@@ -1,0 +1,166 @@
+Welcome back, and in this video I want to cover the differences between stateful and stateless firewalls.
+And to do that, I need to refresh your knowledge of how TCP and IP function.
+So let's just jump in and get started.
+In the Networking Fundamentals videos, I talked about how TCP and IP worked together.
+You might already know this if you have networking experience in the real world,
+but when you make a connection using TCP, what's actually happening is that each side is sending IP packets to each other.
+These IP packets have a source and destination IP and are carried across local networks and the public internet.
+Now TCP is a Layer 4 protocol which runs on top of IP.
+It adds error correction together with the idea of ports.
+So HTTP runs on TCP port 80 and HTTPS runs on TCP port 443 and so on.
+So keep that in mind as we continue talking about the state of connections.
+So let's say that we have a user here on the left, Bob,
+and he's connecting to the Categram application running on a server on the right.
+What most people imagine in this scenario is a single connection between Bob's laptop and the server.
+So Bob's connecting to TCP port 443 on the server and in doing so he gets information back,
+in this case many different cat images.
+Now you know that below the surface at Layer 3,
+this single connection is handled by exchanging packets between the source and the destination.
+Conceptually though you can imagine that each connection, in this case it's an outgoing connection from Bob's laptop to the server,
+each one of these is actually made up of two different parts.
+First we've got the request part where the client requests some information from a server,
+in this case some cat images, and then we have the response part where that data is returned to the client.
+Now these are both parts of the same interaction between the client and server,
+but strictly speaking you can think of these as two different components.
+What actually happens as part of this connection setup is this.
+First the client picks a temporary port and this is known as an ephemeral port.
+Now typically this port has a value between 1024 and 65535,
+but this range is dependent on the operating system which Bob's laptop is using.
+Then once this ephemeral port is chosen the client initiates a connection to the server using a well-known port number.
+Now a well-known port number is a port number which is typically associated with one specific popular application or protocol,
+in this case TCP port 443 is HTTPS.
+So this is the request part of the connection, it's a stream of data to the server.
+You're asking for something, some cat pictures or a web page.
+Next the server responds back with the actual data.
+The server connects back to the source IP of the request part, in this case Bob's laptop,
+and it connects to the source port of the request part which is the ephemeral port which Bob's laptop has chosen.
+This part is known as the response.
+So the request is from Bob's laptop using an ephemeral port to a server using a well-known port.
+The response is from the server on that well-known port to Bob's laptop on the ephemeral port.
+Now it's these values which uniquely identify a single connection.
+So that's a source port and source IP and a destination IP and a destination port.
+Now I hope that this makes sense so far, if not then you need to repeat this first part of the video again
+because this is really important to understand.
+If it does make sense then let's carry on.
+Now let's look at this example in a little bit more detail.
+This is the same connection that we looked at on the previous screen.
+We have Bob's laptop on the left and the Categram server on the right.
+Obviously the left is the client and the right is the server.
+I also introduced the correct terms on the previous screen so request and response.
+So the first part is the client talking to the server asking for something and that's the request
+and the second part is the server responding and that's the response.
+But what I want to get you used to is that the directionality depends on your perspective
+and let me explain what I mean.
+So in this case the client initiates the request and I've added the IP addresses on here for both the client and the server.
+So what this means is that packets will be sent from the client to the server
+and these will be flowing from left to right.
+These packets are going to have a source IP address of 119.18.36.73
+which is the IP address of the client so Bob's laptop
+and they will have a destination IP of 1.3.3.7 which is the IP address of the server.
+Now the source port will be a temporary or ephemeral port chosen by the client
+and the destination port will be a well-known port.
+In this case we're using HTTPS so TCP port 443.
+Now if I challenge you to take a quick guess would you say that this request is outbound or inbound?
+If you had to pick, if you had to define a firewall rule right now would you pick inbound or outbound?
+Well this is actually a trick question because it's both.
+From the client perspective this request is an outbound connection.
+So if you're adding a firewall rule on the client you would be looking to allow or deny an outbound connection.
+From the server perspective though it's an inbound connection
+so you have to think about perspective when you're working with firewalls.
+But then we have the response part from the server through to the client.
+This will also be a collection of packets moving from right to left.
+This time the source IP on those packets will be 1.3.3.7 which is the IP address of the server.
+The destination IP will be 119.18.36.73 which is the IP address of the client
+so Bob's laptop.
+The source port will be TCP port 443 which is the well-known port for HTTPS
+and the destination port will be the ephemeral port chosen originally by the client.
+Now again I want you to think about the directionality of this component of the communication.
+Is it outbound or inbound?
+Well again it depends on perspective.
+The server sees it as an outbound connection from the server to the client
+and the client sees it as an inbound connection from the server to itself.
+Now this is really important because there are two things to think about when dealing with firewall rules.
+The first is that each connection between a client and a server has two components, the request and the response.
+So the request is from a client to a server and the response is from a server to a client.
+The response is always the inverse direction to the request
+but the direction of the request isn't always outbound and isn't always inbound.
+It depends on what that data is together with your perspective
+and that's what I want to talk about a bit more on the next screen.
+Let's look at this more complex example.
+We still have Bob and his laptop and the Categram server
+but now we have a software update server on the bottom left.
+Now the Categram server is inside a subnet which is protected by a firewall
+and specifically this is a stateless firewall.
+A stateless firewall means that it doesn't understand the state of connections.
+What this means is that it sees the request connection from Bob's laptop to Categram
+and the response, so from Categram to Bob's laptop, as two individual parts.
+You need to think about allowing or denying them as two parts.
+You need two rules, in this case one inbound rule which is the request
+and one outbound rule for the response.
+This is obviously more management overhead, two rules needed for each thing.
+Each thing which you as a human see as one connection.
+But it gets slightly more confusing than that.
+For connections to the Categram server, so for example when Bob's laptop is making a request
+then that request is inbound to the Categram server.
+The response logically enough is outbound, sending data back to Bob's laptop.
+But it's possible to have the inverse.
+Consider the situation where the Categram server is performing software updates.
+Well in this situation the request will be from the Categram server to the software update server,
+so outbound, and the response will be from the software update server to the Categram server.
+So this is inbound.
+So when you're thinking about this, start with the request.
+Is the request coming to you or going to somewhere else?
+The response will always be in the reverse direction.
+So this situation also requires two firewall rules.
+One outbound for the request and one inbound for the response.
+Now there are two really important points I want to make about stateless firewalls.
+First, for any servers where they accept connections and where they initiate connections,
+and this is common with web servers which need to accept connections from clients,
+but where they also need to do software updates.
+In this situation you'll have to deal with two rules for each of these,
+and they will need to be the inverse of each other.
+So get used to thinking that outbound rules can be both the request and the response,
+and inbound rules can also be the request and the response.
+It's initially confusing, but just remember, start by determining the direction of the request,
+and then always keep in mind that with stateless firewalls you're going to need an inverse rule for the response.
+Now the second important thing is that the request component is always going to be to a well-known port.
+If you're managing the firewall for the Categram application,
+you'll need to allow connections to TCP port 443.
+The response though is always from the server to a client,
+but this always uses a random ephemeral port.
+Because the firewall is stateless, it has no way of knowing which specific port is used for the response,
+so you'll often have to allow the full range of ephemeral ports to any destination.
+This makes security engineers uneasy,
+which is why stateful firewalls, which I'll be talking about next, are much better.
+Just focus on these two key elements, that every connection has a request and a response,
+and together with those, keep in mind the fact that they can both be in either direction.
+So a request can be inbound or outbound,
+and a response will always be the inverse to the directionality of the request.
+Also, you'll need to keep in mind that any rules that you create for the response
+will need to often allow the full range of ephemeral ports.
+That's not a problem with stateful firewalls, which I want to cover next.
+So we're going to use the same architecture.
+We've got Bob's laptop on the top left, the Categram server on the middle right,
+and the Software Update server on the bottom left.
+A stateful firewall is intelligent enough to identify the response for a given request,
+since the ports and IPs are the same, it can link one to the other.
+And this means that for a specific request to Categram from Bob's laptop to the server,
+the firewall automatically knows which data is the response.
+And the same is true for Software Updates.
+For a given connection to a Software Update server, the request,
+the firewall is smart enough to be able to see the response.
+So the return data from the Software Update server back to the Categram server.
+And this means that with a stateful firewall, you'll generally only have to allow the request or not,
+and the response will be allowed or not automatically.
+This significantly reduces the admin overhead and the chance for mistakes,
+because you just have to think in terms of the directionality and the IPs and ports of the request,
+and it handles everything else.
+In addition, you don't need to allow the full ephemeral port range,
+because the firewall can identify which port is being used,
+and implicitly allow it based on it being the response to a request that you allow.
+Okay, so that's how stateless and stateful firewalls work.
+I know it's been a little bit abstract, but this has been intentional,
+because I want you to understand how they work conceptually before I go into more detail
+with regards to how AWS implements both of these different security firewall standards.
+Now at this point, I've finished with the abstract description,
+so go ahead and finish this video, and when you're ready, I'll look forward to you joining me in the next.

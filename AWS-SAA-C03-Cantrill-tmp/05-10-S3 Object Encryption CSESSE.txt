@@ -1,0 +1,265 @@
+Welcome back, and in this lesson I want to talk about S3 encryption.
+Now we're going to be focusing on server-side encryption, known as SSE,
+but I will be touching on client-side encryption and how that's different.
+Now we've got a lot to get through, so let's jump in and get started.
+Now before we start, there's one common misconception which I want to fix right away,
+and that's that buckets aren't encrypted, objects are.
+You don't define encryption at the bucket level.
+There's something called bucket default encryption, but that's different,
+and I'll cover that elsewhere in the course.
+For now, understand that you define encryption at the object level,
+and each object in a bucket might be using different encryption settings.
+Now before we talk about the ways that S3 natively handles encryption for objects,
+I think it's useful to just review the two main architectures of encryption
+which can be used with the product.
+There's client-side encryption and server-side encryption,
+and both of these refer to what method is used for encryption at rest,
+and this controls how objects are encrypted as they're written to disk.
+It's a method of ensuring that even if somebody were to get the physical disks
+from AWS which your data is on, they would need something else,
+a type of key to access that data.
+So visually, this is how a transaction between a group of users or an application
+an S3 looks like.
+The users or the application on the left uploading data to an S3 endpoint
+for a specific bucket which gets stored on S3's base storage hardware.
+Now it's a simplistic overview, but for this lesson, it's enough.
+I want to illustrate the difference between client-side encryption and server-side encryption.
+So on the top, we have client-side encryption, and on the bottom, we have server-side encryption.
+Now this is a really, really important point which often confuses students.
+What I'm talking about in this lesson is encryption at rest,
+so how data is stored on disk in an encrypted way.
+Both of these methods also use encryption in transit between the user-side and S3.
+So this is an encrypted tunnel, which means that you can't see the raw data inside the tunnel.
+It's encrypted.
+So ignoring any S3 encryption, ignoring how data is encrypted as it's written to disk,
+data transferred to S3 and from S3 is generally encrypted in transit.
+Now there are exceptions, but use this as your default,
+and I'll cover those exceptions elsewhere in the course.
+So in this lesson, when we're talking about S3 encryption,
+we're focusing on encryption at rest and not encryption in transit, which happens anyway.
+Now the difference between client-side encryption and server-side encryption
+is pretty simple to understand when you see it visually.
+With client-side encryption, the objects being uploaded are encrypted by the client before they ever leave,
+and this means that the data is ciphertext the entire time.
+From AWS's perspective, the data is received in a scrambled form and then stored in a scrambled form.
+AWS would have no opportunity to see the data in its plaintext form.
+With server-side encryption, known as SSE, it's slightly different.
+Here, even though the data is encrypted in transit using HTTPS,
+the objects themselves aren't initially encrypted,
+meaning that inside the tunnel, the data is in its original form.
+Let's assume it's animal images.
+So you could remove the HTTP encrypted tunnel somehow, and the animal pictures would be in plaintext.
+Now once the data hits S3, then it's encrypted by the S3 servers,
+which is why it's referred to as server-side encryption.
+So at a high level, the differences are, with client-side encryption, everything is yours to control.
+You take on all of the risk, and you control everything, which is both good and bad.
+You take the original data, you are the only one who ever sees the plaintext version of that data,
+you generate a key, you hold that key, and you manage that key.
+You are responsible for recording which key is used for which object,
+and you perform the encryption process before it's uploaded to S3,
+and this consumes CPU capacity on whatever device is performing the encryption.
+You just use S3 for storage, nothing else.
+It isn't involved in the encryption process in any way.
+So you own and control the keys, the process, and any tooling.
+So if your organization needs all of these, if you have real reasons that AWS cannot be involved in the process,
+then you need to use client-side encryption.
+Now with server-side encryption, known as SSE, you allow S3 to handle some or all of that process,
+and this means there are parts that you need to trust S3 with.
+How much of that process you trust S3 with, and how you want the process to occur,
+will determine which type of server-side encryption you use, as there are multiple types.
+Now AWS has recently made server-side encryption mandatory,
+and so you can no longer store objects in an unencrypted form on S3.
+You have to use encryption at rest.
+So let's break apart server-side encryption and review the differences between each of the various types.
+There are three types of server-side encryption available for S3 objects,
+and each is a trade-off of the usual things, trust, overhead, cost, resource consumption, and more.
+So let's quickly step through them and look at how they work.
+The first is SSE-C, and this is server-side encryption with customer-provided keys.
+Now don't confuse this with client-side encryption, because it's very different.
+The second is SSE-S3, which is server-side encryption with Amazon S3-managed keys, and this is the default.
+The last one is an enhancement on SSE-S3, which is SSE-KMS,
+and this is server-side encryption with KMS keys stored inside the AWS Key Management Service, known as KMS.
+Now the difference between all of these methods is what parts of the process you trust S3 with,
+and how the encryption process and key management is handled.
+At a high level, there are two components to server-side encryption.
+First, the encryption and decryption process.
+This is the process where you take plaintext, a key, and an algorithm, and generate ciphertext.
+It's also the reverse, so taking that ciphertext and a key, and using an algorithm to output plaintext.
+Now this is symmetrical encryption, so the same key is used for both encryption and decryption.
+The second component is the generation and management of the cryptographic keys,
+which are used as part of the encryption and decryption processes.
+These three methods of server-side encryption, they handle these two components differently.
+And let's look at how.
+Now before we do, again, I just want to stress that SSE is now mandatory on objects within S3 buckets.
+This process will occur, you cannot choose not to use it.
+The only thing that you can influence is how the process happens, and what version of SSE is utilized.
+Now first, with SSE-C, the customer is responsible for the keys,
+and S3 manages the encryption and decryption processes.
+So the major change between client-side encryption and this is that S3 are handling the cryptographic operations.
+Now this might sound like a small thing, but if you're dealing with millions of objects,
+and a high number of transactions, then the CPU capability required to do encryption can really add up.
+So you're essentially offloading the CPU requirements of this process to AWS,
+but you still need to generate and manage the key or keys.
+So when you put an object into S3 using this method, you provide the plaintext object and an encryption key.
+Remember this object is encrypted in transit by HTTPS on its way to S3,
+so even though it's plaintext right now, it's not visible to an external observer.
+When it arrives at S3, the object is encrypted, and a hash of the key is tagged to the object, and the key is destroyed.
+Now this hash is one-way, it can't be used to generate a new key,
+but if a key is provided during decryption, the hash can identify if that specific key was used or not.
+So the object and this one-way hash are stored on disk persistently.
+Remember S3 doesn't have the key at this stage.
+To decrypt, you need to provide S3 with the request and the key used to encrypt the object.
+If it's correct, S3 decrypts the object, discards the key, and returns the plaintext.
+And again, returning the object is done over an encrypted HTTPS tunnel, so from the perspective of an observer, it's not visible.
+Now this method is interesting. You still have to manage your keys, which does come with a cost and some effort,
+but you also retain control of that process, which is good in some regulation-heavy environments.
+You also save on the CPU requirements versus client-side encryption, because S3 performs encryption and decryption,
+meaning smaller devices don't need to consume resources for this process.
+But you need to trust that S3 will discard the keys after use,
+and there are some independent audits which prove what AWS does and doesn't do during this process.
+So you choose SSE-C when you absolutely need to manage your own keys,
+but are happy to allow S3 to perform the encryption and decryption processes.
+You would choose client-side encryption when you need to manage the keys and also the encryption and decryption processes,
+and you might do this if you never want AWS to have the ability to see your plaintext data.
+So let's move on to the next type of server-side encryption, and the type I want to describe now is SSE-S3.
+And with this method, AWS handles both the encryption processes as well as the key generation and management.
+When putting an object into S3, you just provide the plaintext data.
+When an object is uploaded to S3 using SSE-S3, it's encrypted by a key which is unique for every object.
+So S3 generates a key just for that object, and then it uses that key to encrypt that object.
+For extra safety, S3 has a key which it manages as part of the service.
+You don't get to influence this. You can't change any options on this key, nor do you get to pick it.
+It's handled end-to-end by S3.
+From your perspective, it isn't visible anywhere in the user interface,
+and it's rotated internally by S3 out of your visibility and control.
+This key is used to encrypt the per-object key, and then the original key is discarded.
+What we're left with is a ciphertext object and a ciphertext key, and both of these are persistently stored on disk.
+With this method, AWS take over the encryption process just as with SSE-C,
+but they also manage the keys on your behalf, which means even less admin overhead.
+The flipside with this method is that you have very little control over the keys used.
+The S3 key is outside of your control, and the keys used to encrypt and decrypt objects are also outside of your control.
+For most situations, SSE-S3 is a good default type of encryption, which makes sense.
+It uses a strong algorithm, AES-256.
+The data is encrypted at rest, and the customer doesn't have any admin overhead to worry about.
+But it does present three major problems.
+Firstly, if you're in an environment which is strongly regulated,
+where you need to control the keys used and control access to the keys, then this isn't suitable.
+If you need to control rotation of keys, this isn't suitable.
+And then lastly, if you need role separation, this isn't suitable.
+What I mean by role separation is that a full S3 administrator,
+somebody who has full S3 permissions to configure the bucket and manage the objects,
+then he or she can also decrypt and view data.
+You can't stop an S3 full administrator from viewing data when using this type of server-side encryption.
+And in certain industry areas such as financial and medical,
+you might not be allowed to have this full and open access for service administrators.
+You might have certain groups within the business who can access the data but can't manage permissions.
+And you might have a requirement for another, say, sysadmin group who need to manage the infrastructure
+but can't be allowed to access data within objects.
+And with SSE-S3, this cannot be accomplished in a rigorous, best practice way.
+And this is where the final type of server-side encryption comes in handy.
+The third type of server-side encryption is server-side encryption with AWS Key Management Service Keys,
+known as SSE-KMS.
+How this differs is that we're now involving an additional service, the Key Management Service, or KMS.
+Instead of S3 managing keys, this is now done via KMS.
+Specifically, S3 and KMS work together.
+You create a KMS key, or you can use the service default one,
+but the real power and flexibility comes from creating a customer-managed KMS key.
+If you choose a customer-managed KMS key, it means this is created by you within KMS,
+it's managed by you, and it has isolated permissions.
+And I'll explain why this matters in a second.
+In addition, the key is fully configurable.
+Now, this seems on the surface like a small change,
+but it's actually really significant in terms of the capabilities which it provides.
+When S3 wants to encrypt an object using SSE-KMS,
+it has to liaise with KMS and request a new data encryption key to be generated using the chosen KMS key.
+KMS delivers two versions of the same data encryption key.
+A plaintext version and an encrypted or ciphertext version.
+S3 then takes the plaintext object and the plaintext data encryption key
+and creates an encrypted or ciphertext object,
+and then it immediately discards the plaintext key,
+leaving only the ciphertext version of that key, and both of these are stored on S3 storage.
+So you're using the same overarching architecture, the per-object encryption key,
+and the key which encrypts the per-object key,
+but with this type of server-side encryption, so using SSE-KMS,
+KMS is generating the keys.
+Now, KMS keys can only encrypt objects up to 4 KB in size,
+so the KMS key is used to generate data encryption keys which don't have those limitations.
+It's important to understand that KMS doesn't store the data encryption keys,
+it only generates them and gives them to S3,
+but you do have control over the KMS key,
+the same control as you would with any other customer-managed KMS key.
+So in regulated industries, this alone is enough reason to consider SSE-KMS
+because it gives fine-grained control over the KMS key being used,
+as well as its rotation.
+You also have logging and auditing on the KMS key itself,
+and with CloudTrail, you'll be able to see any calls made against that key.
+But probably the best benefit provided by SSE-KMS is the role separation.
+To decrypt an object encrypted using SSE-KMS,
+you need access to the KMS key which was originally used.
+That KMS key is used to decrypt the encrypted copy of the data encryption key
+for that object which is stored along with that object.
+If you don't have access to KMS, you can't decrypt the data encryption key,
+so you can't decrypt the object, and so it follows that you can't access the object.
+Now what this means is that if we had an S3 administrator, and let's call him Phil,
+because we're using SSE-KMS, it means Phil, as an S3 administrator,
+does have full control over this bucket.
+But because Phil has been given no permissions on the specific KMS key,
+he can't read any objects, so he can administer the objects as part of administering S3,
+but he can't see the data within those objects,
+because he can't decrypt the data encryption key using the KMS key,
+because he has no permissions on that KMS key.
+Now this is an example of role separation,
+something which is allowed using SSE-KMS versus not allowed using SSE-S3.
+With SSE-S3, Phil, as an S3 administrator, could administer and access the data inside objects.
+However, using SSE-KMS, we have the option to allow Phil to view data in objects or not,
+something which is controllable by granting permissions or not on specific KMS keys.
+So time for a quick summary before we finish this lesson,
+and it's really important that you understand these differences for any of the AWS exams.
+With client-side encryption, you handle the key management and the encryption and decryption processes.
+Use this if you need to control both of those and don't trust AWS and their regular audits.
+This method uses more resources to manage keys,
+as well as resources for actually performing the encryption and decryption processes at scale.
+But it means AWS never see your objects in plain text form because you handle everything end-to-end.
+This generally means you either encrypt all objects in advance
+or use one of the client-side encryption SDKs within your application.
+Now please don't confuse client-side encryption with server-side encryption, specifically SSE-C.
+Client-side encryption isn't really anything to do with S3.
+It's not a form of S3 encryption. It's different.
+You can use client-side encryption and server-side encryption together.
+There's nothing preventing that.
+So now let's step through server-side encryption.
+And remember, this is now on by default. It's mandatory.
+The only choice you have is which method of SSE to use.
+With SSE-C, you manage the encryption keys.
+You can use the same key for everything, though that isn't recommended,
+or you can use individual keys for every single object.
+The choice is yours.
+S3 accepts your choice of key and an object,
+and it handles the encryption and decryption processes on your behalf.
+This means you need to trust S3 with the initial plain text object
+and trust it to discard and not store the encryption key.
+In exchange, S3 takes over the computationally heavy encryption and decryption processes.
+And also keep in mind that the data is transferred in a form
+where it's encrypted in transit using HTTPS,
+so nobody outside of AWS will ever have exposure to plain text data in any way.
+SSE-S3 uses AES-256.
+I mention this because it's often the way exam questions test your knowledge.
+If you see AES-256, think SSE-S3.
+With SSE-S3, S3 handles the encryption keys and the encryption process.
+It's the default, and it works well for most cases,
+but you have no real control over keys, permissions, or rotation,
+and it also can't handle role separation,
+meaning S3 full admins can access the data within objects that they manage.
+Finally, we have SSE-KMS, which uses KMS and KMS keys, which the service provides.
+You can control key rotation and permissions.
+It's similar in operation to SSE-S3, but it does allow role separation.
+So use this if your business has fairly rigid groups of people
+and compartmentalized sets of security.
+You can have S3 admins with no access to the data within objects.
+Now for all AWS exams, make sure you understand the difference
+between client-side and server-side encryption.
+And then for server-side encryption, try and picture scenarios
+where you would use each of the three types of server-side encryption.
+Now that's everything I wanted to cover in this lesson about object encryption,
+specifically server-side encryption.
+Go ahead and complete this lesson, and when you're ready,
+I look forward to you joining me in the next.

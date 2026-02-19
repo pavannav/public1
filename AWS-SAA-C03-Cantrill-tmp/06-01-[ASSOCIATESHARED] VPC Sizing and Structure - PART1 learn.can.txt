@@ -1,0 +1,115 @@
+Welcome back. In this lesson I'm going to cover a topic that many courses don't bother with.
+How to design a well-structured and scalable network inside AWS using a VPC.
+Now this lesson isn't about the technical side of VPC.
+It's about how to design an IP plan for a business,
+which includes how to design an individual network within that plan,
+which when running in AWS means designing a VPC.
+So let's get started and take a look because this is really important to understand,
+especially if you're looking to design real-world solutions
+or if you're looking to identify any problems or performance issues in exam questions.
+Now during this section of the course you'll be learning about and creating a custom VPC,
+a private network inside AWS.
+When creating a VPC one of the first things you'll need to decide on is the IP range that the VPC will use.
+The VPC sider.
+You can add more than one, but if you take architecture seriously
+you need to know what range the VPC will use in advance.
+Even if that range is made up of multiple smaller ranges,
+you need to think about this stuff in advance.
+Deciding on an IP plan and VPC structure in advance
+is one of the most critically important things you will do as a solutions architect,
+because it's not easy to change later and it will cause you a world of pain if you don't get it right.
+Now when you start this design process there are a few things that you need to keep in mind.
+First, what size should the VPC be?
+This influences how many things, how many services can fit into that VPC.
+Each service has one or more IPs and they occupy the space inside a VPC.
+Secondly, you need to consider other networks that you'll use or that you'll need to interact with.
+In the previous lesson I mentioned that overlapping or duplicate ranges would make network communication difficult,
+so choosing widely at this stage is essential.
+Be mindful about ranges that other VPCs use,
+ranges which are utilized in other cloud environments, on other on-premises networks,
+and even partners and vendors.
+Try to avoid ranges which other parties use which you might need to interact with,
+and be cautious. If in doubt, assume the worst.
+You should also aim to predict what could happen in the future.
+What the situation is now is important, but we all know that things change,
+so consider what things could be like in the future.
+You'll also need to consider the structure of the VPC.
+For a given IP range that we allocate to a VPC, it will need to be broken down further.
+Every IT network will have tiers. Web tier, application tier, and database tier are three common examples,
+but there are more, and these will depend on your exact IT architecture.
+Tiers are things which separate application components and allow different security to be applied, for example.
+Modern IT systems also have different resiliency zones, known as availability zones in AWS.
+Networks are often split, and parts of that network are assigned to each of these zones.
+These are my starting points for any systems design.
+As you can see, it goes beyond the technical considerations, and rightfully so.
+A good solid infrastructure platform is just as much about a good design as it is about a good technical implementation.
+So since this course is structured around a scenario,
+what do we know about the Animals for Life organization so far?
+We know that the organization has three major offices, London, New York, and Seattle.
+That will be three IP address ranges which we know are required for our global network.
+We don't know what those networks are yet, but as Solutions Architects,
+we can find out by talking to the IT staff of the business.
+We know that the organization have field workers who are distributed globally,
+and so they'll consume services from a range of locations.
+But how will they connect to the business?
+Will they access services via web apps?
+Will they connect to the business networks using a virtual private network or VPN?
+We don't know, but again, we can ask the question to get this information.
+What we do know is that the business has three networks which already exist.
+192.168.10.0.24, which is the business's on-premise network in Brisbane.
+10.0.0.0.16, which is a network used by an existing AWS pilot.
+And finally, 172.31.0.0.16, which is used in an existing Azure pilot.
+These are all ranges our new AWS network design cannot use and also cannot overlap with.
+We might need to access data in these networks, we might need to migrate data from these networks,
+or in the case of the on-premises network, it will need to access our new AWS deployment.
+So we have to avoid these three ranges.
+And this information that we have here is our starting point, but we can obtain more by asking the business.
+Based on what we already know, we have to avoid 192.168.10.0.0.16,
+and we have to avoid 172.31.0.0.16.
+These are confirmed networks that are already in use.
+And let's also assume that we've contacted the business and identified the other on-premises networks which are in use by the business.
+192.168.15.0.0.24 is used by the London office.
+192.168.20.0.0.0.24 is used by the New York office.
+192.168.25.0.0.0.0.24 is used by the Seattle office.
+We've also received some disturbing news.
+The vendor who previously helped Animals for Life with their Google Cloud proof of concept cannot confirm which networks are in use in Google Cloud,
+but what they have told us is that the default range is 10.128.0.0.0.9,
+and this is a huge amount of IP address space.
+It starts at 10.128.0.0 and runs all the way through to 10.255.255.255.
+And so we can't use any of that if we're trying to be safe, which we are.
+So this list would be my starting point. When I'm designing an IP addressing plan for this business, I would not use any of this IP address space.
+Now I want you to take a moment, pause the video if needed, and make sure you understand why each of these ranges can't be used.
+Start trying to become familiar with how the network address and the prefix map onto the range of addresses that the network uses.
+You know that the IP address represents the start of that range. Can you start to see how the prefix helps you understand the end of that range?
+Now with the bottom example for Google, remember that a slash 8 is one fixed value for the first octet of the IP, and then anything else.
+Google's default uses a slash 9, which is half of that. So it starts at 10.128 and uses the remainder of that 10. space, so 10.128 through to 10.255.
+Another interesting fact, the Azure network is using the same IP address range as the AWS default VPC users, so 172.31.0.0.
+And that means that we can't use the default VPC for anything production, which is fine because as I talked about earlier in the course, as architects, where possible, we avoid using the default VPC.
+So at this point, if this was a production process, if we were really designing this for a real organization, we'd be starting to get a picture of what to avoid.
+So now it's time to focus on what to pick. Now there is a limit on VPC sizing in AWS.
+A VPC can be, at the smallest, a slash 28 network, so that's 16 IP addresses in total. And at most, it can be a slash 16 network, which is just over 65,000 IP addresses.
+Now I do have a personal preference, which is to use networks in the 10 range, so 10.x.y.z.
+And given the maximum VPC size, this means that each of these slash 16 networks in this range would be 10.1, 10.2, 10.3, all the way through to 10.255.
+I also find it important to avoid common ranges, and in my experience, this is logically 10.0 because everybody uses that as a default, and 10.1 because as human beings, everybody picks that one to avoid 10.0.
+I'd also avoid anything up to and including 10.10 to be safe, and just because I like base two numbers, I would suggest a starting point of 10.16.
+With this starting point in mind, we need to start thinking about the IP plan for the Animals for Life business.
+We need to consider the number of networks the business will need, because we'll allocate these networks starting from this 10.16 point in the 10 range.
+Now the way I normally determine how many ranges a business requires is I like to start thinking about how many AWS regions the business will operate in.
+Be cautious here and think of the highest possible number of regions that a business could ever operate in, and then add a few as a buffer.
+At this point, we're going to be pre-allocating things in our IP plan, so caution is the term of the day.
+I suggest ensuring that you have at least two ranges which can be used in each region in each AWS account that your business uses.
+For Animals for Life, we really don't yet know how many regions the business will be operating in, but we can make an educated guess and then add some buffer to protect us against any growth.
+Let's assume that the maximum number of regions the business will use is three regions in the US, one in Europe and one in Australia.
+That's a total of five regions. We want to have two ranges in each region, so that's a total of five times two, so ten ranges.
+And we also need to make sure that we've got enough for all of our AWS accounts, so I'm going to assume four AWS accounts.
+So that's a total number of IP ranges of two in each of five regions, so that's ten, and then that in each of four accounts, so that's a total of ideally forty IP ranges.
+So to summarise where we are, we're going to use the ten range. We're going to avoid ten dot zero to ten dot ten because they're far too common.
+We're going to start at ten dot sixteen because that's a nice clean base two number.
+And we can't use ten dot one twenty eight through to ten dot two fifty five because potentially that's used by Google Cloud.
+So that gives us a range of possibilities from ten dot sixteen to ten dot one two seven inclusive, which we can use to create our networks.
+And that's plenty.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video and when you're ready, join me in part two.

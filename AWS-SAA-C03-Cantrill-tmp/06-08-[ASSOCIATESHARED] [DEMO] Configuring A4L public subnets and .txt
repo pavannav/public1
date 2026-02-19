@@ -1,0 +1,82 @@
+Welcome back and this demo lesson is going to bring together some really important theory and architecture that you've learned over the past few lessons.
+What we're starting this demo lesson with is this architecture. We have our VPC, the Animals for Life VPC in US East 1.
+It uses the 10.16.0.0 slash 16 side arrange. It has 12 subnets created inside it over 3 AZs with 4 tiers, reserved, DB, application and web.
+Now currently all of the subnets are private and can't be used for communication with the internet or the AWS public zone.
+In this demo we're going to reconfigure the VPC to allow that.
+So the first step is to create an internet gateway and attach it. And to do that I'm going to move across to my desktop.
+Now to do this in your environment you'll need the VPC and subnet configuration as you set it up in the previous demo lesson.
+So that configuration needs to be in place already. You need to be logged in as the IAM admin user of the management account of the organization
+and have the Northern Virginia region selected. So US-East-1.
+So go ahead and move across to the VPC console. Now this should already be in the recently visited services because you were using this in the previous demo lesson.
+But if it's not visible just click in the services drop down, type VPC and then click to move to the VPC console.
+Now if you do still have the configuration as it was at the end of the previous demo lesson you should be able to click on subnets on the menu on the left
+and see a list of lots of subnets. So you'll see the ones for the default VPC without a name and if you have the correct configuration
+you should see a collection of 12 subnets, 3 application subnets, 3 database subnets, 3 reserved subnets and then 3 web subnets.
+So all of these should be in place within the Animals for Life VPC in order to do the tasks within this demo lesson.
+So I'm going to assume from this point onwards that you do have all of these subnets created and configured.
+Now what we're going to be doing in this demo lesson is configuring the 3 web subnets, so Web A, Web B and Web C, to be public subnets.
+Being a public subnet means that you can launch resources into the subnet, have them allocated with a public IP version 4 address
+and have connectivity to and from the public IP version 4 internet. And in order to enable that functionality there are a number of steps
+that we need to perform and I want you to get the practical experience of implementing these within your own environment.
+Now the first step to making subnets public is that we need an internet gateway attached to this VPC.
+So internet gateways as I talked about in the previous theory lesson are highly available gateway objects
+which can be used to allow public routing to and from the internet. So we need to create one.
+So let's click on internet gateways on the menu on the left. There will already be an internet gateway in place for the default VPC.
+Remember when you create a default VPC all of this networking infrastructure is created and configured on your behalf.
+But because we've created a custom VPC for animals for life we need to do this manually.
+So to do that go ahead and click on create internet gateway. We're going to call the internet gateway A4L,
+so animals for life, VPC1 which is the VPC we're going to attach it to and then IGW for internet gateway.
+So A4L-VPC1-IGW. Now that's the only information that we need to enter so scroll down and click on create internet gateway.
+Internet gateways are initially not attached to a VPC and we can tell that because it's initially in the detached state.
+So we need to attach this to the animals for life VPC. So click on actions and then attach to VPC.
+Inside the available VPC's box just click and then select A4L-VPC1. Once selected go ahead and click on attach internet gateway
+and that will attach our brand new internet gateway to the animals for life VPC.
+And that means that it's now available within that VPC as a gateway object.
+Which gives the VPC the capability to communicate to and receive communications from the public internet and the AWS public zone.
+Now the next step is that we want to make all of the subnets in the web tier public.
+So that services deployed into these subnets can take advantage of this functionality.
+So we want the web subnets to be able to communicate to and receive communications from the public internet and AWS public services.
+Now there are a number of steps that we need to do to accomplish this. We need to create a route table for the public subnets.
+We need to associate this route table with the three public subnets. So Web A, Web B and Web C.
+And then we need to add two routes to this route table. One route will be a default route for IP version 4 traffic
+and the other will be a default route for IP version 6 traffic.
+And both of these routes for their target will be pointing at the internet gateway that you've just created and attached to this VPC.
+Now this will configure the VPC router to forward any data intended for anything not within our VPC to the internet gateway.
+Finally on each of these web subnets we'll be configuring the subnet to auto assign a public IP version 4 address.
+And that will complete the process of making them public. So let's perform all of these sets of configuration.
+So now that we're back at the AWS console we need to create a route table. So go ahead and click on route tables on the menu on the left.
+And then we're going to create a new route table. First we'll select the VPC that this route table will belong to.
+And it's going to be the Animals for Life VPC. So go ahead and select that VPC.
+And then we're going to give this route table a name. And I like to keep the naming scheme consistent.
+So we're going to use A4L for Animals for Life and then a hyphen. VPC1 because this is the VPC the route table will belong to.
+And then a hyphen RT for route table. And then a hyphen and then web because this route table is going to be used for the web subnets.
+So we'll go ahead and create this route table. Then click route tables on the menu on the left.
+If we select the route table that we've just created. So that's the one that's called A4L hyphen VPC1 hyphen RT hyphen web.
+And then just expand this overview area at the bottom. We'll be able to see all of the information about this route table.
+Now there are a number of areas of this which are important to understand. One is the routes area which lists all of the routes on this route table.
+And the other is subnet associations. This determines which subnets this route table is associated with.
+So let's go to subnet associations. And currently we can see that it's not actually associated with any subnets within this VPC.
+We need to adjust that. So go ahead and edit those associations. And we're going to associate it with the three web subnets.
+So you need to select web A, web B and web C. Now notice how all of those are currently associated with the main route table of the VPC.
+Remember a subnet can only be associated with one route table at a time. If you don't explicitly associate a route table with a subnet then it's associated with the main route table.
+We're going to change that. We're going to explicitly associate this new route table with the web A, web B and web C subnets.
+So go ahead and save that. So now this route table has been associated with web A, web B and web C. Those subnets are no longer associated with the main route table of the VPC.
+So now we've configured the association. Let's move to routes. And we can see that this route table has two local routes.
+We've got the IP version 4 side of the VPC and the IP version 6 side of the VPC. So these two routes on this route table will mean that web A, web B and web C will know how to direct traffic towards any other IP version 4 or IP version 6 addresses within this VPC.
+Now these local routes can never be adjusted or removed but what we can do is add additional routes. So we're going to add two routes. A default route for IP version 4 and a default route for IP version 6.
+So we'll do that and we'll start with IP version 4. So we'll edit those routes and then we'll add a route. Now the format for the IP version 4 default route is 0.0.0.0.0 and this means any IP addresses.
+Now I've talked elsewhere in the course how there is a priority to routing within a VPC that a more specific route always takes priority. So this route, the slash 16, is more specific than this default route.
+So this default route will only affect IP version 4 traffic which is not matched by this local route. So essentially anything which is IP version 4 which is not destined for the VPC will use this default route.
+Now we need to pick the Internet Gateway as the target for this route. So click in the target box on this row. Select Internet Gateway. There should only be one that's highlighted. That's the Animals for Life Internet Gateway you created moments ago.
+So select that and that means that any IP version 4 traffic which is not destined for the VPC side arrange will be sent to the Internet Gateway. Now we're going to do the same but for IP version 6.
+So go ahead and add another route and the format for IP version 6 default route is double colon forward slash zero and this is the same architecture. It essentially means that this matches all IP version 6 addresses but it's less specific than the IP version 6 local route on this top row.
+So this will only be used for any IP version 6 addresses which are not in the IP version 6 VPC side arrange. So go ahead and select target, go to Internet Gateway and select the Animals for Life Internet Gateway.
+And once you've done both of those go ahead and click on save changes. Now this means that we now have two default routes, an IP version 4 default route and an IP version 6 default route. So this means that anything which is associated with these route tables will now send any unknown traffic towards the Internet Gateway.
+But what we need to do before this works is we need to ensure that any resources launched into the Web A, Web B or Web C subnets are allocated with public IP version 4 addresses. To do that go ahead and click on subnets.
+In the list we need to locate Web A, Web B and Web C. So we'll start with Web A. So select Web A, click on actions and then edit subnet settings. And this time we're going to modify this subnet so that it automatically assigns a public IP version 4 address.
+So check this box and click on save and that means that any resources launched into the Web A subnet will be allocated with a public IP version 4 address. Now we need to follow the same process for the other Web subnets so select the Web B subnet, click on actions and then edit subnet settings.
+Enable IP version 4, click on save and then do that same process for Web C. So locate Web C, click on actions and then edit subnet settings. And then enable public IP version 4 addresses and click on save.
+So that's all of the networking configuration done. We've created an internet gateway, we've associated the internet gateway with the Animals for Life VPC, we've created a route table for the Web subnets, we've associated this route table with the Web subnets, we've added default routes onto this route table pointing at the internet gateway as a default IP version 4 and IP version 6 route.
+And then we've enabled the allocation of public IP version 4 addresses for Web A, Web B and Web C.
+Okay, so this is the end of part one of this lesson. It was getting a little bit on the long side and so I wanted to add a break. It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one. So go ahead, complete the video and when you're ready, join me in part two.

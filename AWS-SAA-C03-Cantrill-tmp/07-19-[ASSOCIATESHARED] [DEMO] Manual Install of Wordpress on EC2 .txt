@@ -1,0 +1,163 @@
+Welcome back and in this lesson we're going to be doing something which I really hate doing
+and that's using WordPress in a course as an example.
+Joking aside though, WordPress is used in a lot of courses
+as a very simple example of an application stack.
+The problem is that most courses don't take this any further,
+but in this course I want to use it as one example of how an application stack
+can be evolved to take advantage of AWS products and services.
+What we're going to be using WordPress for in this demo
+is to give you experience of how a manual installation of a typical application stack works in EC2.
+We're going to be doing this so you can get the experience of how not to do things.
+My personal belief is that to fully understand the advantages
+that automation features within AWS provide,
+you need to understand what a manual installation is like
+and what problems you can experience doing that manual installation.
+As we move through the course, we can compare this to various different automated ways
+of installing software within AWS.
+So you're going to get the experience of bad practices, good practices,
+and the experience to be able to compare and contrast between the two.
+By the end of this demonstration, you're going to have a working WordPress site,
+but it won't have any high availability because it's running on a single EC2 instance.
+It's going to be architecturally monolithic with everything running on the one single instance.
+In this case, that means both the application and the database.
+The design is fairly straightforward.
+It's just the Animals for Life VPC.
+We're going to be deploying the WordPress application into a single subnet,
+the WebA public subnet.
+So this subnet is going to have a single EC2 instance deployed into it,
+and then you're going to be doing a manual install onto this instance,
+and the end result is a working WordPress installation.
+Now at this point, it's time to get started and implement this architecture.
+So let's go ahead and switch over to our AWS console.
+Now to get started with this demo lesson, you're going to need to do a few preparation steps.
+First, just make sure that you're logged in to the general AWS account,
+so the management account of the organization,
+and as always, make sure you have the Northern Virginia region selected.
+Now attached to this lesson is a one-click deployment for the base infrastructure that we're going to use,
+so go ahead and open the one-click deployment link that's attached to this lesson.
+That link's going to take you to the quick create stack screen.
+Everything should be pre-populated, the stack name should be WordPress,
+all you need to do is scroll down towards the bottom,
+check this capabilities box, and then click on create stack.
+And this stack is going to need to be in a create complete state before we move on with the demo lesson.
+So go ahead and pause this video, wait for the stack to change to create complete,
+and then we're good to continue.
+Also attached to this lesson is a lessons command document,
+which lists all of the commands that you'll be using within the EC2 instance throughout this demo lesson,
+so go ahead and open that as well.
+So that should look something like this, and these are all of the commands that we're going to be using,
+so these are the commands that perform a manual WordPress installation.
+Now that that stack's completed and we've got the lesson commands document open,
+the next step is to move across to the EC2 console,
+because we're going to actually install WordPress manually.
+So click on the services dropdown, and then locate EC2 in this all services part of the screen.
+If you've recently visited it, it should be in the recently visited section under favorites,
+or you can go ahead and type EC2 in the search box, and then open that in a new tab.
+And then click on instances running, and you should see one single instance,
+which is called A4L-publicec2.
+Go ahead and right click on this instance, this is the instance we'll be installing WordPress within.
+So right click, select connect, we're going to be using our browser to connect to this instance,
+so we'll be using instance connect, just verify that the username is ec2-user,
+and then go ahead and connect to this instance.
+Now again, I fully understand that a manual installation of WordPress might seem like a waste of time,
+but I genuinely believe that you need to understand all the problems that come from manually installing software
+in order to understand the benefits which automation provides.
+It's not just about saving time and effort, it's also about error reduction and the ability to keep things consistent.
+Now I always like to start my installations or my scripts by setting variables
+which will store the configuration values that everything from that point forward will use.
+So we're going to create four variables, one for the database name, one for the database user,
+one for the database password, and then one for the root or admin password of the database server.
+So let's start off by using the pre-populated values from the Lessons commands documents.
+So that's all of those variables set, and we can confirm that those are working by typing echo,
+and then a space, and then a dollar, and then the name of one of those variables.
+So for example, dbname, and press enter, and that will show us the value stored within that variable.
+So now we can use these at later points of the installation.
+So at this point I'm going to clear the screen to keep it easy to see.
+And stage two of this installation process is to install some system software.
+So there are a few things that we need to install in order to allow a WordPress installation.
+We'll install those using the DNF package manager.
+We need to give it admin privileges, which is why we use sudo.
+And then the packages that we're going to install are the database server,
+which is MariaDB-server, the Apache web server, which is HTTPD,
+and then a utility called wget, which we're going to use to download further components of the installation.
+So go ahead and type or copy and paste that command and press enter.
+And that installation process will take a few moments,
+and it will go through installing that software and any of the prerequisites.
+They're done, so I'll clear the screen to keep this easy to read.
+Now that all those packages are installed, we need to start both the web server and the database server
+and ensure that both of them are started if ever the machine is restarted.
+So to do that, we need to enable and start those services.
+So enabling and starting means that both of the services are both started right now
+and they'll start if the machine reboots.
+So first we'll use this command. So we're using admin privileges again,
+systemctl, which allows us to start and stop system processes,
+and then we use enable and then HTTPD, which is the web server.
+So type and press enter, and that ensures that the web server is enabled.
+We need to run the same command again, but this time specifying MariaDB
+to ensure that the database server is enabled.
+So type or copy and paste and press enter.
+So that means both of those processes will start if ever the instance is rebooted,
+and now we need to manually start both of those so they're running and we can interact with them.
+So we need to use the same structure of command, but instead of enable,
+we need to start both of these processes.
+So first the web server and then the database server.
+So that means this EC2 instance now has a running web and database server,
+both of which are required for WordPress.
+So I'll clear the screen to keep this easy to read.
+Next we're going to move to stage four, and stage four is that we need to set
+the root password of the database server.
+So this is the username and password that will be used to perform
+all of the initial configuration of the database server.
+Now we're going to use this command, and you'll note that for password
+we're actually specifying one of the variables that we configured at the start of this demo.
+So we're using the db root password variable that we configured right at the start.
+So go ahead and copy and paste or type that in and press enter,
+and that sets the password for the root user of this database platform.
+The next step, which is step five, is to install the WordPress application files.
+Now to do that we need to install these files inside what's known as the web root.
+So whenever you browse to a web server, either using an IP address or a DNS name,
+if you don't specify a path, so if you just use the server name, for example,
+netflix.com, then it loads those initial files from a folder known as the web root.
+Now on this particular server, the web root is stored in forward slash var,
+forward slash www, forward slash html.
+So we need to download WordPress into that folder.
+Now we're going to use this command, wget,
+and that's one of the packages that we installed at the start of this lesson.
+So we're giving it admin privileges and we're using wget to download
+latest.tar.gz from wordpress.org, and then we're putting it inside this web root.
+So forward slash var, forward slash www, forward slash html.
+So go ahead and copy and paste or type that in and press enter.
+That'll take a few moments depending on the speed of the WordPress servers,
+and that will store latest.tar.gz in that web root folder.
+Next we need to move into that folder, so cd space, forward slash var,
+forward slash www, forward slash html, and press enter.
+We need to use a Linux utility called tar to extract that file,
+so sudo and then tar, and then the command line options,
+hyphen zxvf, and then the name of the file, so latest.tar.gz.
+So copy and paste or type that in and press enter,
+and that will extract the WordPress download into this folder.
+So now if we do an ls space hyphen la, you'll see that we have a WordPress folder,
+and inside that folder are all of the application files.
+Now we actually don't want them inside a WordPress folder.
+We want them directly inside the web root.
+So the next thing we're going to do is this command,
+and this is going to copy all of the files from inside this WordPress folder to dot,
+and dot represents the current folder.
+So it's going to copy everything inside WordPress into the current working directory,
+which is the web root directory.
+So enter that, and that copies all of those files,
+and now if we do another listing you'll see that we have all of the WordPress application files
+inside the web root.
+And lastly for the installation part we need to tidy up the mess that we've made,
+so we need to delete this WordPress folder and the download file that we just created.
+So to do that we'll run an rm space hyphen big R and then WordPress to delete that folder,
+and then we'll delete the download with sudo rm and then a space and then the name of the file,
+so latest.tar.gz.
+And that means that we have a nice clean folder.
+So I'll clear the screen to make it easy to see,
+and then I'll just do another listing.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side, and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one,
+so go ahead, complete the video, and when you're ready, join me in part two.

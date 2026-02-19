@@ -1,0 +1,227 @@
+Welcome back, and in this demo lesson, you're going to evolve the infrastructure which you've been using throughout this section of the course.
+In this demo lesson, you're going to add private internet access capability using NAT Gateways.
+So you're going to be applying a CloudFormation template which creates this base infrastructure.
+It's going to be the Animals for Life VPC with infrastructure in each of three availability zones.
+So there's a database subnet, an application subnet, and a web subnet in availability zone A, B, and C.
+Now to this point, what you've done is configured public subnet internet access,
+and you've done that using an internet gateway together with routes on these public subnets.
+In this demo lesson, you're going to add NAT Gateways into each availability zone, so A, B, and C,
+and this will allow this private EC2 instance to have access to the internet.
+Now you're going to be deploying NAT Gateways into each availability zone,
+so that each availability zone has its own isolated private subnet access to the internet.
+It means that if any of the availability zones fail, then each of the others will continue operating,
+because these route tables, which are attached to the private subnets,
+they point at the NAT Gateway within that availability zone.
+So each availability zone, A, B, and C, has its own corresponding NAT Gateway,
+which provides private internet access to all of the private subnets within that availability zone.
+Now in order to implement this infrastructure, you're going to be applying a one-click deployment,
+and that's going to create everything that you see on screen now,
+apart from these NAT Gateways and the route table configurations.
+So let's go ahead and move across to our AWS console and get started implementing this architecture.
+Okay, so now we're at the AWS console.
+As always, just make sure that you're logged in to the general AWS account as the IAM admin user,
+and you'll need to have the Northern Virginia region selected.
+Now at the end of the previous demo lesson, you should have deleted all of the infrastructure
+that you've created up until that point, so the Animals for Life VPC,
+as well as the Bastion host and the associated networking.
+So you should have a relatively clean AWS account.
+So what we're going to do first is use a one-click deployment
+to create the infrastructure that we'll need within this demo lesson.
+So attached to this demo lesson is a one-click deployment link, so go ahead and open that link.
+That's going to take you to a quick create stack screen.
+Everything should be pre-populated.
+The stack name should be A4L.
+Just scroll down to the bottom, check this capabilities box, and then click on create stack.
+Now this will start the creation process of this A4L stack,
+and we will need this to be in a create complete state before we continue.
+So go ahead, pause the video, wait for your stack to change into create complete,
+and then we're good to continue.
+Okay, so now this stack's moved into a create complete state, then we're good to continue.
+So what we need to do before we start is make sure that all of our infrastructure has finished provisioning.
+To do that, just go ahead and click on the resources tab of this CloudFormation stack
+and look for A4L internal test.
+This is an EC2 instance, a private EC2 instance,
+so this doesn't have any public internet connectivity,
+and we're going to use this to test our NAT Gateway functionality.
+So go ahead and click on this icon under physical ID,
+and this is going to move you to the EC2 console,
+and you'll be able to see this A4L-internal-test instance.
+Now currently in my case it's showing as running,
+but the status check is showing as initializing.
+Now we'll need this instance to finish provisioning before we can continue with the demo.
+What should happen is this status check should change from initializing to two out of two status checks,
+and once you're at that point you should be able to right-click and select connect,
+and choose session manager, and then have the option of connecting.
+Now you'll see that I don't because this instance hasn't finished its provisioning process.
+So what I want you to do is to go ahead and pause this video,
+wait for your status checks to change to two out of two checks,
+and then just go ahead and try to connect to this instance using session manager.
+Only resume the video once you've been able to click on connect under the session manager tab.
+And don't worry if this takes a few more minutes after the instance finishes provisioning
+before you can connect to session manager.
+So go ahead and pause the video, and when you can connect to the instance you're good to continue.
+Okay, so in my case it took about five minutes for this to change to two out of two checks passed,
+and then another five minutes before I could connect to this EC2 instance.
+So I can right-click on here and put connect, I'll have the option now of picking session manager,
+and then I can click on connect, and this will connect me in to this private EC2 instance.
+Now the reason why you're able to connect to this private instance is because we're using session manager,
+and I'll explain exactly how this product works elsewhere in the course,
+but essentially it allows us to connect into an EC2 instance with no public internet connectivity,
+and it's using VPC interface endpoints to do that, which I'll be explaining elsewhere in the course.
+But what you should find when you're connected to this instance,
+if you try to ping any internet IP address, so let's go ahead and type ping,
+and then a space 1.1.1.1 and press enter, you'll note that we don't have any public internet connectivity,
+and that's because this instance doesn't have a public IP version 4 address,
+and it's not in a subnet with a route table which points at the internet gateway.
+This EC2 instance has been deployed into the application A subnet, which is a private subnet,
+and it also doesn't have a public IP version 4 address.
+So at this point what we need to do is go ahead and deploy our NAT gateways,
+and these NAT gateways are what will provide this private EC2 instance with connectivity to the public IP version 4 internet.
+So let's go ahead and do that.
+Now to do that we need to be back at the main AWS console, click in the services search box at the top,
+type VPC and then right click and open that in a new tab.
+Once you've done that, go ahead and move to that tab.
+Once you're there, click on NAT gateways and create a NAT gateway.
+Okay, so once you're here you'll need to specify a few things.
+You'll need to give the NAT gateway a name, you'll need to pick a public subnet for the NAT gateway to go into,
+and then you'll need to give the NAT gateway an elastic IP address, which is an IP address which doesn't change.
+So first we'll set the name of the NAT gateway, and we'll choose to use A4L for Animals for Life,
+hyphen VPC1, hyphen NAT GW, and then hyphen uppercase A, because this is going into availability zone A.
+Next we'll need to pick the public subnet that the NAT gateway will be going into,
+so click on the subnet dropdown and then select the Web A subnet, which is the public subnet in availability zone A.
+So SN, hyphen Web, hyphen A.
+Now we need to give this NAT gateway an elastic IP.
+It doesn't currently have one, so we need to click on Allocate Elastic IP, which gives it an allocation.
+Don't worry about the connectivity type, we'll be covering that elsewhere in the course.
+Just scroll down to the bottom and create the NAT gateway.
+Now this process will take some time, and so we need to go ahead and create the two other NAT gateways.
+So click on NAT gateways at the top, and then we're going to create a second NAT gateway.
+So go ahead and click on Create NAT gateway again.
+This time we'll call the NAT gateway A4L, hyphen VPC1, hyphen NAT GW, hyphen B,
+and this time we'll pick the Web B subnet, so SN, hyphen Web, hyphen B.
+Allocate it an elastic IP again, and click on Create NAT gateway.
+Then we'll follow the same process a third time.
+So click Create NAT gateway, use the same naming scheme but with hyphen C,
+pick the Web C subnet from the list, allocate an elastic IP, and then scroll down and click on Create NAT gateway.
+And at this point we've got the three NAT gateways that are being created.
+They're all in a pending state.
+If we go to Elastic IPs, we can see the three elastic IPs which have been allocated to the NAT gateways,
+and we can scroll to the right or left and see details on these IPs,
+and if we wanted we could release these IPs back to the account once we'd finished with them.
+Now at this point you need to go ahead and pause the video and resume it once all three of those NAT gateways have moved away from a pending state.
+We need them to be in an available state, ready to go, before we can continue with this demo.
+So go ahead and pause and resume once all three have changed to an available state.
+OK, so all these are now in an available state, so that means they're good to go, they're providing service.
+Now if you scroll to the right in this list, you're able to see additional information about these NAT gateways.
+So you can see the elastic and private IP address, the VPC, and then the subnet that each of these NAT gateways are located in.
+What we need to do now is configure the routing so that the private instances can communicate via the NAT gateways.
+So right click on route tables and open in a new tab, and we need to create a new route table for each of the availability zones.
+So go ahead and click on create route table.
+First we need to pick the VPC for this route table, so click on the VPC drop down and then select the animals for life VPC, so A4L-VPC1.
+Once selected, go ahead and name the route table.
+We're going to keep the naming scheme consistent, so A4L-VPC1-RT for route table, hyphen private A.
+So enter that and click on create, then close that dialog down and create another route table.
+This time we'll use the same naming scheme, but of course this time it will be RT-Private B.
+Select the animals for life VPC and click on create, close that down, and then finally click on create route table again.
+This time A4L-VPC1-RT-Private C, again click on the VPC drop down and select the animals for life VPC and then click on create.
+So that's going to leave us with three route tables, one for each availability zone.
+What we need to do now is create a default route within each of these route tables,
+and that route is going to point at the NAT gateway in the same availability zone.
+So select the route table, private A, and then click on the routes tab.
+Once you've selected the routes tab, click on edit routes and we're going to add a new route.
+It's going to be the IP version for default route of 0.0.0.0.0, and then click on target and pick NAT gateway.
+And we're going to pick the NAT gateway in availability zone A, and because we named them it makes it easy to select the relevant one from this list.
+So go ahead and pick A4L-VPC1-NAT-GW-A.
+So because this is the route table in availability zone A, we need to pick the same NAT gateway.
+So save that and close, and now we'll be doing the same process for the route table in availability zone B.
+Make sure the routes tab is selected and click on edit routes.
+Click on add route, again 0.0.0.0.0, and then for target pick NAT gateway,
+and then pick the NAT gateway that's in availability zone B, so NAT GW-B.
+Once you've done that, save the route table, and then next select the route table in availability zone C, so select RT-Private C.
+Make sure the routes tab is selected and click on edit routes.
+Again we'll be adding a route, it will be the IP version for default route, so 0.0.0.0.0, select a target.
+Go to NAT gateway and pick the NAT gateway in availability zone C, so NAT GW-C.
+Once you've done that, save the route table, and now our private EC2 instance should be able to ping 1.1.1.1,
+because we have the routing infrastructure in place.
+So let's move back to our private instance, and we can see that it's not actually working.
+Now the reason for this is that although we have created these routes,
+we haven't actually associated these route tables with any of the subnets.
+Subnets in the VPC, which don't have an explicit route table association, are associated with the main route table.
+Now we need to explicitly associate each of these route tables with the subnets inside that same AZ.
+So let's go ahead and pick RT-Private A, we'll go through in order.
+So select it, click on the subnet associations tab, and edit subnet associations.
+And then you need to pick all of the private subnets in AZ-A.
+So that's the reserved subnet, so reserved hyphen A, the app subnet, so app hyphen A, and the DB subnet, so DB hyphen A.
+So all of these are the private subnets in availability zone A.
+Notice how all the public subnets are associated with this custom route table you created earlier,
+but the ones we're setting up now are still associated with the main route table.
+So we're going to resolve that now by associating this route table with those subnets.
+So click on save, and this will associate all of the private subnets in AZ-A with the AZ-A route table.
+So now we're going to do the same process for AZ-B and AZ-C, and we'll start with AZ-B.
+So select the private B route table, click on subnet associations, edit subnet associations.
+So select application B, database B, and then reserved B.
+And then scroll down and save the associations, and then select the private C route table,
+click on subnet associations, edit subnet associations, and then select reserved C, database C, and then application C.
+And then scroll down and save those associations.
+And now that we've associated these route tables with the subnets, and now that we've added those default routes,
+if we go back to Session Manager where we still have the connection open to the private EC2 instance,
+we should see that the ping has started to work.
+And that's because we now have a NAT gateway providing service to each of the private subnets in all of the three availability zones.
+OK, so that's everything you needed to cover in this demo lesson.
+Now it's time to clean up the account and return it to the same state as it was at the start of this demo lesson.
+From this point onward in the course, you're going to be using automation,
+and so we can remove all of the configuration that we've done inside this demo lesson.
+So the first thing we need to do is to reverse the route table changes that we've done.
+So we need to go ahead and select the RT-Private A route table.
+Go ahead and select Subnet Associations, and then edit the subnet associations,
+and then just uncheck all of these subnets.
+And this will return these to being associated with the main route table.
+So scroll down and click on Save.
+Do the same for RT-Private B.
+So deselect all of these associations and click on Save.
+And then the same for RT-Private C.
+So select it, go to Subnet Associations, and then edit them,
+and remove all of these subnets, and click on Save.
+Next, select all of these private route tables.
+These are the ones that we created in this lesson.
+So select them all, click on the Actions dropdown, and then Delete Route Table,
+and confirm by clicking Delete Route Tables.
+Go to NAT Gateways on the left, and we need to select each of the NAT Gateways in turn.
+So A, and then click on Actions, and Delete NAT Gateway.
+Type Delete, click Delete.
+Then select B, and do the same process.
+Actions, Delete NAT Gateway, type Delete, click Delete.
+And finally, the same for C.
+So select the C NAT Gateway, click on Actions, and Delete NAT Gateway.
+You'll need to type Delete to confirm, click on Delete.
+Now we're going to need all of these to be in a fully deleted state before we can continue.
+So hit Refresh, and make sure that all three NAT Gateways are deleted.
+If yours aren't deleted, if they're still listed in a deleting state,
+then go ahead and pause the video, and resume once all of these have changed to deleted.
+At this point, all of the NAT Gateways have deleted,
+so you can go ahead and click on Elastic IPs.
+And we need to release each of these IPs.
+So select one of them, and then click on Actions,
+and Release Elastic IP Addresses, and click Release.
+And do the same process for the other two.
+Click on Release.
+Then finally Actions, Release IP, click on Release.
+Once that's done, move back to the CloudFormation console,
+select the stack which was created by the one-click deployment at the start of the lesson,
+and click on Delete, and then confirm that deletion,
+and that will remove the CloudFormation stack and any resources created as part of this demo.
+And at that point, once that finishes deleting,
+the account has been returned into the same state as it was at the start of this demo lesson.
+So I hope this demo lesson has been useful.
+Just to reiterate what you've done,
+you've created three NAT Gateways for a region-resilient design,
+you've created three route tables, one in each availability zone,
+added a default IP version for route, pointing at the corresponding NAT Gateway,
+and associated each of those route tables with the private subnets in those availability zones.
+So you've implemented a regionally resilient NAT Gateway architecture.
+So that's a great job, that's a pretty complex demo,
+but it's going to be functionality that will be really useful if you're using AWS in the real world,
+or if you have to answer any exam questions on NAT Gateways.
+With that being said, at this point you have cleared up the account,
+you've deleted all the resources, so go ahead, complete this video,
+and when you're ready, I'll see you in the next.

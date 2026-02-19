@@ -1,0 +1,133 @@
+Welcome back, and by now you should understand the difference between stateless and stateful security protection.
+In this lesson I want to talk about one security feature of AWS VPCs in a little bit more depth,
+and that's Network Access Control Lists, known as NACLs.
+Now we do have a lot to cover, so let's jump in and get started.
+A Network Access Control List can be thought of as a traditional firewall available within AWS VPCs.
+So let's look at a visual example.
+A subnet within an AWS VPC which has two EC2 instances, A and B.
+The first thing to understand, and this is core to how NACLs work within AWS, is that they are associated with subnets.
+Every subnet has an associated network ACL, and this filters data as it crosses the boundary of that subnet.
+In practice this means any data coming into the subnet is affected, and data leaving the subnet is affected.
+But, and this is super important to remember, connections between things within that subnet,
+such as between instance A and instance B in this example, are not affected by network ACLs.
+Each network ACL contains a number of rules, two sets of rules to be precise.
+We have inbound rules and outbound rules.
+Now inbound rules only affect data entering the subnet, and outbound rules affect data leaving the subnet.
+Remember from the previous lesson, this isn't always matching directly to request and response.
+A request can be either inbound or outbound as can a response.
+These inbound and outbound rules are focused only on the direction of traffic,
+not whether it's request or response.
+In fact, and I'll cover this very soon, NACLs are stateless, which means they don't know if traffic is request or response.
+It's all about direction.
+Now rules match the destination IP or IP range, destination port or port range together with the protocol,
+and they can explicitly allow or explicitly deny traffic.
+Remember this one, network ACLs offer both explicit allows and explicit denies.
+Now rules are processed in order.
+First, a network ACL determines if the inbound or outbound rules apply.
+Then it starts from the lowest rule number.
+It evaluates traffic against each individual rule until it finds a match.
+Then that traffic is either allowed or denied based on that rule, and then processing stops.
+Now this is critical to understand because it means that if you have a deny rule and an allow rule which match the same traffic,
+but if the deny rule comes first, then the allow rule might never be processed.
+Lastly, there's a catchall showed by the asterisk in the rule number, and this is an implicit deny.
+If nothing else matches, then traffic will be denied.
+So those are the basics.
+Next, let's move on to some more complex elements of network ACLs.
+Now I just mentioned that network ACLs are stateless,
+and this means that rules are required for both the request and the response part of every communication.
+You need individual rules for those, so one inbound and one outbound.
+Take this example, a multi-tiered application running in a VPC.
+We've got a web server in the middle and an application server on the left.
+On the right, we have our user Bob using a laptop, and he's accessing the website,
+so he makes a connection using HTTPS, which is TCP port 443, and this is the request, as you know by now,
+and this is also going to mean that a response is required using the ephemeral port range,
+and this ephemeral port is chosen at random from the available range decided by the operating system on Bob's laptop.
+Now to allow for this initial communication, if we're using network ACLs,
+then we'll need to have one associated with the web subnet,
+and it will need rules in the inbound and outbound sections of that network ACL.
+Notice how on the inbound rule set, we have rule number 110,
+which allows connections from anywhere, and this is signified by 0.0.0.0.0, through this network ACL,
+and this is allowed as long as it's using TCP port 443,
+so this is what allows the request from Bob into the web server.
+We also have on the outbound rule set, rule number 120,
+and this allows outbound traffic to anywhere, again, 0.0.0.0.0, as long as the protocol is TCP,
+using the port range of 1024 to 65535, and this is the ephemeral port range, which I mentioned in the previous lesson.
+Now this is not amazingly secure, but with stateless firewalls, this is the only way.
+Now we also have the implicit denies, and this is denoted by the rules with the star in the rule number,
+and this means that anything which doesn't match rule 110 or 120 is denied.
+Now it's also worth mentioning, while I do have rule 110 and 120 numbered differently,
+the rule numbers are unique on inbound and outbound, so we could have the single rule number 110 on both rule sets,
+and that would be okay, it's just easier to illustrate this if I use unique rule numbers for each of the different rule sets.
+Now let's move on and increase the complexity a little.
+So we have the same architecture, we have Bob on the right, the web subnet in the middle, and the application subnet on the left.
+You know now that because network ACLs are stateless, each communication requires one request rule and one response rule.
+This becomes more complex when you have a multi-tiered architecture which operates across multiple subnets,
+and let's step through this to illustrate why.
+Let's say that Bob initiates a connection to the web server.
+We know about this already because I just covered it.
+If we have a network ACL around the web subnet, we'll need an inbound rule on the web network ACL.
+There's also going to be response traffic, so this is going to use the ephemeral port range,
+and this is going to need an outbound rule on that same web network ACL.
+So this should make sense so far.
+But also the web server might need to communicate with the app server using some application TCP port.
+Now this is actually crossing two subnet boundaries, the web subnet boundary and the application subnet boundary.
+So it's going to need an outbound rule on the web subnet ACL and also an inbound rule on the application subnet ACL.
+Then we have the response for that as well from the app server through to the web server,
+and this is going to be using ephemeral ports.
+But this also crosses two subnet boundaries.
+It leaves the application subnet, which will need an outbound rule on that ACL,
+and it enters the web subnet, which will also need an inbound rule on that network ACL.
+And what if each of those servers need software updates?
+It will get even more complex really quickly.
+You always have to be aware of these rule pairs, the application port request,
+and the ephemeral response for every single communication.
+In some cases you're going to have multi-tier architecture,
+and this might mean that communications go through different subnets.
+If you need software updates, this will need more.
+If you use network address translation or NAT, you might need more rules still.
+You'll need to worry about this if you use network ACLs within a VPC
+for traffic to a VPC or traffic from a VPC or traffic between subnets inside that VPC.
+When a VPC is created, it's created with a default network ACL,
+and this contains inbound and outbound rule sets, which have the default implicit deny,
+but also a catch-all allow.
+And this means that the net effect is that all traffic is allowed.
+So the default within a VPC is that NACLs have no effect. They aren't used.
+This is designed to be beginner-friendly and reduce admin overhead.
+AWS prefer using security groups, which I'll be covering soon.
+If you create your own custom network ACLs, though, that's a different story.
+Custom NACLs are created for a specific VPC, and initially they're associated with no subnets.
+They only have one rule on both the inbound and outbound rule sets, which is the default deny,
+and the result is that if you associate this custom network ACL with any subnets,
+all traffic will be denied. So be careful with this.
+It's radically different behavior than the default network ACL created with a VPC.
+Now, at this point, I just want to cover some finishing key points
+which you need to be aware of for any real-world usage and when you're answering exam questions.
+So network access control lists, remember they're known as NACLs.
+They are stateless, so they view request and response as different things.
+So you need to add rules both for the request and for the response.
+A NACL only affects data which is crossing the subnet boundary.
+So communications between instances in the same subnet is not affected by a network ACL on that subnet.
+Now, this can mean that if you do have data crossing between subnets,
+then you need to make sure that each NACL on both of those subnets has the appropriate inbound and outbound rules.
+So you end up with a situation where one connection can, in theory,
+need two rules on each NACL if that connection is crossing two different subnet boundaries.
+Now, NACLs are able to explicitly allow traffic and explicitly deny,
+and the deny is important because as you'll see when I talk about security groups,
+this is a capability that's unique to network ACLs.
+So network ACLs allow you to block specific IPs or specific IP ranges which are associated with bad actors.
+So they're a really good security feature when you need to block any traffic attempting to exploit your systems.
+Now, network ACLs are not aware of any logical resources.
+They only allow you to use IPs and side arrangers, ports and protocols.
+You cannot reference logical resources within AWS.
+And NACLs can also not be assigned to logical resources.
+They're only assigned to subnets within VPCs within AWS.
+Now, NACLs are very often used together with security groups, as I've just mentioned,
+to add the capability to explicitly deny bad IPs or bad networks.
+So generally you would use security groups to allow traffic and you'd use NACLs to deny traffic.
+And I'll talk about exactly how this works in the next lesson.
+Now, each subnet within a VPC has one NACL associated with it.
+It's either going to be the default network ACL for that VPC or a custom one which you create and associate.
+A single NACL, though, can be associated with many different subnets.
+So while a subnet can only have one network ACL, one network ACL can be associated with many different subnets.
+Now, at this point, that is everything that I wanted to cover about network ACLs for this lesson.
+So go ahead, complete the video, and when you're ready, I'll look forward to you joining me in the next lesson.

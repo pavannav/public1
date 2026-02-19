@@ -1,0 +1,173 @@
+Welcome back and we're going to use this demo lesson to get some experience of working with EBS and instant store volumes.
+Now before we get started, this series of demo videos will be split into two main components.
+The first component will be based around EBS and EBS snapshots, and all of this will come under the free tier.
+The second component will be based on instant store volumes and will be using larger instances which are not included within the free tier.
+So I'm going to make you aware of when we move on to a part which could incur some costs and you can either do that within your own environment or watch me do it in the video.
+If you do decide to do it in your own environment, just be aware that there will be a 13 cents per hour cost for the second component of this demo series.
+And I'll make it very clear when we move into that component.
+The second component is entirely optional, but I just wanted to warn you of the potential cost in advance.
+Now to get started with this demo, you're going to need to deploy some infrastructure.
+To do that, make sure that you're logged in to the general account, so the management account of the organization, and you've got the Northern Virginia region selected.
+Now attached to this demo is a one click deployment link to deploy the infrastructure.
+So go ahead and click on that link.
+That's going to open this quick create stack screen and all you need to do is scroll down to the bottom, check this capabilities box and click on create stack.
+Now you're going to need this to be in a create complete state before you continue with this demo.
+So go ahead and pause the video, wait for that stack to move into the create complete status and then you can continue.
+Okay, now that's finished and the stack is in a create complete state.
+You're also going to be running some commands within EC2 instances as part of this demo.
+Also attached to this lesson is a lesson commands document, which contains all of those commands and you can use this to copy and paste, which will avoid errors.
+So go ahead and open that link in a separate browser window or separate browser tab.
+It should look something like this and we're going to be using this throughout the lesson.
+Now this CloudFormation template has created a number of resources, but the three that we're concerned about are the three EC2 instances.
+So instance one, instance two and instance three.
+So the next thing to do is to move across to the EC2 console.
+So click on the services drop down and then either locate EC2 under all services, find it in recently visited services,
+or you can use the search box at the top, type EC2 and then open that in a new tab.
+Now the EC2 console is going through a number of changes,
+so don't be alarmed if it looks slightly different or if you see any banners welcoming you to this new version.
+Now if you click on instances running, you'll see a list of the three instances that we're going to be using within this demo lesson.
+We have instance one hyphen azA, we have instance two hyphen azA and then instance one hyphen azB.
+So these are three instances, two of which are in availability zone A and one which is in availability zone B.
+Next I want you to scroll down and locate volumes under elastic block store and just click on volumes.
+And what you'll see is three EBS volumes, each of which is eight GIB in size.
+Now these are all currently in use, you can see that in the state column,
+and that's because all of these volumes are in use as the boot volumes for those three EC2 instances.
+So on each of these volumes is the operating system running on those EC2 instances.
+Now to give you some experience of working with EBS volumes, we're going to go ahead and create a volume.
+So click on the create volume button.
+The first thing you'll need to do when creating a volume is pick the type and there are a number of different types available.
+We've got GP2 and GP3 which are the general purpose storage types.
+We're going to use GP3 for this demo lesson.
+You could also select one of the provisioned IOPS volumes, so this is currently IO1 or IO2.
+And with both of these volume types, you're able to define IOPS separately from the size of the volume.
+So these are volume types that you can use for demanding storage scenarios where you need high-end performance,
+or when you need especially high performance for smaller volume sizes.
+Now IO1 was the first type of provisioned IOPS SSD introduced by AWS,
+and more recently they've introduced IO2 and enhanced it, which provides even higher levels of performance.
+In addition to that, we do have the non-SSD volume types, so SC1, which is cold HDD,
+ST1, which is throughput optimized HDD, and then of course the original magnetic type, which is now legacy,
+and AWS don't recommend this for any production usage.
+For this demo lesson, we're going to go ahead and select GP3, so select that.
+Next you're able to pick a size in GIB for the volume. We're going to select a volume size of 10 GIB.
+Now EBS volumes are created within a specific availability zone,
+so you have to select the availability zone when you're creating the volume.
+At this point, I want you to go ahead and select US-EAST-1A.
+When creating volume, you're also able to specify a snapshot as the basis for that volume.
+So if you want to restore a snapshot into this volume, you can select that here.
+At this stage in the demo, we're going to be creating a blank EBS volume, so we're not going to select anything in this box.
+We're going to be talking about encryption later in this section of the course.
+You are able to specify encryption settings for the volume when you create it,
+but at this point, we're not going to encrypt this volume.
+We do want to add a tag so that we can easily identify the volume from all of the others, so click on add tag.
+For the key, we're going to use name. For the value, we're going to put EBS test volume.
+So once you've entered both of those, go ahead and click on create volume, and that will begin the process of creating the volume.
+Just close down any dialogues and then just pay attention to the different states that this volume goes through.
+It begins in a creating state.
+This is where the storage is being provisioned and then made available by the EBS product.
+If we click on refresh, you'll see that it changes from creating to available.
+And once it's in an available state, this means that we can attach it to EC2 instances.
+And that's what we're going to do. So we're going to right click and select attach volume.
+Now you're able to attach this volume to EC2 instances, but crucially, only those in the same availability zone.
+EBS is an availability zone scoped service, and so you can only attach EBS volumes to EC2 instances within that same availability zone.
+So if we select the instance box, you'll only see instances in that same availability zone.
+Now at this point, go ahead and select instance 1 in availability zone A.
+Once you've selected it, you'll see that the device field is populated.
+And this is the device ID that the instance will see for this volume.
+So this is how the volume is going to be exposed to the EC2 instance.
+So if we want to interact with this instance inside the operating system, this is the device that we'll use.
+Now different operating systems might see this in slightly different ways.
+So as this warning suggests, certain Linux kernels might rename SDF to XVDF.
+So we've got to be aware that when you do attach a volume to an EC2 instance,
+you need to get used to how that's seen inside the operating system,
+how we can identify it and how we can configure it within the operating system for use.
+And I'm going to demonstrate that in the next part of this demo lesson.
+So at this point, just go ahead and click on attach and this will attach this volume to the EC2 instance.
+Once that's attached to the instance and you see the state change to in use,
+then just scroll up on the left-hand side and select instances.
+We're going to go ahead and connect to instance 1 in availability zone A.
+This is the instance that we just attached that EBS volume to.
+So we want to interact with this instance and see how we can see the EBS volume.
+So right click on this instance and select connect.
+And then you could either connect with an SSH client or use instance connect.
+And to keep things simple, we're going to connect from our browser.
+So select the EC2 instance connect option, make sure the username is set to ec2-user and then click on connect.
+So now we're connected to this EC2 instance.
+And it's at this point that we'll start needing the commands that are listed inside the lesson commands document.
+And again, this is attached to this lesson.
+So first, we need to list all of the block devices which are connected to this instance.
+And we're going to use the LSBLK command.
+Now if you're not comfortable with Linux, don't worry, just take this nice and slowly
+and understand at a high level all of the commands that we're going to run.
+So the first one is LSBLK and this is list block devices.
+So if we run this, we'll be able to see a list of all of the block devices connected to this EC2 instance.
+You'll see the root device.
+This is the device that's used to boot the instance.
+It contains the instance operating system.
+You'll see that it's eight gig in size.
+And then this is the EBS volume that we just attached to this instance.
+You'll see that device ID, so XVDF, and you'll see that it's 10 gig in size.
+Now what we need to do next is check whether there is a file system on this block device.
+So this block device, we've created it with EBS and then we've attached it to this instance.
+Now we know that it's blank, but it's always safe to check if there's any file system on a block device.
+So to do that, we run this command.
+So we're going to check, are there any file systems on this block device?
+So press enter, and if you see just data, that indicates that there isn't any file system on this device,
+and so we need to create one.
+You can only mount file systems under Linux,
+and so we need to create a file system on this raw block device, this EBS volume.
+So to do that, we run this command.
+So sudo again is just giving us admin permissions on this instance.
+MKFS is going to make a file system.
+We specify the file system type with hyphen T and then XFS, which is a type of file system,
+and then we're telling it to create this file system on this raw block device,
+which is the EBS volume that we just attached.
+So press enter, and that will create the file system on this EBS volume.
+We can confirm that by rerunning this previous command,
+and this time instead of data, it will tell us that there is now an XFS file system on this block device.
+So now we can see the difference.
+Initially it just told us that there was data, so raw data on this volume,
+and now it's indicating that there is a file system, the file system that we just created.
+Now the way that Linux works is we mount a file system to a mount point, which is a directory.
+So we're going to create a directory using this command.
+MKDIR makes a directory, and we're going to call the directory forward slash EBS test.
+So this creates it at the top level of the file system.
+This signifies root, which is the top level of the file system tree,
+and we're going to make a folder inside here called EBS test.
+So go ahead and enter that command and press enter, and that creates that folder.
+And then what we can do is to mount the file system that we just created on this EBS volume into that folder.
+And to do that we use this command, mount.
+So mount takes a device ID, so forward slash dev forward slash xvdf.
+So this is the raw block device containing the file system we just created,
+and it's going to mount it into this folder.
+So type that command and press enter, and now we have our EBS volume with our file system mounted into this folder.
+And we can verify that by running a df space hyphen k.
+And this will show us all of the file systems on this instance,
+and the bottom line here is the one that we've just created and mounted.
+At this point I'm just going to clear the screen to make it easier to see.
+And what we're going to do is to move into this folder.
+So cd, which is change directory, space forward slash EBS test.
+And then press enter, and that will move you into that folder.
+Once we're in that folder, we're going to create a test file.
+So we're going to use this command, so sudo nano, which is a text editor,
+and we're going to call the file amazingtestfile.txt.
+So type that command in and press enter, and then go ahead and type a message.
+It can be anything. You just need to recognize it as your own message.
+So I'm going to use cats, our amazing, and then some exclamation marks.
+Then I'm going to press control O and enter to save that file, and then control X to exit.
+Again, clear the screen to make it easier to see.
+And then I'm going to do an ls space hyphen la and press enter just to list the contents of this folder.
+So as you can see, we've now got this amazingtestfile.txt.
+And if we cat the contents of this, so cat amazingtestfile.txt,
+you'll see the unique message that you just typed in.
+So at this point we've created this file within the folder.
+And remember the folder is now the mount point for the file system that we created on this EBS volume.
+So the next step that I want you to do is to reboot this EC2 instance.
+To do that, type sudo space and then reboot and press enter.
+Now this will disconnect you from this session,
+so you can go ahead and close down this tab and go back to the EC2 console.
+Just go ahead and click on instances.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side, and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video, and when you're ready, join me in part two.

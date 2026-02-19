@@ -1,0 +1,114 @@
+Welcome back, and in this first lesson of the EC2 section of the course, I want to cover the basics of virtualisation as briefly as possible.
+EC2 provides virtualisation as a service. It's an infrastructure as a service or IaaS product.
+To understand all of the value it provides and why some of the features work the way that they do,
+understanding the fundamentals of virtualisation is essential. So that's what this lesson aims to do.
+Now, I want to be super clear about one thing. This is an introduction level lesson.
+There's a lot more to virtualisation than I can talk about in this brief lesson.
+This lesson is just enough to get you started, but I will include a lot of links in the lesson description if you want to learn more.
+So let's get started. We do have a fair amount of theory to get through,
+but I promise when it comes to understanding how EC2 actually works, this lesson will be really beneficial.
+Virtualisation is the process of running more than one operating system on a piece of physical hardware, a server.
+Before virtualisation, the architecture looked something like this.
+A server had a collection of physical resources, so CPU and memory, network cards and maybe other logical devices such as storage.
+And on top of this runs a special piece of software known as an operating system.
+That operating system runs with a special level of access to the hardware.
+It runs in privileged mode, or more specifically, a small part of the operating system runs in privileged mode, known as the kernel.
+The kernel is the only part of the operating system, the only piece of software on the server that's able to directly interact with the hardware.
+Some of the operating system doesn't need this privileged level of access, but some of it does.
+Now the operating system can allow other software to run, such as applications, but these run in user mode or unprivileged mode.
+They cannot directly interact with the hardware. They have to go through the operating system.
+So if Bob or Julie are attempting to do something with an application which needs to use the system hardware,
+that application needs to go through the operating system. It needs to make a system call.
+If anything but the operating system attempts to make a privileged call, so tries to interact with the hardware directly,
+the system will detect it and cause a system-wide error, generally crashing the whole system, or at minimum the application.
+This is how it works without virtualization. Virtualization is how this is changed into this.
+A single piece of hardware running multiple operating systems.
+Each operating system is separate. Each runs its own applications.
+But there's a problem. A CPU, at least at this point in time, could only have one thing running as privileged.
+A privileged process, remember, has direct access to the hardware.
+And all of these operating systems, if they're running in their unmodified state, they expect to be running on their own in a privileged state.
+They contain privileged instructions, and so trying to run three or four or more different operating systems in this way will cause system crashes.
+Virtualization was created as a solution to this problem, allowing multiple different privileged applications to run on the same hardware.
+But initially virtualization was really inefficient, because the hardware wasn't aware of it.
+Virtualization had to be done in software, and it was done in one of two ways.
+The first type was known as emulated virtualization, or software virtualization.
+With this method, a host operating system still ran on the hardware, and it included additional capability known as a hypervisor.
+The software ran in privileged mode, and so it had full access to the hardware on the host server.
+Now around the multiple other operating systems, which we'll now refer to as guest operating systems, were wrapped a container of sorts called a virtual machine.
+Each virtual machine was an unmodified operating system, such as Windows or Linux, with a virtual allocation of resources such as CPU, memory, and local disk space.
+Virtual machines also had devices mapped into them, such as network cards, graphics cards, and other local devices, such as storage.
+The guest operating systems believed these to be real. They had drivers installed just like physical devices, but they weren't real hardware.
+They were all emulated, fake information provided by the hypervisor to make the guest operating systems believe that they were real.
+The crucial thing to understand about emulated virtualization is that the guest operating systems still believed that they were running on real hardware, and so they still attempt to make privileged calls.
+They try to take control of the CPU. They try to directly read and write to what they think of as their memory and their disk, which are actually not real.
+They're just areas of physical memory and disk that have been allocated to them by the hypervisor.
+Without special arrangements, the system would at best crash, and at worst all of the guests would be overwriting each other's memory and disk areas.
+So the hypervisor, it performs a process known as binary translation.
+Any privileged operations which the guests attempt to make, they're intercepted and translated on the fly in software by the hypervisor.
+Now the binary translation in software is the key part of this.
+It means that the guest operating systems need no modification, but it's really, really slow.
+It could actually half the speed of the guest operating systems, or even worse.
+Emulated virtualization was a cool set of features for its time, but it never achieved widespread adoption for demanding workloads because of this performance penalty.
+But there was another way that virtualization was initially handled, and this is called para-virtualization.
+With para-virtualization, the guest operating systems are still running in the same virtual machine containers with virtual resources allocated to them.
+But instead of the slow binary translation which is done by the hypervisor, another approach is used.
+Para-virtualization only works on a small subset of operating systems, operating systems which can be modified.
+Because with para-virtualization, there are areas of the guest operating systems which attempt to make privileged calls, and these are modified.
+They're modified to make them user calls, but instead of directly calling on the hardware, they're calls to the hypervisor called hypercalls.
+So areas of the operating systems which would traditionally make privileged calls directly to the hardware, they're actually modified.
+So the source code of the operating system is modified to call the hypervisor rather than the hardware.
+So the operating systems now need to be modified specifically for the particular hypervisor that's in use.
+It's no longer just generic virtualization.
+The operating systems are modified for the particular vendor performing this para-virtualization.
+By modifying the operating system in this way and using para-virtual drivers in the operating system for network cards and storage,
+it means that the operating system became almost virtualization aware, and this massively improves performance.
+But it was still a set of software processors designed to trick the operating system and or the hardware into believing that nothing had changed.
+The major improvement in virtualization came when the physical hardware started to become virtualization aware.
+This allows for hardware virtualization, also known as hardware assisted virtualization.
+With hardware assisted virtualization, the hardware itself has become virtualization aware.
+The CPU contains specific instructions and capabilities so that the hypervisor can directly control and configure this support.
+So the CPU itself is aware that it's performing virtualization.
+Essentially, the CPU knows that virtualization exists.
+What this means is that when guest operating systems attempt to run any privileged instructions,
+they're trapped by the CPU, which knows to expect them from these guest operating systems.
+So the system as a whole doesn't halt.
+But these instructions can't be executed as is because the guest operating system still thinks that it's running directly on the hardware.
+And so they're redirected to the hypervisor by the hardware.
+The hypervisor handles how these are executed.
+And this means very little performance degradation over running the operating system directly on the hardware.
+The problem, though, is while this method does help a lot,
+what actually matters about a virtual machine tends to be the input-output operation, so network transfer and disk I.O.
+The virtual machines, they have what they think is physical hardware, for example, a network card.
+But these cards are just logical devices using a driver,
+which actually connect back to a single physical piece of hardware which sits in the host, the hardware everything is running on.
+Unless you have a physical network card per virtual machine,
+there's always going to be some level of software getting in the way.
+And when you're performing highly transactional activities such as network I.O. or disk I.O.,
+this really impacts performance, and it consumes a lot of CPU cycles on the host.
+The final iteration that I want to talk about is where the hardware devices themselves become virtualization aware, such as network cards.
+This process is called SRIOV, Single Route I.O. Virtualization.
+Now, I could talk about this process for hours about exactly what it does and how it works,
+because it's a very complex and feature-rich set of standards.
+But at a very high level, it allows a network card or any other add-on card to present itself not as one single card, but almost as several mini cards.
+Because this is supported in hardware, these are fully unique cards as far as the hardware is concerned,
+and these are directly presented to the guest operating system as real cards dedicated for its use.
+And this means no translation has to happen by the hypervisor.
+The guest operating system can directly use its card whenever it wants.
+Now, the physical card which supports SRIOV, it handles this process end-to-end.
+It makes sure that when the guest operating systems use their logical mini network cards,
+that they have physical access to the physical network connection when required.
+In EC2, this feature is called Enhanced Networking, and it means that the network performance is massively improved.
+It means faster speeds. It means lower latency.
+And more importantly, it means consistent lower latency, even at high loads.
+And it means less CPU usage for the host CPU, even when all of the guest operating systems are consuming high amounts of consistent I.O.
+Many of the features that you'll see EC2 using are actually based on AWS implementing some of the more advanced virtualization techniques that have been developed across the industry.
+AWS do have their own hypervisor stack now called Nitro, and I'll be talking about that in much more detail in an upcoming lesson,
+because that's what enables a lot of the higher-end EC2 features.
+But that's all of the theory I wanted to cover.
+I just wanted to introduce virtualization at a high level and get you to the point where you understand what SRIOV is,
+because SRIOV is used for enhanced networking right now, but it's also a feature that can be used outside of just network cards.
+It can help hardware manufacturers design cards which, whilst they're a physical single card,
+can be split up into logical cards that can be presented to guest operating systems.
+It essentially makes any hardware virtualization aware,
+and many of the advanced EC2 features that you'll come across within this course will be taking advantage of SRIOV.
+At this point, though, we've completed all of the theory I wanted to cover, so go ahead, complete this lesson, and when you're ready, you can join me in the next.

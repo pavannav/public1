@@ -1,0 +1,204 @@
+Welcome back, and in this lesson I want to start talking about S3 security in more detail.
+Starting with bucket policies, which are a type of AWS resource policy.
+So by now you know the drill, let's jump in and get started.
+Now before we start I want to repeat one thing, and you will have heard me say this before,
+but I'm going to say it again over and over.
+S3 is private by default.
+Everything that we can do to control S3 permissions is based on this starting point.
+The only identity which has any initial access to an S3 bucket is the account root user of the account which owns that bucket,
+so the account which created it.
+Anything else, so any other permissions, have to be explicitly granted.
+And there are a few ways that this can be done.
+The first way is using an S3 bucket policy.
+And an S3 bucket policy is a type of resource policy.
+A resource policy is just like an identity policy, but as the name suggests they're attached to resources instead of identities,
+in this case an S3 bucket.
+Resource policies provide a resource perspective on permissions.
+The difference between resource policies and identity policies is all about this perspective.
+With identity policies you're controlling what that identity can access.
+With resource policies you're controlling who can access that resource.
+So it's from an inverse perspective.
+One is identities and one is resources.
+Now identity policies have one pretty significant limitation.
+You can only attach identity policies to identities in your own account.
+And so identity policies can only control security inside your account.
+With identity policies you have no way of giving an identity in another account access to an S3 bucket.
+That would require an action inside that other account.
+Resource policies allow this.
+They can allow access from the same account or different accounts because the policy is attached to the resource.
+And it can reference any other identities inside that policy.
+So by attaching the policy to the resource and then having flexibility to be able to reference any other identity,
+whether they're in the same account or different accounts,
+resource policies therefore are a great way of controlling access for a particular resource no matter what the source of that access is.
+Now think about that for a minute because that's a major benefit of resource policies.
+The ability to grant other accounts access to resources inside your account.
+They also have another benefit.
+Resource policies can allow or deny anonymous principles.
+Identity policies by design have to be attached to a valid identity in AWS.
+You can't have one attached to nothing.
+Resource policies can be used to open a bucket to the world by referencing those principles.
+So bucket policies can be used to grant anonymous access.
+So two of the very common uses for bucket policies are to grant access to other AWS accounts and anonymous access to a bucket.
+Let's take a look at a simple visual example of a bucket policy because I think it will help you understand how everything fits together.
+There's a demo lesson coming up soon where you'll implement one as part of a mini project.
+So you will get some experience soon enough of how to use bucket policies.
+Let's say that we have an AWS account and inside this account is a bucket called Secret Cat Project.
+Now I can't say what's inside this bucket because it's a secret but I'm sure that you can guess.
+Now attached to this bucket is a bucket policy.
+Resource policies have one major difference to identity policies and that's the presence of an explicit principal component.
+The principal part of a resource policy defines which principles are affected by the policy.
+So the policy is attached to a bucket in this case but we need a way to say who is impacted by the configuration of that policy.
+Because a bucket policy can contain multiple statements there might be one statement which affects your account
+and one which affects another account as well as one which affects a specific user.
+The principal part of a policy or more specifically the principal part of a statement in a policy
+defines who that statement applies to, which identities, which principles.
+Now in an identity policy this generally isn't there because it's implied that the identity which the policy is applied to is the principal.
+That's logical right? Your identity policy by definition applies to you so you are the principal.
+So a good way of identifying if a policy is a resource policy or an identity policy is the presence of this principal component.
+If it's there it's probably a resource policy.
+In this case the principal is a wild card, a star, which means any principal.
+So this policy applies to anyone accessing the S3 bucket.
+So let's interpret this policy.
+Well first the effect is allow and the principal is star, so any principal.
+So this effect allows any principal to perform the action S3 get object on any object inside this secret cat project S3 bucket.
+So in effect it allows anyone to read any objects inside this bucket.
+So this would equally apply to identities in the same AWS account as the bucket.
+It could also apply to other AWS accounts, so a partner account.
+And crucially it also applies to anonymous principals, so principals who haven't authenticated to AWS.
+Bucket policies should be your default thought when it comes to granting anonymous access to objects in buckets.
+And they're one way of granting external accounts that same access.
+They can also be used to set the default permissions on a bucket if you want to grant everyone access to Boris's picture for example
+and then grant certain identities extra rights or even deny certain rights, then you can do that.
+Bucket policies are really flexible, they can do many other things.
+So let's quickly just look at a couple of common examples.
+Bucket policies can be used to control who can access objects, even allowing conditions which block specific IP addresses.
+In this example, this bucket policy denies access to any objects in the secret cat project bucket unless your IP address is 1.3.3.7.
+The condition block here means this statement only applies if this condition is true.
+So if your IP address, the source IP address, is not 1.3.3.7, then the statement applies and access is denied.
+If your IP address is 1.3.3.7, then this condition is not met because it's a not IP address condition.
+So if your IP address is this IP address, the condition is not matched and you get any other access that's applicable.
+Essentially this statement, which is a deny, does not apply.
+Now bucket policies can be much more complex.
+In this example, one specific prefix in the bucket, remember this is what a folder really is inside a bucket,
+so one specific prefix called Boris is protected with MFA.
+It means that accesses to the Boris folder in the bucket are denied if the identity that you're using does not use MFA.
+The second statement allows read access to objects in the whole bucket.
+Because an explicit deny overrides and allow, the top statement applies to just that specific prefix in the bucket, so just Boris.
+Now I won't labour on about bucket policies because we'll be using them a fair bit throughout the course,
+but they can range from simple to complex.
+I will include a link in the lesson description with some additional examples that you can take a look through if you're interested.
+In summary though, a resource policy is associated with a resource.
+A bucket policy, which is a type of resource policy, is logically associated with a bucket, which is a type of resource.
+Now there can only be one bucket policy on a bucket, but it can have multiple statements.
+If an identity inside one AWS account is accessing a bucket also in that same account,
+then the effective access is a combination of all of the applicable identity policies plus the resource policy, so the bucket policy.
+For any anonymous access, so access by an anonymous principle, then only the bucket policy applies.
+Because logically, if it's an anonymous principle, it's not authenticated and so no identity policies apply.
+Now if an identity in an external AWS account attempts to access a bucket in your account,
+your bucket policy applies as well as anything that's in their identity policies.
+So there's a two-step process if you're doing cross-account access.
+The identity in their account needs to be able to access S3 in general and your bucket,
+and then your bucket policy needs to allow access from that identity, so from that external account.
+Now there is another form of S3 security. It's used less often these days, but I wanted to cover it anyway.
+Access control lists, or ACLs, are ways to apply security to objects or buckets.
+They're a sub-resource of that object or of that bucket.
+Remember in the S3 introduction lesson earlier in the course, I talked about sub-resources.
+Well, this is one of those sub-resources.
+Now I almost didn't want to talk about ACLs because they are legacy.
+AWS don't even recommend their use and prefer that you use bucket policies or identity policies.
+But as a bare minimum, I want you to be aware of their existence.
+Now part of the reason that they aren't used all that often and that bucket policies have replaced much of what they do
+is that they're actually inflexible and only allow very simple permissions.
+They can't have conditions like bucket policies, and so you're restricted to some very broad conditions.
+Let me show you what I mean.
+This is an example of what permissions can be controlled using an ACL.
+Now apologies for the wall of text, but I think it's useful to visualize it all at once.
+There are five permissions which can be granted in an ACL.
+Read, write, read ACP, write ACP, and full control.
+That's it, so it's already significantly less flexible than an identity or a resource policy.
+What these five things do depend on if they're applied to a bucket or an object.
+Read permissions, for example, on a bucket allow you to list all objects in that bucket.
+Whereas write permissions on a bucket allow the grantee, which is the principle being granted those permissions,
+the ability to overwrite and delete any object in that bucket.
+Read permissions on an object allow the grantee just to read the object specifically as well as its metadata.
+Now with ACLs you either configure an ACL on the bucket or you configure the ACL on an object,
+but you don't have the flexibility of being able to have a single ACL that affects a group of objects.
+You can't do that. That's one of the reasons that a bucket policy is significantly more flexible.
+It is honestly so much less flexible than a bucket policy to the extent where I won't waste your time with it anymore.
+It's legacy and I suspect at some point it won't be used anymore.
+If there are any specific places in the course which do require knowledge of ACLs, I'll mention it.
+Otherwise it's best to almost ignore the fact that they exist.
+Now before we finish up, one final feature of S3 permissions and that's the block public access settings.
+In the overall lifetime of the S3 product, this was actually added fairly recently
+and it was added in response to lots of public PR disasters
+where buckets were being configured incorrectly and being set so that they were open to the world.
+This resulted in a lot of data leaks and the root cause was a mixture of genuine mistakes
+or administrators who didn't fully understand the S3 permissions model.
+So consider this example, an S3 bucket with resource permissions granting public access.
+Until block public access was introduced, if you had public access configured, the public could logically access a bucket.
+Public access in this sense is read-only to any objects defined in a resource policy on a bucket.
+So there's no restrictions. Public access is public access.
+Block public access added a further level of security, another boundary.
+And on this boundary is the block public access settings which apply no matter what the bucket policies say.
+But they apply to just the public access, so not any of the defined AWS identities.
+So these settings will only apply to when an anonymous principal, somebody who isn't an AWS identity,
+attempt to access a bucket using these public access configurations.
+Now these settings can be set when you create the bucket and adjusted afterwards.
+They're pretty simple to understand.
+You can choose the top option which blocks any public access to the bucket, no matter what the resource policy says.
+It's a full override, a fail-safe.
+Or you can choose the second option which allows any public access granted by any existing ACLs when you enable the setting,
+but it blocks any new ones.
+The third option blocks any public access granted by ACLs,
+no matter if it was enabled before or after the block public access settings were enabled.
+The fourth setting allows any existing public access granted by bucket policies or access point policies,
+so anything enabled at the time when you enable this specific block public access setting,
+they're allowed to continue, but it blocks any new ones.
+The fifth option blocks both existing and new bucket policies from granting any public access.
+Now they're simple enough and they function as a final fail-safe.
+If you're ever in a situation where you've granted some public access and it doesn't work,
+these are probably the settings which are causing that inconsistency.
+And don't worry, I'll show you where these are accessed in the demo lesson.
+Now before we finish up, just one final thing I want to cover, and this is an exam power-up,
+so these are just some key points on how to remember all of the theory that I've discussed in this lesson.
+When I first started in AWS, I found it hard to know from instinct
+when to use identity policies versus resource policies versus ACLs.
+Choosing between resource policies and identity policies much of the time is a preference thing,
+so do you want to control permissions from the perspective of a bucket,
+or do you want to grant or deny access from the perspective of the identities accessing a bucket?
+Are you looking to configure one user accessing ten different buckets, or a hundred users accessing the same bucket?
+It's often a personal choice, a choice on what makes sense for your situation and business,
+so there's often no right answer.
+But there are some situations where one makes sense over the other.
+If you're granting or denying permissions on lots of different resources across an AWS account,
+then you need to use identity policies, because not every service supports resource policies.
+And besides, you would need a resource policy for each service,
+so that doesn't make sense if you're controlling lots of different resources.
+If you have a preference for managing permissions all in one place,
+that single place needs to be IAM, so identity policies would make sense.
+IAM is the only single place in AWS you can control permissions for everything.
+You can sometimes use resource policies, but you can use IAM policies all of the time.
+If you're only working with permissions within the same account, so no external access,
+then identity policies within IAM are fine, because with IAM you can only manage permissions
+for identities that you control in your account.
+So there are a wide range of situations where IAM makes sense,
+and that's why most permissions control is done within IAM.
+But there are some situations which are different.
+You can use bucket policies or resource policies in general if you're managing permissions on a specific product,
+so in this case S3.
+If you want to grant a single permission to everybody accessing one resource or everybody in one account,
+then it's much more efficient to use resource policies to control that base level permission.
+If you want to directly allow anonymous identities or external identities
+from other AWS accounts to access a resource, then you should use resource policies.
+Now finally, and I know this might seem like I'm anti-access controlist, which is true,
+but so are AWS, never use ACLs unless you really need to.
+And even then, consider if you can use something else.
+At this point in time, if you are using an ACL,
+you have to be pretty certain that you can't use anything else because they're legacy and they're inflexible
+and AWS are actively recommending against their use.
+So keep that in mind.
+Okay, well that's all of the theory that I wanted to cover in this lesson.
+I know it's been a lot, but we do have to cover this detailed level of security because it's needed in the exam,
+and you'll be using it constantly throughout the rest of this section and the wider course.
+At this point though, go ahead and complete this video and when you're ready,
+you can join me in the next where I'm going to be talking about another exciting feature of S3.

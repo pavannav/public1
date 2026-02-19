@@ -1,0 +1,165 @@
+Welcome back, and in this brief demo lesson, you're going to get some experience working with S3 pre-signed URLs.
+Now, as you learned in the theory lesson, a pre-signed URL is a type of URL which can be used to grant access to certain objects within an S3 bucket
+where the credentials for accessing that object are encoded on the URL.
+Now, I want to explain exactly what that means and how you can use it in the real world.
+Now, to do that, we're not going to need to create any infrastructure using CloudFormation. Instead, we're going to do it manually.
+So first, I want you to make sure that you're logged in to the general AWS account as the IAM admin user,
+and as always, please make sure that you have the Northern Virginia region selected.
+Assuming that's all good, go ahead and type S3 in the search box at the top and open that in a new tab.
+We're going to create an S3 bucket within the general AWS account, so go ahead and click on Create Bucket to begin that process.
+Now, I'll want you to call the bucket Animals for Life Media, and because of the unique naming requirements of S3 buckets,
+you'll need to add some randomness onto the end of this name.
+We'll need to select US-EAST-1 for the region. We can scroll past the bucket settings for block public access.
+We don't need to enable bucket versioning. We won't be using any form of encryption. Just go ahead and click on Create Bucket.
+Now, I want you to go inside the bucket that you've created and click on the Upload button to upload an object.
+Now, at this point, we need to upload an image file to this bucket.
+Any image file will do, but I've included a sample one attached to this lesson if you don't have one available.
+So click the link for the image download that will download an image called All5.jpg.
+Once that's downloaded to your local machine, click on Add Files, select the file, open it, and then go ahead and upload the file to the S3 bucket.
+Once that's finished, you can go ahead and click on Close.
+And you'll see now that we've got our S3 bucket and one object uploaded to that bucket called All5.jpg.
+Next, go ahead and click on that object.
+Now, I want to demonstrate how we can interact with this object in a number of different ways, and the detail really matters here.
+So we really need to be sure of exactly what differences there are between these different methods.
+The first thing I want you to do is towards the top right of the screen, click on the Open button.
+You might get a pop-up notification. If you do, just allow pop-ups.
+And what that's going to do is open that JPEG object in a new tab.
+Now, I want to point out a number of really important points about how this object has been opened.
+If you take a moment to review the URL that's been used to open this object,
+you'll note that a number of pieces of information have been specified on the URL, including AMZ-SecurityToken.
+So essentially, a form of authentication has been provided on the URL, which allows you to access this object.
+Now, I want you to contrast this by what happens if we go back to the S3 bucket and just copy down the object URL into our clipboard.
+And note how this does not contain any additional authentication information.
+It's just the raw URL for this object.
+So copy that into your clipboard and then open a new tab and paste that in.
+What you're going to see is an access denied message.
+And this makes sense because we're now attempting to access this object as an unauthenticated identity,
+just like any internet user, anyone browsing to this bucket would be doing.
+We're not providing any authentication.
+And so the only way that we could access the object in this way by not providing any authentication is if we made the bucket public.
+And the bucket currently isn't public, which is why we're getting this access denied message.
+Just to reiterate, we can access it by using the previous method because by opening it from within the console,
+the console is intelligent enough to add authentication information onto the URL, which allows us to access this object.
+So those are the differences between these two methods.
+One is providing authentication and the other isn't.
+So right now, the only entity that is able to access any of the objects within this bucket is this AWS account and specifically the IAM admin user.
+The object has no public access.
+So now what we're going to do is we're going to work with the scenario that you want to grant access to this object to somebody else for a limited amount of time.
+So you don't want to provide the URL that includes authentication information.
+You want to provide a URL which allows access to that object for a limited amount of time.
+That's important.
+So we're going to generate a time-limited, pre-signed URL.
+So go ahead and click on the Cloud Shell icon.
+And this is going to open a Cloud Shell using the identity that you're currently logged in as.
+So it's going to open a shell, much like the one that you'll see when you're connected to an EC2 instance.
+But the credentials that you have in this shell are going to be the credentials of the identity that you're currently logged into AWS using.
+In our case, the IAM admin user of the general AWS account.
+You'll see a message saying preparing your terminal and then you'll be logged in to what looks like an EC2 instance prompt.
+You can use the AWS CLI tool.
+So I'm able to run an AWS space S3 space LS.
+And this shell will interact with your current AWS account using your current credentials.
+So in my case, I'm able to see the Animals for Life media bucket which is in my general AWS account
+because I'm currently logged into this Cloud Shell using the credentials of my IAM admin user.
+Now to generate a pre-signed URL, we have to use this command.
+So we use AWS to use the command line tools and then a space S3 because we're using the S3 service.
+And then a space and then the word pre-signed because we want to generate a pre-signed URL.
+And then a space and then we need the S3 URI to this object.
+Now we can get that from the S3 console.
+For every object, you can see this unique URI.
+So go ahead and copy this into your clipboard, go back to the Cloud Shell, paste it in, and then we'll need space.
+And then we'll use double hyphen, expires hyphen in, and then a space.
+And then we need to provide the number of seconds that this pre-signed URL will be valid for.
+In this case, we're going to use 180 which is a total of three minutes.
+So this is in seconds, so three minutes is 180 seconds.
+So go ahead and press enter and this will generate you a unique pre-signed URL.
+So go ahead and copy this into your clipboard and it is a really long URL.
+So make sure that you get everything including HTTPS all the way to the end of this URL.
+Copy that into your clipboard and then I'll want you to open a new tab and load that URL.
+And there you go, you can see that this object loads up using this pre-signed refresh.
+We see this access denied page with the message request has expired.
+So you can see how pre-signed URLs are a really effective way of granting access to objects within an S3 bucket for a limited amount of time.
+Now there are a number of really interesting aspects to pre-signed URLs that you really need to understand as an architect, a developer, or an engineer.
+And I want to go through these really interesting aspects of pre-signed URLs before we finish up with this demo lesson.
+Now first, just to make everything easier to see, I'm going to close down any of these tabs that we've got open to this all five object.
+I'm going to go back to the cloud shell and I'm going to generate a new pre-signed URL.
+But this time I'm going to use a much larger expires in time.
+So I'm going to press the up arrow to return to the previous command.
+I'm going to delete this 180 second expiry time and instead I'm going to use 604,800, which is a pretty high number,
+but this is something that we can pick so that we won't have any unintentional expires of the URL as part of this demo lesson.
+So we'll pick something crazily large just to make sure that it doesn't expire until we're ready.
+So we'll generate another URL and so this is an additional unique pre-signed URL.
+So I'm going to select all of this URL and you need to do the same.
+Go ahead and copy that into your clipboard and open it in a new tab.
+Now we can see that that pre-signed URL has opened and keep in mind that we've generated this using the identity that we're currently logged into AWS using.
+So next what I'm going to do is move back to the AWS console and I'm going to click on the services drop down and move across to IAM.
+So I'm going to open IAM up in a new tab.
+I'm going to select the users option, select the IAM admin user.
+I'm going to add an inline policy to this user, select JSON.
+Now attached to this lesson is another link for a file called deny s3.json.
+Go ahead and click that link and then you'll need to get the contents of the file.
+So copy all of the contents of that file into your clipboard and then select all of this JSON and paste in the contents of that file.
+And this is an explicit deny policy which denies our user, so IAM admin, any access to s3.
+So this essentially prevents our IAM admin user any level of access to s3.
+Go ahead and click on review policy, for name call it deny s3 and click on create policy.
+And this will attach this as an inline policy to our IAM admin user.
+Now I'm going to clear the screen within this cloud shell to make it easier to see and then I'm going to run an AWS space s3 space LS and press enter.
+And now we get an access denied when accessing the s3 service because we've just added an explicit deny onto the IAM admin user.
+And remember the rule that applies to permissions, deny allow deny.
+An explicit deny always overrules everything else.
+And so even though the IAM admin user has administrator permissions by applying this deny s3 policy which has an s3 explicit deny, this wins.
+So currently we have no access to s3.
+Now let's return to the tab where we have this pre-signed URL open.
+So remember this pre-signed URL was generated at the time when we had access to s3.
+So now let's refresh this page.
+And now we get an access denied message.
+And this is one of those interesting aspects of pre-signed URLs.
+When you generate a pre-signed URL using an identity such as an IAM user, that URL has your access permissions.
+So you generate the pre-signed URL and anyone using that pre-signed URL for the duration that it's active will be interacting with that one object on s3 as though they were using your identity.
+Now if you adjust the permissions on your identity as we've just done by denying access to s3, it means that that pre-signed URL will also have that deny s3 permissions.
+And so this pre-signed URL now no longer has any access to anything in s3, including the object that it was configured to provide access to.
+So now let's go back to our cloud shell.
+And what we're going to do now, remember we are still denied access to s3.
+Let's press the up arrow and move back to the command which we used to generate this pre-signed URL.
+Now let's regenerate another pre-signed URL.
+Now note how even though we are denied access to any part of s3, we can generate a pre-signed URL which points at this one specific object, all 5.jpeg.
+So we're not prevented from generating a pre-signed URL for something that we have no access to.
+Now if we copy this into our clipboard, move to the tab that we already have open and just replace this URL with the pre-signed URL that you just generated.
+Note that we're still denied. We're still denied because although we could generate this pre-signed URL, we've generated it using an identity which has no access to s3.
+So the next interesting fact of pre-signed URLs that I want to demonstrate, if we go back to the IAM console and now we remove this deny s3 policy from our IAM admin user, now our IAM admin user once again has access to s3.
+So if we go back to the cloud shell, we can run an aws s3 ls and press enter and now we can access s3 again from this cloud shell.
+Remember the cloud shell is using permissions based on our IAM admin user.
+Now let's go back to the pre-signed URL and now if we refresh this, now we can access this object again.
+So I'm doing this to illustrate that when you generate a pre-signed URL, that pre-signed URL is linked to the identity that generates it.
+Whatever the permissions are of that identity when the pre-signed URL is used, that is the permissions that that pre-signed URL has.
+So for the duration it always has the same permissions that the identity which generated it has at that very moment.
+So that's something that you need to keep in mind.
+Now more interestingly is that you can actually generate a pre-signed URL for a non-existent object.
+There's nothing preventing that from occurring.
+So if we go back to the cloud shell, we press the up arrow a number of times to bring up this pre-signed URL command and this time we try to generate a pre-signed URL for an object which doesn't exist.
+So if I change this all five to all one three three seven and press enter, it will generate a pre-signed URL.
+That pre-signed URL will be valid to access an object called all one three three seven dot JPEG inside this bucket.
+But because there's no such object in that bucket, if I try to use it, I won't be able to do so.
+So if I open that new invalid pre-signed URL, I'll get the message that the specified key does not exist.
+But we can generate pre-signed URLs for non-existent objects.
+Now one more interesting thing about pre-signed URLs which I'm not going to demonstrate is if you generate a pre-signed URL using temporary credentials that you get by assuming a role.
+So for example, if we logged into an EC2 instance which had an instance role on that instance and then we generated a pre-signed URL,
+even if we set a huge expiry time, so six hundred and four thousand eight hundred,
+that pre-signed URL would stop working when those temporary credentials for that role also stopped working.
+Now it is possible to generate a pre-signed URL from the console UI.
+This is a relatively recent change from the object.
+If you click on the object actions drop down, you can click share with the pre-signed URL.
+You have to set the same settings.
+So what you want the expiry to be in this particular case, let's say 60 minutes.
+And then I can go ahead and click on create pre-signed URL.
+Now that's automatically copied into my clipboard and I can go ahead and move to a different tab, paste that in and we can open the console UI generated pre-signed URL.
+So that's just an alternative way of doing the same process that we just used the cloud shell for.
+Now that's everything that I wanted to demonstrate in this demo lesson about pre-signed URL.
+And don't worry, we're going to be talking about these more later in the course as well as looking at some alternatives.
+What we need to do to tidy up this lesson is go back to the AWS console, move to the S3 console and then just go ahead and empty and delete the bucket that you created.
+So select animals for life media, click on empty, type or paste in permanently delete and then confirm.
+And once that's successfully emptied, click on exit.
+The bucket should still be selected and then go ahead and click on delete.
+You'll need to confirm that with the name of the bucket and then go ahead and delete the bucket.
+And at this point we've cleaned up the account and the resources are back in the same state as they were at the start of the lesson.
+So I hope you've enjoyed this brief demo lesson.
+Go ahead, complete the video and when you're ready I'll look forward to you joining me in the next.

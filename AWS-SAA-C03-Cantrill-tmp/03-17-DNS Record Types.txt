@@ -1,0 +1,64 @@
+Welcome back. I've spent the last few lessons going through DNS, helping you, I hope, understand how the system works at an architectural level.
+In this lesson, I want to finish off and talk about the types of records which can be stored in DNS, and I'll try to keep it quick. So let's get started.
+The first record type that I want to touch on are name server records or NS records. I've mentioned these in the previous lessons in this section on DNS.
+These are the record types which allow delegation to occur in DNS. So we've got the dot com zone, and that's managed by VeriSign, and this zone will have multiple name server records inside it for amazon.com.
+Now these name server records are how the dot com delegation happens for amazon.com, and they point at servers managed by the amazon.com team, and these servers host the amazon.com zone.
+Inside this zone are DNS records such as www, which is how you can access those records as part of DNS.
+Now of course the same is true on the other side. The root zone has delegated management of dot com by having name servers in the root zone point at the servers that host the dot com zone.
+So name server records are how delegation works end to end in DNS. Name servers are hugely important. Next up we have a pair of record types that you will use a lot more often in DNS, and they're A records or AAAA records, and they actually do the same thing.
+Given a DNS zone, in this example google.com, then these type of records map host names to IP addresses. The difference is the type of IP address.
+For a given host, let's say www, an A record maps this onto an IP version 4 address. An AAAA record type is the same, but this maps the host onto an IP version 6 address.
+Generally, as an admin or a solutions architect, you will normally create two records with the same name. One will be an A record, and one will be an AAAA record. The client operating system and DNS software on that client can then pick the correct type of address that it wants, either AAAA if it's capable of IP version 6, or just a normal A record if it's not capable of version 6.
+Now next up is the CNAME record type, which stands for canonical name. For a given zone, the CNAME record type lets you create the equivalent of DNS shortcuts, so host to host records.
+Let's say that we have an A record called server, which points at an IP version 4 IP address. It's fairly common that a given server performs multiple tasks. Maybe in this case, it provides FTP, mail and web services.
+Creating three CNAMES and pointing them all at the A server record means that they will all resolve to the same IP version 4 address. CNAMES are used to reduce admin overhead. In this case, if the IP version 4 address of the server changes, it's just the single record to update, the A record. Because the three CNAMES reference that A record, they'll automatically get updated.
+Now CNAMES cannot point directly at an IP address, only other names, and you can expect to see that feature in the exam as a trick question. Next is the MX record type, and this is hugely important for how the internet works, specifically how email on the internet works.
+Imagine if you're using your laptop via your email server, and you want to send an email to hi at google.com. MX records are used as part of this process. Your email server needs to know which server to pass the email onto. So we start with the google.com zone.
+Inside this zone, we have an A record with the name mail, and this is pointing at an IP address. Now it's important to know from the offset that this could be called rabbits, or apple, or fluffy. The name isn't important to how email works using MX records. In this case, this A record is just called mail, but it doesn't matter.
+Now also inside the google.com zone is a collection of MX records. In this example, two records. MX records have two main parts, a priority and a value, and I'll revisit the priority soon. For now, let's focus on the values.
+The value can be just a host, as with the top example. So mail here is just mail, that's just a host. If it's just a host, and we can tell that by the fact that it's got no dot on the right, it's assumed to be part of the same zone that it's in. So mail here actually means mail.google.com. It's the mail host inside the google.com zone.
+If you include a dot on the right, this means it's a fully qualified domain name. And so it can either point at a host inside the same zone, or something outside that zone. Maybe Office 365 if Google decided Microsoft's mail product was better.
+The way that MX records are used is that our email server looks at the two address on the mail. So hi at google.com. And it focuses on the domain, so google.com. It then does an MX query using DNS on google.com. This is the same process as any other record type. So it talks to the root first, then dot com, then google.com, and then it retrieves any MX records. In this case, two different records.
+Now this is where the priority value is used, to choose which record to use. Lower values for the priority field are actually higher priority. So in this example, mail is used first, and then mail.other.domain is only used if mail isn't functional. If the priority is the same, then any of them could be selected.
+Whichever is used, the server gets the result of the query back, and it uses this to connect to the mail server for google.com via SMTP, and it uses this protocol to deliver the mail.
+In summary, an MX record is how a server can find the mail server for a specific domain. MX records are used constantly. Whenever you send an email to a domain, the server that is sending the email on your behalf is using DNS to do an MX lookup and locate the mail server to use.
+The last record type that I want to talk about is a TXT record, also known as a text record. Text records allow you to add arbitrary text to a domain. It's a way in which the DNS system can provide additional functionality.
+One common usage for a TXT record type is to prove domain ownership. Let's say for the Animals for Life domain, we want to add it to an email system, maybe Google Mail or Office 365 or Amazon Workmail.
+Whatever system we use to host our email might ask us to add a text record to the domain containing a certain piece of text data.
+So let's say that the random text that we need to add, our cats, are the best. Then our administrator would add a record inside this domain with that text data.
+Once our admin has done that, the external party, say the Google email system, would query that text data, make sure that it matches the value that they're expecting, and if it does, that would prove that we own that domain and we can manage it.
+So text records are fairly important in proving domain ownership and that's one of the most common use cases that you will use the text record type for.
+There are other uses for the text record type. It can be used to fight spam, so you can add certain information to a domain indicating which entities are authorized to send email on your behalf.
+And if any email servers receive email from any other servers, then that's a good indication that that email is spam and not authorized.
+So there are record types that I want to cover, but there's one more concept that I need to discuss before we finish up, and that is DNS TTL or Time to Live.
+A TTL value is something that can be set on DNS records. It's a numeric value in seconds.
+Let's look at a visual example. We have a client looking to connect to Amazon.com, and so it queries DNS using a resolver server that's hosted at its internet provider.
+That resolver server talks to the DNS route, which points at the .com registry authoritative servers, and so the resolver queries those servers.
+Those authoritative servers for .com provide the name servers at the Amazon.com zone, and so it goes ahead and queries that.
+That server hosts and is authoritative for the Amazon.com zone, which has a record for www, and so it uses this record to get the IP address and connect to the server.
+This process takes time. This walking the tree process, talking to the route, and then all of the levels to get the eventual result that you need, it is a lengthy process.
+Getting a result from the authoritative source, so the source that is trusted by DNS, this is known as an authoritative answer.
+You get an authoritative answer by talking to a name server, which is authoritative for that particular domain.
+If I query the name server for Amazon.com, and I'm querying the www record in Amazon.com, then I get back what's known as an authoritative answer.
+That is always preferred, because it's always going to be accurate. It's the single source of truth.
+But using TTL values, the administrator of Amazon.com can indicate to others how long records can be cached for, what amount of time is appropriate.
+In this example, because the admin of Amazon.com has set a 3600 TTL value, which is in seconds, it means that the results of the query are stored at the resolver server for 3600 seconds, which is one hour.
+If another client queries the same thing, which is pretty likely for Amazon.com, then they will get back a non-authoritative answer.
+But that answer will be retrieved immediately, because it's cached on the resolver server.
+The resolver server, remember, is hosted probably at our internet provider, and so it's much quicker to access that data.
+So non-authoritative answers are often the same as authoritative answers.
+Normally things in DNS don't change, and when they don't change, non-authoritative and authoritative is the same thing.
+But TTL is important for when things change.
+If you migrate your email service and you have a high TTL value on your MX record, and you change to a provider with a different IP address, then email delivery might be delayed because old IP addresses for those MX records will be cached and they will be used.
+TTLs are a balance.
+Low values mean more queries against your name servers.
+Low values mean less queries, but also less control if you need to change records.
+You can change TTL values before projects and upgrades, or you can leave them permanently low.
+Also keep in mind that a resolver should obey TTL values, but that's not always the case.
+It could ignore them.
+That configuration can be changed locally by the admin of the resolver server.
+DNS is often the cause of project failures because of TTL values.
+If you're doing any work that involves changing any DNS records, it's always recommended to lower the TTL value well in advance of the work, sometimes days or weeks in advance.
+And this will make sure that you have less caching issues when you finally do change those records.
+Okay, that's it. That's everything I wanted to cover in this lesson.
+Thanks for listening. Go ahead, complete this video, and when you're ready, join me in the next.

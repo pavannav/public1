@@ -1,0 +1,149 @@
+Welcome back and in this demo lesson we're going to explore IAM users. This is the first type of identity that we've covered in AWS.
+We're going to use the knowledge that we gained in the IAM policy documents lesson and assign an IAM user some permissions in our AWS account.
+Now to get started you'll need to be logged in as the IAM admin user to the general AWS account
+and you'll also need to have the Northern Virginia region selected.
+Now attached to this lesson are two links. The first is a one click deployment link which will deploy the infrastructure that you'll need for this demo
+and the second is a link which will download the files you'll need for this demo.
+So go ahead and click the demo files link to start that download and then click the one click deployment link to begin the deployment.
+Now earlier in the course you've already created an IAM user that you should be logged into this account with
+so I'm not going to step through the process again of creating an IAM user.
+Instead we're going to use CloudFormation to apply a template and this template is going to create an IAM user called Sally
+and it's also going to create two S3 buckets that we'll be using in this demonstration together with a managed policy that we'll also be using.
+Then you'll need to enter as a parameter the password for the Sally user that this CloudFormation stack will create.
+We'll only be using this user for this lesson so you should probably make it something that's reasonably secure
+but you don't need to make it a massively random password.
+Just use something that you can remember and something that you can type.
+Now this password does need to meet the password policy that's assigned to your AWS account.
+Most AWS accounts come with a password policy where the minimum password length is eight characters
+and it also includes a minimum of three of the following mix of character types
+so uppercase, lowercase, numbers and certain special characters.
+Additionally it cannot be identical to your AWS account name or email address.
+So enter that password, scroll down, check this capabilities box and click on create stack.
+Now while that creates I just want to switch over to my text editor and this is what this template does.
+So it essentially asks for a parameter, so Sally's password and then it creates a number of resources.
+We've got a logical resource called CatPix which is an S3 bucket, a logical resource called AnimalPix again which is an S3 bucket.
+We've also got a logical resource called Sally which is an IAM user and I want to draw your attention to a number of key things.
+The first is that this IAM user has a managed policy attached to it so that's what this part of the configuration does.
+This references an ARN for a managed policy that I'll show you once the stack's completed applying.
+It also sets the login profile and this is how we set the password and this references the parameter at the top of the template
+and it also sets so that you need to reset the password upon first login.
+And then the last thing that I want to talk about quickly is this policy logical resource which is a managed policy
+and if you recall when I've been talking about permissions in the last few lessons I demonstrated a particular policy document
+that allowed access to all S3 but then denied access to a CatPix S3 bucket and that is what's defined here.
+So this creates a managed policy that will allow access to S3 but won't allow access to the CatPix bucket.
+So that's all that this does. If I just quickly now switch back over to the console and then just refresh, yep this is completed now
+so I can click on resources and see that we've got four resources that have been created.
+The AnimalPix S3 bucket, the CatPix S3 bucket, the IAM managed policy and the Sally IAM user.
+Now note that I didn't set any particular explicit hard-coded names here and so what CloudFormation does in that circumstance
+is it automatically generates resource names and the way that it generates these names is to take the name of the stack
+which is IAM, the name of the logical resource defined in the template so AnimalPix, CatPix and Sally
+and then it puts on the end some randomness so you're always guaranteed that the physical ID that CloudFormation generates
+will always be unique. So now this is finished creating I just want to go ahead and open up the Sally IAM user
+so I'm going to click on that link under resources and I want to draw your attention to the fact that Sally has this
+attached managed policy called IAM user change password. Remember in previous lessons I talked about the different
+types of managed policy. If I go to policies here these are all of the managed policies inside the account at the moment
+and most of these are AWS managed policies so policies created and managed by AWS and one of those is that policy
+that's been assigned to the Sally user so that allows an IAM user to change his or her password upon first login
+so that's something that we're going to utilize now. So what I'm going to ask you to do is to click on dashboard
+and just make sure that you've got this IAM user's sign-in link on your clipboard. Next you need to either open
+a private browser tab or a separate browser completely. I'm going to go ahead and use an add-on for Firefox
+and I'm going to open a temporary container. Now you need this to be separate from the browser that you're currently
+logged in. We don't want to be logged out of our IAM admin user so ideally a separate browser or if you've got
+Firefox or if you know that you can create isolated tabs then go ahead and do that. And once you've got that
+just paste in the IAM sign-in link for the general account. That's the one that you just copied onto your clipboard.
+So this is the IAM sign-in page for the general AWS account. So I need to go back and get the username for Sally.
+So I'm going to go back to CloudFormation. I'm going to click on outputs and I'm just going to copy the username for Sally.
+The template also had an output section and this is the easiest way to get the username for Sally. So I'm going to
+copy that into my clipboard and paste that into the IAM username box here. And then I'll need to enter the password
+that I chose for Sally. So remember when you created the CloudFormation stack you were prompted for a password.
+So go ahead and enter that. And then click on sign-in. So now we logged into Sally's IAM user and we need to
+change the password. So enter the old password and then choose a new password, a secure password.
+And the reason you can do this is because of that managed policy that's assigned to Sally that gives her just
+enough permissions to change her own password. So do that and click on confirm password change.
+And then you'll be logged in to the console UI as the Sally IAM user.
+Now just to demonstrate the permissions that Sally has, we're going to move to the EC2 console and just try to interact with EC2.
+You might see some API errors straight away. If I change across to the S3 console, we'll see the same thing.
+We won't have any permissions to list any S3 buckets even though we know that we have got at least two buckets
+because they were created by the CloudFormation template. So that just proves that an IAM user has no permissions
+when they first get created in an AWS account. They generally start off with this managed policy that allows them
+to change their password, but outside that they don't have any permissions.
+Now at the start of the demo, you downloaded a link which is the demo files for this demo. That's a zip file.
+So I want you to go ahead and locate that file and then extract it. It will create a folder containing all the files
+that you'll need from this point onward. Within this folder, there's a specific file that we're going to open
+and look at next. And it's called S3 full admin JSON. So go ahead and open that file.
+And this is a JSON policy document that grants full access to any S3 actions, so S3 colon star, on any S3 resource.
+So this is an ARN that represents any S3 resource. And the first thing I'm going to have you do is assign this to Sally
+as an inline policy. So to do that, just open this file up and then copy it into your clipboard.
+Go back to the console, open the tab or the browser that you've got logged into IAM admin and you're on the IAM
+area of the console and just open the Sally user. Make sure you're on the permissions tab, then add permissions,
+create inline policy. Now you can go through this wizard type interface of selecting services, actions,
+and resources. That's often quite easy to make sure that you've got a correct policy applied, but you can also
+select the JSON tab and enter raw JSON. And that's what I'm going to do. So I want you to do this as well.
+Select the JSON document that exists already and just delete that and then paste in that JSON document
+that you've just copied into your clipboard. So this has one statement that allows all S3 actions on all S3 resources.
+So that looks good. Go ahead and hit review policy, give it a name, call it S3 admin inline, all one word,
+so S3 admin inline, and hit create policy. So Sally now has, in addition to the IAM user change password
+managed policy, she also has this S3 admin inline. So now if you either go to the separate browser or the separate
+isolated tab that you're logged into using Sally, if you hit refresh, you should be able to then see
+the S3 buckets. So there we go. We've got the IAM animal picks bucket and the IAM cat picks bucket.
+Now just to demonstrate that we have full access over both of these buckets, if you go into the IAM animal picks bucket
+and click on upload, select add files, locate the folder containing the files for this demo that you downloaded
+and extracted earlier, go in there and there's a thor.jpg file, select it and click on open and then upload that
+to this bucket. So that proves that the Sally user has permissions to upload to the animal picks bucket.
+So go back to the S3 console, go into cat picks, click on upload. This time, if you go into the cat picks folder
+and there's a file in there called merlin.jpg, go ahead and upload that to this bucket, and there we go.
+There we go, we can see that Sally's got the ability to upload to the cat picks bucket as well.
+So now to make sure that we can read from the cat picks bucket, just go ahead and click on merlin.jpg
+and then select open, and there we go, we can see Merlin and he is definitely approving of your AWS skills.
+He looks at very approval, serious cat. So that proves that we can access that bucket.
+So now I want you to switch to the other browser that you've got, the one that's logged in as the IAM admin user
+and for me it's this separate tab. Open up the Sally user, you should still have it open
+and just delete the S3 admin inline policy that we added moments ago.
+So that will return the Sally user to having no access rights over S3.
+And if we return to the other browser window, in my case it's the other tab, and refresh it,
+again we'll get the access denied error. So that's good, that's what we expect.
+So now go back to the other browser window again, the one that's logged in as IAM admin.
+We're still open in the Sally user, this time click on add permissions.
+And it's here where we can attach a managed policy.
+So select attach policies directly, and this is where you can attach a managed policy.
+Now you should see the one that's been created by the cloud formation template, which is allow all S3 except cats.
+So select that one, click next, and then add permissions.
+And this will attach this managed policy to the Sally user.
+So if you expand that, you'll be able to see what this managed policy is.
+So it's a slightly different policy, this time it's got two statements.
+Remember a policy document is a list of statements, so this particular one has two.
+We've got this first statement, which allows any S3 actions on any resource.
+So that's essentially S3 admin.
+And we've got the second statement, which denies any S3 actions on just the cat pics bucket and any objects in the cat pics bucket.
+Now remember, deny, allow, deny. An explicit deny always takes priority.
+So the top statement will allow us access to everything in S3, that's an explicit allow.
+But this bottom statement will explicitly deny us access to a certain area of S3.
+And because of deny, allow, deny, an explicit deny always overrides everything else.
+So what this should do now, if we return to the Sally user, is we should be able to interact with any other bucket in S3,
+apart from the cat pics bucket and anything that's inside the cat pics bucket.
+So let's test that out. You'll need to move back to your other browser, in my case the other tab that's logged in as Sally,
+hit refresh, because we've got this permission to be able to interact with the entire S3, you'll be able to do a bucket list.
+But if you go into the cat pics bucket, you'll get an access denied because you can't perform any operations on the cat pics bucket now.
+So unfortunately you won't be able to see Merlin approving of your AWS skills anymore.
+What you will be able to do though, if you go back to the S3 console and go in animal pics, you'll be able to open this object,
+so if I click on this object and go to open, you'll be able to see Thor, and Thor is a stand-in for Merlin,
+and Thor definitely approves of your growing AWS skills.
+So this has just been a simple demonstration of being able to apply different types of policies to an IAM user.
+We've applied an inline policy that grants full admin rights over S3, we've removed that,
+we've attached a managed policy which has a mixture of an explicit allow and an explicit deny,
+and you've seen how these various bits and pieces affect the effective permissions that Sally has.
+So that's everything that I wanted to cover in this demo, we're going to be using the Sally IAM user
+over the next couple of lessons just to further demonstrate some features of IAM,
+so IAM groups and how permissions work with groups, but because we're using cloud formation,
+and because I want you to gain the experience of cleaning up resources after demo lessons,
+we're going to delete everything that we've created in this lesson.
+So let's get started. First, you'll need to delete this managed policy attachment from Sally,
+so I'll go ahead and do that, and then as the IAM admin user, that's important, go to the S3 console,
+select the cat pics bucket, and then click on empty.
+You'll need to copy and paste or type permanently delete into the text field, and then click on empty.
+Once you've done that, click on exit to return to the S3 console,
+and then do the same with the animal pics bucket, so select it, click on empty,
+type in permanently delete, and then click on empty, and then click on exit to return back to the console.
+And then if you do both of those, then you can go back to cloud formation,
+you can select the IAM stack and hit delete, and that will clean up everything that's been created by this stack.
+But that's everything that I wanted to cover, so go ahead, complete this video, and when you're ready, join me in the next.

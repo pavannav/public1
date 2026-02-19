@@ -1,0 +1,141 @@
+Welcome back. In this lesson, I want to talk about S3 Replication, a feature which allows you to configure the replication of objects between a source and destination S3 bucket.
+Now there are two types of replication supported by S3.
+The first type, which has been available for some time, is Cross Region Replication, or CRR, and that allows the replication of objects from a source bucket to one or more destination buckets in different AWS regions.
+The second type of replication announced more recently is Same Region Replication, or SRR, which as the name suggests is the same process, but where both the source and destination buckets are in the same AWS region.
+Now the architecture for both types of replication is pretty simple to understand once you've seen it visually.
+It only differs depending on whether the buckets are in the same AWS accounts or different AWS accounts.
+Both types of replication support both, so the buckets could be in the same or different AWS accounts.
+In both cases, a replication configuration is applied to the source bucket.
+The replication configuration configures S3 to replicate from this source bucket to a destination bucket, and it specifies a few important things.
+The first is logically the destination bucket to use as part of that replication.
+And another thing that's configured in the replication configuration is an IAM role to use for the replication process.
+The role is configured to allow the S3 service to assume it, so that's defined in its trust policy.
+The role's permissions policy gives it the permission to read objects on the source bucket and permissions to replicate those objects to the destination bucket.
+And this is how replication is configured between source and destination buckets, and of course that replication is encrypted.
+Now the configuration does define a few other items, but I'll talk about them on the next screen.
+For now, I'm just focusing on this basic architecture.
+There is one crucial difference between replication which occurs in the same AWS account versus different AWS accounts.
+Inside one account, both S3 buckets are owned by the same AWS account, so they both trust that same AWS account that they're in.
+That means that they both trust IAM as a service, which means that they both trust the IAM role.
+For the same account, that means that the IAM role automatically has access to the source and the destination buckets as long as the role's permission policy grants that access.
+If you're configuring replication between different AWS accounts though, that's not enough.
+The destination bucket, because it's in a different AWS account, doesn't trust the source account or the role that's used to replicate the bucket contents.
+So in different accounts, remember that the role that's configured to perform the replication isn't by default trusted by the destination account because it's a separate AWS account.
+So if you're configuring this replication between different accounts, there's also a requirement to add a bucket policy on the destination bucket,
+which allows the role in the source account to replicate objects into it.
+So you're using a bucket policy, which is a resource policy, to define that a role in a separate account can write or replicate objects into that bucket.
+Once this configuration is applied, so either the top configuration, if it's the same account, or the bottom, if it's different accounts, then S3 can perform the replication.
+Now let's quickly review some of the options available for replication configuration. Some of them might actually come in handy for the exam.
+The first important option is what to replicate.
+The default is to replicate an entire source bucket to a destination bucket, so all objects, all prefixes, and all tags.
+You can, though, choose a subset of objects, so you can create a rule that adds a filter, and the filter can filter objects by prefix or tags or a combination of both,
+and that can define exactly what objects are replicated from the source to the destination.
+You can also select which storage class the objects in the destination bucket will use.
+Now the default is to use the same class, but you can pick a cheaper class if this is going to be a secondary copy of data.
+Remember when I talked about the storage classes that are available in S3, I talked about infrequent access or one-zone infrequent access classes, which could be used for secondary data.
+So with secondary data, you're able to tolerate a lower level of resiliency, so we could use one-zone infrequent access for the destination bucket objects,
+and we can do that because we've always got this primary copy in the source bucket, so we can achieve better economies by using a lower cost storage class in the destination.
+So remember this for the exam, the default is to use the same storage class on the destination as is used on the source, but you can override that in the replication configuration.
+Now you can also define the ownership of the objects in the destination bucket.
+The default is that they will be owned by the same account as the source bucket.
+Now this is fine if both buckets are inside the same account.
+That will mean that objects in the destination bucket will be owned by the same as the source bucket, which is the same account, so that's all good.
+However, if the buckets are in different accounts, then by default the objects inside the destination bucket will be owned by the source bucket account,
+and that could mean you end up in the situation where the destination account can't read those objects because they're owned by a different AWS account.
+So with this option, you can override that and you can set it so that anything created in the destination bucket is owned by the destination account.
+And lastly, there's an extra feature that can be enabled called replication time control or RTC,
+and this is a feature which adds a guaranteed 15-minute replication SLA onto this process.
+Now without this, it's a best efforts process, but RTC adds this SLA.
+It's a guaranteed level of predictability and it even adds additional monitoring so that you can see which objects are queued for replication.
+So this is something that you would tend to only use if you've got a really strict set of requirements from your business
+to make sure that the destination bucket and source buckets are in sync as closely as possible.
+If you don't require this, if this is just performing backups or it's just for a personal project,
+or if the source and destination buckets aren't required to always be in sync within this 15-minute window,
+then it's probably not worth adding this feature.
+It's something to keep in mind and be aware of for the exam.
+If you do see any questions that mention 15 minutes for replication, then you know that you need this replication time control.
+Now there are some considerations that you should be aware of, especially for the exam.
+These will come up in the exam, so please pay attention and try to remember these points.
+The first thing is that by default, replication isn't retroactive.
+You enable replication on a pair of buckets, a source and a destination,
+and only from that point onward are objects replicated from source to destination.
+So if you enable replication on a bucket which already has objects, those objects will not be replicated.
+And related to this, in order to enable replication on a bucket,
+both the source and destination bucket need to have versioning enabled.
+You'll be allowed to enable versioning as part of the process of enabling replication,
+but it is a requirement to have it on, so a bucket cannot be enabled for replication without versioning.
+Now you can use S3 batch replication to replicate existing objects,
+but this is something that you need to specifically configure.
+If you don't, just remember by default, replication is not retroactive.
+Secondly, it is a one-way replication process only.
+Objects are replicated from the source to the destination.
+If you add objects manually in the destination, they will not be replicated back to the source.
+So this is not a bi-directional replication, it's one-way only.
+Now more recently, AWS did add the feature which allows you to add bi-directional replication,
+but just be aware that this is an additional setting which you need to configure.
+By default, replication is one-way, and enabling bi-directional replication is something you need to specifically configure.
+So keep that in mind.
+Now in terms of what does get replicated from source to destination,
+replication is capable of handling objects which are unencrypted,
+so if you don't have any encryption on an object,
+it's capable of handling objects which are encrypted using SSC-S3,
+and it's even capable of handling objects which are encrypted using SSC-KMS,
+but this is an extra piece of configuration that you'll need to enable.
+So there's configuration and there's extra permissions which are required because, of course, KMS is involved.
+Now more recently, AWS did add the ability to replicate objects encrypted with SSC-C,
+so that's server-side encryption with customer-managed keys,
+but this is a relatively recent addition.
+Historically, SSC-C was incompatible with cross- or same-region replication.
+Replication also requires that the owner of the source bucket needs permissions on the objects which will replicate,
+so in most cases, if you create a bucket in an account and you have those objects,
+then the owner of the objects will be the source account,
+but if you grant cross-account access to a bucket,
+if you add a resource policy allowing other AWS accounts to create objects in a bucket,
+it's possible that the source bucket account will not own some of those objects,
+and this style of replication can only replicate objects where the source account owns those objects,
+so keep that in mind.
+Another limitation is it will not replicate system events,
+so if any changes are made in the source bucket by lifecycle management,
+they will not be replicated to the destination bucket,
+so only user events are replicated,
+and in addition to that, it can't replicate any objects inside a bucket
+that are using the Glacier or Glacier Deep Archive storage classes.
+Now that makes sense, because Glacier and Glacier Deep Archive,
+while they are shown as being inside of an S3 bucket,
+you need to conceptually think of them as separate storage products,
+so they cannot be replicated using this process.
+And then lastly, it's important to understand that by default, deletes are not replicated between buckets,
+so the adding of a delete marker, which is how object deletions are handled for a version enabled bucket,
+by default, these delete markers are not replicated.
+Now you can enable that, but you need to be aware that by default, this isn't enabled.
+So one of the important things that I need to make sure you're aware of in terms of replication
+is why you would use replication.
+What are some of the scenarios that you'll use replication for?
+So for same region replication specifically, you might use this process for log aggregation.
+So if you've got multiple different S3 buckets which store logs for different systems,
+then you could use this to aggregate those logs into a single S3 bucket.
+You might want to use same region replication to configure some sort of synchronization between production and test accounts.
+Maybe you want to replicate data from prod to test periodically,
+maybe you want to replicate some testing data into your prod account.
+This can be configured in either direction, but a very common use case for same region replication
+is this replication between different AWS accounts for different functions,
+so prod and test, or different functional teams within your business.
+You might want to use same region replication to implement resilience if you have strict sovereignty requirements.
+So there are companies in certain sectors which cannot have data leaving a specific AWS region
+because of sovereignty requirements,
+so you can have same region replication replicating between different buckets in different accounts,
+and then you have this account isolation for that data.
+So by having a separate account with separate logins isolated to maybe an audit team or a security team,
+replicate data into that account, it provides this account level isolation.
+Obviously, if you don't have those sovereignty requirements,
+then you can use cross-region replication and use replication to implement global resilience improvements,
+so you can have backups of your data copied to different AWS regions to cope with large-scale failure.
+You can also replicate data into different regions to reduce latency,
+so if you have, for example, a web application or your application loads data,
+then obviously it might be latency sensitive,
+so you can replicate data from one AWS region to another so that customers in that remote region
+can access the bucket that's closest to them,
+and that reduces latency, generally gives them better performance.
+Now that is everything I wanted to cover in this video,
+so go ahead and complete the video,
+and when you're ready, I'll look forward to you joining me in the next.

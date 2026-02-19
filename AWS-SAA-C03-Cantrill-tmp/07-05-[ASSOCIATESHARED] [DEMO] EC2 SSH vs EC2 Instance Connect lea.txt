@@ -1,0 +1,116 @@
+Welcome back and in this brief demo lesson I want to give you some experience of working with both EC2 Instance Connect as well as connecting with a local SSH client.
+Now these are both methods which are used for connecting to EC2 instances both with public IP version 4 addressing and IP version 6 addressing.
+Now to get started we're going to need some infrastructure so make sure that you're logged in as the IAM admin user into the general AWS account which is the management account of the organization and as always you'll need the Northern Virginia region selected.
+Now in this demonstration you are going to be connecting to an EC2 instance using both Instance Connect and a local SSH client and to use a local SSH client you need a key pair.
+So to create that let's move across to the EC2 console, scroll down on the left and select key pairs.
+Now you might already have key pairs created from earlier in the course. If you have one created which is called A4L which stands for Animals for Life then that's fine.
+If you don't we're going to go ahead and create that one. So click on create key pair and then under name we're going to use A4L.
+Now if you're using Windows 10 or Mac OS or Linux then you can select the PEM file format. If you're using Windows 8 or prior then you might need to use the PuTTY application and to do that you need to select PPK.
+But for this demonstration I'm going to assume that you're using the PEM format so again this is valid on Linux, Mac OS or any recent versions of Microsoft Windows.
+So select PEM and then click on create key pair and when you do it's going to present you with a download. It's going to want you to save this key pair to your local machine so go ahead and do that.
+Once you've done that from the AWS console attached to this lesson is a one click deployment link so I want you to go ahead and click that link.
+That's going to move you to a quick create stack screen. Everything should be pre-populated. The stack name should be EC2 Instance Connect versus SSH.
+The key name box should already be pre-populated with A4L which is a key that you just created or one which you already had.
+Just move down to the very bottom, check the capabilities box and then click on create stack.
+Now you're going to need this to be in a create complete state before you continue with the demo lesson. So pause the video, wait for your stack to change to create complete and then you're good to continue.
+Okay so this stack's now in a create complete status and we're good to continue. Now if we click on the resources tab you'll see that this has created the standard animals for life VPC.
+And then it's also created a public EC2 Instance. So this is an EC2 Instance with a public IP version 4 address that we can use to connect to.
+So that's what we're going to do. So click on services and then select EC2 to move to the EC2 console.
+Once you're there click on instances running and you should have a single EC2 Instance A4L hyphen public EC2.
+Now the two different ways which I want to demonstrate connecting to this instance in this demo lesson are using a local SSH client and key based authentication and then using the EC2 instance connect method.
+And I want to show you how those differ and give you a few hints and tips which might come in useful for production usage and for the exams.
+So if we just go ahead and select this instance and then click on the security tab you'll see that we have this single security group which is associated to this instance.
+Now make sure the inbound rules is expanded and just have a look at what network traffic is allowed by this security group.
+So the first line allows port 80 TCP which is HTTP and it allows that to connect to the instance from any source IP address specifically IP version 4.
+We can tell it's IP version 4 because it's 0.0.0.0.0 which represents any IP version 4 address.
+Next we allow port 22 using TCP and again using the IP version 4 any IP match and this is the entry which allows SSH to connect into this instance using IP version 4.
+And then lastly we have a corresponding line which allows SSH using IP version 6.
+So we're allowing any IP address to connect using SSH to this EC2 instance and so connecting to it using SSH is relatively simple.
+We can right click on this instance and select connect and then choose SSH client and AWS provides us with all of the relevant information.
+Now note how under step number 3 we have this line which is chmod 400 a4l.pem.
+I want to demonstrate what happens if we attempt to connect without changing the permissions on this key file.
+So to do that right at the bottom is an example command to connect to this instance so just copy that into your clipboard.
+Then I'll want you to move to your command prompt or terminal.
+In my case I'm running macOS so I'm using a terminal application.
+Then you'll need to move to the folder where you have the PEM file stored or where you just downloaded it in one of the previous steps.
+I'm going to paste in that command which I just copied onto my clipboard.
+This is going to use the a4l.pem file as the identity information and then it's going to connect to the instance using the EC2-user local Linux user.
+And this is the hostname that it's going to connect to so this is my EC2 instance.
+Now I'm going to press enter and attempt that connection.
+First it will ask me to verify the authenticity of this server so this is an added security method.
+This is getting the fingerprint of this EC2 instance and it means that if we independently have a copy of this fingerprint
+say from the administrator of the server that we're connecting to then we can verify that we're connecting to that same server
+because it's possible that somebody could exploit DNS and replace a legitimate DNS name with one which points at a non-legitimate server.
+So that's important. You can't always rely on a DNS name. DNS names can be adjusted to point at different IP addresses.
+So this fingerprint is a method that you can use to verify that you're actually connecting to the machine or the instance which you think you are.
+Now in this case because we've just created this EC2 instance we can be relatively certain that it is valid.
+So we're just going to go ahead and type yes and press enter and then it will try to connect to this instance.
+Now immediately in my case I got an error and this error is going to be similar if you're using macOS or Linux.
+If you're using Windows then there is a chance that you will get this error or won't and if you do get it it might look slightly different.
+Now look for the keyword of permissions. If you see that you have a permissions problem with your key then that's the same error as I'm showing on my screen now.
+Basically what this means is that the SSH client likes it when the permissions on these keys are restricted.
+Restricted to only the user that they belong to. Now in my case the permissions on this file are 644 and this represents my user, my group and then everybody.
+So this means this key is accessible to other users on my local system and that's far too open to be safe when using local SSH.
+Now in Windows you might have a similar situation where other users of your local machine have read permissions on this file.
+What this error is telling us to do is to correct those permissions.
+So if we go back to the AWS console this is the command that we need to run to correct those permissions.
+So copy that into your clipboard, move back to your terminal, paste that in and press enter and that will correct those permissions.
+Now under Windows the process is that you need to edit the permissions of that file.
+So right click properties and then edit the security and you need to remove any user access to that file other than your local user.
+And that's the same process that we've just done here only in Windows it's GUI based and under macOS or Linux you use CHmod.
+So now that we've adjusted those permissions if I use the up arrow to go back to the previous command and press enter I'm able to connect to the CC2 instance.
+And that's using the SSH client. To use the SSH client you need to have network connectivity to the CC2 instance and you need to have a valid SSH key pair.
+So you need the key stored on your local machine. Now this can present scalability issues because if you need to have a large team having access to this instance then everybody in that team need a copy of this key.
+And so that does present admin problems if you're doing it at scale.
+Now in addition to this because you're connecting using an SSH client from your local machine you need to make sure that the security group of this instance allows connections from your local machines.
+So in this case it allows connections from any source IP address into this instance and so that's valid for my IP address.
+You need to make sure that the security group on whichever instance you're attempting to connect to allows your IP address as a minimum.
+Now another method that you can use to connect to EC2 is EC2 instance connect. Now to use that we right click, we select connect and we have a number of options at the top.
+One of these is the SSH client that we've just used. Another one is EC2 instance connect.
+So if we select this option we're able to connect to this instance it shows us the instance ID, it shows us the public IP address and it shows us the user to connect into this instance with.
+Now AWS attempt to automatically determine the correct user to use. So when you launch an instance using one of the default AMIs then it tends to pick correctly.
+However if you generate your own custom AMI it often doesn't guess correctly.
+And so you need to make sure that you're using the correct username when connecting using this method.
+But once you've got the correct username you can just go ahead and click on connect and then it will open a connection to that instance using your web browser.
+It'll take a few moments to connect but once it has connected you'll be placed at the terminal of this EC2 instance in exactly the same way as you were when using your local SSH client.
+Now one difference you might have noticed is at no point were you prompted to provide a key.
+When you're using EC2 instance connect you're using AWS permissions to connect into this instance.
+So because we're logged in using an admin user we have those permissions but you do need relevant permissions added to the identity of whoever is using instance connect to be able to connect into the instance.
+So this is managed using identity policies on the user, the group or the role which is attempting to access this instance.
+Now one important element of this which I want to demonstrate if we go back to instances and we select the instance click on security and then click on the security group which is associated with this instance.
+Scroll down click on edit inbound rules and then I want you to locate the inbound rule for IP version 4 SSH.
+SSH TCP 22 and then it's using this catchall so 0.0.0.0.0 which represents any IP version 4 address.
+So go ahead and click on the cross to remove that and then on that same line in the source area click on this drop down and change it to my IP.
+So this is my IP address yours will be different but then we're going to go ahead and save that rule.
+Now just close down the tab that you've got connected to instance connect move back to the terminal and type exit to disconnect from that instance and then just rerun the previous command.
+So connect back to that instance using your local SSH client.
+You'll find that it does reconnect because logically enough this connection is coming from your local IP address and you've changed the security group to allow connections from that address.
+So it makes sense that this connection still works.
+Moving back to the console though let's go to the EC2 dashboard go to running instances.
+Right click on this instance go to connect select EC2 instance connect and then click on connect and just observe what happens.
+Now you might have spent a few minutes waiting for this to connect and you'll note that it doesn't connect.
+Now this might seem strange at this point because you're connecting from a web browser which is running on your local machine.
+So it makes sense that if you can connect from your local SSH client which is also running on your local machine you should be able to connect using EC2 instance connect.
+Now this might seem logical but the crucial thing about EC2 instance connect is that it's not actually originating connections from your local machine.
+What's happening is that you're making a connection through to AWS and then once your connection arrives at AWS the EC2 instance connect service is then connecting to the EC2 instance.
+Now what you've just done is you've edited the security group of this instance to only allow your local IP address to connect and this means that the EC2 instance connect service can no longer connect to this instance.
+So what you need in order to allow the EC2 instance connect service to work is you either need to allow every source IP address so 0.0.0.0.0.0 but of course that's bad practice for production usage.
+It's much more secure if you go to this URL and I'll make sure that I include this attached to this lesson.
+This is a list of all of the different IP ranges which AWS use for their services.
+Now because I have this open in Firefox it might look a little bit different if I just go to raw data that might look the same as your browser.
+If you're using Firefox you have the ability to open this as a JSON document.
+Both of them show the same data but when it's JSON you have the ability to collapse these individual components.
+But the main point about this document is that this contains a list of all of the different IP addresses which are used in each different region for each different service.
+So if we wanted to allow EC2 instance connect for a particular region then we might search for instance, locate any of these items which have EC2 instance connect as the service and then just move through them looking for the one which matches the region that we're using.
+Now in my case I'm using US East 1 so I'd scroll through all of these IP address ranges looking for US East 1.
+There we go I've located it. It's using this IP address range.
+So I might copy this into my clipboard, move back to the EC2 console, select the instance, click on security, select the security group of this instance,
+scroll down, edit the inbound rules, remove the entry for my IP address, paste in the entry for the EC2 instance connect service and then save that rule.
+And now what you'll find if you move back to your terminal and try to interact with this instance you might be able to initially because the connection is still established but if you exit and then attempt to reconnect this time you'll see that you won't be able to connect
+because now your local IP address is no longer allowed to connect to this instance.
+However if you move back to the AWS console, go to the dashboard and then instances running, right click on the instance and put connect, select instance connect and then click on connect.
+Now you'll be allowed to connect using EC2 instance connect and the reason for that just to reiterate is that you've just edited the security group of this EC2 instance and you've allowed the IP address range of the EC2 instance connect service.
+So now you can connect to this instance and you could do so at scale using AWS permissions.
+So I just wanted to demonstrate how both of those connection methods work, both instance connect and using a local SSH client.
+That's everything I wanted to cover, so just go ahead and move back to the CloudFormation console, select this stack that you created using the one click deployment, click on delete and then confirm that process and that will clear up all of the infrastructure that you've used in this demo lesson.
+At this point though that's everything I wanted to cover, so go ahead and complete this video and when you're ready I'll look forward to you joining me in the next.

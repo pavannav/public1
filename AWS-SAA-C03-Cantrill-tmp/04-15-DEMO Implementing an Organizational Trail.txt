@@ -1,0 +1,262 @@
+Welcome back and welcome to this CloudTrail demo, where we're going to set up an organizational trail
+and configure it to log data for all accounts in our organization to S3 and CloudWatch logs.
+The first step is that you'll need to be logged into the IAM admin user of the management account of the organization.
+So as a reminder, this is the general account.
+To set up an organizational trail, you always need to be logged into the management account.
+To set up individual trails, you can do that locally inside each of your accounts,
+but it's always more efficient to use an organizational trail.
+Now before we start the demonstration, I want to talk briefly about CloudTrail pricing.
+I'll make sure this link is in the lesson description,
+but essentially there is a fairly simple pricing structure to CloudTrail that you need to be aware of.
+Now the 90 days history that's enabled by default in every AWS account, that's free.
+You don't get charged for that. It comes free by default with every AWS account.
+Now next, you have the ability to get one copy of management events free in every region in each AWS account.
+So that means creating one trail that's configured for management events in each region in each AWS account, and that comes for free.
+If you create any additional trails, so you get any additional copies of management events,
+then they're charged at $2 per 100,000 events.
+That won't apply to us in this demonstration, but you need to be aware of that if you're using this in production.
+Now logging data events comes at a charge regardless of the number,
+so we're not going to enable data events for this demo lesson,
+but if you do enable it, then that comes at a charge of $0.10 per 100,000 events,
+and that's irrespective of how many trails you have.
+That's from the first time you're logging any data events, this charge applies.
+Now what we'll be doing in this demo lesson is setting up an organizational trail,
+which will create a trail in every region in every account inside the organization.
+But because we get one for free in every region in every account,
+we won't incur any charges for the cloud trail side of things.
+We will be charged for any S3 storage that we use,
+but S3 also comes with a free tier allocation for storage, which I don't expect us to breach.
+With that being said, let's get started and implement this solution.
+So to do that we need to be logged in to the console UI,
+again in the management account of the organization,
+and then we need to move to the cloud trail console.
+Now if you've been here recently, it will be in the recently visited services.
+If not, just type cloud trail in the find services box,
+and then open the cloud trail console.
+Once you're at the console, you might see a screen like this.
+If you do, then you can just click on the hamburger menu on the left,
+and then go ahead and click on trails.
+Now depending on when you're doing this demo,
+if you do see any warnings about a new or old console version,
+then just make sure that you select the new version,
+so your console looks like what's on screen now.
+Now once you're here, we need to create a trail,
+so go ahead and click on create trail.
+To create a trail, you're going to be asked for a few important pieces of information,
+the first of which is the trail name.
+For the trail name, we're going to use animals for life org,
+so just go ahead and enter that.
+Now by default with this new UI version, when you create a trail,
+it's going to create it in all AWS regions in your account.
+If you're logged into the management account of the organization, as we are,
+you also have the ability to enable it for all regions in all accounts of your organization.
+So we're going to do that because this allows us to have one single logging location
+for all CloudTrail logs in all regions in all of our accounts,
+so go ahead and check this box.
+Now by default, CloudTrail stores all of its logs in an S3 bucket,
+and when you're creating a trail, you have the ability to either create a new S3 bucket to use,
+or you can use an existing bucket.
+Now we're going to go ahead and create a brand new bucket for this trail.
+Bucket names within S3 need to be globally unique,
+so it needs to be a unique name across all regions, across all AWS accounts.
+So we're going to call this bucket, we're going to start with CloudTrail,
+so type CloudTrail, and then a hyphen, and then animals for life,
+and then another hyphen, and then you'll need to put a random number.
+You'll need to pick something different from me,
+and different from every other student doing this demo.
+So if you get an error about the bucket name being in use,
+you just need to change this random number.
+Now you're also able to specify if you want the log files stored in the S3 bucket to be encrypted.
+Now the way that this is done is using SSC hyphen KMS encryption.
+This is something that we'll be covering elsewhere in the course,
+and for production usage, this is something that you would definitely want to use.
+For this demonstration to keep things simple, we're not going to be encrypting the log files,
+and so I want you to go ahead and untick this box.
+Now under additional options, you're able to select log file validation,
+so this adds an extra layer of security,
+which means that if any of the log files are tampered with,
+you have the ability to determine that.
+So this is a really useful feature if you're performing any account level audits.
+In most production situations, I do enable this,
+but you can also elect to have an SNS notification delivery,
+so every time log files are delivered into this S3 bucket,
+you can have a notification, again for production usage,
+or if you need to integrate this with any non-AWS systems, then this is often quite useful.
+But for this demonstration, we'll leave this one unchecked.
+Now you also have the ability, as well as storing these log files into S3,
+to store them in CloudWatch logs,
+and this gives you extra functionality because this allows you to perform searches,
+look at the logs from a historical context inside the CloudWatch logs user interface,
+as well as define event-driven processes.
+So you can configure CloudWatch logs to scan these CloudTrail logs,
+and in the event that any particular piece of text occurs in the logs,
+any API call, any actions by a user,
+you can generate an event which can invoke, for example, a Lambda function,
+or spawn some other event-driven processing.
+And don't worry if you don't understand exactly what this means at this point,
+I'll be talking about all of this functionality in detail elsewhere in the course.
+Now for this demonstration, we are going to enable CloudTrail to put these logs into CloudWatch logs as well,
+so check this box.
+You can choose a log group name within CloudWatch logs for these CloudTrail logs.
+If you want to customize this, you can, but we're going to leave it as the default.
+Now as with everything inside AWS, if a service is acting on our behalf,
+we need to give it the permissions to interact with other AWS services,
+and CloudTrail is no exception.
+We need to give CloudTrail the ability to interact with CloudWatch logs,
+and we do that using an IAM role.
+And don't worry, we'll be talking about IAM roles in detail elsewhere in the course.
+For this demonstration, just go ahead and select New,
+because we're going to create a new IAM role,
+a new IAM role that will give CloudTrail the ability to enter data into CloudWatch logs.
+Now what we need to do is provide a role name,
+so go ahead and enter CloudTrail role for CloudWatch logs,
+and then an underscore, and then animals for life.
+The name doesn't really matter, but in production settings,
+you'll want to make sure that you're able to determine what these roles are for,
+and so we'll use a standard naming format.
+Now if you expand policy document,
+you'll be able to see the exact policy document or IAM policy document
+that will be used to give this role the permissions to interact with CloudWatch logs.
+Now don't worry at this point, if you don't fully understand policy documents,
+we'll be using them throughout the course,
+and over time you'll become much more comfortable with exactly how they're used.
+But at a high level, this policy document will be attached to this role,
+and this is what will give CloudTrail the ability to interact with CloudWatch logs.
+At this point, just scroll down, that's everything that we need to do,
+go ahead and click on next.
+Now at this point, you'll need to select what type of events you want this trail to log.
+You've got three different choices.
+The default is to log only management events,
+so this logs any events against the account or AWS resources,
+so things like starting or stopping an EC2 instance, creating or deleting an EBS volume,
+those type of things will be logged using management events.
+You've also got data events,
+and data events give you the ability to log any actions against things inside resources.
+So currently, CloudTrail does support a wide range of services for data event logging,
+so you can click on this dropdown and see all of the services that it supports.
+Now for this demonstration, we won't be setting this up with data events initially,
+because I'll be covering this elsewhere in the course,
+so go back to the top and uncheck data events.
+You also have the ability to log insight events,
+and these can identify any unusual activity errors or user behavior on your account,
+so this is especially useful from a security perspective.
+Now again, for this demonstration, we won't be logging any insight events,
+we're just going to log management events.
+For management events, you can further filter down to read or write or both,
+and optionally exclude KMS or RDS data API events,
+and I'll be talking about KMS elsewhere in the course.
+For this demo lesson, we're just going to go ahead and leave it as defaults,
+so make sure that read and write are checked.
+Once you've done that, go ahead and click on next.
+On this screen, you just need to review everything, that all looks good,
+so go ahead and click on create trail.
+Now at this point, if you do get an error saying the S3 bucket already exists,
+you'll just need to choose a new bucket name,
+so click on edit at the top,
+change the bucket name to something that's globally unique,
+and then just follow that process through again and create the trail.
+After a few moments, that trail will be created.
+It should say US East Northern Virginia as the home region,
+even though you didn't get the option to select it because it's selected by default,
+it is a multi-region trail,
+and then finally, it is an organizational trail,
+which means that this trail is now logging any cloud trail events
+from all regions in all accounts in this AWS organization.
+Now this isn't real time, and when you first enable it,
+it can take some time for anything to start to appear in either S3 or in CloudWatch logs.
+Now at this stage, what I recommend is that you pause the video
+and wait for 10 to 15 minutes before continuing,
+because the initial delivery of that first set of log files through to S3 can take some time.
+So pause the video, wait 10 to 15 minutes, and then you can resume.
+Then right-click this link under S3 bucket and open that in a new tab.
+Then go to that tab, and you should start to see a folder structure being created inside the S3 bucket.
+So let's move down through this folder structure, starting with CloudTrail.
+Let's go to US East1 and just keep going down through this folder structure.
+And in my case, I have quite a few of these log files which have been delivered already,
+so I'm going to pick one of them, the most recent, and just click on Open.
+Depending on the browser that you're using, you might have to download and then uncompress this file.
+Because I'm using Firefox, it can natively open the GZ compressed file
+and then automatically open the JSON log file inside it.
+So this is an example of a CloudTrail event.
+We're able to see the user identity that actually generates this event.
+In this case, it's me, I am admin.
+We're able to see the account ID that this event is for.
+We can see the event source, the event name, the region, the source IP address, the user agent, in this case the console.
+All of the relevant information for this particular interaction with the AWS APIs
+are logged inside this CloudTrail event.
+Now don't worry if this doesn't make a lot of sense at this point.
+You're going to get a lot of opportunity to interact with this type of logging event
+as you do all of the various theory and practical lessons within the course.
+For now, I just want to highlight exactly what to expect with CloudTrail logs.
+Now because we've enabled all of this logging information to also go into CloudWatch logs,
+we can take a look at that as well.
+So back at the CloudTrail console, if we just click on Services,
+and then type CloudWatch, wait for it to pop up, locate Logs underneath CloudWatch,
+and then open that in a new tab.
+Inside CloudWatch, on the left-hand menu, look for Logs, and then Log Groups, and open that.
+You might need to give this a short while to populate, but once it does,
+you should see a log group for the CloudTrail that you've just created.
+Go ahead and open that log group.
+Inside it, you'll see a number of log streams.
+Now these log streams will start with your unique organizational code,
+so this will be different for you.
+Then there will be the account number of the account that it represents again.
+These will be different for you.
+And then there'll be the region name.
+Because I'm only interacting with the Northern Virginia region,
+currently the only ones that I see are for US East 1.
+Now this particular account that I'm in, the general account of the organization,
+if I look at the ARN at the top, or Amazon Resource Name,
+if I look at the thing after US East 1 here, this number is my account number.
+So this is the account number of my general account.
+So if I look at the log streams, in my case you'll be able to see that this account,
+so the general account, matches this particular log stream.
+You'll be able to do the same thing in your account.
+If you look for this account ID and then match it with one of the log streams,
+you'll be able to pull the logs for the general AWS account.
+So if I go inside this particular log stream,
+then as CloudTrail logs any activity in this account,
+all of that information will be populated into CloudWatch logs.
+And that's what I can see here.
+And if I expand one of these log entries,
+we'll see the same formatted CloudTrail event that I just showed you in my text editor.
+So the only difference when using CloudWatch logs,
+is that the CloudTrail events also get entered into a log stream in a log group within CloudWatch logs.
+And as you can see here, the format looks very similar.
+Now if we just return to the CloudTrail console,
+one last thing that I wanted to highlight,
+if you just expand the menu on the left,
+whether you enable a particular trail or not,
+you've always got access to the event history.
+And the event history stores a log of all CloudTrail events for the last 90 days for this particular account,
+even if you don't have a specific trail enabled.
+So this is standard functionality.
+What a trail allows you to do is customize exactly what happens to that data.
+So this area of the console, the event history,
+is always useful if you just want to go in and search for a particular event,
+maybe check who's logged onto the account recently,
+or look at exactly what the IAM admin user has been doing within this particular AWS account.
+The reason why we created a trail is to persistently store that data in S3,
+as well as put it into CloudWatch logs, which gives us that extra functionality.
+Now with that being said, that is everything that I wanted to cover in this demo lesson.
+One thing that you do need to be aware of is that S3 as a service provides a certain amount of resource
+under the free tier that's available in every new AWS account.
+So you can store a certain amount of data in S3 free of charge.
+The problem with CloudTrail, and especially organizational trails,
+is they do generate quite a large number of requests.
+And there is also, in addition to space, there is a number of requests per month that are part of the free tier.
+Now if you leave this CloudTrail enabled for the duration of your studies for the entire month,
+then it is possible that this will go slightly over the free tier allocation for requests within the S3 service.
+So you might see warnings that you're approaching a billable threshold,
+and you might even get a couple of cents of bill per month if you leave this enabled all the time.
+To avoid that, if you just go to Trails, open up the trail that you've created,
+and then just go ahead and click on Stop Logging.
+You'll need to confirm that by clicking on Stop Logging,
+and at that point no logging will occur into the S3 bucket or into CloudWatch logs,
+and you won't experience those charges.
+Now for any production usage, the low cost of this service means that you would normally leave it enabled in all situations.
+But to keep costs within the free tier for this course, you can, if required, just go ahead and stop the logging.
+If you don't mind a few cents per month of S3 charges for CloudTrail,
+then by all means go ahead and leave it enabled.
+With that being said though, that's everything I wanted to cover in this demo lesson,
+so go ahead, complete the lesson, and then when you're ready, I'll look forward to you joining me in the next.

@@ -1,0 +1,162 @@
+Welcome back, and in this lesson I want to go into a little bit more depth on Amazon Machine Images or AMIs.
+Many people in the AWS community would have you think that there's some kind of argument or disagreement over how to pronounce AMI,
+with some people pronouncing it a slightly different way that I'm not going to repeat here.
+In my view, there's no argument, those people are just misguided.
+AMIs are the images of EC2. They're one way that you can create a template of an instance configuration
+and then use that template to create many instances from that configuration.
+AMIs are actually used when you launch EC2 instances. You're launching those instances using AWS-provided AMIs.
+But you can create your own, and that's what I want to focus on in this lesson.
+So what that means, what happens when you create your own AMIs and how to do it effectively.
+So just a few key points before I talk about the life cycles and the flow around AMIs.
+AMIs can be used to launch EC2 instances. I've mentioned that a second ago.
+They're actually used by the console UI. When you launch an EC2 instance, when you select to use Amazon Linux 2,
+you're actually using an Amazon Linux 2 AMI to launch that instance.
+Now the AMIs that you usually use to launch instances with, they can be AWS or community-provided.
+So certain vendors that make their own distribution of Linux, they produce community AMIs that can be used to launch
+that distribution of Linux inside EC2. So companies such as Red Hat, distributions such as CentOS and Ubuntu,
+they're available inside AWS. You can use those AMIs to launch EC2 instances with those distributions.
+You can also launch instances from marketplace-provided AMIs, and these can include commercial software.
+So you're able to launch an instance and have that instance cost the normal hourly rate,
+plus an extra amount for that commercial software. And you can do that by going to the marketplace,
+picking a commercial AMI from the marketplace, launching it on a specific instance.
+And with that architecture, there's generally the instance cost as well as an extra cost for the AMI,
+which includes the licenses to that commercial software.
+Now AMIs are regional, so there are different AMIs for the same thing in different regions.
+For Amazon Linux 2, there will be an AMI in US East 1, there will be an AMI in US West 1,
+there will be another AMI in the Sydney region. Each individual region has its own set of AMIs,
+and each AMI has a unique ID with this format on screen now, so AMI hyphen and then a random set of numbers and letters.
+And an AMI can only be used in the region that it's in, so there will be different AMI IDs
+for the same distribution of an operating system in each individual region.
+An AMI also controls permissions, so by default an AMI is set so that only your account can use it.
+So one of the permissions models is only your account. You can set an AMI to be public so that everybody can access it,
+or you can add specific AWS accounts onto that AMI. So those are the three options you have for permissions.
+Now the flow that you've experienced so far is to take an AMI and use it to create an instance,
+but you can also do the reverse. You can create an AMI from an existing EC2 instance to capture the current configuration of that instance,
+so creating a template of an existing instance that can be used to make more instances.
+Now I want you to think about the life cycle of an AMI as having four phases.
+We've got launch, configure, create image, and launch again.
+And that second launch, that is intentional. I'll explain more as we stay in the first phase.
+And this is where you use an AMI to launch an EC2 instance, and we've done that together a few times so far in the course.
+Now in one of the previous demo lessons in this section of the course, you started to experience a little more of EBS
+and saw that volumes which were attached to EC2 instances are actually separate logical devices.
+EBS volumes are attached to EC2 instances using block device IDs.
+The boot volume is usually forward slash dev forward slash xvda.
+And as we saw in a previous demo lesson, an extra volume was called forward slash dev forward slash xvdf.
+So these are device IDs, and device IDs are how EBS volumes are presented to an instance.
+Now if this is all you ever use AMIs for, that's fine. There are more ways to provision things inside AWS than creating your own AMIs.
+So it's 100% fine if you don't use custom AMIs much beyond using them to launch things.
+But if you choose to, you can take the instance that you provisioned during the launch phase,
+so that's the instance and its attached EBS volumes, and then maybe you can decide to apply some customization
+to bring your instance into a state where it's perfectly set up for your organization.
+This might be an OS with certain applications and services installed,
+or it might be an instance with a certain set of volumes attached of a certain size,
+or it might be an instance with a full application suite installed and configured
+to your exact bespoke business requirements ready to use.
+Now an instance that's in this heavily customized state, you can take this and actually create your own AMI
+using that configuration. So a customized configuration of an EC2 instance architecturally
+will just be the instance and any volumes that are attached to that instance,
+but you can take that configuration and you can use it to create an AMI.
+Now this AMI will contain a few things, and it's the exact details of those few things that are important.
+We've already mentioned that the AMI contains permissions, so who can use the AMI?
+Is it public, is it private just to your account, or do you give access to that AMI to other AWS accounts?
+That's stored inside the AMI. Think of an AMI as a container.
+It's just a logical container which has associated information.
+It's an AMI, it's got an AMI ID, and it's got the permissions restricting who can use it.
+But what really matters is that when you create an AMI for any EBS volumes which are attached to that EC2 instance,
+we have EBS snapshots created from those volumes. And remember, EBS snapshots are incremental,
+but the first one that occurs is a full copy of all the data that's used on that EBS volume.
+So when you make an AMI, the first thing that happens is these snapshots are taken
+and those snapshots are actually referenced inside the AMI using what's known as a block device mapping.
+Now what the block device mapping is, is essentially just a table of data.
+It links the snapshot IDs that you've just created when making that AMI,
+and it has for each one of those snapshots a device ID that the original volumes had on the EC2 instance.
+So visually with what's on screen now, the snapshot that's on the right side of the screen,
+that matches the boot volume of the instance.
+So the block device mapping will contain the ID of the right snapshot,
+and it will contain the block device of the original volume, so forward slash dev, forward slash xvda.
+The left snapshot that's on screen now, that references the data volume,
+which is forward slash dev, forward slash xvdf.
+So the block device mapping in this case will have two lines, it will reference each of the snapshots,
+and then the device ID that the original volumes had.
+Now what this does is it means that when this AMI is used to create a new instance,
+this instance will have the same EBS volume configuration as the original.
+When you launch an instance using an AMI, what actually happens is the snapshots are used
+to create new EBS volumes in the availability zone that you're launching that instance into,
+and those volumes are attached to that new instance using the same device IDs
+that are contained in that block device mapping.
+So AMIs are a regional construct.
+So you can take an AMI from an instance that's in availability zone A,
+and that AMI as an object is stored in the region.
+The snapshots, remember, are stored on S3, so they're already regional,
+and you can use that AMI to deploy instances back into the same AZ as the source instance,
+or into other availability zones in that region.
+So just make sure that you understand this architecture.
+In the following demo lesson, you're going to get a chance to actually do this, to create an AMI,
+but it's a lot easier to understand exactly how this works
+if you've got a picture of the architecture in your mind.
+So an AMI itself does not contain any real data volume.
+An AMI is a container.
+It references snapshots that are created from the original EBS volumes
+together with the original device IDs,
+and so you can take that AMI and use it to provision brand new instances
+with exactly the same data and exactly the same configuration of volumes.
+Now before we finish this lesson and move on to the demo,
+I do have some exam power-ups that I want to step through.
+AMIs do feature on the exam, and the architecture of AMIs is especially important
+for the Solutions Architect Associate exam,
+so I'm just going to step through a few really key points.
+AMIs are in one region, so you create an AMI in a particular region.
+It can only be used in that region,
+but it can be used to deploy instances into all of the availability zones in that region.
+There's a term that you might see in documentation
+or hear other AWS professionals talk about, which is AMI-baking.
+And AMI-baking is the concept of taking an EC2 instance,
+installing all of the software, doing all of the configuration changes,
+and then baking all of that into an AMI.
+If you imagine what we did in the last lesson,
+where we installed WordPress manually on an EC2 instance,
+imagine how easier that would have been if we'd have performed that installation once,
+so installed and configured all of the software,
+and then created an AMI of that configuration
+that we could then use to deploy tens of instances or hundreds of instances,
+all pre-configured with WordPress.
+Well, that is a scenario that you can use AMIs for,
+so create an AMI with a custom configuration of an EC2 instance
+for a particular bespoke requirement in your business,
+and then use it to stamp out lots of EC2 instances.
+And that process is known as AMI-baking.
+You're baking the configuration of that instance into an AMI.
+Another important thing to understand is that an AMI cannot be edited.
+If you want to adjust the configuration of an existing AMI,
+then you should take the AMI, use it to launch an instance,
+update the configuration, and then create a brand new AMI.
+You cannot update an existing AMI. That's critical to understand.
+Another important thing to understand is that AMIs can be copied between AWS regions.
+Now, remember the default permissions on an AMI is that it's accessible only in your account.
+You can change it by adding additional accounts explicitly,
+so you could add different accounts in your organization,
+you could add partner accounts, or you can make the AMI completely public.
+Those are the three options. It can be private, it can be public,
+or you can explicitly grant access to individual AWS accounts.
+Now, in terms of billing for AMIs, an AMI does contain EBS snapshots,
+and so you are going to be billed for the capacity used by those snapshots.
+Remember, though, that snapshots only store the data used in EBS volumes,
+so even if you do have instances with fairly large volume allocations,
+if those volumes only use a small percentage of the data,
+then the snapshots will be much smaller than the size allocated for the EBS volumes.
+But for an AMI, you do need to be aware that it does have a cost,
+and those costs are the storage capacity used by the EBS snapshots that that AMI references.
+Now, at this point, I think that's enough theory,
+so that's where we're going to finish off this lesson.
+In the next lesson, which is a demo lesson,
+you're going to get some practical experience of launching an instance,
+performing some custom configuration, and then creating your own AMI
+and using that AMI to create new instances.
+So I'm hoping that by having this theory lesson,
+which introduces all of the architecture and important details,
+it will help you understand the demo lesson,
+where you'll implement this in your own environment,
+and that demo lesson will help all of this theory and architecture stick,
+because it will be important to remember for the exam.
+At this point, though, go ahead, complete this video,
+and when you're ready, you can join me in the next.

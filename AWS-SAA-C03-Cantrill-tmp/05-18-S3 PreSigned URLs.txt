@@ -1,0 +1,106 @@
+Welcome back, and in this lesson I want to talk to you about S3 pre-signed URLs.
+Pre-signed URLs are a way that you can give another person or application access to an object inside an S3 bucket,
+using your credentials in a safe and secure way.
+Let's have a look at how this works architecturally.
+To illustrate how pre-signed URLs work, let's use this example architecture.
+An S3 bucket, which doesn't have any public access configured, so it's still in a default private configuration.
+This means that in order to access the bucket or any resources in it, an IAM user, such as IAM admin,
+would have to authenticate to AWS and be authorized to access the resource.
+IAM admin would send credentials along with the access request, AWS would validate them at the time that the request is made,
+and only then grant access to the object in S3.
+Now one issue that we have is that because the bucket is private, only authenticated users are able to access it.
+Our masked man here has no way of providing authentication information to AWS because he doesn't have any,
+and so any request that's unauthenticated would fail.
+Now if giving the mystery user access to S3 is an essential requirement for the business,
+then there are three common solutions at this point, and none of them are ideal.
+Number one is to give the mystery user an AWS identity.
+Number two is to give the mystery user some AWS credentials to use.
+Or number three is to make the bucket or the object public.
+Now none of these are ideal.
+If the user only needs short-term access to the bucket and objects, the effort of supplying an identity seems excessive.
+Just giving some credentials to the user appears on the surface to be a security risk,
+and definitely if it's somebody else's credentials, that's just bad practice.
+Making the bucket public for anything which has sensitive data in it also appears to be less than ideal.
+So one solution that AWS offers is to use pre-signed URLs.
+And let's look at how this would work with an architecture example.
+IAM admin is an AWS identity with some access rights granted via a permissions policy.
+So IAM admin can make a request to S3 to generate a pre-signed URL.
+She would need to provide her security credentials, specify a bucket name, an object key, and an expiry date and time,
+as well as indicate how the object would be accessed.
+And S3 will create a pre-signed URL and return it.
+This URL will have encoded inside it the details that IAM admin provided, so which bucket it's for, which object it's for.
+It will be encoded with the fact that the IAM admin user generated it,
+and it will be configured to expire at a certain date and time, as requested by the IAM admin user.
+The URL could then be passed to our mystery user,
+and he or she could use it to access the specific object in the specific S3 bucket up until the point at which it expires.
+When the pre-signed URL is used, the holder of that URL is actually interacting with S3 as the person who generated it.
+So for that specific object in that specific bucket until the timer expires, our masked man is actually IAM admin.
+Pre-signed URLs can be used for both downloads from S3, so get operations, or uploads to S3, known as put operations.
+So this type of architecture might be useful for the Animals for Life remote workers
+if they don't have access to AWS accounts or are accessing from a secure location and just need to upload one specific object.
+Now there's another type of architecture which commonly uses pre-signed URLs,
+and I've mentioned this earlier in the course when I was talking about some benefits of S3.
+I want you to think about a traditional application architecture.
+On the left, we have an application user with a laptop.
+We've got an application server in the public cloud in the middle, which hosts the application.
+And for example, let's say this is a video processing application for wildlife videos that the Animals for Life organization manages.
+We've learned that one of the real strengths of S3 is its ability to host large media files,
+and so the large wildlife video files have been migrated from the application server to a media S3 bucket.
+But by doing this, we've introduced a problem.
+Previously, the videos were hosted on the application server, and it could control access to the video files.
+If we host them on an S3 bucket, then either every user needs an AWS identity, so an IAM user, to access the videos,
+or we need to make the videos public so that the user running the web application can download them into her browser,
+and neither of those are ideal.
+Luckily, pre-signed URLs offer a solution.
+With pre-signed URLs, we can keep the bucket private.
+Then we can create an IAM user in our AWS account for this application.
+Remember when I talked about choosing between an IAM user or a role?
+I said that if you could visualize how many of a certain thing that would be using an identity, then it's likely to suit an IAM user.
+Well, in this case, we have one application, and application service accounts are a common scenario where IAM users are used.
+So, for this example, we create an IAM user for the application.
+So when our application user interacts with the web application, she makes a request, and that's step one.
+The request might be for a page of information on a bushfire which is currently happening in Australia, which has a video file associated with it.
+The application that's running on the server knows that it can directly return the information that the request is asking for,
+but that the video is hosted on the private S3 bucket.
+So it initiates a request to S3 asking for it to generate a pre-signed URL for that particular video object,
+using the permissions of the IAM user that the application is using, so IAM app one.
+The S3 service then creates a URL which has encoded within it the authentication information for the IAM app one user,
+the access to one object in the bucket for a short time limited basis, maybe two to three hours.
+And the S3 service then returns that to the application server and through to the end user.
+The web application that's running on the user's laptop then uses this pre-signed URL to securely access the particular object that's stored on the media bucket.
+Pre-signed URLs are often used when you offload media into S3 or as part of serverless architectures,
+where access to a private S3 bucket needs to be controlled and you don't want to run thick application servers to broker that access.
+And we'll look at serverless architectures later in the course.
+For now, I just want to be sure that you understand what pre-signed URLs do.
+And in the next lesson, which is a demo lesson, you're going to get the chance to experiment yourself and generate a pre-signed URL.
+Pre-signed URLs can be used to access an object in a private S3 bucket with the access rights of the identity which generates them.
+They're time limited and they encode all of the authentication information needed inside.
+And they can be used to upload objects and download objects from S3.
+Now I want to show you this in a demo because it's far easier to actually do it.
+But before we do that, I want to step through some exam power-ups.
+There are a couple of really interesting facts about generating pre-signed URLs which might help you out in some exam questions.
+Now first, and this is a fairly odd behavior, but you can create a pre-signed URL for an object that you have no access to.
+The only requirement for generating a pre-signed URL is that you specify a particular object and an expiry date and time.
+If you don't have access to that object, you can still generate a pre-signed URL which also, because it's linked to you, will have no access to that object.
+So there aren't many use cases where this is applicable, but you do need to be aware that it is possible to generate a pre-signed URL when you don't have any access.
+Now when you're using the URL, so when you utilize a URL and attempt to access an object, the permissions that you have access to match the identity that generated it.
+And it's important to understand that it matches the permissions that the identity has right now.
+So at the point when you use the URL, the URL has the same permissions as the identity that generated it has right now.
+So if you get an access denied error when you attempt to use a pre-signed URL to access an object, it could be that the identity that generated that URL never had access,
+or it could be that it simply doesn't have access right now.
+And they're two very important nuances to understand about pre-signed URLs.
+So when you're using a URL to access an object, it matches the current permissions of the identity that generated that URL.
+Now that's fairly okay for an IAM user. As I demonstrated on the previous example of the application,
+generally you would create an IAM user for the application and this IAM user would have fairly static permissions.
+So the permissions generally wouldn't change between when you created the URL and when your customer is using that URL within an application.
+But don't generate pre-signed URLs based on an IAM role.
+You can in theory assume an IAM role, which remember gives you temporary credentials.
+And then you can use those temporary credentials to generate a pre-signed URL.
+A pre-signed URL can have a much longer validity period than those temporary credentials.
+So those temporary credentials will generally expire well before a pre-signed URL does.
+So if you generate a pre-signed URL using a role and then those temporary credentials expire,
+those credentials are no longer valid and so that URL will stop working.
+And so it's almost never a good idea to generate a pre-signed URL using an IAM role.
+You should always use long term identities. So generally an IAM user.
+With that being said though, that is everything that I wanted to cover in this theory lesson.
+So go ahead, complete the video and when you're ready, I'll look forward to you joining me in the next.

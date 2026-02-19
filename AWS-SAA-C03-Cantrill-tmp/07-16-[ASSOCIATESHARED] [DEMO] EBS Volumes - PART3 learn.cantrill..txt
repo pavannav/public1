@@ -1,0 +1,198 @@
+Welcome back, and in this video we're going to interact with instant store volumes.
+Now, this part of the demo does come at a cost.
+This isn't inside the free tier, because we're going to be launching some instances
+which are fairly large and are not included in the free tier.
+The demo has a cost of approximately 13 cents per hour, and so you should only do this part
+of the demo if you're willing to accept that cost.
+If you don't want to accept those costs, then you can go ahead and watch me perform
+these within my test environment.
+So to do this, we're going to go ahead and click on instances, and we're going to launch
+an instance manually.
+So I'm going to click on launch instances.
+We're going to name the instance, Instance Store Test, so put that in the name box.
+Then scroll down, pick Amazon Linux, make sure Amazon Linux 2023 is selected, and the
+architecture needs to be 64-bit x86.
+Scroll down, and then in the instance type box, click, and we need to find a different
+type of instance.
+This is going to be one that supports instant store volumes.
+So scroll down, and we're looking for m5dn.large.
+This is a type of instance which includes one instant store volume.
+So select that, then scroll down a little bit more, and under key pair, click in the
+box and select proceed without a key pair not recommended.
+Scroll down again, and under network settings, click on edit.
+Click in the VPC dropdown and select A4L-VPC1.
+Under subnet, make sure sn-web-a is selected.
+Make sure enabled is selected for both of the auto-assign public IP dropdowns.
+Then we're going to select an existing security group.
+Click the dropdown, select the EBS demo instance security group.
+It will have some random after it, but that's okay.
+Then scroll down, and under storage, we're going to leave all of the defaults.
+What you are able to do, though, is to click on show details next to instance store volumes.
+And this will show you the instance store volumes which are included with this instance.
+And you can see that we have one instance store volume.
+It's 75 GB in size, and it has a slightly different device name.
+So dev nvme0n1.
+Now all of that looks good, so we're just going to go ahead and click on launch instance.
+And then click on view all instances.
+And initially it will be in a pending state, and eventually it will move into a running
+state, and then we should probably wait for the status check column to change from initializing
+to 2 out of 2.
+So go ahead and pause the video and wait for this status check to change to be fully green.
+It should show 2 out of 2 status checks.
+So that's now in a running state with 2 out of 2 checks, so we can go ahead and connect
+to this instance.
+Before we do, though, just go ahead and select the instance and just note the instance's
+public IP version 4 address.
+Now this address is really useful because it will change if the EC2 instance moves between
+EC2 hosts, and so it's a really easy way that we can verify whether this instance has moved
+between EC2 hosts.
+So just go ahead and note down the IP address of the instance that you have if you're performing
+this in your own environment.
+We're going to go ahead and connect to this instance, though, so right click, select connect.
+We'll be choosing instance connect.
+Go ahead and connect to the instance.
+Now many of these commands that we'll be using should by now be familiar.
+Just refer back to the lessons command document if you're unsure, because we'll be using
+all of the same commands.
+First we need to list all of the block devices which are attached to this instance, and we
+can do that with ls blk.
+This time it looks a little bit different because we're using Instance Store rather
+than EBS additional volumes.
+So in this particular case, I want you to look for the 8G volume.
+So this is the root volume.
+This represents the boot or root volume of the instance.
+Remember that this particular instance type came with a 75GB Instance Store volume, so
+we can easily identify it's this one.
+Now to check that, we can verify whether there's a file system on this Instance Store volume.
+If we run this command, so the same command we've used previously, so sudo file-s and
+then the id of this volume, so dev nvme1n1, you'll see it reports data.
+And if you recall from the previous parts of this demo series, this indicates that there
+isn't a file system on this volume.
+We're going to create one, and to do that we use this command again, it's the same command
+that we've used previously, just with the new volume id.
+So press enter to create a file system on this raw block device, this Instance Store
+volume, and then we can run this command again to verify that it now has a file system.
+To mount it, we can follow the same process that we did in the earlier stages of this
+demo series.
+We'll need to create a directory for this volume to be mounted into, this time we'll
+call it forward slash Instance Store, so create that folder, and then we're going to mount
+this device into that folder.
+So sudo mount, then the device id, and then the mount point, or the folder that we've
+previously created.
+So press enter, and that means that this block device, this Instance Store volume, is now
+mounted into this folder.
+And if we run a df space hyphen k and press enter, you can see that it's now mounted.
+Now we're going to move into that folder by typing cd space forward slash Instance Store,
+and to keep things efficient, we're going to create a file called Instance Store dot
+txt, and rather than using an editor, we'll just use sudo touch, and then the name of
+the file, and this will create an empty file.
+If we do an ls space hyphen la and press enter, you can see that that file exists.
+So now that we have this file stored on a file system, which is running on this Instance
+Store volume, let's go ahead and reboot this instance.
+Now we need to be careful, we're not going to stop and start the instance, we're going
+to restart the instance.
+Restarting is different than stop and start.
+So to do that, we're going to close this tab, move back to the EC2 console, so click
+on instances, right click on Instance Store test, and select reboot instance, and then
+confirm that.
+Note what this IP address is before you initiate the reboot operation, and then just give this
+a few minutes to reboot.
+Then right click and select connect.
+Using instance connect, go ahead and connect back to the instance.
+And again, if it appears to hang at this point, then you can just wait for a few moments
+and then connect again, but in this case I've left it long enough and I'm connected back
+into the instance.
+Now once I'm back in the instance, if I run a ds space hyphen k and press enter, note
+how that file system is not mounted after the reboot.
+Now that's fine because we didn't configure the Linux operating system to mount this file
+system when the instance is restarted.
+But what we can do is do an ls blk again to list the block device, we can see that it's
+still there, and we can manually mount it back in the same folder as it was before the
+reboot.
+To do that, we run this command.
+So it's mounting the same volume id, the same device id, into the same folder.
+So go ahead and run that command and press enter.
+Then if we use cd space forward slash and then instant store, press enter, and then
+do an ls space hyphen la, we can see that this file is still there.
+Now the file is still there because instant store volumes do persist through the restart
+of an EC2 instance.
+Restarting an EC2 instance does not move the instance from one EC2 host to another, and
+because instant store volumes are directly attached to an EC2 host, this means that the
+volume is still there after the machine has restarted.
+Now we're going to do something different though.
+Close this tab down, move back to instances, again pay special attention to this IP address.
+Now we're going to right click and stop the instance.
+So go ahead and do that and confirm it if you're doing this in your own environment.
+Watch this public IPv4 address really carefully.
+We'll need to wait for the instance to move into a stopped state, which it has, and if
+we select the instance, note how the public IPv4 address has been unallocated.
+So this instance is now not running on an EC2 host.
+Let's right click, go to start instance and start it up again.
+We'll need to give that a few moments again.
+It'll move into a running state, but notice how the public IPv4 address has changed.
+This is a good indication that the instance has moved from one EC2 host to another.
+So let's give this instance a few moments to start up, and once it has, right click,
+select connect, and then go ahead and connect to the instance using instance connect.
+Once connected, go ahead and run an LSBLK and press enter, and you'll see it appears
+to have the same instant store volume attached to this instance.
+It's using the same ID, and it's the same size, but let's go ahead and verify the
+contents of this device using this command.
+So sudo file space hyphen s space, and then the device ID of the instant store volume.
+If I press enter, now note how it shows data.
+So even though we created a file system in the previous step, after we've stopped and
+started the instance, it appears this instant store volume has no data.
+Now the reason for that is when you restart an EC2 instance, it restarts on the same EC2
+host.
+But when you stop and start an EC2 instance, which is a distinctly different operation,
+the EC2 instance moves from one EC2 host to another, and that means that it has access
+to completely different instant store volumes than it did on that previous host.
+It means that all of the data, so the file system and the test file that we created on
+the instant store volume before we stopped and started this instance, all of that is
+lost.
+When you stop and start an EC2 instance, or for any other reason, which means the instance
+moves from one host to another, all of the data is lost.
+So instant store volumes are ephemeral, they're not persistent, and you can't rely on them
+to keep your data safe, and it's really important that you understand that distinction.
+If you're doing the developer or SysOps streams, it's also important that you understand
+the difference between an instance restart, which keeps the same EC2 host, and a stop
+and start, which moves an instance from one host to another.
+The former means you're likely to keep your data, but the latter means you're guaranteed
+to lose your data when using instant store volumes.
+EBS, on the other hand, as we've seen, is persistent, and any data persists through
+the life cycle of an EC2 instance.
+Now with that being said, though, that's everything that I wanted to demonstrate within
+this series of demo lessons.
+So let's go ahead and tidy up the infrastructure.
+Close down this tab, click on instances.
+If you follow this last part of the demo in your own environment, go ahead and right click
+on the instant store test instance and terminate that instance.
+That will delete it along with any associated resources.
+We'll need to wait for this instance to move into the terminated state, so give that
+a few moments.
+Once that's terminated, go ahead and click on services, and then move back to the cloud
+formation console.
+You'll see the stack that you created using the one-click deploy at the start of this
+lesson.
+Go ahead and select that stack, click on delete, and then delete stack.
+And that's going to put the account back in the same state as it was at the start of
+this lesson, so it will remove all of the resources that have been created.
+And at that point, that's the end of this demo series.
+So what did you learn?
+You learned that EBS volumes are created within one specific availability zone.
+EBS volumes can be mounted to instances in that availability zone only and can be moved
+between instances while retaining their data.
+You can create a snapshot from an EBS volume which is stored in S3 and that data is replicated
+within the region, and then you can use snapshots to create volumes in different availability
+zones.
+I told you how snapshots can be copied to other AWS regions, either as part of data
+migration or disaster recovery, and you learned that EBS is persistent.
+You've also seen in this part of the demo series that instance store volumes can be used.
+They are included with many instance types, but if the instance moves between EC2 hosts,
+so if an instance is stopped and then started, or if an EC2 host has hardware problems, then
+that EC2 instance will be moved between hosts and any data on any instance store volumes
+will be lost.
+So that's everything that you needed to know in this demo lesson, and you're going to learn
+much more about EC2 and EBS in other lessons throughout the course.
+At this point though, thanks for watching and doing this demo, I hope it was useful,
+but go ahead, complete this video, and when you're ready, I'll look forward to you
+joining me in the next.

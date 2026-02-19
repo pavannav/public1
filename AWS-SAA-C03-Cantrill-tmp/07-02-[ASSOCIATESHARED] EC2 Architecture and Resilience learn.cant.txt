@@ -1,0 +1,181 @@
+Welcome back. In this lesson, now that we've covered virtualisation at a high level,
+I want to focus on the architecture of the EC2 product in more detail.
+EC2 is one of the services you'll use most often in AWS, and it's one which features on a lot of exam questions.
+So let's get started.
+First thing, let's cover some key high-level architectural points about EC2.
+EC2 instances are virtual machines, so this means an operating system
+plus an allocation of resources such as virtual CPU, memory, potentially some local storage,
+maybe some network storage, and access to other hardware such as networking and graphics processing units.
+EC2 instances run on EC2 hosts, and these are physical service hardware which AWS manages.
+These hosts are either shared hosts or dedicated hosts.
+Shared hosts are hosts which are shared across different AWS customers.
+So you don't get any ownership of the hardware, and you pay for the individual instances
+based on how long you run them for and what resources they have allocated.
+It's important to understand though that every customer, when using shared hosts, are isolated from each other.
+So there's no visibility of it being shared.
+There's no interaction between different customers, even if you're using the same shared host.
+And shared hosts are the default.
+With dedicated hosts, you're paying for the entire host, not the instances which run on it.
+It's yours, it's dedicated to your account, and you don't have to share it with any other customers.
+So if you pay for a dedicated host, you pay for that entire host,
+you don't pay for any instances running on it, and you don't share it with other AWS customers.
+Now EC2 is an availability zone resilient service.
+The reason for this is that hosts themselves run inside a single availability zone.
+So if that availability zone fails, the hosts inside that availability zone could fail,
+and any instances running on any host that fail will themselves fail.
+So as a solutions architect, you have to assume if an AZ fails,
+then at least some, and probably all, of the instances that are running inside that availability zone
+will also fail or be heavily impacted.
+Now let's look at how this looks visually.
+So this is a simplification of the US East One region.
+I've only got two AZs represented, AZ A and AZ B.
+And in AZ A, I've represented that I've got two subnets, subnet A and subnet B.
+Now inside each of these availability zones is an EC2 host.
+Now these EC2 hosts, they run within a single AZ.
+I'm going to keep repeating that because it's critical for the exam.
+When you're thinking about EC2 in the exam, keep thinking about it being an AZ resilient service.
+If you see EC2 mentioned in an exam, see if you can locate the availability zone details
+because that might factor into the correct answer.
+Now EC2 hosts have some local hardware, logically CPU and memory, which you should be aware of,
+but also they have some local storage called the instance store.
+The instance store is temporary.
+If an instance is running on a particular host, depending on the type of the instance,
+it might be able to utilize this instance store.
+But if the instance moves off this host to another one, then that storage is lost.
+And they also have two types of networking, storage networking and data networking.
+When instances are provisioned into a specific subnet within a VPC,
+what's actually happening is that a primary elastic network interface is provisioned in a subnet,
+which maps to the physical hardware on the EC2 host.
+Remember, subnets are also in one specific availability zone.
+Instances can have multiple network interfaces, even in different subnets,
+as long as they're in the same availability zone.
+Everything about EC2 is focused around this architecture,
+the fact that it runs in one specific availability zone.
+Now EC2 can make use of remote storage,
+so an EC2 host can connect to the elastic block store, which is known as EBS.
+The elastic block store service also runs inside a specific availability zone,
+so the service running inside availability zone A is different than the one running inside availability zone B,
+and you can't access them cross-zone.
+EBS lets you allocate volumes, and volumes are portions of persistent storage,
+and these can be allocated to instances in the same availability zone.
+So again, it's another area where the availability zone matters.
+What I'm trying to do by keeping repeating availability zone over and over again
+is to paint a picture of a service which is very reliant on the availability zone that it's running in.
+The host is in an availability zone, the network is per availability zone,
+the persistent storage is per availability zone of those things.
+Now an instance runs on a specific host, and if you restart the instance, it will stay on that host.
+Instances stay on a host until one of two things happen.
+Firstly, the host fails or is taken down for maintenance for some reason by AWS.
+Or secondly, if an instance is stopped and then started, and that's different than just restarting,
+so I'm focusing on an instance being stopped and then being started, so not just a restart.
+If either of those things happen, then an instance will be relocated to another host,
+but that host will also be in the same availability zone.
+Instances cannot natively move between availability zones.
+Everything about them, their hardware, networking and storage, is locked inside one specific availability zone.
+Now there are ways you can do a migration, but it essentially means taking a copy of an instance
+and creating a brand new one in a different availability zone,
+and I'll be covering that later in this section where I talk about snapshots and AMIs.
+What you can never do is connect network interfaces or EBS storage located in one availability zone
+to an EC2 instance located in another.
+EC2 and EBS are both availability zone services, they're isolated.
+You cannot cross AZs with instances or with EBS volumes.
+Now instances running on an EC2 host share the resources of that host,
+and instances of different sizes can share a host,
+but generally instances of the same type and generation will occupy the same host,
+and I'll be talking in much more detail about instance types and sizes and generations
+in a lesson that's coming up very soon.
+But when you think about an EC2 host, think that it's from a certain year
+and includes a certain class of processor and a certain type of memory
+and a certain type and configuration of storage,
+and instances are also created with different generations,
+different versions that utilize specific types of CPU memory and storage.
+So it's logical that if you provision two different types of instances,
+they may well end up on two different types of hosts.
+So a host generally has lots of different instances from different customers
+of the same type, but different sizes.
+So before we finish up this lesson, I want to answer a question.
+That question is what's EC2 good for?
+So what types of situations might you use EC2 for?
+And this is equally valuable when you're evaluating a technical architecture
+or you're answering questions in the exam.
+So first, EC2 is great when you've got a traditional OS and application compute need.
+So if you've got an application that requires to be running on a certain operating system
+with a certain runtime with certain configuration,
+maybe your internal technical staff are used to that configuration,
+or maybe your vendor has a certain set of support requirements,
+EC2 is a perfect use case for this type of scenario.
+And it's also great for any long-running compute needs.
+There are lots of other services inside AWS that provide compute services,
+but many of these have got runtime limits,
+so you can't leave these things running consistently for one year or two years.
+With EC2, it's designed for persistent long-running compute requirements.
+So if you have an application that runs constantly 24-7-365
+and needs to be running on a normal operating system, Linux or Windows,
+then EC2 is the default and obvious choice for this.
+If you have any applications which are server-style applications,
+so traditional applications they expect to be running in an operating system
+waiting for incoming connections,
+then again, EC2 is a perfect service for this.
+And it's perfect for any applications or services
+that need burst requirements or steady-state requirements.
+There are different types of EC2 instances which are suitable
+for low levels of normal load with occasional bursts,
+as well as steady-state load.
+So again, if your application needs an operating system
+and it's got bursty needs or consistent steady-state load,
+then EC2 should be the first thing that you review.
+EC2 is also great for monolithic application stack,
+so if your monolithic application requires certain components,
+a stack, maybe a database, maybe some middleware,
+maybe other runtime-based components,
+and especially if it needs to be running on a traditional operating system,
+EC2 should be the first thing that you look at.
+And EC2 is also ideally suited for migrating application workloads,
+so application workloads which expect a traditional virtual machine
+or server-style environment,
+or if you're performing disaster recovery.
+So if you have existing traditional systems which run on virtual servers
+and you want to provision a disaster recovery environment,
+then EC2 is perfect for that.
+In general, EC2 tends to be the default compute service within AWS.
+There are lots of niche requirements that you might have,
+and if you do have those, there are other compute services
+such as the Elastic Container Service or Lambda.
+But generally, if you've got traditional-style workloads
+or you're looking for something that's consistent,
+or if it requires an operating system, or if it's monolithic,
+or if you're migrating it into AWS,
+then EC2 is a great default first option.
+Now, in this section of the course,
+I'm covering the basic architectural components of EC2,
+so I'm going to be introducing the basics and let you get some exposure to it,
+teaching you all of the things that you'll need for the exam.
+But as you'll see later in the course, AWS is really flexible,
+and there are lots of different options,
+and it's the small, detailed decision points
+that lead you to select EC2 or Lambda or the Elastic Container Service.
+They're important for the exam,
+so I want to make sure that you're 100% confident
+with when and where you would select to use EC2.
+But as a starting point, pick EC2 as the default
+and only move away if you have a specific requirement.
+With that being said, though, that's everything I wanted to cover.
+I've covered the architecture of EC2.
+I've talked about EC2 hosts.
+I hope I've sufficiently mentioned availability zone enough times.
+I don't have an exact count, but it must be in the hundreds.
+I really hope I've got that committed to your memory.
+It's one of the most important points about this whole section of the course,
+is to realize that architecturally,
+EC2 is really tied down to a particular availability zone.
+As a solutions architect,
+you will find that when you're deploying highly available architectures,
+you will make use of this availability zone isolation
+by deploying services into different availability zones
+and load balancing across all those different servers.
+So it's critical that you understand that whilst it might seem limiting at this point,
+if you know that the blast radius of a problem is always going to be isolated to an availability zone,
+then that gives you an element of control that you can design around.
+So it's actually a strength of the product, not a limitation.
+With that being said though, that's everything I wanted to cover in this lesson.
+So go ahead, complete this video and when you're ready, you can join me in the next.

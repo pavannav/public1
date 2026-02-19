@@ -1,0 +1,188 @@
+Welcome back, and in this demo lesson I just want to give you the opportunity to gain some
+practical experience of how S3 handles encryption.
+So what we're going to do is create an S3 bucket, and into that bucket we're going
+to put a number of objects, and for each one we're going to utilise a different type of
+server-side encryption.
+So we'll be uploading one object using SSE-S3, so S3 managed encryption, and then one object
+using SSE-KMS, which will utilise KMS for key management.
+So once we've uploaded those objects, we'll experiment with some permissions changes just
+to see how each of these different encryption types work.
+So let's get started.
+Now the first thing you'll need to check is that you're logged into the IAM admin
+user of the general AWS account, and you need to have the Northern Virginia region selected.
+Then let's move to S3, so click in the services drop-down, type S3, and then open that in
+a new tab, and then click to move to the S3 console.
+Now I want you to go ahead and click on create bucket, and then just create a bucket called
+CatPix, and then put some random text on the end.
+You should use something different and something that's unique to you.
+Leave the region set as US East, Northern Virginia, scroll all the way down to the bottom and
+click on create bucket.
+Next, change across to the key management service console, that will either be in your
+history or you'll have to type it in the services drop-down.
+Once you're here, go ahead and click on create key, pick symmetric key, then expand advanced
+options, make sure KMS is selected as well as single region key, click next.
+The alias we'll be using is CatPix, so type CatPix, then click next.
+Don't select anything for define key administrative permissions, we'll not set any permissions
+on the key policy this time, so just click next.
+And then on this screen, define key usage permissions, just click next again without
+selecting anything.
+So the key policy that's going to be created for this KMS key only trusts the account,
+so it only trusts the account root user of this specific AWS account, and that's what
+we want.
+So go ahead and click on finish.
+Now at this point, move back across to the S3 console, go into the CatPix bucket that
+you've just created, and I want you to go ahead and download the file that's attached
+to this lesson, and then extract that file, and inside the resultant folder are some objects
+that you're going to be uploading to this S3 bucket.
+So go ahead and do that, and then click on upload, add files, then locate the folder
+that you've just extracted, and go into it, and you should see three images in that folder.
+So that's good, so the first one that we want to upload, we need to do these one by one,
+because we're going to be configuring the encryption type to use.
+So the first one is ssc-s3-dweez.jpg, so select that and click on open, expand properties,
+and then scroll down to server-side encryption, and it's here where you can specify to accept
+the bucket defaults by not specifying an encryption key, or you can specify an encryption key.
+Now when you pick to specify an encryption key, you're again offered the ability to
+use the bucket default settings for encryption, or you can override bucket settings and choose
+between two different types, either Amazon S3 key, which is ssc-s3, or AWS Key Management
+Service, which is ssc-kms.
+Now for this upload, we're going to use ssc-s3, so Amazon S3 managed keys, so select this
+option, scroll all the way down to the bottom, and click upload, wait for this upload process
+to complete, and then click on close.
+Now we're going to follow that same process again, so click on upload again, add files,
+this time ssc-kms-gini, so select that, click on open, expand properties, and then scroll
+down to server-side encryption, then click specify an encryption key, override bucket
+settings for default encryption, and this time we're going to use ssc-kms, so select
+that, and then select choose from your AWS KMS keys, and then you can either use the
+AWS managed key, so this is the service default key, so AWS forward slash S3, or you can choose
+your own KMS key to use for this object.
+What I'm going to do first is select this AWS managed key, so the default key for this
+service, then scroll all the way down to the bottom and click on upload, wait for this
+upload process to complete, and then click on close.
+So that will encrypt the object using this default S3 AWS managed KMS key that's now
+inside KMS.
+I wanted to do that just to demonstrate how it automatically creates it.
+So now let's go ahead and re-upload this object, so click on upload, add files, select
+ssc-kms-gini.jpeg and click on open, scroll down, expand properties, scroll down again.
+For server-side encryption, select specify an encryption key, select override bucket
+settings for default encryption, pick AWS key management service key, so ssc-kms, select
+choose from your AWS KMS keys, click in the drop down, and then select cat pics that we
+created earlier.
+Once you've done that, scroll all the way down to the bottom, click on upload, wait
+for that process to complete, and then click on close.
+Now at this point we've got two different objects in this bucket and we're going to
+open both of these.
+We're going to start with ssc-s3-dweeze, so let's click on it and then click on open,
+and that works, and then let's try the other object, ssc-kms-gini, so click on that and
+click on open, and that also opens OK, because IAM admin is a full administrator of the entire
+AWS account, so that includes s3 and all the services, including KMS.
+Next what we're going to do is apply a deny policy on the IAM admin user, which prevents
+from using KMS.
+So we'll stay as being a full account administrator and a full s3 administrator, but we're going
+to block off the KMS service entirely, and I want to demonstrate exactly what that does
+to our ability to open these three objects.
+So click on services, and either open the IAM console from the history or type it in
+the find services box and then click it.
+Once we're here, click on users, select your IAM admin user, click add permissions and
+then create inline policy, click on the JSON tab, and then delete the skeleton template
+that's in this box, and then paste in the contents of the deny KMS.json file, and this
+is contained in the folder you extracted from this lesson's download link, and it's also
+attached to this lesson.
+This is what it should look like.
+The effect is to deny.
+It denies any actions, KMS colon star, so any KMS actions, on all resources.
+So essentially this blocks off the entire KMS service for this user.
+So go ahead and click on review policy, call it deny KMS, and click on create policy, and
+this now means that IAM admin can no longer access KMS.
+So now, if we go back to the S3 console, go inside the CatPix bucket, we should still
+be able to open the SSC-S3 Dweez.jpeg object.
+If we click that and click on open, because this is encrypted using SSC-S3, and this is
+completely internal to the S3 product, we should have no problems opening this object,
+because we have the permissions inside S3 to do anything in S3.
+But something different happens if we try to open the SSC-KMS-GINI object.
+Now just to explain what will occur when I click on this open link, S3 will then have
+to liaise with KMS and get KMS to decrypt the data encryption key that encrypts this
+object.
+So we need to retrieve the encrypted data encryption key for this object and request
+that KMS decrypts it.
+Now if that worked, we'd get back the plain text version of that key and we would use
+it to decrypt this object and it would open up in a tab without any issues.
+Because we've got full rights over S3, we have permission to do almost all of that process.
+But what we don't have permission to do is to actually get KMS to decrypt this encrypted
+data encryption key.
+We don't have that permission because we just added a deny policy to the iamadmin user.
+And as we know by now, deny allow deny, deny always wins and explicit deny always overrules
+everything else.
+So when I click on open and S3 retrieves this encrypted data encryption key and gives it
+to KMS and says please decrypt this and give me the plain text back, KMS is going to refuse.
+And what we see when we do that is we get an access denied.
+So now we've implemented this role separation.
+So even though we have full S3 admin rights, so if I went back to this bucket and I clicked
+on the SSC KMS Gini file and deleted it, I would be able to delete that object because
+I have full control over S3.
+But I can't open it because I've prevented us accessing KMS.
+And that's how we implement role separation.
+So SSC-KMS is definitely the encryption type that you want to use if you've got these really
+extensive regulations or any security requirements around key control.
+So let's go ahead and just remove that restriction.
+So just go back to the iam console.
+I just want to do this before we forget and have problems later in the course.
+Click on users, click on iamadmin, check the box next to deny KMS and then click remove
+and confirm that removal and that will allow us to access KMS again.
+We can verify that by moving to the KMS console and we can bring up this list which proves
+that we've got some access to KMS again.
+So that's good.
+Now if we just go ahead and click on the AWS managed keys option on the left here, this
+is where you'll be able to see this default encryption key that's used when you upload
+an object using SSC-KMS encryption, but don't pick a particular key.
+So this is now the default.
+Now if we open this, because it's an AWS managed key, we don't have the ability to set any
+key rotation.
+We can see the key policy here, but we can't make any changes to it.
+This is set by AWS when it creates it so that it only allows accesses from S3.
+So this is a fixed key policy, but we can't control anything about this key.
+Now contrast that with the customer managed keys that we've got.
+And if we go into CatPix, this is the key that we created.
+Now we can edit the key policy, we could switch to policy view and make changes, and we've
+got the ability to control the key rotation.
+So if you face any exam questions where you need to fully manage the keys that are used
+as part of the S3 encryption process, then you've got to use SSC-KMS.
+Now if we just return to the S3 console, there's just one more thing that I want to demonstrate.
+Go into the CatPix bucket again, click on properties, locate default encryption and
+then click on edit.
+And this is where you get the option to specify the default encryption to use for this bucket.
+Now again, this isn't a restriction.
+This does not prevent anyone uploading objects to the bucket using a different type of encryption.
+All it does is specify what the default is if the upload itself does not specify an encryption
+method.
+So we could select Amazon S3 key, which is SSC-S3, and you might also see this referred
+to elsewhere as AES-256, it's also known by that name.
+But we could also select the AWS Key Management Service key, known as SSC-KMS, and this is
+where we can either choose to use the default key or pick a customer managed key that we
+want to use as the default for the bucket.
+So let's just demonstrate that.
+Go ahead and select the CatPix key to use for this bucket.
+Then scroll down and click on save changes and that will set the defaults for the bucket.
+And we can demonstrate that.
+Let's go ahead and click on the objects tab and we're going to upload a new object to
+this bucket.
+So click on upload, add files, then go ahead and select the default hyphen Merlin object
+and click open, scroll down, click on upload.
+And even though we didn't pick a particular encryption method for this object, it's going
+to use the default settings that we picked for the bucket.
+And now we can see that default hyphen Merlin dot JPEG object has been uploaded.
+So if we open up default hyphen Merlin, we can see it's using SSC-KMS as the server side
+encryption type, and it's using the KMS key that we set in the default encryption settings
+on the bucket.
+Okay, well that's everything I wanted to cover in this demo lesson.
+So let's just tidy up to make sure that we don't experience any charges.
+Go back to the Amazon S3 console, select the bucket that you created and then click on
+empty.
+You'll need to confirm to empty that bucket.
+Once that process is completed and the bucket's emptied and then follow that same process,
+but this time click on delete to delete the bucket from your AWS account.
+Click on key management service and we'll just mark the key that we created for deletion.
+So select customer managed keys, select cat pics, click on key actions, schedule key deletion,
+set this to seven which is the minimum, check the box and click on schedule deletion.
+With that being said though, that's everything I wanted to cover in this demonstration.
+I hope it's been fun and useful.
+Go ahead, mark this video as complete and when you're ready, I'll see you in the next.

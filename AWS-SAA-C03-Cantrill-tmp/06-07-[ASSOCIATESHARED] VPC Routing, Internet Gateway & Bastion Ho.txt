@@ -1,0 +1,254 @@
+Welcome back, and in this lesson I want to talk about how routing works within a VPC
+and introduce the Internet Gateway, which is how we can configure a VPC so that data can exit to
+and enter from the AWS Public Zone and Public Internet.
+Now this lesson will be Theory, where I'm going to introduce routing and the Internet Gateway,
+so the architecture behind both those things, as well as Jump Boxes, also known as Bastion Hosts.
+In the demo lesson, which immediately follows this one, you'll get the opportunity to implement
+an Internet Gateway yourself in the Animals for Life VPC,
+and fully configure the VPC with public subnets that allow you to connect to that Jump Box.
+So let's get started, we've got a lot to cover.
+A VPC router is a highly available device, which is present in every VPC, both default or custom,
+which moves traffic from somewhere to somewhere else.
+It runs in all of the availability zones that the VPC uses, you never need to worry about its availability,
+it simply works.
+The router has a network interface in every subnet in your VPC, the network plus one address of the subnet.
+By default, in a custom VPC, without any other configuration,
+the VPC router simply routes traffic between subnets in that VPC.
+If an EC2 instance in one subnet wants to communicate with something in another subnet,
+the VPC router is the thing that moves the traffic between the two.
+Now the VPC router is controllable, you create route tables,
+which influence what to do with traffic when it leaves a subnet.
+So just to be clear, the route table that's associated with a subnet
+defines what the VPC router will do when data leaves that subnet.
+A VPC is created with what's known as a main route table.
+If you don't explicitly associate a custom route table with a subnet,
+it uses the main route table of the VPC.
+If you do associate a route table that you create with a subnet,
+then when you associate that, the main route table is disassociated.
+A subnet can only have one route table associated with it at any one time,
+but a route table can be associated with many subnets.
+A route table looks like this in the user interface.
+In this case, this is the main route table for this specific VPC.
+And a route table is just a list of routes.
+This is one of those routes.
+When traffic leaves the subnet that this route table is associated with,
+the VPC router reviews the IP packets.
+And remember, I said that a packet had a source address
+and a destination address as well as some data.
+Well, the VPC router looks at the destination address
+of all packets leaving this subnet.
+And when it has that address, it looks at the route table
+and it identifies all of the routes which match that destination address.
+And it does that by checking the destination field of a route.
+This destination field determines what destination the route matches.
+Now, the destination field on a route could match exactly one specific IP address.
+It could be an IP with a slash 32 prefix.
+And remember, that means that it matches one single IP.
+But the destination field on a route could also be a network match,
+so matching an entire network of which that IP is part.
+Or it could be a default route.
+Remember for IP version 4, I mentioned that 0.0.0.0.0 matches all IP version 4 IP addresses.
+That's known as a default route, a catch-all.
+In the case where traffic leaving a subnet only matches one route,
+then that one route is selected.
+If multiple routes match, so maybe there's a specific slash 32 IP match,
+maybe there's a slash 16 network match,
+and maybe there is a 0.0.0.0 slash 0 default match,
+well then the prefix is used as a priority.
+The higher the prefix value, the more specific the route is,
+and the higher priority that that route has.
+So the higher the prefix, all the way up to the highest priority of slash 32,
+that is used to select which route applies when traffic leaves a subnet.
+Once we get to the point where a single rule in a route table is selected,
+either the sole route that applies or the one with the highest priority,
+then the VPC router forwards that traffic through to its destination,
+which is determined by the target field on the route.
+And the target field will either point at an AWS gateway,
+or it will say, as with this example, local.
+And local means that the destination is in the VPC itself,
+so the VPC router can forward the traffic directly.
+All route tables have at least one route, the local route.
+This matches the VPC sider range,
+and it lets the VPC router know that traffic destined for any IP address
+in the VPC sider range is local, and it can be delivered directly.
+If the VPC is also IP version 6 enabled,
+it will also have another local route matching the IP version 6 sider for the VPC,
+as is the case with this example.
+That bottom route, beginning 2600, that is an IP version 6 local route.
+That's the IP version 6 sider of this specific VPC.
+Now, these local routes can never be updated.
+They're always present, and the local routes always take priority.
+They're the exception to that previous rule
+about the more specific the route is, the higher the priority.
+Local routes always take priority.
+For the exam, remember that route tables are attached to zero or more subnets,
+a subnet has to have a route table.
+It's either the main route table of the VPC or a custom one that you've created.
+A route table controls what happens to data as it leaves the subnet or subnets
+that that route table is associated with.
+Local routes are always there, uneditable,
+and match the VPC IP version 4 or 6 sider range.
+For anything else, higher prefix values are more specific, and they take priority.
+The way that a route works is it matches a destination IP,
+and for that route, it directs traffic towards a specific target.
+Now, a default route, which I'll talk about shortly,
+is what happens if nothing else matches.
+Now, an internet gateway is one of the most important add-on features available within a VPC.
+It's a regionally resilient gateway, which can be attached to a VPC.
+I've highlighted the words region and resilient
+because it always comes up in the exam.
+You do not need a gateway per availability zone.
+The internet gateway is resilient by design.
+One internet gateway will cover all of the availability zones in the region,
+which the VPC is using.
+Now, there's a one-to-one relationship between internet gateways and the VPC.
+A VPC can have no internet gateways, which makes it entirely private,
+or it can have one internet gateway.
+Those are the two choices.
+An internet gateway can be created and not attached to a VPC,
+so it can have zero attachments,
+but it can only ever be attached to one VPC at a time,
+at which point it's valid in all of the availability zones that the VPC uses.
+Now, the internet gateway runs from the border of the VPC and the AWS public zone.
+It's what allows services inside a VPC,
+which are allocated with public IPv4 addresses or IPv6 addresses
+to be reached from the internet
+and to connect to the AWS public zone or the internet.
+And, of course, the AWS public zone is used if you're accessing S3,
+SQS, SNS, or any other AWS public services from your VPC.
+Now, it's a managed gateway, and so AWS handles the performance.
+From your perspective as an architect, it simply works.
+Now, using an internet gateway within a VPC, it's not all that complex.
+Here's a simplified VPC diagram.
+First, we create and attach an internet gateway to a VPC.
+This means that it's available for use inside the VPC.
+We can use it as a target within route tables.
+So then we create a custom route table, and we associate it with the web subnet.
+Then we add IPv4 and, optionally, IPv6 default routes to the route table,
+with the target being the internet gateway.
+Then, finally, we configure the subnet to allocate IPv4 addresses
+and, optionally, IPv6 by default.
+And at that point, once we've done all of those actions together,
+the subnet is classified as being a public subnet.
+And any services inside that subnet with public IP addresses
+can communicate to the internet and vice versa,
+and they can communicate with the AWS public zone
+as long as there's no other security limitations that are in play.
+Now, don't worry if this seems complex.
+You'll get to experience it shortly in the upcoming demo lesson.
+But before that, I want to talk about how IPv4 addressing actually works inside a VPC,
+because I've seen quite a few difficult questions on the exam
+based around IPv4 addressing, and I want to clarify exactly how it works.
+So, conceptually, this is how an EC2 instance might look if it's using IPv4
+to communicate with a software update server of some kind.
+So we've got the instance on the left with an internet gateway in between,
+and let's say it's a Linux EC2 instance trying to do some software updates
+to a Linux update server that's located somewhere in the public internet zone.
+So the instance has a private IP address of, let's say, 10.16.16.20,
+and it also has an IPv4 public address that's assigned to it of 43.250.192.20.
+Only, that's not how it really works.
+This is another one of those little details which I try to include in my training courses
+because it really comes invaluable for the exam.
+What actually happens with public IPv4 addresses
+is that they never touch the actual services inside a VPC.
+Instead, when you allocate a public IPv4 address, for example, to this EC2 instance,
+a record is created which the internet gateway maintains.
+It links the instance's private IP to its allocated public IP.
+So the instance itself is not configured with that public IP.
+That's why when you make an EC2 instance and allocate it a public IPv4 address,
+inside the operating system, it only sees the private IP address.
+Keep this in mind for the exam.
+There are questions which will try to trip you up on this one.
+For IPv4, it is not configured in the OS with the public IP address.
+So let's look at the flow of data. How does this work?
+Well, when the Linux instance wants to communicate with the Linux Software Update Server,
+it creates a packet of data.
+Now, obviously, it probably creates a lot of packets,
+but let's focus on one for now because it keeps the diagram nice and simple.
+The packet has a source address of the EC2 instance
+and a destination address of the Linux Software Update Server.
+So at this point, the packet is not configured with any public addressing.
+This packet would not be routable across the public Internet.
+It could not reach the Linux Update Server.
+That's really important to realize.
+Now, the packet leaves the instance,
+and because we've configured a default route, it arrives at the Internet Gateway.
+The Internet Gateway sees that this packet is from the EC2 instance
+because it analyzes the source IP address of that packet,
+and it knows that this instance has an associated public IP version 4 address,
+and so it adjusts the packet.
+It changes the packet's source IP address to the public IP address
+that's allocated to that instance,
+and this IP address, because it's public, is routable across the Internet.
+So the Internet Gateway then forwards the updated packet onto its destination.
+So as far as the Linux Software Update Server is concerned,
+it's receiving a packet from a source IP address of 43.250.192.20.
+It knows nothing of the private IP address of this EC2 instance.
+Now, on the way back, the inverse happens.
+The Linux Software Update Server wants to send a packet back to our EC2 instance,
+but as far as it's concerned, it doesn't know about the private address.
+It just knows about the public address.
+So the Software Update Server sends a packet back
+addressed to the instance's public IP address with its source address.
+So it thinks that the real IP address of the instance is this 43.250.192.20 address.
+Now, this IP address actually belongs to the Internet Gateway,
+and so it travels over the public Internet,
+and it arrives at the Internet Gateway, which then modifies this packet.
+It changes it. It changes the destination address of this packet
+from the 43 address to the original IP address of the EC2 instance,
+and it does this because it's got a record of the relationship
+between the private IP and the allocated public IP.
+So it just changes the destination to be the private IP address of the instance,
+and then it forwards this packet through the VPC network to the original EC2 instance.
+So the reason I wanted to highlight this is because at no point
+is the operating system on the EC2 instance aware of its public IP.
+It just has a private IP.
+Don't fall for any exam questions which try to convince you
+to assign the public IP version 4 address of an EC2 instance directly to the operating system.
+It has no knowledge of this public address.
+Configuring an EC2 instance appropriately using IP version 4
+means putting the private IP address only.
+The public address never touches the instance.
+For IP version 6, all addresses that AWS uses are natively publicly routable,
+and so in the case of IP version 6, the operating system does have
+the IP address version 6 address configured on it.
+That's the publicly routable address, and all the Internet Gateway does
+is pass traffic from an instance to an Internet server and then back again.
+It doesn't do any translation.
+Before we implement this in the demo lesson, I just want to briefly touch upon
+bastion hosts and jump boxes.
+At a high level, bastion hosts and jump boxes are one and the same.
+Essentially, it is just an instance in a public subnet inside a VPC,
+and architecturally, they're used to allow incoming management connections.
+So all incoming management connections arrive at a bastion host or jump box,
+and then once connected, you can then go on to access internal only VPC resources.
+So bastion hosts and jump boxes are generally used either as a management point
+or as an entry point for private only VPCs.
+So if your VPC is a highly secure private VPC, you'll generally have a bastion host
+or a jump box being the only way to get access to that VPC.
+So it's essentially just an inbound management point,
+and you can configure these bastion hosts or jump boxes to only accept connections
+from certain IP addresses, to authenticate with SSH,
+or to integrate with your on-premises identity servers.
+You can configure them exactly how you need, but at a real core architectural level,
+they are generally the only entry point to a highly secure VPC.
+And historically, they were the only way to manage private EC2 instances.
+Now, there are alternative ways to do that now,
+but you will still find bastion hosts and jump boxes do feature on the exam.
+OK, so that's all of the theory that I wanted to cover in this lesson.
+It's now time for a demo.
+In the next lesson, we're going to implement the Internet Gateway in the Animals for Life VPC.
+We'll create it, we'll attach it to the VPC,
+we'll create a custom route table for the web subnets,
+we'll create two routes in that route table,
+one for IP version 4 and one for IP version 6,
+and both of these will point at the Internet Gateway as a target.
+We'll associate that route table with the web tier subnets,
+configure those subnets to allocate public IP version 4 addresses,
+and then launch a bastion host into one of those web subnets.
+And if all goes well, we will be able to connect to that instance using our SSH application.
+So I think this demo lesson is going to be really interesting and really exciting,
+and it's the first time that we're going to be stepping through something together
+that we could qualify as production-like.
+It's something that you could implement and would implement in a production-ready VPC.
+So go ahead, complete this video, and when you're ready, join me in the demo lesson.

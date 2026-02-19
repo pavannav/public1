@@ -1,0 +1,195 @@
+Welcome back, and in this lesson I want to cover some networking theory related to EC2 instances.
+I want to talk about network interfaces, instance IPs and instance DNS.
+EC2 is a feature-rich product and there's a lot of nuance in the way that you can connect to it and interact with it.
+So it's important that you understand exactly how interfaces, IPs and DNS work.
+So let's get started and take a look.
+Architecturally, this is how EC2 looks.
+We have an EC2 instance and it always starts off with one network interface.
+And this interface is called an ENI, an elastic network interface.
+And every EC2 instance has at least one, which is the primary interface or primary ENI.
+Now optionally, you can attach one or more secondary elastic network interfaces,
+which can be in separate subnets, but everything needs to be within the same availability zone.
+Remember EC2 is isolated in one availability zone, so this is important.
+An instance can have different network interfaces in separate subnets,
+but all of those subnets need to be in the same availability zone.
+In this case, availability zone A.
+Now these network interfaces have a number of attributes or things which are attached to them.
+This is important because when you're looking at an EC2 instance using the console UI,
+these are often presented as being attached to the instance itself.
+So you might see things like IP addresses or DNS names and they appear to be attached to the instance.
+But when you're interacting with the instance from a networking perspective,
+you're often seeing elements of the primary network interface.
+So when you launch an instance with security groups, for instance,
+those security groups are actually on the network interface, not the instance.
+But let me expand on this a little bit and just highlight some of the things that are actually attached to the network interfaces.
+First, network interfaces have a MAC address, and this is the hardware address of the interface,
+and it's visible inside the operating system, so it can be used for things like software licensing.
+Each interface also has a primary IP version 4 private address
+that's from the range of the subnet that the interface is created in.
+So when you select a VPC and a subnet for an EC2 instance,
+what you're actually doing is picking the VPC and the subnet for the primary network interface.
+Now you can have zero or more secondary private IP addresses also on the interface.
+You can have zero or one public IP addresses associated with the interface itself,
+and you can also have one elastic IP address per private IP version 4 address.
+Now elastic IP addresses are public IP version 4 addresses,
+and these are different than normal public IP version 4 addresses where it's one per interface.
+With elastic IP addresses, you can have one public elastic IP address per private IP address on this interface.
+You can have zero or more IP version 6 addresses per interface,
+and remember these are by default publicly routable,
+so with IP version 6 there's no definition of public or private addresses, they're all public addresses.
+And then you can have security groups, and security groups, these are applied to network interfaces,
+so a security group that's applied on a particular interface will impact all IP addresses on that interface.
+That's really important architecturally because if you're ever in a situation
+where you need different IP addresses for an instance impacted by different security groups,
+then you need to create multiple interfaces with those IP addresses separated
+and then apply different security groups to each of those different interfaces.
+Security groups are attached to interfaces.
+And then finally, per interface, you can also enable or disable the source and destination check.
+This means that if traffic is on the interface, it's going to be discarded
+if it's not from one of the IP addresses on the interface as a source
+or destined to one of the IP addresses on the interface as a destination.
+So if this is enabled, traffic is discarded if it doesn't match one of those conditions.
+So if you recall when I talked about NAT instances,
+this is the setting that you need to disable for an EC2 instance to work as a NAT instance.
+So this check needs to be switched off.
+Now depending on the type of EC2 instance that you provision, you can have additional secondary interfaces.
+The exact number depends on the instance.
+But at a high level, the capabilities of the secondary interfaces are the same as the primary,
+except that you can detach secondary interfaces and move them to other EC2 instances.
+So that is a critical difference, and that does bring with it some additional capabilities.
+So let's explore some of these ENI attributes and attachments in a little bit more detail.
+Let's assume for this example that this instance receives a primary IP version 4
+private IP address of 10.16.0.10.
+This is static, and it doesn't change for the lifetime of the instance.
+Now the instance is also given a DNS name that's associated with this private address.
+It has a logical format, so it starts off with IP, so the letters I and P, and then a hyphen,
+and then it's got the private IP address separated by hyphens rather than periods,
+and then .ec2.internal.
+And this IP is only resolvable inside the VPC, and it always points at this private IP address,
+so this internal IP address.
+So you can use this private DNS name for internal communications only inside the VPC.
+Now assuming that the instance is either manually set to receive a public IP version 4 address,
+or that it's launched with the default settings into a subnet,
+which is configured to automatically allocate IP version 4 public addresses,
+then it will get one. So it will get an IP version 4 public IP.
+But this is a dynamic IP. It's not fixed.
+If you stop and start an instance, its public IP address will change.
+Specifically, when you stop an instance, the public IP version 4 address is deallocated,
+and when you start an instance again, it is allocated a brand new public IP version 4 address,
+and it will be a different one.
+Now if you just restart the instance, so not stop and then start, but just perform a restart,
+that won't change the IP address, because it's only stopping it and then starting it again
+that will cause that change.
+But in addition, anything that makes that instance change between EC2 hosts will also cause an IP change.
+For this public IP version 4 address, EC2 instances are also allocated a public DNS name,
+and generally it's very similar to this format, so it starts with EC2 and then a hyphen,
+and then the IP address with hyphens rather than dots, and then something similar to this,
+so compute-1.amazonaws.com.
+Now this might differ slightly, but generally the public DNS follows this format.
+Now what's special about this public DNS name is that inside the VPC,
+it will resolve to the primary private IP version 4 address of the instance,
+so the primary network interface.
+Remember how VPC works, this public IP version 4 IP address is not directly attached to the instance
+or any of the interfaces, it's associated with it and the internet gateway handles that translation,
+and so in order to allow instances in a VPC to use the same DNS name
+and to make sure they're always using the private addresses inside the VPC,
+it always resolves to the private address.
+Outside of the VPC, the DNS will resolve to the public IP version 4 address of that instance,
+so that's important to know and that will come up later on in the course when we're doing hybrid network design.
+It allows you to specify one single DNS name for an instance
+and have that traffic resolved to an internal address inside AWS
+and an external IP outside AWS, so it simplifies the discoverability of your instances.
+Now elastic IP addresses are something that I want to introduce now,
+and then in the next demo lesson you'll get to experiment with them.
+Elastic IP addresses are something that's allocated to your AWS account.
+When you allocate an elastic IP, you can associate the elastic IP with a private IP
+either on the primary interface or a secondary interface.
+If you do associate it with the primary interface, then as soon as you do that,
+the normal, so the non-elastic IP version 4 address that the instance had,
+that's removed and the elastic IP becomes the instances new public IP version 4 address.
+So if you assign an elastic IP to an instance, under most circumstances,
+the instance will lose its non-elastic public address.
+If you remove that elastic IP address, it will gain a new public IP version 4 address.
+That's a question that comes up in the exam all the time.
+If an instance has a non-elastic public IP and you assign an elastic IP and then remove it,
+is there any way to get that original IP back?
+And the answer is no, there's not.
+When you assign an elastic IP, it loses that original dynamic public IP version 4 address.
+If you remove the elastic IP, it gets a new one, but it's completely different.
+Now I know that this is a lot of theory, but this is really important from a networking perspective.
+So you need to try and become really clear with what I've talked about on this slide.
+So instances have one or more network interfaces, a primary and optionally secondaries,
+and then for each network interface, just make sure that you're certain about what IP addressing it has.
+So a primary private IP address, secondary private IP addresses,
+optionally one public IP version 4 address, and then optionally one or more elastic IP addresses.
+So become familiar with exactly what these mean.
+And again, in the next demo lesson, you'll get a chance to experiment and understand exactly how they work.
+But before we move on, I want to talk about some exam power-ups.
+This is an important area of AWS, and so there are a number of hints and tips that I can give you for the exam.
+So let's take a look at some of those.
+Now my first tip is to talk about secondary elastic network interfaces and their MAC addresses.
+So this is a really useful technique.
+A lot of legacy software is actually licensed using a MAC address.
+A MAC address is viewed as something static that doesn't change.
+But because EC2 is a virtualized environment, then we can swap and change elastic network interfaces.
+And so if you provision a secondary elastic network interface on an instance
+and use that secondary network interface's MAC address for licensing,
+well, that means that you can detach that secondary interface and attach it to a new instance
+and move that licensing between EC2 instances.
+So that's really powerful.
+Something else to keep in mind is that multiple interfaces can be used for multi-homed systems.
+So an instance with an ENI in two different subnets.
+You might use one for management and one for data.
+It gives you some flexibility.
+And why you might use multiple interfaces rather than just multiple IPs
+is that security groups are attached to interfaces.
+So as I mentioned earlier in this lesson, if you need different rules,
+so different security groups for different IPs or different rules for different types of access
+based on IPs your instance has, then you need multiple elastic network interfaces
+with different security groups on each.
+When you interact with an instance and apply security groups,
+if you're doing it on an instance level, you're generally interacting with the primary elastic network interface.
+In many ways, you can almost think of the primary interface as the instance in a way.
+But they are separate things. When you get down to the deep technical level,
+they are separate things and it's the interfaces that generally have a lot of the configuration on them.
+One really important point about EC2 IP addressing that I keep stressing for the exam,
+I even covered this in a previous lesson of the course,
+is that the operating system never sees the IP version 4 public address.
+This is provided by a process called NAT, which is performed by the internet gateway.
+And so as far as the operating system's concerned, you always configure the private IP version 4 address on the interface.
+Always. Inside the OS, it has no visibility on the networking configuration of the public IP address.
+You will never be in a situation where you need to configure Windows or Linux with the IP version 4 public address.
+The IP version 6 is different because they're all public.
+But for the exam, just remember this. Really, really remember it.
+You never configure a network interface inside an operating system with a public IP version 4 address inside AWS.
+The normal IP version 4 public IP address that EC2 instances are provided with is dynamic.
+If you stop an instance, that IP is de-allocated.
+If you start an instance again, a new IP version 4 public IP address is allocated in its place.
+Restarting an instance is fine, but if you do stop and start, or if there's a forced migration of an instance between hosts,
+the normal IP version 4 public IP address will change.
+To avoid this, you need to allocate and assign an elastic IP address.
+Finally, and this will help you later on in the course and for the exam,
+the public DNS, which is given to the instance for the public IP version 4 address,
+this will resolve to the primary private IP version 4 address from within the VPC.
+And this is done so that if you've got instance-to-instance communication using this address inside the VPC,
+it never leaves the VPC.
+So it doesn't have to go out to the internet gateway and then back again when you're communicating
+between two EC2 instances using this public DNS.
+Everywhere else, this public DNS resolves to the public IP version 4 IP address.
+Remember this for the exam and remember it later in the course when I'm talking about technologies such as VPC peering,
+because you'll need to know exactly how this works.
+So inside the VPC, the public DNS resolves to the private IP.
+Outside the VPC, it will resolve to the public IP address.
+Now I know that has been a lot of theory.
+Don't worry, I promise you as we continue moving through the course,
+all of these really theoretical concepts that I'm talking about in these dedicated theory lessons,
+they will start to click when you start using this technology.
+We've already experienced this a little bit when we started provisioning EC2 instances or using NAT gateways.
+You've seen how some of the theory is applied by AWS products and services.
+So don't worry, it will click as we move through the course.
+It's my job to make sure that information sticks,
+but I do need to teach you some raw theory occasionally as we go through the course.
+And this has been one of those lessons.
+Do your best to remember, but it will start sticking when we start getting practical exposure.
+But at this point, that's everything I wanted to cover.
+So go ahead, mark this video as complete and when you're ready, you can join me in the next.

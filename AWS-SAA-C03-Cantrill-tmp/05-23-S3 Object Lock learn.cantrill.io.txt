@@ -1,0 +1,109 @@
+Welcome back, and in this lesson I want to talk about S3 Object Lock.
+Now this is something which is really important to understand for the SysOps certification,
+but equally if you're developing applications running in AWS or architecting solutions for AWS,
+you also need to have an awareness.
+Now we've got a fair amount to cover, so let's jump in and get started.
+S3 Object Lock is actually a group of related features which I'll talk about in this lesson.
+But it's something that you enable on new S3 buckets.
+If you want to turn on Object Lock for existing buckets, then you need to contact AWS support.
+And this is probably going to change over time, but at the time of creating this lesson, this is the current situation.
+Now when you create a bucket with Object Lock enabled, versioning is also enabled on that bucket.
+Once you create a bucket with Object Lock and enable it, you cannot disable Object Lock or suspend versioning on that bucket.
+Object Lock implements a write-once-read-many architecture, and this is known as Worm.
+It means that you can set it so that object versions, once created, can't be overwritten or deleted.
+And just to reiterate, since this is a pretty important point, the feature requires versioning to be enabled on a bucket,
+and because of this, it's actually individual object versions which are locked.
+Now when we talk about Object Lock, there are actually two ways it manages object retention.
+Retention periods and legal holds.
+An object version can have both of these, one or the other, or none of them.
+And it's really important for the exam and for the real world to think of these as two different things.
+So S3 Object Lock Retention and S3 Object Lock Legal Hold.
+Now just like with bucket default encryption settings, these can be defined on individual object versions,
+or you can define bucket defaults for all of the Object Lock features.
+Now this is just the feature at a high level.
+Next, I want to quickly step through the key points of the different retention methods, so Retention Period and Legal Hold.
+And we're going to start with Retention Period.
+With the Retention Period style of Object Locking, when you create the Object Lock,
+you specify a retention period in days and or years.
+One year means the retention period will end one year from when it's applied.
+Now there are two modes of Retention Period Lock which you can apply,
+and it's really, really important that you understand how these work and the differences between the two.
+One, because it matters for the exam, and two, because if you get it wrong, it will cause a world of pain.
+The first mode is Compliance Mode.
+If you set a retention period on an object using Compliance Mode,
+it means that an object version cannot be deleted or overwritten for the duration of the retention period.
+But it also means that the retention period itself cannot be reduced,
+and the retention mode cannot be adjusted during the retention period.
+So no changes at all to the object version or retention period settings, and this even includes the account root user.
+So no identity in the account can make any changes to object versions, delete object versions,
+or change the retention settings until the retention period expires.
+So this is serious business. This is the most strict form of Object Lock.
+Don't set this unless you really want that object version to stay around in its current form until the retention period expires.
+Now you'd use this mode, as the name suggests, for compliance reasons.
+An example of this might be medical or financial data.
+If you have compliance laws stating that you have to keep data, for example, for three years with no exceptions,
+then this is the mode that you set.
+Now a less strict version of this is Governance Mode.
+With this mode, you still set a retention period, and while active, the object version cannot be deleted or changed in any way.
+But you can grant special permissions to allow these to be changed.
+So if you want a specific group of identities to be able to change settings and object versions,
+then you can provide them with the permission S3 colon Bypass Governance Retention.
+And as long as they have that permission and they provide a header along with their request,
+which is X hyphen AMZ hyphen Bypass hyphen Governance hyphen Retention colon True,
+then they can override the Governance Mode of Retention.
+Now an important point to understand is this last header, so X hyphen AMZ hyphen and then all the rest.
+This is actually the default for the Console UI.
+And so using the Console UI, if you have the S3 colon Bypass Governance Retention,
+you will be able to make changes to Governance Mode retention locks.
+So Governance Mode is useful for a few things.
+One, if you want to prevent accidental deletion.
+Two, if you have process reasons or governance reasons to keep object versions.
+Or lastly, you might use it as a test of settings before picking the Compliance Mode.
+So that's Governance Mode.
+These are both modes that can be used when using the Retention Period feature of S3 Object Locking.
+So please make sure you understand how they both work and the differences between the two
+before we finish with this lesson.
+It's really, really critical that you understand.
+Now the last overview that I want to give is S3 Object Lock Legal Hold.
+With this type, you don't actually set a retention period at all.
+Instead, for an object version, you set Legal Hold to be on or off.
+To repeat, there's no concept of retention.
+This is a binary. It's either on or off.
+While Legal Hold is enabled, on an object version, you can't delete or overwrite that specific object version.
+An extra permission is required, which is S3 colon Put Object Legal Hold.
+And this is required if you want to add or remove the Legal Hold feature.
+And this type of object locking can be used to prevent accidental deletions of object versions
+or for actual legal situations when you need to flag specific object versions as critical for a given case or a project.
+Now at this point, let's take a moment to summarize and look visually at how all of these different features work.
+Let's start with Legal Hold.
+We start with a normal object and we upload it to a bucket with the setting Legal Hold Status to on.
+And this means that the object version is locked until the legal hold is removed.
+In this state, the object version can't be deleted or changed, but you can set the Legal Hold Status to off,
+at which point normal permissions apply and the object version can be deleted or replaced as required.
+It's a binary, it's either on or off, and there isn't the concept of a retention period.
+Next we have the S3 object locks that use the retention period architecture.
+First we have Governance, so we put an object into a bucket with the lock configuration of Governance and specify a retention period.
+This creates a locked object version for a given number of days or years.
+And while it's in this state, it cannot be deleted or updated.
+With Governance mode, this can be bypassed if you have the permissions and specify the correct header.
+And once again, this header is the default in the console, so you can adjust or remove the object lock or delete or replace the object version.
+So the important thing to realize here is while an object is locked for a given retention period using the Governance mode,
+you can't make any changes to object versions or delete them, but you can be provided with the S3 colon bypass Governance retention permission.
+And as long as you have that and specify the x-amz-bypass-governance-retention colon true header,
+then you can override the Governance mode object lock during the retention period.
+Then lastly we have Compliance, which is the same architecture.
+We upload an object, we specify Compliance mode together with the retention period,
+and this creates an object version which is locked for a certain period in days and years.
+The difference though is that this can't be changed.
+An object version can't be deleted or updated, the retention period cannot be shortened,
+the compliance model can't be changed to something else, even by the account root user.
+This is permanent. Only once the retention period expires can the object version or the retention settings be updated.
+And for all of these they can be set on object versions or bucket defaults can be defined.
+And that's the architecture of S3 object lock. It's critical that you understand it,
+so if it takes a few watches of this lesson then that's okay.
+Make sure you understand it in detail, including how each type differs from the others.
+And remember they can be used in conjunction with each other, so the effects can overlap.
+You might use Legal Hold together with either Governance or Compliance,
+and if you do then the effects of this could overlap, so you need to understand all of this in detail.
+But at this point that's everything I wanted to cover in this lesson,
+so go ahead and complete the video, and when you're ready I'll look forward to you joining me in the next.

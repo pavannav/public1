@@ -1,0 +1,64 @@
+Welcome back. In this video we're going to be covering EBS encryption, something that's really important for the real world and for most AWS exams.
+Now EBS volumes, as you know by now, are block storage devices presented over the network.
+These volumes are stored in a resilient, highly available way inside an availability zone.
+But, at an infrastructure level, they're stored on one or more physical storage devices.
+By default, no encryption is applied, so the data is persisted to disk exactly as the operating system writes it.
+If you write a cat picture to a drive or a mount point inside your instance, the plain text of that cat picture is written to one or more raw disks.
+Now this obviously adds risk and a potential physical attack vector for your business operations, and EBS encryption helps to mitigate this risk.
+EBS encryption provides at-rest encryption for volumes and for snapshots, so let's take a look at how it works architecturally.
+EBS encryption isn't all that complex an architecture when you understand KMS, which we've already covered.
+Without encryption, the architecture looks at a basic level like this.
+So we have an EC2 host running in a specific availability zone, and running on this host is an EC2 instance using an EBS volume for its boot volume.
+And without any encryption, the instance generates data and this is stored on the volume in its plain text form.
+So if you're storing any cats or chicken pictures on drives or mount points inside your EC2 instance, then by default that plain text is stored at-rest on the EBS volumes.
+Now when you create an encrypted EBS volume initially, EBS uses KMS and a KMS key, which can either be the EBS default AWS managed key,
+so this will be called AWS forward slash service name, in this case EBS, or it can be a customer managed KMS key that you create and manage.
+That key is used by EBS when an encrypted volume is created.
+Specifically, it's used to generate an encrypted data encryption key known as a DEK, and this occurs with the generate data key without plain text API call.
+So you just get the encrypted data encryption key, and this is stored with the volume on the raw storage.
+It can only be decrypted using KMS, and assuming that the entity doing so has permissions to decrypt the data encryption key using the corresponding KMS key.
+Remember, initially a volume is empty, it's just an allocation of space, so there's nothing yet to encrypt.
+When the volume is first used, either mounted on an EC2 instance by you or when an instance is launched,
+then EBS asks KMS to decrypt the data encryption key that's used just for this one volume,
+and that key is loaded into the memory of the EC2 host which will be using it.
+The key is only ever held in this decrypted form in memory on the EC2 host which is using the volume currently.
+So the key is used by the host to encrypt and decrypt data between an instance and the EBS volume, specifically the raw storage that the EBS volume is stored on.
+This means the data stored onto the raw storage used by the volume is ciphertext. It's encrypted at rest.
+Data only exists in an unencrypted form inside the memory of the EC2 host.
+What's stored on the raw storage is the ciphertext version, the encrypted version of whatever data is written by the instance operating system.
+Now when the EC2 instance moves from this host to another, the decrypted key is discarded, leaving only the encrypted version with the disk.
+For that instance to use the volume again, the encrypted data encryption key needs to be decrypted and loaded into another EC2 host.
+If a snapshot is made of an encrypted volume, the same data encryption key is used for that snapshot, meaning the snapshot is also encrypted.
+Any volumes created from that snapshot are themselves also encrypted using the same data encryption key, and so they're also encrypted.
+Now that's really all there is to the architecture. It doesn't cost anything to use, so it's one of those things which you should really use by default.
+Now I've covered the architecture in a little detail, and now I want to step through some really important summary points which will help you within the exam.
+Now the exam tends to ask some pretty curveball questions around encryption, so I'm going to try and give you some hints on how to interpret and answer those.
+AWS accounts can be configured to encrypt EBS volumes by default. You can set the default KMS key to use for this encryption, or you can choose a KMS key to use manually each and every time.
+The KMS key isn't used to directly encrypt or decrypt volumes, instead it's used to generate a per-volume, unique data encryption key.
+Now if you do make snapshots or create new volumes from those snapshots, then the same data encryption key is used.
+But for every single time you create a brand new volume from scratch, it uses a unique data encryption key.
+So just to restress this because it's really important, that data encryption key is used for that one volume,
+and any snapshots you take from that volume which are encrypted, and any future volumes created from that snapshot.
+So that's really important to understand, I'm going to stress it again, I know you're getting tired of me saying this.
+Every time you create an EBS volume from scratch, it uses a unique data encryption key.
+If you create another volume from scratch, it uses a different data encryption key.
+But if you take a snapshot of an existing encrypted volume, it uses the same data encryption key,
+and if you create any further EBS volumes from that snapshot, it also uses the same data encryption key.
+Now there's no way to remove the encryption from a volume or a snapshot. Once it's encrypted, it's encrypted.
+There are ways that you can manually work around this by cloning the actual data from inside an operating system
+to an unencrypted volume, but this isn't something that's offered from the AWS console, the CLI, or the APIs.
+Remember, inside an operating system, it just sees plain text.
+And so this is the only way that you have access to the plain text data and can clone it to another unencrypted volume.
+And that's another really important point to understand, the OS itself isn't aware of any encryption.
+To the operating system, it just sees plain text because the encryption is happening between the EC2 host and the volume.
+It's encrypted using AES-256, so between the EC2 host and the EBS system itself.
+If you face any situations where you need the operating system to encrypt things,
+that's something that you'll need to configure on the operating system itself.
+If you need to hold the keys, if you need the operating system to hold the keys rather than EC2, EBS, and KMS,
+then you need to configure volume encryption within the operating system itself.
+This is commonly called software disk encryption, and this just means that the operating system does the encryption and stores the keys.
+Now, you can use software disk encryption within the operating system and EBS encryption at the same time.
+This doesn't really make sense for most use cases, but it can be done.
+EBS encryption is really efficient though, you don't need to worry about keys, it doesn't cost anything, and there's no performance loss for using it.
+Now that is everything I wanted to cover in this video, so thanks for watching, go ahead and complete the video,
+and when you're ready, I look forward to you joining me in the next.

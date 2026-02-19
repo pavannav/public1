@@ -1,0 +1,117 @@
+Welcome back, and this time we're going to cover a few performance optimization aspects of S3.
+If you recall from earlier in the course, this is the Animals for Life scenario.
+We have a head office in Brisbane, remote offices which consume services from the Brisbane office,
+and remote workers using potentially slower or less reliable services to access and upload data to and from the head office.
+So keep this scenario in mind as we step through some of the features that S3 offers to improve performance.
+It's not always about performance, it's often about performance and reliability combined,
+and this is especially relevant when we're talking about a distributed organization such as Animals for Life.
+So let's go ahead and review the features that S3 offers which help us in this regard.
+Now understanding the performance characteristics of S3 is essential as a solutions architect.
+We know from the Animals for Life scenario that remote workers need to upload large data sets and do so frequently,
+and we know that they're often on unreliable internet connections.
+Now this is a concern because of the default way that S3 uploads occur.
+By default, when you upload an object to S3, it's uploaded as a single blob of data in a single stream.
+A file becomes an object and it's uploaded using the put object API call and placed in a bucket,
+and this all happens as a single stream.
+Now this method has its problems.
+While it is simple, it means that if a stream fails, the whole upload fails,
+and the only recovery from it is a full restart of the entire upload.
+If the upload fails at 4.5 GB of a 5 GB upload, that's 4.5 GB of data wasted and probably a significant amount of time.
+Remember, the data sets are being uploaded by remote workers over slow and potentially unreliable internet links,
+and this data is critical to the running of the organization.
+Any delay can be costly and potentially risky to animal welfare.
+When using this single put method, the speed and reliability of the upload will always be limited because of this single stream of data.
+If you've ever downloaded anything online, it's often already using multiple streams behind the scenes.
+There are many network-related reasons why even on a fast connection, one stream of data might not be optimal,
+especially if the transfer is occurring over long distances.
+In this type of situation, single stream transfers can often provide much slower speeds than both ends of that transfer are capable of.
+If I transfer you data with a single stream, it will often run much slower than my connection can do and your connection can do.
+Remember, when transferring data between two points, you're only ever going to experience the speed, which is the lowest of those two points,
+but often using single stream transfer, you don't even achieve that.
+Data transfer protocols such as BitTorrent have been developed in part to allow speedy, distributed transfer of data,
+and these have been designed to address this very concern.
+Using data transfer with only a single stream is just a bad idea.
+Now, there is a limit within AWS. If you utilize a single-put upload, then you're limited to 5 GB of data as a maximum,
+but I would never trust a single-put upload with anywhere near that amount of data. It's simply unreliable.
+But there is a solution to this, and that solution is multi-part upload.
+Multi-part upload improves the speed and reliability of uploads to S3, and it does this by breaking data up into individual parts.
+So we start with the original blob of data that we want to upload to S3, and we break this blob up into individual parts.
+Now, there is a minimum. The minimum size for using multi-part upload is 100 MB.
+So the minimum size for this original blob of data is 100 MB. You can't use multi-part upload if you're uploading data smaller than this.
+Now, my recommendation is that you start using this feature the second that you can.
+Most AWS tooling will automatically use it as soon as it becomes available, which is at this 100 MB lower threshold.
+There are almost no situations where a single-put upload is worth it when you get above 100 MB.
+The benefits of multi-part upload are just too extensive and valuable.
+Now, an upload can be split into a maximum of 10,000 parts, and each part can range in size between 5 MB and 5 GB.
+The last part is left over, so it can be smaller than 5 MB if needed.
+Now, the reason why multi-part upload is so effective is that each individual part is treated as its own isolated upload.
+So each individual part can fail in isolation and be restarted in isolation, rather than needing to restart the whole thing.
+So this means that the risk of uploading large amounts of data to S3 is significantly reduced.
+But not only that, it means that because we're uploading lots of different individual bits of data, it improves the transfer rate.
+The transfer rate of the whole upload is the sum of all of the individual parts.
+So you get much better transfer rates by splitting this original blob of data into smaller individual parts and then uploading them in parallel.
+It means that if you do have any single stream limitations on your ISP or any network inefficiencies by uploading multiple different streams of data,
+then you more effectively use the internet bandwidth between you and the S3 endpoint.
+Now, next I want to talk about a feature of S3 called Accelerated Transfer.
+To understand Accelerated Transfer, it's first required to understand how global transfer works to S3 buckets.
+Let's use an example. Let's say that the Animals for Life organization has a European campaign which is running from the London office.
+For this campaign, they'll need data from staff in the field.
+And let's say that we have three teams dedicated to this campaign, one in Australia, one in South America, and one on the west coast of the US.
+Now, the S3 bucket, which is being used by the campaign staff, has been created in the London region.
+So this is how this architecture looks.
+We've got three geographically spread teams who are going to be uploading data to an S3 bucket that's located within the UK.
+Now, it might feel like when you upload data to S3, your data would go in a relatively straight line, the most efficient line to its destination.
+Now, this is not how networking works.
+How networking works is that it is possible for the data to take a relatively indirect path,
+and the data can often slow down as it moves from hop to hop on the way to its destination.
+In some cases, the data might not be routed the way you expect.
+I've had data, for instance, routed from Australia to the UK, but taking the alternative path around the world.
+It's often not as efficient as you expect.
+Remember, S3 is a public service and it's also regional.
+In the case of the Australian team, their data would have to transit across the public internet all the way from Australia to the UK
+before it enters the AWS public zone to communicate with S3.
+And we have no control over the public internet data path.
+Routers and ISPs are picking this path based on what they think is best
+and potentially commercially viable.
+And that doesn't always align with what offers the best performance.
+So using the public internet for data transit is never an optimal way to get data from source to destination.
+Luckily, as Solutions Architects, we have a solution to this, which is S3 Transfer Acceleration.
+Transfer Acceleration uses the network of AWS edge locations, which are located in lots of convenient locations globally.
+An S3 bucket needs to be enabled for Transfer Acceleration.
+The default is that it's switched off and there are some restrictions for enabling it.
+The bucket name cannot contain periods and it needs to be DNS compatible in its naming.
+So keep in mind those two restrictions.
+But assuming that's the case, once enabled, data being uploaded by our field workers
+instead of going back to the S3 bucket directly,
+it immediately enters the closest, best performing AWS edge location.
+Now this part does occur over the public internet, but geographically it's really close
+and it transits through fewer normal networks, so it performs really well.
+At this point, the edge locations transit the data being uploaded over the AWS global network,
+a network which is directly under the control of AWS,
+and this tends to be a direct link between these edge locations and other areas of the AWS global network,
+in this case, the S3 bucket.
+Remember, the internet is a global, multipurpose network,
+so it has to have lots of connections to other networks
+and many stops along the way where traffic is routed from network to network,
+and this just slows performance down.
+Think of the internet as the normal public transit network
+when you need to transit from bus to train to bus to bus to get to a far-flung destination.
+The normal transit network, whilst it's not the highest performance,
+is incredibly flexible because it allows you to get from almost anywhere to almost anywhere.
+The internet is very much like that. It's not designed primarily for speed.
+It's designed for flexibility and resilience.
+The AWS network, though, is purpose-built to link regions to other regions in the AWS network,
+and so this is much more like an express train stopping at only the source and destination.
+It's much faster and with lower, consistent latency.
+Now, the results of this in this context are more reliable
+than higher-performing transfers between our field workers and the S3 bucket.
+The improvements can vary, but the benefits achieved by using transfer acceleration
+improve the larger the distance between the upload location and the location of the S3 bucket.
+So in this particular case, transferring data from Australia to a bucket located in Europe,
+you'll probably see some significant gains by using transfer acceleration.
+The worse the initial connection, the better the benefit by using transfer acceleration.
+OK, so now it's time for a demonstration.
+In the next lesson, I just want to take a few moments to show you an example of how this works.
+I want to show you how to enable the feature on an S3 bucket
+and then demonstrate some of the performance benefits that you can expect by using an AWS-provided tool.
+So go ahead, finish this video, and when you're ready, you can join me in the demo lesson.

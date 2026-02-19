@@ -1,0 +1,231 @@
+Welcome back, and in this lesson I want to start off by covering an important part of how AWS handles security.
+And I want to talk about IAM policies in this lesson.
+IAM policies are a type of policy which get attached to identities inside AWS.
+And as you've previously learned, identities are IAM users, IAM groups, and IAM roles.
+Now you'll use IAM policies constantly.
+You'll need to understand them for the exam, as well as if you design and implement solutions inside AWS.
+Policies, once you understand them, are actually pretty simple.
+So I want to step you through the components and give you an opportunity to experiment with them inside your own AWS account.
+Understanding policies comes in three main stages.
+First, you'll need to understand their architecture and how they work.
+Second, you need to gain the ability to read and understand the policy.
+And then finally, you'll need to learn to write your own.
+For the exam, understanding their architecture and being able to read them is enough.
+So that's what I'll be focusing on in this lesson.
+You'll gain the ability to write them as you work through the course and get more practical exposure.
+So let's jump in and get started.
+An IAM identity policy, or an IAM policy, is just a set of security statements to AWS.
+It grants access or denies access to AWS products and features to any identity which uses that policy.
+Identity policies, also known as policy documents, are created using JSON.
+So it will help a lot if you've already experienced JSON before.
+If not, don't worry, it'll just need a little bit more time and effort.
+This is an example of an identity policy document.
+And this is the type of thing that you would use with a user, group, or a role.
+At a high level, a policy document is just one or more statements.
+So inside this statement block, there are multiple statements.
+Each of them is inside a pair of curly braces.
+And it's these statements which grant or deny permissions to AWS services.
+When an identity attempts to access AWS resources, that identity needs to prove who it is to AWS.
+A process known as authentication.
+Once authenticated, that identity is known as an authenticated identity.
+AWS knows which policies an identity has, and it could be multiple.
+And each of these policies can have multiple statements in it.
+So AWS has a collection of all of the statements which apply to a given identity.
+AWS also knows which resource or resources you're attempting to interact with,
+as well as what actions you want to perform on those resources.
+AWS then works through all of the statements one by one,
+and it reviews any that apply to a particular identity,
+accessing a particular resource in a particular way.
+So let's step through what makes up a statement.
+The first part of a statement is a Statement ID, or a SID.
+And this is an optional field which lets you identify a statement and what it does.
+See how in this case, it states full access.
+In the second statement, it states deny cat bucket.
+And that's just a way that we can inform the reader what this statement actually does.
+It's best practice to always use these, regardless of how big or small a policy document is.
+Every interaction that you have with AWS is a combination of two main things.
+The resource that you're interacting with,
+and the actions that you're attempting to perform on that resource.
+So an example might be that you're attempting to interact with an S3 bucket,
+and the action you might be attempting to perform is to add an object into that bucket.
+A statement only applies if the interaction that you're having with AWS
+match the action and the resource.
+The action part of a statement matches one or more actions.
+It can be very specific and list a specific individual action.
+The format is service colon and then the operation.
+So S3 colon and then the operation is an example.
+Or, as shown on screen, you can use wildcards.
+So a wildcard can match any S3 operations if it's listed in the format S3 colon star.
+Alternatively, actions could be a list of individual actions.
+So you've got three options.
+You have a specific individual action, a wildcard or a list of multiple independent actions.
+Now resources is the same, only it matches AWS resources.
+Now you can use wildcards here too, so specify individual AWS resources,
+or you can specify lists of AWS resources, as with the second example.
+Now you can use wildcards to refer to every resource,
+but if you do refer to either individual resources or lists of resources,
+you use the ARN format or Amazon resource name.
+And I'll talk in a little bit more detail about that in the next lesson.
+Now lastly, we have effect, and effect is either allow or deny.
+Effect controls what AWS does if the action and the resource parts of a statement
+match the operation that you're attempting to do with AWS.
+So if you're attempting to access an S3 bucket
+and the action and resource part of a statement match and the effect is allow,
+then AWS will allow you to access that resource using those actions.
+If the effect is deny, such as the one that's highlighted now,
+then if you're attempting to perform an action on a resource, it will be denied.
+Now it is possible that you could be allowed and denied at the same time.
+So take this example that's on screen now.
+Imagine that you're attempting to access either the cat GIFs bucket
+or an object in the cat GIFs bucket.
+Well, the top statement will apply because that matches any S3 actions on any resource.
+So if you're attempting to access the cat GIFs bucket,
+it will apply and it will allow that access.
+But the bottom statement denies any S3 actions on a specific S3 bucket.
+Understanding policies where there's only one allow or one deny is easy
+because there's no overlap.
+The challenge is when you do have this overlap
+and you'll fairly often see questions related to this in the exam.
+So let's take a look at that in more detail.
+For this example now, let's assume that an identity is attempting to access an object
+in the cat GIFs bucket and that identity has this policy attached to it,
+so the one that's on screen now.
+Visually we can show this as a Venn-style graphic.
+The first statement is pretty wide.
+It allows full access to all of the S3 service.
+It's all S3 actions on all resources.
+So with this statement on its own, you could access any object in any bucket in S3.
+You could perform operations on any object or any bucket,
+or even create and delete buckets.
+Essentially, with this statement, you're an S3 administrator.
+The second statement denies access to a small portion of S3.
+In this case, it's the cat GIFs bucket and any objects in that bucket.
+One of the most important security concepts in AWS for the exam and for the real world
+is how to handle this overlap-style situation
+if there are multiple statements which apply to an operation in AWS,
+as with this example, then both of the statements are processed.
+So in this case, you've both allowed access to all of S3
+and denied access to this specific bucket.
+Now luckily, there are a set of consistent rules
+which make things pretty easy to remember.
+If you remember the rule, it'll always make sense.
+We start with the first priority.
+The first priority are explicit denies.
+What that means is that if you have a statement
+which explicitly denies access to something,
+then that's it, it wins, it overrules everything else.
+The policy denies access to a particular resource and action combination,
+and nothing can overrule that.
+In this example, accessing the cat GIFs bucket or any object in that bucket
+is explicitly denied.
+That's it, nothing can overrule that.
+The second priority are explicit allows.
+And in this example, this statement explicitly allows access
+to all S3 actions on any resource.
+And these take effect unless, and this is the really important part,
+unless there is also an explicit deny.
+If you're explicitly allowed access to something,
+which the top statement does,
+and you're also explicitly denied access to something
+as the bottom statement does, the deny always wins.
+Explicit denies always take priority.
+Lastly, if neither of those applies,
+or if you're attempting to do something
+for which you have no explicit allow and no explicit deny,
+then the default implicit deny takes effect.
+With the exception of the account root user,
+AWS identities start off with no access to any AWS resources.
+It's really important for you to understand this.
+If they're not allowed access, they have no access.
+Get used to repeating this rule, deny, allow, deny.
+Say it while cooking, while cleaning, while working out.
+Even try to say it while you're sleeping.
+Just this one rule will mean that you can answer questions much quicker in the exam.
+It's the same rule if one statement applies or ten.
+If one policy document applies or ten.
+It doesn't matter.
+If there are no allows which apply to a specific action on a particular resource,
+then you have no access.
+If there is an explicit allow, then you do have access
+unless there is an explicit deny.
+If you have an explicit deny on anything, that always wins.
+So the rule is deny, allow, deny.
+Now it can be more complex because there might be multiple policies involved.
+Take Sally for example.
+She's a developer and she's trying to access a resource inside AWS.
+Sally has two policies which apply to her.
+Policy one and policy two.
+But Sally is also a member of a group.
+That group is called the developer's group.
+So she's a member of that group and that group also has a policy associated with it.
+So Sally attempts to access an AWS resource
+and that AWS resource might also have a policy associated with it.
+All of these policies will have one or more statements inside them.
+And the way that AWS handles this is when a given identity accesses a resource,
+it collects all of the statements in all of the policies which apply.
+So the users directly, the groups the users are in,
+and any resource policies on the resources that they're attempting to access.
+It collects all of these together and evaluates them all at the same time.
+But the same rule applies.
+Deny, allow, deny.
+If there's ever an explicit deny, that's it, game over.
+If there's an explicit allow, then you're allowed access unless there is a deny.
+And if none of those apply, there is always the default implicit deny.
+Now there's one more thing I want to cover before I finish up this lesson
+and that's that there are two main types of policies
+inline policies and managed policies.
+Now they're the same thing, they're JSON policy documents.
+The difference is how they're managed.
+Let's say we have 100 staff in our business
+and of these 100 staff we're going to use an example focusing on three.
+We've got Sally from the previous example and she's a developer,
+Miles in accounts and Mike in production.
+So let's say you're running a secret project
+and you want to grant these three access to the resources for that project,
+then you could do it in one of two main ways.
+First you could design a policy that grants access to the resources needed for that project
+and then assign that JSON individually on three separate accounts.
+Now that's known as an inline policy.
+Crucially what you're doing there is you're applying the JSON to each account individually.
+It becomes three isolated bits of JSON.
+Now this would work in this situation, but it's not best practice.
+Because it's three individual inline policies,
+each of which is an individual piece of JSON,
+changing the access rights would mean changing it on all three of these inline policies.
+Doing this for three staff might sound easy, but what about 300?
+And then if you needed to change the policy that's applied to those 300 staff,
+well, you'd have to edit 300 inline policies because they're unique to each identity.
+Another option is to use what's known as a managed policy
+and managed policies are created as their own object.
+First you'd create the managed policy, which is just a piece of JSON with some statements in,
+and then you'd attach that policy to any identities who you wanted to gain those access rights.
+Now managed policies are great for two main reasons.
+First, they're reusable.
+So in this example I can use the same managed policy for three identities or for 300.
+So for access rights that you want to grant to large numbers of users, groups and roles,
+you should definitely use managed policies.
+Managed policies should be used for the normal, default operational rights in your business.
+So if you've got a set of common access rights that you want to give to lots of people,
+then you should use managed policies.
+Now secondly, managed policies are low management overhead.
+So if you do need to change the JSON in a managed policy,
+then it immediately impacts all of the identities it's attached to.
+So the question is, when would you use an inline policy?
+Well generally, this is for exceptions to the normal access rights that you want to grant.
+So special circumstances, exceptional access rights,
+when you need to ensure that a specific set of rights,
+either giving an individual more access rights or blocking certain permissions for one individual identity,
+then you can use inline policies, apply those to one particular user,
+and then influence the permissions on that user.
+So generally when you're using inline policies, it's for special or exceptional allows or denies.
+Now there are two main types of managed policies.
+AWS managed policies, which are created and managed by AWS.
+Now you don't need to manage these, but they might not fit your exact needs.
+And then you have customer managed policies, which you can create and manage,
+so you can define them as per the exact requirements of your business.
+Now I do want to give you the chance to gain practical experience
+of how to use these different types of permissions within identity policies in AWS.
+So elsewhere in this section, there's going to be an opportunity for you to gain some practical experience.
+But initially, I just want to introduce the theory.
+Now at this point, that's everything that I want you to do in this lesson.
+So go ahead and complete the video, and when you're ready, I look forward to you joining me in the next.

@@ -1,0 +1,66 @@
+Welcome back. Over the remaining lessons in this section, you're going to learn how to build a complex multi-tier custom VPC, step by step.
+One of the benefits of the VPC product is that you can start off simple and layer components in piece by piece.
+This lesson will focus on just the VPC shell, but by the end of this section you'll be 100% comfortable building a pretty complex private network inside AWS.
+Let's get started. Now don't get scared off by this diagram, but this is what we're going to implement together in this section of the course.
+Right now it might look complicated, but it's like building a Lego project. We'll start off simple and add more and more complexity as we go through the section.
+This is a multi-tier custom VPC. If you look at the IP plan document that I linked in the last lesson, it's using the IP address of the first range of the US Region 1 for the general account.
+So 10.16.0.0.0.16. So the VPC will be configured to use that range. Inside the VPC there'll be space for four tiers running in four availability zones for a total of 16 possible subnets.
+Now we'll be creating all four tiers, so reserved, database, app and web, but only three availability zones, A, B and C.
+We won't be creating any subnets in the capacity reserved for the future availability zone, so that's the part at the bottom here.
+In addition to the VPC that we'll create in this lesson, the subnets that we'll create in the following lessons will also, as we move through the section of the course, be creating an internet gateway,
+which will give resources in the VPC public access. We'll be creating NAT gateways, which will give private instances outgoing only access, and we'll be creating a bastion host, which is one way that we can connect into the VPC.
+Now using bastion hosts is frowned upon and isn't best security practice for getting access to AWS VPCs, but it's important that you understand how not to do something in order to appreciate good architectural design.
+So I'm going to step you through how to implement a bastion host in this part of the course, and as we move through later sections of the course you'll learn more secure alternatives.
+Finally, later on in the section, we'll also be looking at network access control lists, or NACLs, which can be used to secure the VPC as well as data transfer costs for any data that moves in and around the VPC.
+Now this might look intimidating, but don't worry, I'll be explaining everything every step of the way.
+To start with though, we're going to keep it simple and just create the VPC.
+Before we do create the VPC, I want to cover some essential architectural theory, so let's get started with that.
+VPCs are a regionally isolated and regionally resilient service. A VPC is created in a region and it operates from all of the AZs in that region.
+It allows you to create isolated networks inside AWS, so even in a single region in an account, you can have multiple isolated networks.
+Nothing is allowed in or out of a VPC without a piece of explicit configuration. It's a network boundary and it provides an isolated blast radius.
+What I mean by this is if you have a problem inside a VPC, so if one resource or a set of resources are exploited, the impact is limited to that VPC or anything that you have connected to it.
+I talked earlier in the course about the default VPC being set up by AWS using the same static structure of one subnet per availability zone,
+using the same IP address ranges and requiring no configuration from the account administrator.
+Well, custom VPCs are pretty much the opposite of that. They let you create networks with almost any configuration,
+which can range from a simple VPC to a complex multi-tier one, such as the one that we're creating in this section.
+Custom VPCs also support hybrid networking, which let you connect your VPC to other cloud platforms as well as on-premises networks, and we'll cover that later on in the course.
+When you create a VPC, you have the option of picking default or dedicated tenancy.
+This controls whether the resources created inside the VPC are provisioned on shared hardware or dedicated hardware.
+Be really careful with this option. If you pick default, then you can choose on a per resource basis later on when you provision resources as whether it goes on shared hardware or dedicated hardware.
+If you pick dedicated tenancy at a VPC level, then that's locked in. Any resources that you create inside that VPC have to be on dedicated hardware.
+So you need to be really careful with this option because dedicated tenancy comes at a cost premium,
+and my rule on this is unless you really know that you require dedicated, then pick default, which is the default option.
+Now a VPC can use IP version for private and public IPs.
+The private CIDR block is the main method of IP communication for the VPC. So by default, everything uses these private addresses.
+Public IPs are used when you want to make resources public, when you want them to communicate with the public internet or the AWS public zone,
+or you want to allow communication to them from the public internet.
+Now a VPC is allocated one mandatory private IP version for CIDR block. This is configured when you create the VPC, which you'll see in a moment when we actually create a VPC.
+Now this primary block has two main restrictions. It can be at its smallest a slash 28 prefix, meaning the entire VPC has 16 IP addresses,
+and some of those can't be used. More on that in the next lesson when I talk about subnets though.
+At the largest, a VPC can use a slash 16 prefix, which is 65,536 IPs.
+Now you can add secondary IP version for CIDR blocks after creation, but by default at the time of creating this lesson there's a maximum of five of those,
+but they can be increased by using a support ticket. But generally when you're thinking conceptually about a VPC,
+just imagine that it's got a pool of private IP version for addresses and optionally it can use public addresses.
+Now another optional configuration is that a VPC can be configured to use IP version 6 by assigning a slash 56 IPv6 CIDR to the VPC.
+Now this is a feature set which is still being matured, so not everything works with the same level of features as it does for IP version 4,
+but with the increasing worldwide usage of IP version 6, in most circumstances you should start looking at applying an IP version 6 range as default.
+An important thing about IP version 6 is that the range is either allocated by AWS, as in you have no choice on which range to use,
+or you can select to use your own IP version 6 addresses, addresses which you own.
+You can't pick a block like you can with IP version 4, either let AWS assign it or you use addresses that you own.
+Now IP version 6 IPs don't have the concept of private and public, the range of IP version 6 addresses that AWS uses are all publicly routable by default,
+but if you do use them you still have to explicitly allow connectivity to and from the public internet.
+So don't worry about security concerns, it just removes an admin overhead because you don't need to worry about this distinction between public and private.
+Now AWS VPCs also have fully featured DNS, it's provided by Route 53 and inside the VPC it's available on the base IP address of the VPC plus 2.
+So if the VPC is 10.0.0.0 then the DNS IP will be 10.0.0.2.
+Now there are two options which are critical for how DNS functions in a VPC, so I've highlighted both of them.
+The first is a setting called enable DNS hostnames, and this indicates whether instances with public IP addresses in a VPC are given public DNS hostnames.
+So if this is set to true then instances do get public DNS hostnames, if it's not set to true they don't.
+The second option is enable DNS support and this indicates whether DNS is enabled or disabled in the VPC, so DNS resolution.
+If it is enabled then instances in the VPC can use the DNS IP address, so the VPC plus 2 IP address.
+If this is set to false then this is not available.
+Now why I mention both of these is if you do have any questions in the exam or any real world situations where you're having DNS issues,
+these two should be the first settings that you check are switched on or off as appropriate.
+And in the demo part of this lesson I'll show you where to access those.
+Speaking of which it's now time for the demo component of this lesson and we're going to implement the framework,
+the VPC for the Animals for Life organization together inside our AWS account.
+So let's go ahead and finish the theory part of this lesson right now and then in the next lesson the demo part will implement this VPC together.

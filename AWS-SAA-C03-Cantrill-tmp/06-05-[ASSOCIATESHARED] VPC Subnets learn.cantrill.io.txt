@@ -1,0 +1,123 @@
+Welcome back and in this lesson, I want to continue the theme of VPC networking in AWS by covering VPC subnets.
+Now subnets are what services run from inside VPCs and they're how you add structure, functionality and resilience to VPCs.
+So they're an important thing to get right, both for production deployments and to do well in the exam.
+So let's not waste time. Let's jump in and get started.
+In this lesson, we'll be starting off with this architecture.
+This is exactly how we left off at the end of the previous lesson.
+A framework VPC, a skeleton.
+What we'll be doing is creating an internal structure using subnets.
+We'll be turning this into this.
+Now if you compare this diagram to the one that I've linked previously,
+you might notice that the web tier subnets on the right are blue on this diagram instead of green on the diagram that I've previously linked.
+Now with AWS diagrams, blue means private subnets and green means public subnets.
+Subnets inside of VPC start off entirely private and they take some configuration to make them public.
+So at this point, the subnets which will be created on the right, so the web tier, they'll be created as private subnets.
+And in the following lessons, we'll change that together.
+So for now, this diagram showing them as private subnets is correct.
+So what exactly is a subnet? It's an AZ resilient feature of a VPC, a subnetwork of the VPC,
+a part of the VPC that's inside a specific availability zone.
+It's created within one availability zone and it can never be changed because it runs inside of an availability zone.
+If that availability zone fails, then the subnet itself fails and so do any services that are only hosted in that one subnet.
+And as AWS Solutions Architects, when we design highly available architectures,
+we're trying to put different components of our system into different availability zones
+to make sure that if one fails, our entire system doesn't fail.
+And the way that we do that is to put these components of our infrastructure into different subnets,
+each of which are located in a specific availability zone.
+The relationship between subnets and availability zones is that one subnet is created in a specific availability zone in that region.
+It can never be changed and a subnet can never be in multiple availability zones.
+That's an important one to remember for the exam.
+One subnet is in one availability zone.
+A subnet can never be in more than one availability zone.
+Logically though, one availability zone can have zero or lots of subnets.
+So one subnet is in one availability zone, but one availability zone can have many subnets.
+Now the subnet by default uses IP version 4 networking and it's allocated an IP version 4 sider.
+And this sider is a subset of the VPC sider block.
+It has to be within the range that's allocated to the VPC.
+What's more, the sider that a subnet uses cannot overlap with any other subnets in that VPC.
+They have to be non-overlapping.
+That's another topic which tends to come up all the time in the exam.
+Now a subnet can optionally be allocated an IP version 6 sider block,
+as long as the VPC also is enabled for IP version 6.
+The range that's allocated to individual subnets is a slash 64 range.
+And that slash 64 range is a subset of that slash 56 VPC.
+So a slash 56 IP version 6 range has enough space for 256 slash 64 ranges that each subnet can use.
+Now subnets inside a VPC can by default communicate with other subnets in that same VPC.
+The isolation of a VPC is at the perimeter of the VPC.
+Internally, there is free communication between subnets by default.
+Now we've spoken in previous lessons about sizing.
+So sizes of networks are based on the prefix.
+For example, a slash 24 network allows values from 0 to 255 in the fourth octet.
+Now that's a possible 256 possible IPs.
+But inside a subnet, you don't get to use them all.
+Some IPs inside every VPC subnet are reserved.
+So let's look at those next.
+There are five IP addresses within every VPC subnet that you can't use.
+So whatever the size of the subnet, the usable IPs are five less than you would expect.
+Let's assume, for example, that the subnet we're talking about is 10.16.16.0 slash 20.
+So this has a range of 10.16.16.0 to 10.16.31.255.
+The first address, which is unusable, is the network address.
+The first address of any subnet is the one that represents the network,
+the starting address of the network, and it can't be used.
+This isn't specific to AWS. It's the case for any other IP networks as well.
+Nothing uses the first address on a network.
+Next is what's known as the network plus one address, the first IP after the network address.
+And in AWS this is used by the VPC router, the logical network device which moves data between subnets
+and in and out of the VPC if it's configured to allow that.
+The VPC router has a network interface in every subnet and it uses this network plus one address.
+Next is another AWS specific IP address which can't be used called the network plus two address.
+In a VPC the second usable address of the VPC range is used for DNS.
+And AWS reserve the network plus two address in every subnet.
+So I've put DNS and an asterisk here because I refer to this reservation as the DNS reservation,
+but strictly speaking it's the second address in a VPC which is used for DNS, so that's the VPC range plus two.
+But AWS do reserve the network plus two address in every single subnet and so you need to be aware of that.
+And there's one more AWS specific address that you can't use and you guessed it, it's the network plus three address.
+This doesn't have a use yet, it's reserved for future requirements.
+And this is the network plus three, in this example 10.16.16.3.
+And then lastly, the final IP address that can't be used in every VPC subnet is the network broadcast address.
+Broadcasts are not supported inside a VPC, but the last IP address in every subnet is reserved regardless.
+So you cannot use this last address.
+So this makes a total of five IP addresses in every subnet that you can't use, three AWS specific ones,
+and then the network and broadcast addresses.
+So if a subnet should have 16 IPs, it actually has 11 usable IPs.
+So keep this in mind especially when you're creating smaller VPCs and subnets,
+because this can quickly eat up IP addresses, especially if you use small VPCs with lots of subnets.
+Now a VPC has a configuration object applied to it called a DHCP option set.
+DHCP stands for Dynamic Host Configuration Protocol.
+It's how computing devices receive IP addresses automatically.
+Now there's one DHCP option set applied to a VPC at one time, and this configuration flows through to subnets.
+It controls things like DNS servers, NTP servers, NetBIOS servers, and a few other things.
+If you've ever managed a DHCP server, this will be familiar.
+So for every VPC, there's a DHCP option set that's linked to it, and that can be changed.
+You can create option sets, but you cannot edit them.
+So keep in mind, if you want to change the settings, you need to create a new one,
+and then change the VPC allocation to this new one.
+On every subnet, you can also define two important IP allocation options.
+The first option controls if resources in a subnet are allocated a public IP version 4 address
+in addition to their private subnet address automatically.
+Now I'm going to be covering this in the lesson on routing an internet gateway,
+because there's some additional theory that you need to understand about public IP version 4 addresses,
+but this is one of the steps that you need to do to make a subnet public.
+So it's on a per subnet basis that you can set auto-assign public IP version 4 addresses.
+Another related option defined at a subnet level is whether resources deployed into that subnet
+are also given an IP version 6 address, and logically for that to work,
+the subnet has to have an allocation, as does the VPC.
+But both of these options are defined at a subnet level and flow on to any resources inside that subnet.
+Okay, so now it's time for a demo. That's all the theory that I wanted to cover in this VPC subnet lesson.
+So in the demo lesson, we're going to implement the structure inside the VPC together.
+We're essentially going to change this skeleton VPC into a multi-tier VPC
+that's configured with all of these subnets.
+Now it is going to be a fairly detailed demo lesson.
+You're going to have to create all of these 12 subnets manually one by one,
+and out of all of the lessons, the detail really matters on this one.
+We need to make sure that you configure this exactly as required so you don't have any issues in future.
+Now if you do make any mistakes, I'm going to make sure that I supply a CloudFormation template
+with the next lesson that allows you to configure this in future automatically.
+But the first time that you do this lesson, I do want you to do it manually
+because you need to get used to the process of creating subnets.
+So controlling what the IP ranges are, being able to select which availability zone they go in,
+and knowing how to assign IP version 6 ranges to those subnets.
+So it is worthwhile investing the time to create each of these 12 subnets manually.
+And that's what we're going to do in the next demo lesson.
+But at this point, go ahead and complete this lesson.
+And then when you've got the time, I'll see you in the next demo lesson
+where we'll complete the configuration of this VPC by creating the subnets.

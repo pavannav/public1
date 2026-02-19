@@ -1,0 +1,176 @@
+Welcome back and in this demo lesson I want to give you some experience of working with service control policies or SCPs.
+At this point you've created the AWS account structure which you'll be using for the remainder of the course.
+You've made an AWS organization and the general account which created that AWS organization became the management account of the organization.
+And in addition to that you invited the production AWS account into the organization and created the development account within the organization.
+Now in this demo lesson I want to show you how you can use service control policies to restrict what identities within an AWS account can do.
+And this is a feature which comes part of AWS organizations.
+Now before we do that I want to tidy up the AWS organization.
+So make sure that you're logged into the general account so the management account of the organization and then just move to the organizations console.
+You can either type that in the find services box or it should be available in recently used services.
+Now as I talked about in the previous lessons AWS organizations includes the ability to organize accounts with a hierarchical structure.
+And currently there's only the root container of the organization.
+Now to create a hierarchical structure we need to create some organizational units.
+And we're going to create a development organizational unit and a production organizational unit.
+So to do that select the root container at the top of the organizational structure then click actions and create new.
+Now we're going to call the organizational unit for production prod.
+So type prod into name of organizational unit, scroll down and click on create organizational unit and then do the same for development.
+So make sure root is still selected, click on actions and then create new.
+Under name just type dev and then scroll down and click on create organizational unit.
+Now we're going to move our AWS accounts into these relevant organizational units.
+So currently the development, production and general accounts are all contained in this root container.
+So this is the top most point of our hierarchical structure inside our organization.
+So to move accounts we need to select them and then move them into each of the relevant organizational units.
+So go ahead and select the production AWS account then click on actions and then move.
+Once you're at this dialog just select the production organizational unit and click on move.
+And this account will be moved inside this organizational unit and we'll do the same for the development account.
+So select the development AWS account and again click on actions and then move.
+Select the dev OU and click on move.
+And now we've got these two AWS accounts inside the relevant organizational units.
+And if we select each of the organizational units in turn, so prod, and we can see that it's got one account inside the production OU.
+And then if we select dev we can see that it's got the development AWS account inside of this organizational unit.
+So that's a simple hierarchical structure that we've created inside this organization.
+And the general account, so the management account of the organization, is currently within the root container of the organizational structure.
+So now that we've done that, to prepare for the demo part of this lesson where we're looking at service control policies,
+I want you to move back to the AWS console.
+So just click on AWS and then click on the account drop down and we're going to switch roles into the production AWS account.
+So select prod from role history.
+Now once we're here, we're going to create an S3 bucket.
+So type S3 into the find services box, or alternatively it might be within the recently used services.
+But either way, move to the S3 console.
+So once you're at the S3 console, go ahead and click on create bucket.
+And for bucket name, I just want you to call it catpix, so C-A-T-P-I-C-S, and then pick a random number at the end.
+Remember, S3 bucket names need to be globally unique, so you'll need to pick a random set of numbers different than what I use and every other student uses.
+So I'm going to pick one, and then lots of threes, and then seven.
+And make sure that you pick the US East One region for this bucket.
+Once you've set all those options, just scroll all the way down to the bottom and then select create bucket.
+Now once you've created the bucket, just go inside the bucket and we're going to upload some files into this bucket.
+So follow the same process that we've used before.
+Click on add files, and then attached to this lesson is a link to a cat picture that you'll need to download to your local machine and then upload that cat picture to this S3 bucket.
+So go ahead and download the image, locate it, go ahead and select that and click on open.
+And then click on upload to upload that picture into this S3 bucket.
+Wait for that to finish and click on close.
+Now this is a picture of Samson, so if you click on this and then click on open, you'll see there Samson looks pretty sleepy.
+He does tend to sleep a lot, but he's a pretty amazing cat.
+But what you're illustrating is that you can currently access the samson.jpeg object, and you're currently operating within the production AWS account.
+Now crucially the way that you're doing that is you've assumed an IAM role.
+By switching role into the production account, what you've actually done is you've assumed the role which is called organization account access role.
+And if we open this role up and look at the permissions, it currently has the administrator access managed policy attached to this role.
+So you're operating inside the production account with the permissions that you've gained by assuming this role and their administrator permissions.
+So there should be no confusion why you can create an S3 bucket, upload an object and access that object.
+Because you have full administrator access which has been granted by attaching this managed policy to the IAM role,
+which you're currently assuming as part of switching role into the production account.
+What we're going to demonstrate is how this can be restricted by using service control policies.
+So at this point move back to the main AWS console, click on the account drop down, and then click switch back to move back to the general AWS account.
+Once we're back inside this account, at the main AWS console either type AWS organizations or select it from the recently visited services.
+Now once you're here click on policies and you'll see that currently that most of these options are currently disabled.
+So service control policies, tag policies, AI services, opt out policies and backup policies, they're all disabled.
+Now I'll be talking about what all of these mean as you move throughout the course.
+But at this point I want you to click on service control policies and then click on enable service control policies.
+And this will enable the functionality within the AWS organization.
+Now what it's actually done as part of this is to add this full AWS access policy onto the entire organization.
+So if we click on full AWS access and then scroll down, this is the policy which is currently associated with everything within the organization.
+So this has the effect of adding no restrictions onto what any of the accounts within the organization can do.
+So in effect by enabling service control policies, the first policy which is applied does nothing.
+It simply maintains the existing functionality.
+So all AWS accounts within the organization maintain full access to all of the services provided by AWS.
+So click on service control policies at the top to move back to the overview of all of the various SCPs that we have available within the organization.
+What we're going to do is create our own service control policy.
+Now linked to this lesson is a file called denyS3.json.
+And this is an example of a new service control policy that we're going to apply.
+So go ahead and download that file and open it up in a code editor.
+Now this is a service control policy with two statements.
+The first statement is an allow statement.
+So the effect is allow action is star, which is a wild card and resource is also the star wild card.
+Now this replicates the full AWS access service control policy that is applied by default.
+So this allows access to all products and services within an AWS account.
+But this one also has a second statement, which is a deny statement.
+So this denies any S3 colon star actions on any AWS resource.
+So the effect of this is to deny access to S3.
+Now service control policies follow the same deny, allow, deny logic as identity policies within AWS.
+And so this explicit deny overrules this explicit allow, but only for S3 colon star.
+So the effect of this is that if this service control policy is applied,
+then we'll maintain access to all AWS except S3.
+So we're going to apply this to the production AWS account and observe the results.
+So to do that, we need to copy all of this into our clipboard and then move back to the AWS console.
+Once you're there, make sure you're in the policy section of the console
+and then service control policies and then go ahead and create a policy.
+Scroll down and then select all of the existing JSON that's inside this policy box
+and then just delete it and then paste in what you've just copied into your clipboard.
+So just as a reminder, this denies access to any S3 actions on all resources
+and then allows access to all of the AWS account.
+And then using the deny, allow, deny rule, which by now you should be at least familiar with,
+this means that S3 will be denied and access to all other AWS services will be available.
+And then scroll up to the top and for policy name,
+we're going to call this allow all except S3.
+Once you've put that in the policy name box, then just scroll all the way down to the bottom and create the policy.
+So now you have two service control policies, full AWS access, which allows access to every operation
+and then allow all except S3, which is the new service control policy we've just created.
+So now go ahead and click on AWS accounts on the menu on the left
+and then click on the prod OU because we're going to apply this new service control policy to the production OU
+and then click on the policies tab.
+And then we're going to do two things.
+First, we're going to attach the new policy that we've created.
+So go ahead and click on attach in the applied policies box
+and then select allow all except S3 and then attach that policy.
+And so now we have that policy that's attached to the production OU.
+So go ahead and click on the policies tab again and you can see that we have the allow all except S3 policy attached directly,
+the full AWS access policy that's attached directly,
+and also the full AWS access policy that's inherited from the root container.
+So now what we may as well do to keep things tidy is detach the full AWS access policy that's attached directly.
+So check the box next to full AWS access.
+Click on detach and then confirm by clicking detach policy.
+So now the only service control policy that's directly attached to the production OU is the one that we just created.
+And just as a reminder, this is the one that allows access to all AWS products and services via this explicit allow
+but also has this explicit deny just for S3.
+So now if I go back to the main AWS console
+and if I go into the S3 console, remember this is the general or the management AWS account,
+notice how I can see and interact with S3 within this account.
+If I go back to the main AWS console and click on the account drop down
+and then switch roles into the production AWS account,
+remember this is the one that has this new service control policy attached to it.
+For the production AWS account, now if I go into the S3 console and just wait for it to load,
+now we receive a permissions error.
+You don't have access to list buckets.
+Now this is because even though this role that we're using does have permissions to access S3,
+it's operating inside the production AWS account.
+Because this production AWS account has this SCP attached which explicitly denies access to S3,
+well we have no access to S3.
+Access to all of the other services are unaffected because we have administrator access.
+We could go for example to the EC2 console and then go to instances
+and then go to launch an instance and we won't be doing this
+but if you just step through you'll see that there are no permissions errors at any point in this process
+so we could launch an EC2 instance.
+The only thing which is impacted by the service control policy is S3
+and so that's the only thing that is explicitly denied
+because it's denied inside the service control policy.
+If we go back to the general account, so click on the account drop down and then switch back,
+then we go to AWS organizations, go to AWS accounts,
+then click on the production OU and then click on policies.
+If we again attach the full AWS access and then detach the allow all except S3,
+now if we follow the same process and we switch role into the production AWS account
+because this service control policy has no explicit denies,
+this time if we go to the S3 console we can again access this S3 bucket
+so we can go inside the CatPix bucket and then open the object which is Samson.jpg
+and there we go, we can see Samson nice and relaxed.
+So this just illustrates exactly how service control policies or SCPs can be used to restrict access
+for identities who operate inside an AWS account, in this case the production AWS account.
+So we've removed this custom service control policy that we've created,
+now let's just clean up by removing this bucket.
+So select the CatPix bucket and then whatever randomness you added onto the end and click empty.
+Copy and paste or type permanently delete and then select empty.
+Once that's completed you can click on exit and then you should be able to delete the bucket.
+So select it and then click on delete.
+You'll need to confirm that by copying and pasting or typing the name of the bucket
+and then clicking delete bucket.
+And there you go, you've got full control over S3 as evidenced by the fact that you can delete that bucket.
+So now let's go back to the general account and that's the end of this demo lesson.
+What you've done is create a service control policy, one which allows access to the entire account
+but denies S3 and you've attached this policy onto the production AWS account
+and removed the default full AWS access policy.
+And you've observed how that has the effect of restricting the permissions
+that a full admin role has over the production account.
+At this point that's everything I wanted to illustrate.
+I'll be talking more about boundaries and restrictions as they apply to AWS accounts and identities
+as you move through the course.
+But for now that's everything that you need to do so go ahead and complete this video
+and when you're ready I look forward to you joining me in the next.

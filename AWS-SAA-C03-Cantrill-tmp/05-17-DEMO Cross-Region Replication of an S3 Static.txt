@@ -1,0 +1,245 @@
+Welcome back, and in this demo lesson, you're going to configure S3 cross-region replication.
+So that's the replication of objects from one bucket to another bucket in different AWS regions.
+And the scenario that we're going to be stepping through is where you, as a systems engineer,
+are looking to configure replication to allow disaster recovery of an S3 static website
+from one region to another AWS region.
+So the first thing that I'll need you to do is to make sure that you're logged in to the general AWS account,
+and you'll need to have the Northern Virginia region selected.
+Assuming that's the case, then go ahead and move to the S3 console,
+because we're going to be creating our source and destination buckets.
+Now if you see any notifications about updates to the UI or any additional functionality,
+then just go ahead and close that down.
+What I want you to do is to go ahead and click on Create Bucket.
+Now we're going to keep these names simple so that we can distinguish between the source and destination bucket.
+So for the source bucket, we're going to start with source bucket,
+and then I want you to use your initials, in my case AC,
+and then I want you to put a random number at the end, and I'm going to attempt to use 1337.
+For region, for the source bucket, let's use US-EAST-1,
+and then scroll down past the block public access settings,
+scroll down past bucket versioning and default encryption,
+and then just create the bucket.
+In my case, it successfully created a bucket using this name,
+and again, because of the globally unique naming requirements of S3 buckets,
+you need to make sure that you pick something different than me and different from other students.
+Now the scenario is that we're using this bucket to host a static S3 website,
+so we need to enable that functionality.
+So go into source bucket, click on properties,
+scroll down all the way to the bottom,
+and click on edit next to static website hosting.
+Now we need to enable static website hosting,
+and for hosting type, just make sure that you select host a static website.
+Now we're going to use index.html for both the index document and for the error document,
+so enter index.html in both of those boxes,
+and once you've done that, you can save those changes.
+Now so that this bucket can host a static website,
+we need to go to permissions,
+and then we need to edit the block public access settings,
+so click on edit and uncheck block all public access,
+and once you've done so, click on save changes.
+You'll need to confirm that, so follow the instructions and then confirm,
+and this means that the bucket can be made public,
+but in order to make it public, we need to add a bucket policy.
+So to edit the bucket policy, scroll down below the block public access settings,
+and then edit the bucket policy.
+Now attached to this lesson is a demo files link.
+I'll need you to click that link, which will download a zip file.
+Go ahead and extract that zip file, which will create a folder,
+and go inside that folder.
+Contained within this folder are all of the files which you'll need for this demo,
+and inside that folder is a file called bucket underscore policy dot json.
+Go ahead and open that file.
+So this is the file bucket underscore policy.
+This is a bucket policy which allows any principal,
+so using the star wild card, to use the S3 get object action on this particular ARN.
+Now this is a placeholder.
+We need to update this placeholder so that it references any objects within our source bucket.
+So I want you to copy this entire bucket policy into your clipboard,
+move back to the console, paste it in,
+and once you've pasted it in, go ahead and copy the bucket ARN for this bucket into your clipboard
+by clicking on this icon,
+and then I want you to select the placeholder that you've just pasted in.
+So straight after the first speech mark, all the way up to before the forward slash.
+So select this component of this placeholder ARN and paste in the source bucket ARN.
+So it should look like this.
+It references ARN colon AWS colon S3, and then colon colon colon,
+and then the source bucket.
+So whatever you've called your source bucket, it should reference this.
+So don't use what's on my screen, use your specific source bucket ARN.
+And then it should have a forward slash star on the end.
+That means that any anonymous or unauthenticated identity will be able to get any objects within this S3 bucket.
+And that's what we want. We want this to be a public bucket.
+So click on save changes to commit those changes, and now this bucket is public.
+You get the warning under permissions overview that this bucket is public,
+and under the bucket name at the top, it will say publicly accessible.
+Now once you've done that, go back to the S3 console, and we're going to create the destination bucket.
+We're going to follow exactly the same process.
+So click on create bucket.
+This time we'll call it destination bucket, and then again your initials,
+and then ideally the same random number.
+So in my case 1337.
+Go ahead and click on the region dropdown, and instead of picking US-EAST-1,
+this time we're going to use US-WEST-1.
+Now to save us some time, we're going to uncheck this block all public access while we're creating the bucket,
+so that we don't need to do that afterwards.
+And we'll need to acknowledge that by checking this box.
+Scroll all the way down to the bottom, and then click on create bucket.
+Then we're going to go into destination bucket, select properties,
+move down to the bottom, and we'll need to enable static website hosting,
+so click edit, enable, choose the option to host a static website,
+and then just like before we're going to use index.html for both the index document and the error document.
+So enter index.html in both of those boxes, and then save those changes.
+Then we'll need to go to permissions and edit the bucket policy, so scroll down,
+click on edit for bucket policy.
+You'll need to copy this template bucket policy into your clipboard,
+paste it into the policy box, and again we need to replace this placeholder.
+So copy the destination bucket ARN into your clipboard,
+select from after the speech mark through to before the forward slash, paste that in,
+and that will now reference any objects in the destination bucket,
+and go ahead and click on save changes.
+So now at this point we have the source and destination bucket,
+both of them are public, both of them are set to be static websites,
+and neither of them have any objects inside that bucket.
+The next step is to enable cross region replication from the source bucket through to the destination bucket.
+So to do that click on the source bucket, click on the management tab,
+scroll down, and we need to configure a replication rule.
+So click on create replication rule,
+we're told that replication requires versioning to be enabled for the source bucket,
+and we're given a convenient button to click to enable versioning on this bucket,
+and that's what we're going to do, so click on enable bucket versioning,
+and this means this bucket can now be the source of this replication rule.
+For replication rule name, I'm going to call it static website DR for disaster recovery,
+we want it to be enabled straight away, so make sure the status is set to enabled,
+now we can limit this replication rule to have a certain scope,
+we can filter it based on prefix or tags, and this allows us to replicate only part of this bucket,
+in our case we want to replicate the entire bucket,
+so we're going to select the option that this rule applies to all objects in the bucket,
+so check this option, now that we've configured the source,
+so we've configured the bucket name, the source region,
+and chosen the scope of this replication rule,
+now we need to decide on the destination,
+now for the destination we can use a bucket within the same AWS account,
+or we can specify a bucket within another AWS account,
+if we choose another AWS account, then we need to worry about object ownership,
+we need to make sure that the objects which are replicated into the destination account
+have the correct ownership, because by default they will be owned by our account,
+because we will be creating them,
+we can specify as part of a replication rule that the destination account owns those objects,
+but because we're using the same account, that doesn't apply in this scenario,
+so we're going to choose a bucket within this account,
+click on browse S3, and we're going to select the destination bucket that we just created,
+so select the destination bucket that you created in the previous step,
+and then click on choose path,
+you're going to be informed that as well as replication requiring versioning on the source bucket,
+it also is required on the destination bucket,
+and again you're presented with a convenient button to enable versioning on this destination bucket,
+we'll click on enable bucket versioning,
+just to confirm, versioning is required on both the source and destination bucket
+when you're using S3 replication,
+so that's the destination configured,
+we've picked the destination bucket and enabled versioning, so scroll down,
+next we need to give this replication rule the permissions that it needs to interact with different AWS resources,
+so this rule needs the ability to read from the source bucket and write those objects into the destination bucket,
+so we need to give this replication rule an IAM role which provides those permissions,
+so click in the choose IAM role drop down and select create new role,
+you could select an existing one if you already had one which was pre-configured,
+but for this demo lesson we don't, so we're going to create a new role,
+now you can enable the ability of S3 replication to support objects which are encrypted with AWS KMS,
+you do have to select that option explicitly though when you're creating a replication rule,
+and in our case we're not going to be replicating any encrypted objects using SSC-KMS,
+so we can leave this unchecked,
+I talked about this in the theory lesson but you can also change the storage class as part of the replication process,
+so generally you're replicating objects from a primary location or a source bucket through to a destination bucket,
+and this is often part of disaster recovery scenarios where you often want cheaper storage at the destination end,
+and so the default is to maintain the storage class that's used in the source bucket,
+but you can override that and change the storage class which is used when storing those replicated objects in the destination bucket,
+now we're not going to set that in this demonstration but you do have the option to do so,
+now these are all relatively new features of S3 replication,
+so S3 replication has been a feature of AWS for some time,
+but over time they've evolved and enhanced the feature sets available to the product,
+so you're able to set Replication Time Control or RTC,
+and this imposes an SLA on the replication process,
+so by enabling it you ensure that 99.99% of new objects are replicated within 15 minutes,
+and this feature also provides access to replication metrics and notifications,
+but do note that this does come at an additional cost,
+because S3 versioning is used on both the source and destination buckets,
+if you do delete an object in the source bucket then by default that deletion is not replicated through to the destination,
+so by default S3 replication does not replicate delete markers,
+and I've talked about delete markers elsewhere in the course,
+by selecting this option you do replicate delete markers and that means that deletions are replicated from the source through to the destination,
+for now though we're not going to select any of these, just go ahead and click on save,
+after a few moments you'll be presented with this option,
+now by default S3 replication historically didn't replicate any objects which existed in a bucket before you enabled replication,
+you're now offered the ability to replicate existing objects within a bucket,
+so if you wanted to do this, if you had a bucket with objects that already existed,
+then you could replicate those as part of starting this process,
+now our bucket is empty so we won't do this anyway,
+so go ahead and select no, do not replicate existing objects and click submit,
+and at this point replication is enabled between our source bucket and our destination bucket,
+so let's give it a try, what we're going to do is click at the top here next to the source bucket name,
+and this will take us to the top level of the source bucket and we're going to upload some objects,
+so go ahead and click on upload and then click on add files,
+now at this point go ahead and locate the folder which you downloaded and extracted earlier in this demo lesson,
+so the demo files folder,
+so go inside that folder and inside here as well as the bucket policy template which you used earlier,
+you'll see two folders, website and website2,
+I want you to expand website and select both the aotm.jpeg object and the index.html object,
+select both of those and make sure you use the ones from the website folder not the website2 folder,
+so we're going to copy the bucket website endpoint into our clipboard and then open that in a new tab,
+so this is the source bucket website endpoint and this opens animalsforlife.org,
+animal of the month for March, and this is a picture of my cat Winky,
+so let's go back to the S3 console, move to the top, go back to the main S3 console,
+and then move in to the destination bucket,
+if you're concerned if you see something slightly different at this point,
+the time taken for replicating objects from source to destination can vary wildly if you don't enable the replication SLA option,
+in our case because these objects are relatively small they should be replicated fairly quickly,
+now at this point I want you to go ahead and pause this video and wait until you see two objects in your destination bucket,
+be alarmed if these objects take five or ten minutes to appear,
+just wait, pause the video, wait for those objects to appear and then you're good to continue,
+you'll see that we have both of the objects which we added to the source bucket,
+they're both now stored in the destination bucket and that's because they've been replicated using S3 replication,
+what we can do is go to properties, move all the way down to the bottom,
+copy the destination bucket website endpoint into our clipboard and open that in a new tab,
+so this is the destination static website endpoint and again we see the same website,
+animalsforlife.org, Animal of the Month for March, again my cat Winky,
+so next we're going to move back to the main S3 console,
+so click on Amazon S3 and then move back to the source bucket,
+click on upload again and we're going to replace the objects that we just added,
+so click on add files and then expand the website to folder and go ahead and upload both of these objects,
+so they have the same name so aotm.jpeg and index.html,
+go ahead and upload both of these and make sure you're uploading to the source bucket,
+so upload those, you'll need to confirm that, that'll take a few moments to complete,
+once you see that the upload was successful you can close down this dialogue
+and then you should still have the tab open to the source bucket,
+if you go to that tab and refresh you'll see now that we have animalsforlife.org,
+Animal of the Month for April and this is my cat Truffles,
+if we go immediately to the destination bucket and hit refresh on this bucket,
+you might still see the picture of Winky, if the image doesn't change you need to keep refreshing it
+and just give it a few minutes because without the replication SLA
+then the time taken to replicate from source to destination can vary significantly,
+in my case it took about three or four minutes of refreshes,
+but now we see that the destination bucket has been updated with the new image again,
+this is a picture of my cat Truffles, so this has been a very simple example of cross region replication,
+at this point though that's everything that I wanted to do in this demo lesson,
+so all we need to do is to clean up the account and return it to the same state as it was at the start of the demo,
+so close down both of these tabs and just return to the main S3 console,
+select the destination bucket and click empty, confirm this by following the instructions and then confirm,
+click exit, with the bucket still selected, delete the bucket,
+again you'll need to follow the instructions to confirm deletion of this bucket,
+so go ahead and do that, and then we need to follow the same process for the source bucket,
+so select it and empty it, confirm that, close down this dialog and then delete the bucket,
+and again you'll need to confirm that, follow those instructions and delete bucket,
+then we need to click on services, move to the IAM console,
+because remember S3 replication created an IAM role that was used for that replication,
+so click on roles, locate the role which starts with S3CRR,
+and it will have the name of the source bucket as part of that role name,
+so go ahead and select the correct role, make sure that you select the one which has the name of your source bucket,
+and then delete that role, and you'll need to confirm that process and that will delete the role,
+and at this point that's the account back in the same state as it was at the start of this demo lesson.
+So I hope you've enjoyed this demo and this simple example of how to use S3 replication,
+specifically in this case cross-region replication from a source to a destination bucket.
+At this point that's everything that I wanted to do,
+I'll be talking about S3 replication elsewhere in the course, in other associate courses,
+and at the professional level, so don't worry, you'll get plenty of opportunities
+to explore this specific piece of functionality available as part of S3,
+but at this point that's everything I wanted to do in this demo lesson,
+go ahead, complete the video, and when you're ready I'll look forward to you joining me in the next.

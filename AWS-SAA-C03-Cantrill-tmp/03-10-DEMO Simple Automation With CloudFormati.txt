@@ -1,0 +1,193 @@
+Welcome back, and in this demo lesson, I want to quickly demonstrate how to use CloudFormation to create some simple resources.
+So before we start, just make sure you're logged in to the general AWS account and you've got the Northern Virginia region selected.
+Once you've got that, just move across to the CloudFormation console.
+So this is the CloudFormation console, and as I discussed in the previous lesson, it works around the concepts of stacks and templates.
+So in order to get started with CloudFormation, we need to create a stack.
+When you create a stack, you can use a sample template, and there are lots of different sample templates that AWS make available.
+You can create a template in the designer, or you can upload a ready-made template, and that's what I'm going to do.
+Now I've provided a template for you to use. It's linked to this lesson, so go ahead and click on that link to download the sample template file.
+Once you've downloaded it, you'll need to select Upload a template file, and then choose File.
+You'll need to locate the template file that you just downloaded. It should be called ec2instance.yml. Select that and click on Open.
+Now whenever you upload a template to CloudFormation, what it's actually doing is uploading the template directly to an S3 bucket that it creates automatically,
+which is why when you're using AWS, you may notice lots of buckets with the prefix cf that get created in a region automatically.
+Now you can always go ahead and delete these if you want to keep things tidy, but that's where they come from, and I just wanted you to know that.
+Now before we upload this, I just want to move across to my code editor and just step through exactly what this template does.
+So the template uses three of the main components that I've talked about previously. The first one is parameters.
+There are two parameters for the template, Latest AMI and SSH and Web Location.
+Now let's quickly talk about Latest AMI ID, because this is an important one.
+And the type of this parameter is a special type that's actually a really useful feature.
+What this allows us to do is rather than having to explicitly provide an AMI ID, we can say that we want the latest AMI for a given distribution.
+So in this case, I'm asking for the Latest AMI ID for Amazon Linux 2023 in whichever region you apply this template in.
+And we use this style of parameter. It means that Latest AMI ID gets set to the AMI of the latest version of this operating system.
+The final parameter that this template uses is SSH and Web Location, which is where we can just specify an IP address range that we want to be able to access this EC2 instance.
+So that's parameters, nothing special, and you'll get more exposure to these as we go through the course.
+Now we've also got outputs, and outputs are things that are set when the template has been applied successfully.
+So when a stack creates, when it finishes that process, it will have some outputs.
+And I've created outputs so that we get the instance ID, the availability zone that the instance uses.
+Remember EC2 is an AZ service. It'll also provide the public DNS name for the instance as well as the public IP address.
+And the way that it sets those is to use what's known as a cloud formation function.
+So this is ref, and this is going to reference another part of the cloud formation template.
+In this case, it's going to reference a logical resource, so the EC2 instance resource.
+Now get attribute or get at, that's another function that's a more capable version of ref.
+So with get attribute, you still refer to another thing inside the template, but you can pick from different data that that thing generates.
+So in EC2 instance, by default, the default thing that you can reference is the instance ID.
+But it also provides additional information. It provides which availability zone it's in.
+It provides its DNS name. It provides its public IP.
+Now I'll make sure that I include a link in the lesson, which details all of the resources that cloud formation can create as well as all of the outputs that they generate.
+So which pieces of data are available.
+Now the main component, of course, of this template is the resources component.
+Now it creates a number of resources.
+Now these bottom two, you don't have to worry about for now.
+I've included them so I can demonstrate the session manager capability of AWS.
+I'll be talking about that much more later in the course.
+But what I'm doing is creating an instance role and an instance role profile.
+Now you won't know what these are yet, but I'll be talking about them later in the course.
+For now, just ignore them.
+The main two components that we're creating is an EC2 instance and a security group for that instance.
+So we're creating a security group that allows two things into this instance.
+Port 22, which is SSH, and port 80, which is HTTP.
+So it's allowing two different types of traffic in to whatever the security group is attached to.
+And then we're creating the EC2 instance itself.
+And so we've got the EC2 instance, which is logical resource.
+The type, which is AWS double colon EC2 double colon instance.
+And then the properties for that logical resource, so the configuration that this instance will have.
+We're setting the type and size of instance, T2.micro, which will keep it inside the free tier.
+We're setting the AMI image ID to use, and it's referencing the parameter.
+And if you recall, that automatically sets the latest AMI ID.
+And then we're setting the security group, which is referencing the logical resource that we create below.
+So it creates this security group and then uses it on the instance.
+And then finally, we're setting the instance profile.
+Now that's related to these two things that I'm not talking about at the bottom.
+So it just sets the instance profile.
+So it gives us the permission to use Session Manager, which I'll demonstrate shortly after we implement this.
+So there's nothing too complex about that, and I promise you by the end of the course,
+and as you get more exposure to CloudFormation, this will make a lot more sense.
+For now, I just want to use it to illustrate the power of CloudFormation.
+So I'm going to move back to the console.
+And before I do this, I'm going to go to Services and just open EC2 in a new tab.
+Once you've done that, return to CloudFormation and click on Next.
+We'll need to name the stack.
+So I'm just going to call it CFN Demo 1 for CloudFormation Demo 1.
+And here's how the parameters are presented to us in the UI.
+The latest AMI ID is set by default to this value.
+And that's because if we look at the parameters, it's got this default value for this parameter.
+And then SSH and Web Location, that also has a default value, which is set in the template.
+And that's why it's set in the UI.
+So I'll leave these two values as default.
+Once you've done that, click on Next.
+Now, I'll be talking more about all of these advanced options later on in the course
+when I talk about CloudFormation.
+For now, we're not going to use any of these.
+So click on Next.
+Now, on this screen, we need to scroll down to the bottom and check this Capabilities box.
+Now, for certain resources that you can create within CloudFormation,
+CloudFormation views them as high risk.
+So in this case, we're creating an identity, an IAM role in this case.
+Don't worry.
+I'll be talking a lot more about what an IAM role is in the next section of the course.
+But because it's an identity, because it's changing something that provides access to AWS,
+then CloudFormation wants us to explicitly acknowledge that we're fine to create this resource.
+So it's prompting us for this capability to create this resource.
+Check this box. It's fine.
+And then click on Submit.
+So the stack creation process will begin and the status will show Create in Progress.
+So this is a process that might take a few minutes.
+What you're able to do is click on Refresh here, so this icon on the top right,
+and this will refresh the list of events.
+And as CloudFormation is creating each physical resource
+that matches the logical resources in the template, it's going to create a new event.
+For each resource, you'll see a Create in Progress event when the creation process starts,
+and then you'll see another one, Create Complete, when it creates successfully.
+If there are any errors in the template, you might see red text which will tell you the nature of that error.
+But because this is a CloudFormation template that I've created, there'll be no errors,
+and after a number of minutes, the stack itself will move from Create in Progress to Create Complete.
+Now I refreshed a couple more times, and we can see that the SessionManager instance profiles
+moved into the Create Complete status, and straight after that, it started to create the EC2 instance.
+So we've got this additional event line saying Create in Progress,
+and the resource creation has been initiated.
+So we're almost at the end of the process now.
+The EC2 instance is going to be the last thing that the stack will create.
+Now at this point, just go ahead and pause the video and wait until both the EC2 instance
+and the stack itself moves into Create Complete.
+Once both of those move into Create Complete, then you can resume the video, and we're good to continue.
+And another refresh, we can see that the EC2 instance has now moved into a Create Complete status.
+Another refresh, and the entire stack, so CFN Demo 1, is now in the Create Complete state,
+and that means that the creation process has been completed,
+and for every logical resource in the template, it's created a physical resource.
+Now I can click on the Outputs tab and see a list of all of the outputs that are generated from the stack,
+and you'll note how they perfectly match the outputs that are listed inside the template.
+So we've got instance ID, AZ, public DNS, and public IP,
+and these are exactly the same as the outputs listed inside the CloudFormation template.
+And you'll see that these have got corresponding values.
+This is the instance ID, the public DNS of the instance, and the public IP version 4 address of the instance.
+If I click on the Resources tab, we'll be able to see a list of the logical resources defined in the template,
+along with their corresponding physical resource IDs.
+So for the EC2 instance logical resource, it's created an instance with this ID.
+And if you click on this physical ID, it will take you to the actual resource inside AWS.
+In this case, the EC2 instance.
+Now before we look at this instance, I want to click back on CloudFormation,
+and just click on the Stacks clickable link at the top there.
+Note how I've got one stack, which is CFN Demo 1.
+I could actually go ahead and click on Create Stack, and go Create Stack with New Resources,
+and apply this same template again, and it would create another EC2 instance.
+That's one of the powerful features of CloudFormation.
+You can use the same template and apply it multiple times to create the same set of consistent infrastructure.
+I could also take this template, because it's portable, because it automatically selects the AMI to use.
+I could apply it in a different region, and it would have the same effect.
+But I'm not going to do that. I'm going to keep things simple for now, and move back to the EC2 tab.
+Now the one thing I want to demonstrate before I finish up with this lesson is Session Manager.
+This is an alternative to having to use the key pair and SSH to connect to the instance.
+What I'm able to do is to right click and hit Connect,
+and instead of using a standalone SSH client, I can select to use Session Manager.
+I'll select that and hit Connect, and that will open a new tab,
+and it will connect me to this instance without having to use that key pair.
+Now it connects me using a different shell than I'm used to, so if I type bash,
+which is the shell that you normally have when you log into an EC2 instance, that should look familiar.
+I'm able to run normal Linux commands like df-k to list all of the different volumes on the server,
+or dmessage to get a list of informational outputs for the server.
+This particular one does need admin permissions, so I'll need to rerun this with sudo and then dmessage.
+These are all commands that I could run in just the same way if I was connected to the instance
+using an SSH client and the key pair.
+Session Manager is just a better way to do it, but it requires certain permissions to be given to the instance.
+That's done with an instance role that I'll be talking all about later on in the course,
+but that is the reason why my CloudFormation template has these two logical resources,
+because these give the instance the permission to be able to be connected to using Session Manager,
+and it makes it a lot easier to manage EC2 instances.
+So that's been a demo of how easy it is to create an EC2 instance using CloudFormation,
+and throughout the course we'll be using more and more complex examples of CloudFormation,
+and I'll be using that to show you how powerful the tool is.
+For now it's a really simple example, but it should show how much quicker it is to create this instance
+using CloudFormation than it was to do it manually.
+Now to finish up this lesson, I'm going to move back to the CloudFormation console,
+I'm going to select this CloudFormation stack, and I'm going to click on Delete.
+I need to confirm that I want to do this because it's telling me that deleting this stack
+will delete all of the stack resources.
+What happens when I do this is that the stack deletes all of the logical resources that it has,
+and then it deletes all of the corresponding physical resources.
+So this is another benefit of CloudFormation in that it cleans up after itself.
+If you create a stack and that creates resources,
+well when you delete that stack, it cleans up by deleting those resources.
+So if I click on Delete Stack now, which I will do, it starts a delete process,
+and that's going to go ahead and remove the EC2 instance that it created.
+So if I select this stack now, I can watch it do that, I can click on Events,
+and it will tell me exactly what it's doing.
+So it's starting off by deleting the EC2 instance.
+If I move back to the EC2 console and just hit Refresh,
+we can see how the instance state has moved from running to shutting down,
+and eventually once the shutdown is completed, it will terminate that instance,
+it will delete the storage, it will stop using the CPU and memory resources,
+and then at that point the account won't have any more charges.
+It wouldn't have done anyway because this demo has been completely within the free tier allocation,
+because I was using a T2.micro instance.
+But there we go, we can see the instance state's now moved to terminated,
+go back to CloudFormation and just refresh this,
+and we'll see that it's completed the deletion of all the other resources,
+and then finished off by deleting the stack itself.
+So that's the demonstration of CloudFormation finished.
+Just to reaffirm the benefits, it allows us to do automated, consistent provisioning.
+We can apply the same template and always get the same results.
+It's completely automated, it's repeatable, we can use it once or a hundred times.
+It's portable, so well-designed templates can be used in any AWS region.
+It's just a tool that really does allow us to manage infrastructure effectively inside AWS.
+So go ahead, complete this video, make sure you delete the CloudFormation stack in your own account,
+and when you're ready, you can move on to the next lesson.

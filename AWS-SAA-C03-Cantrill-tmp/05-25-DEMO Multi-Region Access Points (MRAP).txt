@@ -1,0 +1,257 @@
+Welcome to this mini-project where you're going to get the experience of creating S3 multi-region access points.
+Now multi-region access points give you the ability to create a single S3 global endpoint and point this at multiple S3 buckets.
+It's an effective way to use a single endpoint to route requests to the closest S3 service.
+Now in order to do this mini-project you need to be logged in to an AWS account with admin permissions.
+If you're using one of my courses then you should use the I am admin user of the general AWS account which is the management account of the organization.
+If you're not using my courses make sure you're using an identity with admin permissions.
+You'll also need to select two different AWS regions to perform this mini-project.
+We're going to create S3 buckets in two regions.
+I'm going to use AP Southeast 2 or the Sydney region and CA Central 1 or the Canada region.
+Now the first thing to do is to move to the S3 console so type S3 in the search box at the top and then open that in a new tab.
+Once you're there we're going to create two buckets.
+So first go ahead and click on create bucket.
+Now we'll keep the bucket naming consistent so we'll use multi-region-demo-region and then the region that you're in.
+So in my case Sydney and then at the end I want you to append on a random number.
+In my case 1337.
+Remember S3 bucket names need to be globally unique and this will ensure both of our buckets are.
+Once you've put the name make sure you set the region correctly.
+Everything else can be left as default apart from we need to enable bucket versioning.
+So set this box under versioning to enable.
+Then scroll to the bottom and click on create bucket.
+Then we need to follow that same process again for the second bucket.
+So click on create bucket.
+Use the same bucket naming so multi-region-demo-and then the region name in this case Canada.
+And make sure you append your random number and set the region.
+Then scroll down, enable bucket versioning again and create the bucket.
+Now once we've got these two buckets we're going to create the multi-region access point.
+So click on multi-region access point on the menu on the left and click create multi-region access point.
+For the name you can pick whatever you want.
+It doesn't need to be globally unique, only unique within an AWS account.
+I'm going to pick really really critical cat data and then scroll down and add the buckets that you've just created.
+These can't be added or edited after creation so we need to do it now.
+So click on add buckets, select the two buckets and then click on add buckets to confirm.
+Once you've done that scroll down to the bottom and click create multi-region access point.
+Now this process can take worst case up to 24 hours to complete but typically it creates much faster.
+Generally around 10 to 30 minutes.
+Now we do need this to be created before we continue.
+So go ahead and pause the video, wait for the status on this to change to ready and then you're good to continue.
+Okay so now that we've got this multi-region access point configured and it's ready to go.
+Now that we've got this multi-region access point configured we need to configure replication between the two buckets.
+Because anyone using this multi-region access point will be directed to the closest S3 bucket.
+And we need to make sure that the data in both matches.
+So to do that go ahead and click on the multi-region access point name and go inside there.
+And you'll see that the access point has an Amazon resource name as well as an alias.
+Now you should probably note down the Amazon resource name because we might need it later on.
+Once you've done that click on the replication and failover tab.
+And you'll be able to see a graphical representation of any replication or failover configuration.
+If we click on the replication tab you'll see there's no replication configured.
+If we click on the failover tab you can see that we've got these two S3 buckets in different AWS regions.
+Configured as an active-active failover configuration.
+Which means any requests made to this multi-region access point will be delivered to either of these S3 buckets as long as they're available.
+Now we can click on one and click on edit routing status and configure it as passive.
+Which means it will only be used if no active buckets exist.
+But in our case we want it to be active-active so we'll leave both of these set to active.
+Now we want to configure replication between the buckets.
+So we're going to scroll down to replication rules and click create replication rule.
+Now there are two templates available to start with.
+Replicate objects amongst all specified buckets and replicate objects from one or more source buckets to one or more destination buckets.
+Now which of these you pick depends on the architecture that you're using.
+But because we have an active-active configuration we want all of the buckets to be the same.
+So we're going to pick the replicate objects among all specified buckets template.
+So this is replicating between every bucket and every other bucket.
+Essentially it creates a set of buckets which contain exactly the same data all fronted by a multi-region access point.
+So go ahead and make sure this template is selected and then click to select both of the buckets that you created.
+In my case Sydney and Canada.
+Once we've done that scroll down you can set whether you want the status to be enabled or disabled when created.
+We're going to choose enabled and you get to adjust the scope.
+So you can either have it configured so that you can replicate objects using one or more filters or you can apply to all objects in the bucket.
+Now we want to make sure the entire bucket is replicated so we're going to use apply to all objects in the bucket.
+Now you're informed that an IAM role or roles will be generated based on your configuration.
+And this will provide S3 with the permissions that it needs to replicate objects between the buckets.
+Now this is informational we don't need to do anything so let's move on.
+Now you're also told what encryption settings are used as well as the destination storage class.
+Now because of the template that we've picked above we don't get to change the destination storage class and that's okay.
+If we scroll down to the bottom we have additional replication options.
+We have replication time control which applies an SLA to the replication process.
+We have replication metrics and notifications to provide additional rich information.
+And we can choose whether to replicate delete markers and whether to replicate modifications.
+Now for this mini project we're not going to use replication time control we don't need that level of SLA.
+We are going to make sure that replication metrics and notifications is selected.
+We don't want to replicate delete markers and we do want to make sure that replica modification sync is checked.
+So we only want replication metrics and notifications and replica modification sync.
+So make sure that both of those are checked and then click on create replication rules.
+Now at this point all of the buckets within this multi-region access point are now replicating with each other.
+In our case it's only the two, in my case it's Canada and Sydney.
+So go ahead and click on close and we can see how this graphical representation has changed.
+Showing us that we now have two-way replication in my case between Sydney and Canada.
+Now at this point we need to test out the multi-region access point.
+And rather than having you configure your local command line interface we're going to do that with Cloud Shell.
+Now what I want you to do is to go ahead and move to a different AWS region.
+So not the same AWS regions that either of your buckets are created in.
+What I do want you to do though is pick a region close to one of your buckets.
+Now I'm going to start off with Sydney and in order to test this I'm going to switch across to the Tokyo region.
+Which is relatively close to Sydney at least from a global perspective.
+So I'm going to click on the region drop down at the top and change it from Sydney to Tokyo.
+And what's on there I'm going to click on this icon which starts the Cloud Shell.
+If this is the first time you're using it in this region you'll probably get the welcome to AWS Cloud Shell notification.
+Just either click on close or check this box and then click on close if you don't want to see this notification again.
+Now all of these commands that we're going to be running are in the instructions which are attached to this video.
+The first thing that we're going to do is to create a test file that we're going to upload to S3.
+And we're going to do that using the DD command.
+So we're going to have an input of slash dev slash urandom which just gives us a stream of random data.
+And then for the output using the OF option we're going to create a file called test1.file.
+This is going to have a block size of 1 meg and a count of 10 which means that it's going to create a 10 meg file called test1.file.
+So run that command.
+Now once you've done that just go back to the tab that you've got open to S3.
+Scroll to the top.
+Click on multi-region access points.
+Check the access point that you've created.
+And then just click on copy ARN to copy the ARN for this access point into your clipboard and then go back to Cloud Shell.
+Next I'm going to do an LS making sure I just have a file created within Cloud Shell.
+I do.
+And now I'm going to run this command.
+So AWS space S3 space CP for copy space test1.file.
+So this is the local file we created within Cloud Shell.
+And then space and then S3 colon double forward slash and then the ARN of the multi-region access point.
+Now this command is going to copy the file that we created to this multi-region access point.
+And this multi-region access point is going to direct us towards the closest S3 location that it serves.
+Which should be the bucket within the Sydney region.
+So go ahead and run that command.
+It's going to take a few moments to upload.
+But when it does switch back to S3.
+Go to buckets.
+In my case I'm going to go to the Sydney bucket.
+And I should see the file created in this bucket.
+I do. That's good.
+So I'm going to go back to buckets and go to Canada.
+And I don't yet see the object created in the Canada bucket.
+And that's because replication can take a few minutes to replicate from the bucket where the object was stored through to the destination bucket.
+If we just give this a few moments and keep hitting refresh.
+After a few moments we should see the same test1.file which has been replicated from the Sydney region through to the Canada region.
+Now S3 replication isn't guaranteed to complete in a set time.
+Especially if you haven't configured the replication time control option.
+So it's fairly normal to see a small delay between when the object gets written to one bucket and when it's replicated to another.
+Now we're going to try this with a different region.
+So go back to Cloud Shell.
+And then click on the region dropdown.
+And we're going to pick a region which is close to our other bucket but not in the same region.
+So the other bucket is created in the Canada region.
+So I'm going to pick a close region.
+In this case I'm going to pick US East 2 which is in Ohio.
+Once I've done that I'm going to go back to Cloud Shell.
+Once I've done that I should be in Cloud Shell in a different AWS region.
+So I'll need to recreate the test file.
+In this case I'm going to call it test2.file.
+And I'm going to use all the same options.
+And again this command is contained in the instructions attached to this video.
+So run that command and it will take a few moments to complete.
+And then we're going to follow the same process.
+We're going to upload this file to RS3 buckets using the multi-region access point.
+So again just make sure you've got the ARN for the access point in your clipboard.
+And then in the Cloud Shell type AWS s3 cp test2.file s3 colon forward slash forward slash
+and then the ARN of the multi-region access point.
+Again we're going to press enter, wait for this to upload and then check the buckets.
+So run that command.
+Then go back to S3.
+Go to buckets.
+I'm going to go to the bucket in Canada first.
+I'm going to hit refresh and we should see test2.file in this bucket which is good.
+Then go to buckets and go to Sydney.
+And we probably won't see that file just yet because it will take a few moments to replicate.
+So keep hitting refresh and eventually you should see test2.file arrives in the S3 bucket.
+Now this time we're going to run the same test but we're going to pick a region
+that is relatively in the middle between these two regions where our S3 buckets are created.
+In my case I'm going to change the region to AP South 1 which is the Mumbai region.
+And I'm going to follow exactly the same process so move to Cloud Shell.
+I'm going to generate a new file so in this case it's test3.file.
+Now before we upload this we're going to go to the S3 console, go to buckets
+and just make sure that we have a tab open to both the Canada and the Sydney bucket.
+This test is going to be uploaded from a region that's in the middle of these two buckets
+and so we need to be able to quickly check which bucket receives the upload directly
+and which bucket receives the replicated copy.
+So once you've got a tab open to both those buckets, go back to Cloud Shell and run this command.
+So aws s3 cp test3.file s3 colon forward slash forward slash
+and then the name of the S3 multi-region access point.
+Once you've done that go ahead and run that command, it will take a few moments to upload
+and then move straight to the tabs that you've got open to the S3 buckets and refresh both of them.
+If I look at Sydney it looks as though that receives the file straight away.
+So this multi-region access point has directed us to Sydney.
+If I move to Canada and hit refresh we can see that the file's not yet arrived
+so this is receiving the replicated copy and it does that after a few minutes
+we can see test3.file arrives in this bucket.
+Now at this point we're going to run a test to show the type of problem that can occur
+if you're using this type of global replicated configuration using multi-region access points.
+What I want you to do is to open up two different Cloud Shells.
+I want one Cloud Shell open in the Canada region, so the region where you have one of your buckets
+and I want the other Cloud Shell open in the AP Southeast 2 region, so the Sydney region.
+So we've got one Cloud Shell open in the same region as each of our buckets.
+Now once we've done that in one region, in my case I'm going to use the Canada region
+I'm going to generate a file called test4.file.
+The command's going to be the same as we've used in previous steps.
+Then I'm going to copy the ARN of the multi-region access point into my clipboard
+and I'm going to type this command again in the Canada Cloud Shell.
+So this command is going to copy this file to the multi-region access point.
+Now because I'm doing this in the Canada region, it's almost guaranteed
+that the multi-region access point is going to direct us to the bucket which is also in the Canada region.
+And so the bucket in this region is going to get the direct copy of the object
+and the bucket in the Sydney region is going to receive the replicated copy.
+So I'm going to fully type out this command and before I run it
+I'm going to move to the Sydney region and type out a slightly different command.
+This command is also contained in the instructions attached to this lesson.
+This command is aws s3 cp space and then s3 colon forward slash forward slash
+and then the name of the multi-region access point
+and then forward slash test4.file and then a space and then a period.
+Now this command, when we run it, which we're not going to do yet,
+is going to copy the test4.file object from the multi-region access point into our Cloud Shell.
+Remember we haven't created this object yet.
+Now because this Cloud Shell is in the Sydney region,
+the multi-region access point is almost certainly going to redirect us to the bucket in the Sydney region.
+So let's move back to the Canada Cloud Shell,
+run this command which is probably going to copy this object into the Canada bucket,
+then move back to the Cloud Shell in the Sydney region
+and then run this command to copy the object from the multi-region access point into our Cloud Shell
+and we receive this error.
+Now we're getting this error because the object test4.file
+doesn't exist within the bucket that the multi-region access point is directing us to.
+So just to reiterate what we've done,
+we've created this object in the Canada region using the multi-region access point,
+which is going to have created the object in the closest S3 resource,
+which is the bucket also in the Canada region.
+So the Canada region bucket has the direct copy of the object.
+This will then take a few minutes to replicate to the Sydney bucket.
+Because we're using this reverse copy command in the Sydney region,
+it's attempting to copy the test4.file object from the multi-region access point to our Cloud Shell.
+But because this replication won't have occurred yet
+and because this is going to direct us at the bucket in the Sydney region,
+we get this object does not exist error.
+And this is one of the issues you can experience when you're using multi-region access points
+in that there's a consistency lag.
+You have to wait for the replication to occur
+before you can retrieve replicated objects from different buckets
+using the multi-region access point.
+Now this process can be improved by using the RTC option when setting up replication,
+but this does come with additional costs.
+So this is something to keep in mind when you're using this type of architecture.
+And if we keep running this command, we'll see that it keeps failing over and over again
+until the replication process finishes and then we can copy down the object.
+Now that is everything which I wanted to cover in this brief mini project into multi-region access points.
+At this point, all that remains is for us to clean up the account
+and return it to the same state as it was at the start of this mini project.
+So to do that, we need to move back to the S3 console, go to multi-region access points,
+select the access point you created for this mini project and click delete,
+and then you need to copy and paste the name and click delete to confirm.
+Then we need to go ahead and move to buckets.
+Select each of the buckets in turn, first click on empty,
+and you'll need to copy and paste or type permanently delete
+and then click to confirm that empty process.
+Once that's finished, click on exit, select the same bucket again,
+this time click delete, copy and paste or type the bucket name and then click to confirm,
+and then do the same process with the other bucket, so first empty it, confirm that,
+and then delete it and confirm that.
+And then at that point, all the billable elements created as part of this mini project have been deleted
+and we're good to finish off this mini project.
+So that's everything I wanted to cover, I hope it's been useful
+and I hope it's given you some practical experience of how to use multi-region access points
+together with S3 replication.
+At this point that's everything, so go ahead and complete this video
+and I hope you'll join me soon for another exciting mini project.

@@ -1,0 +1,144 @@
+Welcome back, this is part two of this lesson. We're going to continue immediately from the end of part one, so let's get started.
+We just need to give this a brief moment to perform that reboot. So just wait a couple of moments, and once you have, right-click again, select Connect.
+We're going to use EC2 Instance Connect again, make sure the user's correct, and then click on Connect.
+Now if it doesn't immediately connect you to the instance, if it appears to have frozen for a couple of seconds, that's fine.
+It just means that the instance hasn't completed its restart. Wait for a brief while longer, and then attempt another connect.
+This time you should be connected back to the instance, and now we need to verify whether we can still see our volume attached to this instance.
+So do a df space hyphen k and press enter, and you'll note that you can't see the file system.
+That's because before we rebooted this instance, we used the mount command to manually mount the file system on our EBS volume into the EBS test folder.
+Now that's a manual process. It means that while we could interact with that before the reboot,
+it doesn't automatically mount that file system when the instance restarts.
+To do that we need to configure it to auto mount when the instance starts up.
+So to do that we need to get the unique ID of the EBS volume which is attached to this instance, and to get that we run a sudo space blkid.
+Now press enter, and that's going to list the unique identifier of all of the volumes attached to this instance.
+You'll see the boot volume listed as dev xvda1, and the EBS volume that we've just attached listed as dev xvdf.
+So we need the unique ID of the volume that we just added. So that's the one next to xvdf.
+So go ahead and select this unique identifier. You'll need to make sure that you select everything between the speech marks and then copy that into your clipboard.
+Next we need to edit the fstab file which controls which file systems are mounted by default.
+So we're going to run a sudo, and then space, nano, which is our editor, and then a space, and then forward slash etc which is the configuration directory on Linux,
+another forward slash, and then fstab, and press enter.
+And this is the configuration file for which file systems are mounted by our instance, and we're going to add a similar line.
+So first we need to use uuid, which is the unique identifier, and then the equal symbol, and then we need to paste in that unique ID that we just copied to our clipboard.
+Once that's pasted in, press space. This is the ID of the EBS volume, so the unique ID.
+Next we need to provide the place where we want that volume to be mounted, and that's the folder we previously created, which is forward slash EBS test.
+Then a space. We need to tell the OS which file system is used, which is xfs, and then a space, and then we need to give it some options.
+You don't need to understand what these do in detail. We're going to use defaults, all one word, and then a comma, and then no fail.
+So once you've entered all of that, press control O to save that file, and enter, and then control X to exit.
+Now this will be mounted automatically when the instance starts up, but we can force that process by typing sudo mount a,
+and this will perform a mount of all of the volumes listed in the fstab file. So go ahead and press enter.
+Now if we do a df space hyphen k and press enter, you'll see that our EBS volume once again is mounted within the EBS test folder.
+So I'm going to clear the screen, then I'm going to move into that folder, press enter, and then do an ls space hyphen la,
+and you'll see that our amazing test file still exists within this folder.
+And that shows that the data on this file system is persistent, and it's available even after we reboot this EC2 instance,
+and that's different than instance store volumes, which I'll be demonstrating later on.
+At this point we're going to shut down this instance because we won't be needing it anymore.
+So close down this tab, click on instances, right click on instance one hyphen az a, and then select stop instance.
+You'll need to confirm it, refresh that and wait for it to move into a stopped state.
+Once it has stopped, go down and click on volumes, select the EBS test volume, right click and detach it.
+We're going to detach this volume from the instance that we've just stopped.
+You'll need to confirm that, and that will begin the process and it will detach that volume from the instance,
+and this demonstrates how EBS volumes are completely separate from EC2 instances.
+You can detach them and then attach them to other instances, keeping the data that's on that volume.
+Just keep refreshing, we need to wait for that to move into an available state,
+and once it has we're going to right click, select attach volume, click inside the instance box,
+and this time we're going to select instance two hyphen az a.
+It should be the only one listed now in a running state, so select that and click on attach.
+Just refresh that and wait for that to move into an in-use state, which it is,
+then move back to instances, and we're going to connect to the instance that we just attached that volume to.
+So select instance two hyphen az a, right click, select connect, and then connect to that instance.
+Once we're connected to that instance, remember this is an instance that we haven't interacted with this EBS volume with,
+so this instance has no initial configuration of this EBS volume,
+and if we do a df space hyphen k, you'll see that this volume is not mounted on this instance.
+What we need to do is do an ls blk, and this will list all of the block devices on this instance.
+You'll see that it's still using xvds, because this is the device ID that we configured when attaching the volume.
+Now if we run this command, so sudo file hyphen s, and then the device ID of this EBS volume,
+notice how now it shows a file system on this EBS volume, because we created it on the previous instance.
+We don't need to go through all of the process of creating the file system,
+because EBS volumes persist past the lifecycle of an EC2 instance.
+You can interact with an EBS volume on one instance, and then move it to another, and the configuration is maintained.
+We're going to follow the same process, we're going to create a folder called EBS test,
+then we're going to mount the EBS volume using the device ID into this folder,
+we're going to move into this folder, and then if we do an ls space hyphen la and press enter,
+you'll see the test file that you created in the previous step.
+It still exists, and all the contents of that file are maintained, because the EBS volume is persistent storage.
+So that's all I wanted to verify with this instance, that you can mount this EBS volume on another instance inside the same availability zone.
+At this point close down this tab, and then click on instances, and we're going to shut down this second EC2 instance.
+So right click, and then select stop instance, and you'll need to confirm that process.
+Wait for that instance to change into a stopped state, and then we're going to detach the EBS volume.
+So that's moved into the stopped state, we can select volumes, right click on this EBS test volume,
+detach the volume, and confirm that.
+Now next we want to mount this volume onto the instance that's in availability zone B,
+and we can't do that because EBS volumes are located in one specific availability zone.
+Now to allow that process we need to create a snapshot.
+Snapshots are stored on S3 and replicated between multiple availability zones in that region,
+and snapshots allow us to take a volume in one availability zone and move it into another.
+So right click on this EBS volume and create a snapshot.
+Under description just use EBS test snap, and then go ahead and click on create snapshot.
+Just close down any dialogues, click on snapshots, and you'll see that a snapshot is being created.
+Now depending on how much data is stored on the EBS volume, snapshots can either take a few seconds,
+or anywhere up to several hours to complete.
+This snapshot is a full copy of all of the data that's stored on our original EBS volume.
+But because the snapshot is stored in S3, it means that we can take this snapshot,
+right click, create volume, and then create a volume in a different availability zone.
+Now you can change the volume type, the size, and the encryption settings at this point,
+but we're going to leave everything the same and just change the availability zone
+from US-EAST-1A to US-EAST-1B.
+So select 1B in availability zone, click on add tag.
+We're going to give this a name to make it easier to identify.
+For the value we're going to use EBS test volume hyphen AZB.
+So enter that and then create the volume.
+Close down any dialogues, and at this point what we're doing is using this snapshot,
+which is stored inside S3, to create a brand new volume inside availability zone US-EAST-1B.
+At this point, once the volume is in an available state, make sure you select the right one,
+then we can right click, we can attach this volume, and this time when we click in the instance box,
+you'll see the instance that's in availability zone 1B.
+So go ahead and select that and click on attach.
+Once that volume is in use, go back to instances, select the third instance, right click, select connect,
+choose instance connect, verify the username, and then connect to the instance.
+Now we're going to follow the same process with this instance,
+So first we need to list all of the attached block devices using LSBLK.
+You'll see the volume we've just created from that snapshot.
+It's using device ID XVDF.
+We can verify that it's got a file system using the command that we've used previously,
+and it's showing an XFS file system.
+Next we create our folder, which will be our mount point.
+Then we mount the device into this mount point using the same command as we've used previously,
+move into that folder, and then do a listing using LS-LA.
+And you should see the same test file you created earlier,
+and if you cat this file, it should have the same contents.
+This volume has the same contents because it's created from a snapshot that we created of the original volume,
+and so its contents will be identical.
+Go ahead and close down this tab to this instance.
+Select instances, right-click, stop this instance, and then confirm that process.
+Just wait for that instance to move into the stopped state.
+We're going to move back to volumes.
+Select the EBS test volume in availability zone 1B,
+detach that volume, and confirm it.
+And then just move to snapshots,
+And I want to demonstrate how you have the option of right-clicking on a snapshot.
+You can copy the snapshot and choose a different region.
+So as well as snapshots giving you the option of moving EBS volume data between availability zones,
+you can also use snapshots to copy data between regions.
+Now I'm not going to do this process, but I could select a different region,
+for example, Asia, Pacific, Sydney, and copy that snapshot to the Sydney region.
+But there's no point doing that because we just have to remember to clean it up afterwards.
+That process is fairly simple and will allow us to copy snapshots between regions.
+It might take some time, again, depending on the amount of data within that snapshot,
+but it is a process that you can perform either as part of data migration or disaster recovery processes.
+So go ahead and click on cancel,
+and at this point we're just going to clear things up,
+because this is the end of this first phase of this demo lesson.
+So right-click on this snapshot and just delete the snapshot and confirm that.
+Then go to volumes, select the volume in US East 1A, right-click, delete that volume and confirm.
+Select the volume in US East 1B, right-click, delete volume and confirm.
+And that just means we've tidied up both of those EBS volumes within this account.
+Now that's the end of this first stage of this set of demo lessons.
+All the steps until this point have been part of the free tier within AWS.
+What follows won't be part of the free tier.
+We're going to be creating a larger instance size and this will have a cost attached,
+but I want to use it to demonstrate instance store volumes and how you can interact with them
+and some of their unique characteristics.
+So I'm going to move into a new video and this new video will have an associated charge.
+So you can either watch me perform the steps or you can do it within your own environment.
+Now go ahead and complete this video and when you're ready,
+you can move on to the next video where we're going to investigate instance store volumes.

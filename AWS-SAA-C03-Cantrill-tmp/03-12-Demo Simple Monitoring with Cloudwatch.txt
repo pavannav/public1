@@ -1,0 +1,186 @@
+Welcome back and in this demo lesson you're going to get some experience
+interacting with CloudWatch. So you're going to create an EC2 instance, you're
+going to cause that instance to consume some CPU capacity and then you're going
+to monitor exactly how that looks within CloudWatch. Now to do this in your own
+environment you'll just need to make sure that you're logged into the general
+AWS account as the IAM admin user and as always make sure that you have the
+Northern Virginia region selected which is US-East-1. Once you've
+got those set correctly then click in the search box at the top and type EC2,
+find the EC2 service and then just go ahead and open that in a brand new tab.
+Now we're going to skip through the instance creation process because
+you've done that in a previous demo lesson. So just go ahead and click on
+instances and then launch instance. Under name I just want you to put CloudWatch
+test as the instance name, then scroll down and then under the Amazon machine
+image to use go ahead and select Amazon Linux. We're going to pick the Amazon
+Linux 2023 version so that's the most recent version of this AMI. It should be
+listed as free tier eligible so just make sure that's the case. We'll leave
+the architecture set to 64-bit x86 and scroll down. It should already be set to
+an instance type which is free tier eligible, in my case t2.micro. We'll be
+connecting to this instance using EC2 instance connect so we won't be using
+an SSH key pair. So in this drop-down just click and then say proceed without
+a key pair. We won't need one because we won't be connecting with a local SSH
+client. Scroll down further still and under network settings click on edit and
+just make sure that the default VPC is selected. There should only be one in
+this list but just make sure that it's set as default. Under subnet we can leave
+this as no preference because we don't need to set one. We will need to make
+sure that auto assign public IP is set to enable and then under create security
+group for the name and for the description just go ahead and type
+CloudWatch SG. So CloudWatch SG for both the security group name and the
+description. Now the default for security group rule should be fine
+because it allows SSH to connect from any source location and that's what we
+want. Scroll down further still and we'll be leaving storage as default.
+Remember this is set from the AMI that we pick. Now because this is a CloudWatch
+lesson we're going to set something a little bit different. So expand advanced
+details and then scroll down and look for detailed CloudWatch monitoring. Now
+this does come at an additional cost so you've got a couple of options. You can
+just watch me do this or you can do this demo without detailed monitoring
+enabled and if you don't enable this it will be entirely free but you might need
+to wait a little bit longer for things to happen in the demo lesson so keep
+that in mind. What I'm going to do is I'm going to enable detailed CloudWatch
+monitoring and if we click on info here we can see some details about exactly
+what that does and we can also open this in a new tab and explore what
+additional charges apply if we want to enable it. Now in this case I'm going to
+enable it you don't have to it's not a huge charge but I think for me demoing
+this to you it's good that I enable it you don't have to you might just have to
+wait a little bit longer for things to happen in the demo. Now once all of that
+set just scroll all the way down to the bottom and go ahead and click launch
+instance. Now this might take a few minutes to create we're first waiting
+for this success dialog and once that shows we can go ahead and click on view
+all instances. Go ahead and click refresh until you see the instance it will start
+off in a pending state with nothing listed under status check. After a few
+moments this will change status we'll see that it's in a running state and
+then we need to wait for this to change to two of two status checks before we
+continue. So go ahead and pause the video wait for your status check to update and
+once it does we good to continue. Okay so now this has changed to two out of two
+checks passed and that's good that's what we want so so it should display
+running on the instance state and then two out of two checks passed on the
+status check. Once this is the case go ahead and click in the search box at the
+top and just type cloud watch locate the cloud watch service and then open that
+in a brand new tab. This is the cloud watch console and it's here where we're
+going to create a cloud watch alarm. Now if you see anything about a new UI or
+new features you can just go ahead and close down that dialog. Once we're here
+go ahead and click on alarms on the left and then click on all alarms. This will
+show a list of all the alarms that you've configured within cloud watch
+and currently there aren't any. What we're going to do is to create an alarm
+so click on create alarm and then click on select metric. Once we're on this
+screen scroll down and we're going to be looking for an EC2 metric because we
+need to find the CPU utilization metric which is inside the EC2 namespace in
+other words it comes from the EC2 service so go ahead and click on EC2 and
+then we're looking for per instance metrics so click on per instance metrics
+and this will show all of the EC2 instance metrics that we currently have.
+Now if I scroll through this list what you'll see is that I have two different
+instance IDs because I'm using this account to create all of these demo
+lessons. In my case I see previous instances. Now if you're doing this in
+your account if you go back to the EC2 management console you can see your
+instance ID here. Just remember the last four digits of this instance ID and then
+go back to the cloud watch console. If you have more than one instance listed
+in cloud watch look for the instance ID that ends with the four digits that you
+just noted down and then from that list you need to identify CPU utilization and
+so I'm going to check the box next to this metric. Now this is the metric that
+monitors as the name suggests CPU utilization on this specific instance ID
+which is our cloud watch test instance. If I scroll up I'm able to see any data
+that's already been gathered for this specific instance and as you can see
+it's not a great deal at the moment because we've only just launched this
+instance. So I'm going to go ahead and click on select metric and then because
+we're creating an alarm it's going to ask us for what metric and conditions we
+want to evaluate. So I'm going to scroll down and under conditions I'm going to
+pick static because I want this alarm to go into an alarm state when something
+happens to the CPU utilization. So I'm going to ask cloud watch that whenever
+the CPU utilization is greater or equal to a specific value than to go into an
+alarm state. So that value is going to be 15%. So whenever the CPU utilization on
+this EC2 instance is greater or equal to 15% then this alarm will go into the
+alarm state. So I'm going to go ahead and click on next. Now you can set this up
+so that if this alarm goes into an alarm state it can notify you using SNS.
+Now that's useful if this is in production usage but in this case we're
+not using it in production so I'm going to go ahead and click on remove. Scroll
+down to the bottom there's also other things that you could pick so you could
+do an auto scaling action an EC2 action or a systems manager action but we're
+going to be talking about these in much more detail as we move through the
+course. For now we're going to keep this simple it's just going to be a basic
+alarm which goes into an alarm state or not. So click on next and then under
+alarm name I'm going to put cloud watch test and then high CPU and you should do
+the same. So type that click on next scroll down to the bottom and create
+that alarm. Now initially this alarm state will be insufficient data because
+cloud watch hasn't yet gathered enough data on the CPU utilization to generate
+the state. That's fine because we've got another thing that we need to do first.
+So now move back to the EC2 console and we're going to connect into this
+instance using EC2 instance connect. Remember that's the web-based way to get
+access to this instance. So over the top of the cloud watch test instance right
+click and go to connect. Make sure that EC2 instance connect is selected so
+click that tab you can leave everything as default and click on connect and that
+will connect you to this EC2 instance. Now at this point we need to install an
+application called stress on this EC2 instance and stress is an application
+which will put artificial CPU load onto a system and that's what we want to do
+in order to see how cloud watch reacts. To install stress we're going to run
+this command and this next command will use the yum package manager to install
+the stress utility. So go ahead and run this command and then clear the screen
+again. Now the stress command can be run by typing stress and what we're going to
+do is do a double hyphen help just to get the help for this command. So what we're
+going to do is we're going to run stress and we're going to specify the number of
+CPUs to use and we want that number to be the same number of virtual CPUs that
+this instance has. Now a T2.micro has one virtual CPU and so the command that we
+need to run is stress space hyphen c space one and then space and then we're
+going to use hyphen t which is the timeout command and this specifies how
+long we want to run this for. So we're going to specify three six zero zero so
+hyphen t and then a space three six zero zero and this will run the stress for
+three thousand six hundred seconds and that's plenty for us to see how this
+affects the metrics which are being monitored by cloud watch. Now what I want
+to do before we do that is go back to the cloud watch console. You might need
+to refresh if you haven't seen the state update yet. In my case it's already
+showing as okay. So this means that it's now got access to some data so click on
+this alarm and you'll be able to see that currently the CPU started off at
+very low levels and then it spiked up and potentially in my case that's
+because we've just installed some software but note here this red line
+which indicates the alarm level for this alarm. So if the CPU utilization which
+is in blue exceeds this red line then this alarm will move from okay to alarm
+and that's what we want to simulate. So go back to the instance and press enter
+to run this stress command and that's going to begin placing high levels of
+CPU load on this instance and what we'll see over the next few minutes is cloud
+watch will detect this additional CPU load and it will cause this alarm to go
+from okay into an alarm state. So move back to the cloud watch console and just
+keep hitting refresh until you see a change in the alarm state. Again this
+might take a few minutes what I suggest you do is pause the video and wait for
+your alarm to change away from okay and then you're good to continue. Now in my
+case this only took a few minutes and as you can see the CPU load reported by
+this alarm in cloud watch went from this value here and spiked all the way up to
+this value which is well above the 15% of the alarm threshold. So the alarm
+changed from okay to in alarm based on this excessive CPU and if we keep
+monitoring this over time you'll see that this trend continues because this
+CPU is under extremely high load because it's been artificially simulated using
+the stress utility. Now if we go back to this EC2 instance and press ctrl and C
+at the same time this will exit out of the stress utility and at this point the
+artificial CPU load has been removed and the instance will gradually move back
+down to its normal levels which is very close to zero. So again what you'll see
+is this may take a few minutes to be reflected inside cloud watch. So keep
+refreshing this once you've cancelled the stress utility and wait for the
+reported CPU utilization to move back down below the alarm value. Again that
+might take a few minutes so go ahead and pause the video and wait for this blue
+line to move back under the red line and once it does you should see that the
+alarm state changes from in alarm to okay again. In my case it took a few
+minutes for the blue line to move below the alarm threshold and then a few more
+minutes afterwards for the alarm to change from in alarm to okay but as you
+can see at this point that's exactly what's happened once the CPU usage goes
+below the configured threshold value then the alarm changes back to an okay
+state. And at this point that's everything that I wanted to cover in
+this demo lesson on cloud watch. Cloud watch is a topic that I'm going to be
+going into much more detail later on in the course. This has just been a really
+brief introduction to the product and how it interacts with EC2. Now at this
+point the only thing left is to clear up the account and put it back into the
+same state as it was at the start of this lesson. So to do that go ahead and
+click on all alarms, select the cloud watch test high CPU alarm that you
+created, click on the actions drop-down, select delete and then confirm that
+deletion. Then go back to EC2, go to the instances overview, right click on the
+cloud watch test instance making sure that it is the correct instance so
+cloud watch test and then select terminate instance and confirm that
+termination. Now that's going to move through a few states it will start with
+shutting down and you need to wait until that instance is in a terminated state.
+Go ahead and pause the video and wait for your instance to change into
+terminated. Okay so once your instance has terminated on the menu on the left
+scroll down, go to security groups, select the cloud watch SG security group
+making sure that you do pick the correct one so cloud watch SG, click on actions
+scroll down, delete security groups and click on delete and at that point the
+account is back in the same state as it was at the start of this demo lesson. So
+thanks for watching this video I hope you gained some experience of the cloud
+watch product and again we're going to be talking about it in much more detail
+later in the course. At this point though go ahead and complete this video and
+when you're ready I'll look forward to you joining me in the next.

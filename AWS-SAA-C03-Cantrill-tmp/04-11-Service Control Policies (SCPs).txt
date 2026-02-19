@@ -1,0 +1,135 @@
+Welcome back and in this lesson I'll be talking about service control policies or SCPs.
+Now SCPs are a feature of AWS organizations which can be used to restrict AWS accounts.
+They're an essential feature to understand if you're involved in the design and implementation of larger AWS platforms.
+Now we've got a lot to cover so let's jump in and get started.
+At this point this is what our AWS account setup looks like.
+We've created an organization for animals for life and inside it we have the general account which from now on I'll be referring to as the management account
+and then two member accounts so production which we'll call prod and development which we'll be calling dev.
+All of these AWS accounts are within the root container of the organization.
+That's to say they aren't inside any organizational units.
+In the next demo lesson we're going to be adding organizational units, one for production and one for development
+and we'll be putting the member accounts inside their respective organizational units.
+Now let's talk about service control policies.
+The concept of a service control policy is simple enough.
+If it's a policy document, so a JSON document, and these service control policies can be attached to the organization as a whole
+by attaching them to the root container or they can be attached to one or more organizational units
+and lastly they can even be attached to individual AWS accounts.
+Service control policies inherit down the organization tree.
+So this means if they're attached to the organization as a whole, so the root container of the organization
+then they affect all of the accounts inside the organization.
+If they're attached to an organizational unit then they impact all accounts directly inside that organizational unit
+as well as all accounts within OUs inside that organizational unit.
+So if you have nested organizational units then by attaching them to one OU they affect that OU and everything below it.
+If you attach service control policies to one or more accounts then they just directly affect those accounts that they're attached to.
+Now I mentioned in an earlier lesson that the management account of an organization is special.
+One of the reasons it's special is that even if the management account has service control policies attached
+either directly via an organizational unit or on the root container of the organization itself
+then the management account is never affected by service control policies.
+Now this can be both beneficial and it can be a limitation but as a minimum you need to be aware of it.
+As a security practice because the management account can't be restricted using service control policies
+then generally in production I avoid using the management account for any AWS resources.
+It's the only AWS account within AWS organizations which can't be restricted using service control policies.
+As a takeaway just remember that the management account is special and it's unaffected by any service control policies
+which are attached to that account either directly or indirectly.
+Now service control policies are account permissions boundaries and what I mean by that is they limit what the AWS account can do
+including the account root user within that account.
+Now I talked earlier in the course about how you can't restrict an account root user and that is true.
+You can't directly restrict what the account root user of an AWS account can do.
+The account root user always has full permissions over that entire AWS account
+but with a service control policy you're actually restricting what the account itself can do
+specifically any identities within that account and so you're indirectly restricting the account root user
+because you're reducing the allowed permissions on the account
+you're also reducing what the effective permissions on the account root user are.
+So this is a really fine detail to understand.
+You can never restrict the account root user.
+It will always have a hundred percent access to the account
+but if you restrict the account then in effect you're also restricting the account root user.
+Now you might apply a service control policy to prevent any usage of that account outside a known region
+for example US East 1.
+You might also apply a service control policy which only allows a certain size of EC2 instance to be used within the account.
+Service control policies are a really powerful feature for any larger more complex AWS deployments.
+The really critical thing though to understand about service control policies is they don't grant any permissions.
+Service control policies are just a boundary.
+They define the limit of what is and isn't allowed within the account but they don't grant permissions.
+You still need to give identities within that AWS account permissions to AWS resources
+but any SCPs will limit the permissions that can be assigned to individual identities.
+Now you can use service control policies in two ways.
+You can block by default and allow certain services which is an allow list
+or you can allow by default and block access to certain services which is a deny list.
+Now the default is a deny list.
+When you enable SCPs on your organization AWS apply a default policy which is called full AWS access
+and this is applied to the organization and all OUs within that organization.
+This policy means that in the default implementation service control policies have no effect since nothing is restricted.
+As a reminder service control policies don't grant permissions
+but when SCPs are enabled there is an implicit default deny just like IAM policies.
+If you had no initial allow then everything would be denied.
+So the default is this full access policy which essentially means no restrictions.
+It has the effect of making SCPs a deny list architecture
+so you need to add any restrictions that you want to any AWS accounts within the organization.
+An example is that you could add another policy such as this one called deny S3
+and this adds a deny policy for the entire S3 set of API operations effectively denying S3.
+You need to remember that SCPs don't actually grant any access rights
+but they establish which permissions can be granted in an account.
+So the same priority rules apply deny, allow, deny.
+Anything explicitly allowed in an SCP is a service which can have access granted to identities within that account
+unless there's an explicit deny within an SCP then a service cannot be granted.
+Explicit deny always wins and in the absence of either
+if we didn't have this full AWS access policy in place
+then there would be an implicit deny which blocks access to everything.
+Now the benefit to using deny lists is that because your foundation is to allow wild card access
+so all actions on all resources.
+As AWS extends the amounts of products and services which are available inside the platform
+this allow list constantly expands to cover those services so it's fairly low admin overhead.
+You simply need to add any services which you want to deny access to via an explicit deny.
+Now in certain situations you might need to be more conscious about usage in your accounts
+and that's where you would use allow lists.
+To implement allow lists it's a two-part architecture.
+One part of it is to remove the AWS full access policy
+and this means that only the implicit default deny is in place and active
+and then you would need to add any services which you want to allow into a new policy.
+In this case S3 and EC2.
+So in this architecture we wouldn't have this full AWS access
+we would be explicitly allowing S3 and EC2 access
+so no matter what identity permissions identities in this account are provided with
+they would only ever be allowed to access S3 and EC2.
+Now this is more secure because you have to explicitly say
+which services can be allowed access for users in those accounts
+but it's much easier to make a mistake and block access to services which you didn't intend to.
+It's also much more admin overhead because you have to add services as your business requirements dictate.
+You can't simply have access to everything and deny services
+you don't want access to with this type of architecture.
+You have to explicitly add each and every service which you want identities within the account to be able to access.
+Generally I would normally suggest using a deny list architecture
+because simply put it's much lower admin overhead.
+Now before we go into a demo I want to visually show you how SCPs affect permissions.
+This is visually how SCPs impact permissions within an AWS account.
+In the left orange circle this represents
+the different services that have been granted access to identities in an account using identity policies.
+On the right in red this represents which services an SCP allows access to.
+So the SCP states that the three services in the middle and the service on the right
+are allowed access as far as the SCP is concerned
+and the identity policies which are applied to identities within the account
+so the orange circle on the left grant access to four different services
+the three in the middle and the one on the left.
+Now only permissions which are allowed within identity policies in the account
+and are allowed by a service control policy are actually active.
+On the right this access permission has no effect
+because while it's allowed within an SCP
+an SCP doesn't grant access to anything
+it just controls what can and can't be allowed by identity policies within that account
+because no identity policy allows access to this resource then it has no effect.
+On the left this particular access permission is allowed within an identity policy
+but it's not effectively allowed because it's not allowed within an SCP.
+So only things which are in both the identity policy and an SCP are actually allowed.
+In this case this particular access permission on the left has no effect
+because it's not within a service control policy so it's denied.
+Now at an associate level this is what you need to know for the exam
+it's just simply understanding that your effective permissions for identities within an account
+are the overlap between any identity policies and any applicable SCPs.
+Now this is going to make more sense if you experience it with a demo
+so this is what we're going to do next.
+Now that you've set up the AWS organisation for the Animals for Life business
+it's time to put some of this into action.
+So I'm going to finish this lesson here and then in the next lesson which is a demo
+we're going to continue with the practical part of implementing SCPs.
+So go ahead and complete this video and when you're ready I'll look forward to you joining me in the next.

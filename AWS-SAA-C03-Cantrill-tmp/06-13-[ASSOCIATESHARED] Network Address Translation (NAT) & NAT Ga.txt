@@ -1,0 +1,103 @@
+Welcome back. In this lesson, I'll be talking about Network Address Translation, or NAT.
+A process of giving a private resource outgoing only access to the internet.
+And a NAT gateway is the AWS implementation that's available within a VPC.
+There's quite a bit of theory to cover, so let's get started.
+So what is NAT? Well, it stands for Network Address Translation.
+This is one of those terms which means more than people think that it does.
+In a strict sense, it's a set of different processes which can adjust IP packets by changing their source or destination IP addresses.
+Now you've seen a form of this already. The internet gateway actually performs a type of NAT known as static NAT.
+It's how a resource can be allocated with a public IP version 4 address.
+And then when the packets of data leave those resources and pass through the internet gateway,
+it adjusts the source IP address on the packet from the private address to the public and then sends the packet on.
+And then when the packet returns, it adjusts the destination address from the public IP address to the original private address.
+That's called static NAT. And that's how the internet gateway implements public IP version 4 addressing.
+Now what most people think of when they think of NAT is a subset of NAT called IP masquerading.
+An IP masquerading hides a whole private side IP block behind a single public IP.
+So rather than the one private IP to one public IP process that the internet gateway does, NAT is many private IPs to one single IP.
+And this technique is popular because IP version 4 addresses are running out.
+The public address space is rapidly becoming exhausted.
+IP masquerading, or what we'll refer to for the rest of this lesson as NAT, gives a whole private range of IP addresses
+outgoing only access to the public internet and the AWS public zone.
+I've highlighted outgoing because that's the most important part.
+Because many private IPs use a single public IP, incoming access doesn't work.
+Private devices that use NAT can initiate outgoing connections to internet or AWS public space services.
+And those connections can receive response data.
+But you cannot initiate connections from the public internet to these private IP addresses when NAT is used.
+It doesn't work that way.
+Now AWS has two ways that it can provide NAT services.
+Historically, you could use an EC2 instance configured to provide NAT.
+But there's also a managed service, the NAT gateway, which you can provision in a VPC to provide the same functionality.
+So let's look at how this works architecturally.
+This is a simplified version of the Animals for Life architecture that we've been using so far.
+On the left is an application tier subnet in blue, and it's using the IP range 10.16.32.0 slash 20.
+So this is a private only subnet.
+Inside it are three instances, I01, which is using the IP 10.16.32.10, I02, which is using 32.20, and I03, which is using 32.30.
+These IP addresses are private, so they're not publicly routable.
+They cannot communicate with the public internet or the AWS public zone services.
+These addresses cannot be routed across a public style network.
+Now, if we wanted this to be allowed, if we wanted these instances to perform certain activities using public networking, for example, software updates, how would we do it?
+Well, we could make the subnets public in the same way that we've done with the public subnets, so the web subnets, but we might not want to do that architecturally.
+With this multi-tier architecture that we're implementing together, part of the design logic is to have tiers which aren't public and aren't accessible from the public internet.
+Now, we could also host some kind of software update server inside the VPC, and some businesses choose to do that.
+Some businesses run Windows update services or Linux update services inside their private network, but that comes with an admin overhead.
+NAT offers us a third option, and it works really well in this style of situation.
+We provision a NAT gateway into a public subnet, and remember the public subnet allows us to use public IP addresses.
+The public subnet has a route table attached to it, which provides default IP version 4 routes pointing at the internet gateway.
+So because the NAT gateway is located in this public web subnet, it has a public IP which is routable across the public internet, so it's now able to send data out and get data back in return.
+Now, the private subnet where the instances are located can also have its own route table, and this route table can be different than the public subnet route table.
+So we could configure it so that the route table that's on the application subnet has a default IP version 4 route, but this time, instead of pointing at the internet gateway, like the web subnet users, we configure this private route table so that it points at the NAT gateway.
+This means when those instances are sending any data to any IP addresses that do not belong inside the VPC, by default, this default route will be used, and that traffic will get sent to the NAT gateway.
+So let's have a look at how this packet flow works. Let's simulate the flow of packets from one of the private instances and see what the NAT gateway actually does.
+So first, instance 1 generates some data. Let's assume that it's looking for software updates. So this packet has a source IP address of instance 1's private IP and a destination of 1.3.3.7.
+For this example, let's assume that that's the software update server.
+Now, because we have this default route on the route table of the application subnet, that packet is routed through to the NAT gateway.
+The NAT gateway makes a record of the data packet. It stores the destination that the packet is for, the source address of the instance sending it, and other details which help it identify the specific communication in future.
+Remember, multiple instances can be communicating at once, and for each instance it could be having multiple conversations with different public internet hosts.
+So the NAT gateway needs to be able to uniquely identify those, and so it records the IP addresses involved, the source and destination, the port numbers, everything it needs, into a translation table.
+So the NAT gateway maintains something called a translation table, which records all of this information.
+And then it adjusts the packet, the one that's been sent by the instance, and it changes the source address of this IP packet to be its own source address.
+Now, if this NAT appliance were anywhere but AWS, what it would do right now is adjust the packet with a public routable address. It'd do this directly.
+But remember, nothing inside of VPC really has directly attached to it a public IP version 4 address. That's what the internet gateway does.
+So the NAT gateway, because it's in the web subnet, it has a default route, and this default route points at the internet gateway, and so the packet is moved from the NAT gateway to the internet gateway by the VPC router.
+At this point, the internet gateway knows that this packet is from the NAT gateway. It knows that the NAT gateway has a public IP version 4 address associated with it,
+and so it modifies the packet to have a source address of the NAT gateway's public address, and it sends it on its way.
+The NAT gateway's job is to allow multiple private IP addresses to masquerade behind the IP address that it has. That's where the term IP masquerading comes from. That's why it's more accurate.
+So the NAT gateway takes all of the incoming packets from all of the instances that it's managing, and it records all of the information about the communication.
+It takes those packets, it changes the source address from being those instances to its own IP address, its own external-facing IP address.
+If it was outside AWS, this would be a public address directly. That's how your internet router works for your home network.
+All of the devices internally on your network talk out using one external IP address, so your home router uses NAT.
+But because it's in AWS, it doesn't have directly attached a real public IP. The internet gateway translates from its IP address to the associated public one.
+So that's how the flow works. If you need to give an instance its own public IP version 4 address, then only the internet gateway is required.
+If you want to give private instances outgoing access to the internet and the AWS public zone services such as S3, then you need both the NAT gateway to do this many-to-one translation,
+and the internet gateway to translate from the IP of the NAT gateway to a real public IP version 4 address.
+Now let's quickly run through some of the key facts for the NAT gateway product that you'll be implementing in the next demo lesson.
+First, and I hope this is logical for you by now, it needs to run from a public subnet because it needs to be able to be assigned a public IP version 4 IP address for itself.
+So to deploy a NAT gateway, you will already need your VPC in a position where it has public subnets.
+And for that, you need an internet gateway, subnets configured to allocate public IP version 4 addresses, and default routes for those subnets pointing at the internet gateway.
+Now a NAT gateway actually uses a special type of public IP version 4 address that we haven't covered yet called an elastic IP.
+For now, just know that these are IP version 4 addresses which are static. They don't change.
+These IP addresses are allocated to your account in a region, and they can be used for whatever you want until you deallocate them.
+And NAT gateways use these elastic IPs. They're one service which utilizes elastic IPs, and I'll be talking about elastic IPs later on in the course.
+Now NAT gateways are an AZ resilient service. If you read the AWS documentation, you might get the impression that they're fully resilient in a region like an internet gateway.
+They're not. They're resilient in the AZ that they're in, so they can recover from hardware failure inside an AZ.
+But if an AZ entirely fails, then the NAT gateway will also fail.
+For a fully region resilient service, so to mirror the high availability provided by an internet gateway, then you need to deploy one NAT gateway in each AZ that you're using in a VPC,
+and then have a route table for private subnets in that availability zone pointing at the NAT gateway also in that availability zone.
+So for every availability zone that you use, you need one NAT gateway and one route table pointing at that NAT gateway.
+Now they aren't super expensive, but it can get costly if you have lots of availability zones, which is why it's important to always think about your VPC design.
+Now NAT gateways are a managed service. You deploy them, and AWS handle everything else.
+They can scale to 45 gigabits per second in bandwidth, and you can always deploy multiple NAT gateways and split your subnets across multiple provisioned products.
+So if you need more bandwidth, you can just deploy more NAT gateways.
+For example, you could split heavy consumers across two different subnets in the same AZ, have two NAT gateways in the same AZ,
+and just route each of those subnets to a different NAT gateway, and that would quickly allow you to double your available bandwidth.
+With NAT gateways, you'll build based on the number that you have, so there's a standard hourly charge for running a NAT gateway,
+and this is obviously subject to change and it differs per region, but it's currently about four cents per hour.
+And note, this is actually an hourly charge, so partial hours are billed as full hours.
+And there's also a data processing charge, so that's the same amount as the hourly charge, so around four cents currently, per gigabyte of processed data.
+So you've got this base charge that a NAT gateway consumes while running, plus a charge based on the amount of data that you process.
+So keep both of those things in mind for any NAT gateway related questions in the exam.
+Don't focus on the actual values, just focus on the fact they have two charging elements.
+Okay, so this is the end of part one of this lesson.
+It was getting a little bit on the long side, and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one, so go ahead, complete the video, and when you're ready, join me in part two.

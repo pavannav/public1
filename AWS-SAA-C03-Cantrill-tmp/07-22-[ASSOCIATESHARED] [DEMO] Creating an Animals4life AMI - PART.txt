@@ -1,0 +1,145 @@
+Welcome back, and in this demo lesson, you'll be creating an AMI from a pre-configured EC2 instance.
+So you'll be provisioning an EC2 instance, configuring it with a popular web application stack,
+and then creating an AMI of that pre-configured web application.
+Now, you know in the previous demo where I said that you would be implementing the WordPress manual install once?
+Well, I might have misled you slightly, but this will be the last manual install of WordPress in the course.
+I promise.
+What we're going to do together in this demo lesson is create an Amazon Linux AMI for the Animals for Life business,
+but one which includes some custom configuration and an install of WordPress ready and waiting to be initially configured.
+So this is a fairly common use case, so let's jump in and get started.
+Now, in order to perform this demo, you're going to need some infrastructure.
+Make sure you're logged in to the general AWS account, so the management account of the organization,
+and as always, make sure that you have the Northern Virginia region selected.
+Now, attached to this lesson is a one-click deployment link.
+Go ahead and click that link.
+This will open the Quick Create Stack screen.
+It should automatically be populated with the AMI demo as the stack name.
+Just scroll down to the bottom, check this capabilities acknowledgement box, and then click on Create Stack.
+We're going to need this stack to be in a Create Complete state,
+so go ahead and pause the video and we can resume once the stack moves into Create Complete.
+Okay, so that stack's now moved into a Create Complete state.
+We're good to continue with the demo.
+Now, you're going to be using some command line commands within an EC2 instance
+as part of creating an Amazon machine image,
+so also attached to this lesson is the lesson's command document, which contains all of those commands.
+So go ahead and open that document.
+Now, you might recognize these as the same commands that you used when you were performing a manual WordPress installation,
+and that's the case. We're running the same manual installation process as part of setting up our Animals for Life AMI.
+So you're going to need all of these commands,
+but as you've already experienced them in the previous demo lesson,
+I'm going to run through them a lot quicker in this demo lesson.
+So go back to the AWS console and we need to move to the EC2 area of the console,
+so click on the Services dropdown,
+type EC2 into the search box, and then open that in a new tab.
+Once you're there, go ahead and click on Running Instances.
+Close down any dialogues about any console changes.
+We want to maximize the amount of screen space that we have.
+We're going to connect to this A4L public EC2 instance.
+This is the instance that we're going to use to create our AMI,
+so we're going to set the instance up manually how we want it to be,
+and then we're going to use it to generate an AMI.
+So we need to connect to this instance, so right-click, select Connect.
+We're going to use EC2 Instance Connect to do the work within our browser,
+so make sure the username is ec2-user, and then connect to this instance.
+Then once connected, we're going to run through the commands to install WordPress really quickly.
+We're going to start again by setting the variables that we'll use throughout the installation,
+so you can just go ahead and copy and paste those straight in and press Enter.
+Now we're going to run through all of the next set of commands really quickly,
+because you used them in the previous demo lesson.
+So first we're going to go ahead and install the MariaDB server,
+Apache, and the wget utility.
+While that's installing, copy all of the commands from step 3,
+so these are the commands which enable and start Apache and MariaDB.
+Go ahead and paste all of those four in and press Enter.
+So now Apache and MariaDB are both set to start when the instance boots,
+as well as being set to Currently Started.
+I'll just clear the screen to make this easier to see.
+Next we're going to set the dbroot password.
+Again, that's this command using the contents of the variable that you set at the start.
+Next we download WordPress.
+Once it's downloaded, we move into the webroot folder.
+We extract the download.
+We copy the files from within the WordPress folder that we've just extracted
+into the current folder, which is the webroot.
+Once we've done that, we remove the WordPress folder itself,
+and then we tidy up by deleting the download.
+I'm going to clear the screen.
+We copy the template configuration file into its final file name,
+so wp-config.php.
+Then we're going to replace the placeholders in that file.
+We're going to start with the database name using the variable that you set at the start.
+Next we're going to use the database user, which you also set at the start,
+and finally the database password.
+And then we're going to set the ownership on all of these files
+to be the Apache user and the Apache group.
+Clear the screen.
+Next we need to create the db.setup script that I demonstrated in the previous demo.
+So we need to run a collection of commands,
+the first to enter the create database command.
+The next one to enter the create user command and set that password.
+The next one to grant permissions on the database to that user.
+Then flush the permissions.
+Then we need to run that script using the MySQL command line interface
+that runs all of those commands and performs all of those operations.
+And then we tidy up by deleting that file.
+Now at this point we've done the exact same process that we did in the previous demo
+we've installed and set up WordPress.
+And if everything's working okay, we can go back to the AWS console,
+click on instances, select the running a4l-public ec2 instance,
+copy down its IP address, again make sure you copy that down,
+don't click this link, and then open that in a new tab.
+If everything's working as expected, you should see the WordPress installation dialog.
+Now this time, because we're creating an AMI,
+we don't want to perform the installation.
+We want to make sure that when anyone uses this AMI,
+they're also greeted with this installation.
+So we're going to leave this at this point, we're not going to perform the installation.
+Instead we're going to go back to the ec2 instance.
+Now because this ec2 instance is for the Animals for Life business,
+we want to customize it and make sure that everybody knows
+that this is an Animals for Life ec2 instance.
+Now to do that, we're going to install an Animal-themed utility called Cowsay.
+I'm going to clear the screen to make it easier to see,
+and then just to demonstrate exactly what Cowsay does,
+I'm going to run a Cowsay OHI.
+And if all goes well, we see a cow using ASCII art saying the OHI message that we just typed.
+So we're going to use this to create a message of the day welcome
+when anyone connects to this ec2 instance.
+To do that we're going to create a file inside the configuration folder of this ec2 instance.
+So we're going to use shudu nano, and we're going to create this file.
+So forward slash etc, forward slash update hyphen motd dot d, forward slash 40 hyphen cow.
+So we're going to create that file.
+This is the file that's going to be used to generate the output
+when anyone logs in to this ec2 instance.
+So we're going to copy in these two lines and then press enter.
+So this means when anyone logs in to the ec2 instance,
+they're going to get an Animal-themed welcome.
+So use Ctrl O to save that file and Ctrl X to exit.
+Clear the screen to make it easier to see.
+We're going to make sure that file that we've just edited has the correct permissions.
+Then we're going to force an update of the message of the day.
+So this is going to be what's displayed when anyone logs in to this instance.
+And then finally, now that we've completed this configuration,
+we're going to reboot this ec2 instance.
+So we're going to use this command to reboot it.
+And just to illustrate how this works, I'm going to close down that tab
+and return to the ec2 console.
+Give this a few moments to restart.
+That should have rebooted by now.
+So we're going to select it, right click, go to connect.
+Again, use ec2 instance connect.
+Assuming everything's working, now when we connect to the instance,
+we'll see an Animal-themed login banner.
+So this is just a nice way that we can ensure that anyone logging in to this instance
+understands that A, it uses the Amazon Linux 2 AMI,
+and B, that it belongs to Animals for Life.
+So we've created this instance using the Amazon Linux 2 AMI.
+We've performed the WordPress installation and initial configuration.
+We've customized the banner.
+And now we're going to use this as our template instance to create our AMI
+that can then be used to launch other instances.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side, and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video, and when you're ready, join me in part two.

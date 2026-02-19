@@ -1,0 +1,63 @@
+Welcome back and in this video I want to talk about S3 bucket keys, which are a way to help S3 scale and reduce costs when using KMS encryption.
+Let's jump in and take a look.
+So let's look at a pretty typical architecture.
+We have S3 in the middle, we have KMS on the right, and inside we have a KMS key, the default S3 service key for this region which is named AWS forward slash S3.
+Then on the left we have a user Bob who is looking to upload some objects to this S3 bucket using KMS encryption.
+Within S3 when you use KMS, each object which is put into a bucket uses a unique data encryption key or DEK.
+So let's have a look at how that works.
+So when Bob begins his first put operation, when the object is arriving in the bucket a call is made to KMS which uses the KMS key to generate a data encryption key unique to this object.
+The object is encrypted and then the object and the unique data encryption key are stored side by side on S3.
+Each object stored on S3 uses a unique data encryption key which is a single call to KMS to generate that data encryption key.
+This means that for every single object that Bob uploads it needs a single unique call to KMS to generate a data encryption key,
+to return that data encryption key to S3, use that key to encrypt the object and then store the two side by side.
+On screen we have three individual puts but imagine if this was 30 or 300 or 300,000 every second.
+This presents us with a serious problem.
+KMS has a cost. It means that using SSC-KMS carries an ever increasing cost which goes up based on the number of objects that you put into an S3 bucket.
+And perhaps more of a problem is that there are throttling issues.
+The generate data encryption key operation can only be run either 5500, 10,000 or 50,000 times per second and this is shared across regions.
+Now this exact number depends on which regions you use.
+But this effectively places a limit on how often a single KMS key can be used to generate data encryption keys
+which limits the amount of puts that you can do to S3 every second.
+And this is where bucket keys improve the situation. So let's look at how.
+So with bucket keys the architecture changes a little.
+We have the same basic architecture but instead of the KMS key being used to generate each individual data encryption key,
+instead it's used to generate a time limited bucket key.
+And conceptually this is given to the bucket.
+This is then used for a period of time to generate any data encryption keys within the bucket for individual object encryption operations.
+And this essentially offloads the work from KMS to S3.
+It reduces the number of KMS API calls so reduces the cost and increases scalability.
+Now it's worth noting that this is not retroactive.
+It only affects objects and the object encryption process after it's enabled on a bucket.
+So this is a great way that you can continue to use KMS for encryption with S3
+but offload some of the intensive processing from KMS onto S3, reducing costs and improving scalability.
+Now there are some things that you do need to keep in mind when you're using S3 bucket keys.
+First, after you enable an S3 bucket key, if you're using CloudTrail to look at KMS logs,
+then those logs are going to show the bucket ARN instead of your object ARN.
+Now additionally, because you're offloading a lot of the work from KMS to S3,
+you're going to see fewer CloudTrail events for KMS in those logs.
+So that's logical, you're offloading the work from KMS to S3
+and instead of KMS keys being used to encrypt individual objects,
+they're used to generate the bucket key.
+And so you're going to see the bucket in the logs, not the object.
+So keep that in mind.
+Bucket keys also work with same region replication and cross region replication.
+There are some nuances you need to keep in mind.
+Generally when S3 replicates an encrypted object,
+it generally preserves the encryption settings of that encrypted object.
+So the encrypted object in the destination bucket generally uses the same settings
+as the encrypted object in the source bucket.
+Now if you're replicating a plain text object, so something that's not encrypted,
+and you're replicating that through to a destination bucket,
+which uses default encryption or an S3 bucket key,
+then S3 encrypts that object on its way through to the destination
+with the destination bucket's configuration.
+And it's worth noting that this can result in ETAG changes between the source and the destination.
+Now I'll make sure that I include a link attached to this video,
+which details all of these nuanced features.
+when you're using S3 bucket keys together with same or cross region replication.
+It's beyond the scope of this video,
+but it might be useful for the exam and the real world
+to be aware of these nuanced features and requirements as you're using the product.
+Now with that being said, that is everything that I wanted to cover in this video.
+So go ahead and complete the video.
+And when you're ready, I'll look forward to you joining me in the next.

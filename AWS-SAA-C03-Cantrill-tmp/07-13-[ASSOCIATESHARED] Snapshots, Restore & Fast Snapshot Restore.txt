@@ -1,0 +1,172 @@
+Welcome back, and in this lesson I'm going to be discussing EBS snapshots.
+So snapshots provide a few really useful features for a solutions architect.
+First, they're an efficient way to back up EBS volumes to S3.
+And by doing this, you protect the data on those volumes against availability zone issues
+or local storage system failure in that availability zone.
+And they can also be used to migrate the data that's on EBS volumes
+between availability zones using S3 as an intermediary.
+So let's step through the architecture first through this lesson,
+and then in the next lesson, which will be a demo,
+we'll get you into the AWS console for some practical experience.
+Snapshots are essentially backups of EBS volumes which are stored on S3.
+EBS volumes are availability zone resilient,
+which means that they're vulnerable to any issues
+which impact an entire availability zone.
+Because snapshots are stored on S3,
+the data that snapshots store become region resilient.
+And so we're improving the resiliency level of our EBS volumes
+by taking a snapshot and storing it into S3.
+Now snapshots are incremental in nature,
+and that means a few very important things.
+It means that the first snapshot to be taken of a volume
+is a full copy of all of the data on that volume.
+Now I'm stressing the word data because a snapshot just copies the data used.
+So if you use 10 GB of a 40 GB volume,
+then that initial snapshot is 10 GB, not the full 40 GB.
+The first snapshot, because it's a full one,
+can take some time depending on the size of the data.
+It's copying all of the data from a volume onto S3.
+Now your EBS performance won't be impacted during this initial snapshot,
+but it just takes time to copy in the background.
+Future snapshots are fully incremental.
+They only store the difference between the previous snapshot
+and the state of the volume when the snapshot is taken.
+And because of that, they consume much less space
+and they're also significantly quicker to perform.
+Now you might be concerned at this point
+hearing the word incremental.
+If you've got any existing backup system or backup software experience,
+it was always a risk that if you lost an incremental backup,
+then no further backups between that point
+and when you next took the full backup would work.
+So there was a massive risk of losing an incremental backup.
+You don't have to worry about that with EBS.
+It's smart enough so that if you do delete an incremental snapshot,
+it makes sure that the data is moved
+so that all of the snapshots after that point still function.
+So each snapshot, even though it is incremental,
+can be thought of as self-sufficient.
+Now when you create an EBS volume, you have a few choices.
+You can create a blank volume
+or you can create a volume that's based on a snapshot.
+So snapshots offer a great way to clone a volume.
+Because S3 is a regional service,
+the volume you create from a snapshot
+can be in a different availability zone from the original,
+which means snapshots can be used to move EBS volumes
+between availability zones.
+But also, snapshots can be copied between AWS regions
+so you can use snapshots for global DR processes
+or as a migration tool to migrate the data on volumes between regions.
+Snapshots are really flexible.
+Visually, this is how snapshot architecture looks.
+So here we've got two AWS regions,
+US East 1 and AP Southeast 2.
+We have a volume in availability zone A in US East 1
+and that's connected to an EC2 instance in the same availability zone.
+Now snapshots can be taken of this volume and stored in S3.
+And the first snapshot is a full copy,
+so it stores all of the data that's used on the source volume.
+The second one is an incremental,
+so this only stores the changes since the last snapshot.
+So at the point that you create the second snapshot,
+only the changes between the original snapshot and now
+are stored in this incremental.
+And these are linked,
+so the incremental references the initial snapshot
+for any data that isn't changed.
+Now the snapshot can be used to create a volume in the same availability zone,
+it can be used to create a volume in another availability zone in the same region,
+and that volume could then be attached to another EC2 instance.
+Or the snapshot could be copied to another AWS region
+and used to create another volume in that region.
+So that's the architecture, that's how snapshots work.
+There's nothing overly complex about it,
+but I did want to cover a few final important points before we finish up.
+As a solutions architect,
+there are some nuances of snapshot and volume performance
+that you need to be aware of.
+These can impact projects that you design and deploy significantly,
+and this does come up in the exam.
+Now first, when you create a new EBS volume without using a snapshot,
+the performance is available immediately.
+There's no need to do any form of initialization process.
+But if you restore a volume from a snapshot,
+it does the restore lazily.
+What this means is that if you restore a volume right now,
+then starting right now, over time,
+it will transfer the data from the snapshot on S3
+to the new volume in the background.
+And this process takes some time.
+If you attempt to read data which hasn't been restored yet,
+it will immediately pull it from S3,
+but that achieves lower levels of performance than reading from EBS directly.
+So you have a number of choices.
+You can force a read of every block of the volume,
+Even this is done in the operating system using tools such as DD on Linux,
+and this reads every block one by one on the new EBS volume,
+and it forces EBS to pull all the snapshot data from S3 into that volume.
+And this is generally something that you would do immediately
+when you restore the volume before moving that volume into production usage.
+It just ensures perfect performance as soon as your customers start using that data.
+Historically, that was the only way to force this rapid initialization of the volume,
+but now there's a feature called Fast Snapshot Restore or FSR.
+This is an option that you can set on a snapshot which makes it instantly restore.
+You can create 50 of these fast snapshot restores per region,
+and when you enable it on a snapshot,
+you pick the snapshot specifically and the availability zones
+that you want to be able to do instant restores to.
+Each combination of that snapshot and an AZ is classed as one fast snapshot restore set,
+and you can have 50 of those per region.
+So one snapshot configured to restore to four availability zones in a region
+represents four out of that 50 limit of FSRs per region.
+So keep that in mind.
+Now FSR actually costs extra.
+Keep this in mind.
+It can get expensive, especially if you have lots of different snapshots.
+You can always achieve the same end result by forcing a read of every block manually
+using DD or another tool in the operating system,
+but if you really don't want to go through the admin overhead,
+then you've got the option of using FSR.
+Now I haven't talked about EBS volume encryption yet.
+That's coming up in a lesson soon within this section,
+but encryption also influences snapshots,
+but don't worry, I'll be covering all of that end-to-end when I talk about volume encryption.
+Now snapshots are billed using a gigabyte month metric.
+So a 10 GB snapshot stored for one month represents 10 GB month.
+A 20 GB snapshot stored for half a month represents the same 10 GB month,
+and that's how you build.
+There's a certain cost for every gigabyte month that you use for snapshot storage.
+Now just to stress this, this is an awesome feature,
+specifically from a cost aspect, is that this is used data, not allocated data.
+You might have a volume which is 40 GB in size,
+but if you only use 10 GB of that, then the first full snapshot is only 10 GB.
+EBS doesn't charge for unused areas in volumes when performing snapshots.
+You're charged for the full allocated size of an EBS volume,
+but that's because it's allocated.
+For snapshots, you're only billed for the data that's used on the volumes.
+And because snapshots are incremental, you can perform them really regularly.
+Only the data that's changed is stored,
+so doing a snapshot every five minutes won't necessarily cost more than doing one per hour.
+Now on the right, this is visually how snapshots look.
+On the left, we have a 10 GB volume using 10 GB of data, so it's 100% consumed.
+The first snapshot, logically, will consume 10 GB of space on S3,
+because it's a full snapshot and it consumes whatever data is used on the volume.
+In the middle column, we're changing 4 GB of data out of that original 10 GB,
+so the bit in yellow at the bottom.
+The next snap references the unchanged 6 GB of data and only stores the changed 4 GB,
+so the second snap only bills for 4 GB of data, the changed data.
+On the right, we've got 2 GB of data that's added to that volume, so the volume is now 12 GB.
+The next snapshot references the original 6 GB of data, so that's not stored in this snapshot.
+It also references the previous snapshot's 4 GB of changed data,
+that's also not stored in this new snapshot.
+The new snapshot simply adds the new 2 GB of data, so this snapshot only bills for 2 GB.
+At each stage, a new snapshot is only storing data inside itself which is new or changed,
+and it's referencing previous snapshots for anything which isn't changed.
+That's why they're all incremental, and that's why you're only billed each time you do a snapshot for the changed data.
+OK, that's enough theory for now. Time for a demonstration.
+So in the next demo lesson, we're going to experiment with EBS volumes and snapshots,
+and just experience practically how we can interact with them.
+It's going to be a simple demo, but I always find that by doing things you retain the theory that you've learned,
+and this has been a lot of theory.
+So go ahead, complete this video, and when you're ready, we can start the demo lesson.

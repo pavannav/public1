@@ -1,0 +1,94 @@
+Welcome back, this is part two of this lesson. We're going to continue immediately from the end of part one, so let's get started.
+That's a good starting point for our plan. Before I elaborate more on that plan though, let's think about VPC sizing and structure.
+AWS provide some useful pointers on VPC sizing, which I'll link to in the lesson text, but I also want to talk about it briefly in this lesson.
+They define micro as a slash 24 VPC with eight subnets inside it. Each subnet is a slash 27, which means 27 IP addresses per subnet and a total of 216.
+This goes all the way through to extra large, which is a slash 16 VPC with 16 subnets inside, each of which is a slash 20, offering 4091 IP addresses per subnet for a total of just over 65,000.
+And deciding which to use, there are two important questions. First, how many subnets will you need in each VPC?
+And second, how many IP addresses will you need in total? And how many IP addresses in each subnet?
+Now deciding how many subnets to use, there's actually a method that I use all of the time which makes it easier. Let's look at that next.
+So this is the shell of a VPC, but you can't just use a VPC to launch services into. That's not how it works in AWS.
+Services use subnets, which are where IP addresses are allocated from. VPC services run from within subnets, not directly from the VPC.
+And if you remember all the way back at the start of the course where I introduced VPCs and subnets, I mentioned that a subnet is located in one availability zone.
+So the first decision point that you need to think about is how many availability zones your VPC will use.
+This decision impacts high availability and resilience, and it depends somewhat on the region that the VPC is in, since some regions are limited in how many availability zones they have.
+Some have three, some have more. So step one is to pick how many availability zones your VPC will use.
+Now, I'll spoil this and make it easy. I always start with three as my default. Why? Because it will work in almost any region.
+But I also always add a spare, because we all know at some point things grow. So aim for at least one spare.
+And this means, as a minimum, four availability zones. A, B, C, and the spare.
+If you think about it, that means that we have to at least split the VPC into at least four smaller networks.
+So if we started with a slash sixteen, we would now have four slash eighteens.
+As well as the availability zones inside a VPC, we also have tiers, and tiers are for different types of infrastructure that are running inside that VPC.
+We might have a web tier, an application tier, a database tier. That makes three, and you should always add buffer.
+So my default is to start with four tiers. Web, application, database, and a spare.
+Now the tiers used in your architecture might be different, but my default for most designs is to assume three plus a spare.
+So web, application, database, and then a spare for future use.
+If you only used one availability zone, then each tier would need its own subnet, meaning four subnets in total.
+But we also have four AZs, and since we want to take full advantage of the resiliency provided by these AZs,
+we need the same base networking duplicated in each availability zone.
+So each tier has its own subnet in each availability zone.
+Four web subnets, four app subnets, four database subnets, and four spares for a total of sixteen subnets.
+So if we chose a slash sixteen for the VPC, that would mean that each of the sixteen subnets would need to fit into that slash sixteen.
+So a slash sixteen VPC split into sixteen subnets results in sixteen smaller network ranges, each of which is a slash twenty.
+Remember, each time the prefix is increased, from sixteen to seventeen it creates two networks, from sixteen to eighteen it creates four,
+from sixteen to nineteen it creates eight, and from sixteen to twenty it creates sixteen smaller networks.
+Now that we know that we need sixteen subnets, we could start with a slash seventeen VPC, and then each subnet would be a slash twenty-one,
+or we could start with a slash eighteen VPC, and then each subnet would be a slash twenty-two, and so on.
+Now that you know the number of subnets, and because of that, the size of the subnets in relation to the VPC prefix size,
+picking the size of the VPC is all about how much capacity you need.
+Whatever prefix you pick for the VPC, the subnets will be four steps away.
+So let's move on to the last part of this lesson, where we're going to be deciding exactly what to use.
+Now Animals for Life is a global organisation already, but with what's happening environmentally around the world,
+the business could grow significantly, and so when designing the IP plan for the business, we need to assume a huge level of growth.
+We've talked about a preference for the ten range, but avoiding the common networks and avoiding Google
+gives us 10.16 to 10.127 to use as slash sixteen networks.
+We have five regions that we're going to be assuming the business will use, three to be chosen in the US, one in Europe, and one in Australia.
+So if we start at 10.16 and break this down into segments, we could choose to use 10.16 to 10.31 as US Region 1,
+10.32 to 10.47 as US Region 2, 10.48 to 10.63 as US Region 3, 10.64 to 10.79 as Europe, and 10.80 to 10.95 as Australia.
+That is a total of 16 slash 16 network ranges for each region.
+Now we have a total of three accounts right now, General, Prod and Dev, and let's add one more buffer, so that's four total accounts.
+So if we break down those ranges that we've got for each region, break them down into four, one for each account,
+then each account in each region gets four slash 16 ranges, enough for four VPCs per region, per account.
+So I've created this PDF and I've included it attached to this lesson and in this lesson's folder on the course GitHub repository.
+So if you go into VPC-basics, in there is a folder called VPC Sizing and Structure,
+and then in this folder is a document called A4L for Animals for Life, underscore, ipplan.pdf, and this is that document.
+So I've just tried to document here exactly what we've done with these different ranges, so starting at the top here,
+we've blocked off all of these networks, these are common ranges to avoid, and we're starting at 10.16 for Animals for Life,
+and then starting at 10.16, I've blocked off 16 slash 16 networks for each region,
+so US Region 1, Region 2, Region 3, Europe and Australia, and then we're left with some that are unused and they're reserved.
+After that, of course, from 10.1 to 8 onwards, that's reserved for the Google Cloud usage, which we're uncertain about,
+so all the way to the end, that's blocked off.
+And then within each region, we've got three AWS accounts that we know about, General, Prod and Dev, and then one set for reserved future use.
+So in the region, each of those accounts has four Class B networks, enough for four non-overlapping VPCs.
+So feel free to look through this document, I've included the PDF and the original Apple numbers document,
+so feel free to use this, adjust this for your network and just experiment with some IP planning,
+but this is the type of document that I will be using as a starting point for any large AWS deployments.
+And we're going to be using this throughout this course to plan the IP address ranges whenever we're creating a VPC.
+We obviously won't be using all of them, but we will be using this as a foundation.
+Now based on that plan, that means we have a slash 16 range to use for each VPC in each account in each region, and these are non-overlapping.
+Now I'm going to be using the VPC structure that I've demonstrated earlier in this lesson,
+so I'll be assuming the usage of three availability zones plus a spare, and three application tiers plus a spare.
+And this means that each VPC is broken down into a total of 16 subnets,
+and each of those subnets is a slash 20 subnet, which represents 4091 IP addresses per subnet.
+Now this might seem excessive, but we have to assume the highest possible growth potential for animals for life.
+We've got the potential growth of the business, we've got the current situation with the environment
+and the raising profile of animal welfare globally, so there is a potential that this business could grow rapidly.
+This process might seem vague and abstract, but it's something that you'll need to do every time you create a well-designed environment in AWS.
+You'll consider the business needs, you'll avoid the ranges that you can't use,
+you'll allocate the remainder based on your business's physical or logical layout,
+and then you'll decide upon and create VPC and subnet structure from there.
+You'll always work either top down or bottom up.
+You can start with the minimum subnet size that you need and work up, or start with the business requirements and work down.
+When we start creating VPCs and services from now on in the course, we will be using this structure,
+and so I will be referring back to this lesson and that PDF document constantly,
+so you might want to save it somewhere safe or print it out.
+Make sure you've got a copy handy, because we will be referring back to it constantly
+as we're deciding upon our network topology throughout the course.
+With that being said though, that's everything I wanted to cover in this lesson.
+I hope it's been useful. I know it's vague and a little bit abstract,
+but I wanted to step you through the process that a real-world solutions architect would use
+when deciding on the size of subnets and the VPCs,
+as well as the different structure these network components would have in relation to each other, so the IP plan.
+But at this point, that is it with the abstract theory.
+From this point onward in this section of the course, we're going to start talking about the technical aspects
+of AWS private networking, starting with VPCs and VPC subnets.
+So go ahead, complete this video, and when you're ready, you can move on to the next.
