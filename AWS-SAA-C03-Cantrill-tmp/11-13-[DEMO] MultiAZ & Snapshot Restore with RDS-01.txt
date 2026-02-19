@@ -1,0 +1,111 @@
+Welcome back, this is part 2 of this lesson. We're going to continue immediately from the end of part 1, so let's get started.
+Now the next thing that I want to demonstrate is how we can restore RDS if we have data corruption.
+The way that we're going to simulate this is to go back to our WordPress blog and we're going to corrupt part of this data.
+So we're going to change the title of this blog post from the best cats ever to not the best cats ever, which is clearly untrue.
+But we're going to change this and this is going to be our simulation of data corruption of this application.
+So go ahead and click on update to update the blog post with this new obviously incorrect data.
+Let's assume that we need to restore this database from an earlier snapshot. For now let's ignore the automatic backup feature of RDS and just look at manual snapshots.
+Well let's move back to the RDS console and click on snapshots and we'll be able to see the snapshot that we created at the start of this demo lesson.
+Remember this does have the blog post contained within it in its original correct form.
+Now to do a restore we need to select this snapshot, click on actions and then restore snapshot.
+Now I mentioned this in the theory lesson about backups and restores within RDS.
+Restoring a snapshot actually creates a brand new database instance. It doesn't restore to the existing one using normal RDS.
+So we have to restore a snapshot. Obviously the engine is set to MySQL community and we're provided with an entry box for a brand new database identifier.
+And we're going to use A4L WordPress hyphen restore. So this allows us to more easily distinguish between this and the original database instance.
+We also need to decide on the deployment options so go ahead and select single DB instance. This is only a demo so we don't need to select multi AZ DB instance.
+We need to pick the type of instance that we're going to restore to and again because this is a new instance we're not limited to the previous free tier restrictions.
+So we're able to select from any of the available instance types. So go ahead and select burstable classes and then pick either T2 or T3.micro.
+We'll leave storage as default. We'll need to provide the VPC to provision this new database instance into so make sure that A4L hyphen VPC1 is selected.
+And we'll use the same subnet group that was created by the one click deployment which you used at the start of this demo.
+You're allowed to choose between public access yes or no. We'll choose no. You'll have to pick a VPC security group to use for this RDS instance.
+Now the one click deployment did create one so click in the drop down and select the RDS multi AZ snap RDS security group.
+So not the instance security group but the RDS security group. Once you've selected that then delete default.
+Scroll down. You can specify database authentication and encryption settings and again if applicable in the course that you're studying I'll be covering these in a separate lesson.
+We'll leave all of that as default and click on restore DB instance.
+Now this is going to begin the process of restoring a brand new database instance from that snapshot.
+Now the important thing that you need to understand is this is a brand new instance.
+We're not restoring the snapshot to the same database instance instead it's creating a brand new one.
+Now when this finishes restoring when it's available for use if we want our application to make use of it and the restored non-corrupted data then we're going to need to change the application to point at this newly restored database.
+So at this point go ahead and pause the video because for the next step which is to adjust the WordPress configuration we need this database to be in an available state.
+So pause the video wait for the status to change from creating all the way through to available and then we're good to continue.
+Okay so the snapshot restores now completed and we have a brand new database instance A4L WordPress hyphen restore and in my case it took about 10 minutes to perform that restoration.
+Now just to reiterate this concept because it's really important it features all the time in the exams and you'll need this if you operate in the real world using AWS.
+If we go into the original RDS instance just pay attention to this endpoint DNS name so we have a standard part which is the region and then dot RDS and then dot Amazon AWS dot com.
+Before this though we have this random part now this represents the name of the database instance as well as some random.
+If we go back to the databases list and then go into the restored version now we can see that we have A4L WordPress hyphen restore and this is different than that original database endpoint name for the original database.
+So the really important the critical thing to understand is that a restore within normal RDS will create a brand new database instance.
+It will have a brand new database endpoint DNS name the CNAME and you will need to update any application configuration to use this brand new database.
+So go ahead and just leave this open in this tab because we'll be needing it very shortly click on services find EC2 and open that in a new tab.
+So as a reminder if we go back to the WordPress tab and just hit refresh we can see that we still have the corrupt data.
+Now what we want to do is point WordPress at the restored correct database.
+So to do that go to the EC2 tab that you just opened right click on the A4L hyphen WordPress instance select connect.
+We're going to use instance connect so choose that to make sure the username is EC2 hyphen user and then connect to the instance.
+This process should be familiar by now because we're going to edit the WordPress configuration file.
+So CD forward slash VAR forward slash WWW forward slash HTML.
+Then we'll do a listing LS space hyphen LA and we want to edit the configuration file which is WP hyphen config dot PHP.
+So sudo space nano which is the text editor space WP hyphen config dot PHP.
+Once we're in this file just scroll down and again we're looking for the DB host configuration which is here.
+Now this DNS name you'll recognize is pointing at the existing database with the corrupt data.
+So we need to delete all of this just to leave the two single quotes.
+Make sure your cursor is over the second quote.
+Go back to the RDS console and we need to locate the DNS name for the A4L WordPress hyphen restore instance.
+Remember this is the one with the correct data.
+So copy that into your clipboard.
+Go back to EC2 and paste that in and then control O and enter to save and control X to exit.
+And that's all of the configuration changes that we need.
+If we go back to the WordPress application and hit refresh we'll see that it's now showing the correct post.
+The best cats ever because we're now pointing at this restored database instance.
+So the key part about this demo lesson really is to understand that when you're restoring a normal RDS snapshot
+you're restoring it to a brand new database instance, its own instance with its own data and its own DNS end point name.
+So you have to update your application configuration to point at this new database instance.
+With normal RDS it's not possible to restore in place.
+You have to restore to a brand new database instance.
+Now this is different with a feature of Aurora which I'll be covering later in this section.
+But for normal RDS you have to restore to a brand new instance.
+So those are the features which I wanted to demonstrate in this demo lesson.
+I wanted to give you a practical understanding of the types of recovery options and resilience options
+that you have available using the normal RDS version, so MySQL.
+Now different versions of RDS such as Microsoft SQL, PostgreSQL, Oracle and even AWS specific versions
+such as Aurora and Aurora Serverless, they all have their own collections of features.
+For the exam and for most production usage you just need to be familiar with a small subset of those.
+Generally you'll either be using Oracle, MSSQL or one of the open source or community versions.
+So you'll only have to know the feature set of a small subset of the wider RDS product.
+So I do recommend experimenting with all of the different features and depending on the course that you're taking
+I will be going into much more depth on those specific features elsewhere in this section.
+For now though that is everything that I wanted to talk about.
+So all that remains is for us to tidy up the infrastructure that we've used in this demo lesson.
+So go to databases. I'll want you to select the A4L WordPress hyphen restore instance
+because we're going to delete this fully. We're not going to be using this anymore in this section of the course.
+So select it, click on the actions drop down and then select delete.
+Don't create a final snapshot, we don't need that.
+Don't retain automated backups and because we don't choose either of these
+we need to acknowledge our understanding of this and type delete me into this box.
+So do that and then click on delete.
+Now that's going to delete that instance as well as any snapshots created as part of that instance.
+So if we go to snapshots we only have the one manual snapshot.
+If we go to system snapshots we can see that we have one snapshot for this restore database
+and if you're deleting a database instance then any system created snapshots for that database instance
+will also be deleted either immediately or after the retention period expires.
+So those will be automatically cleared up as part of this deletion process.
+We're not going to delete the manual snapshot that we created at the very start of this lesson with the cat post in
+because we're going to be using this elsewhere in the course.
+So leave this in place, click on databases again.
+We're going to need to wait for this restored database instance to finish deleting before we can continue.
+So go ahead and pause the video, wait for this to disappear from the list and then we can continue.
+Okay so that restored database instance has completed deleting.
+So now all that remains is to move back to the CloudFormation console.
+You should still have a tab open.
+Select the stack deployed as part of the one-click deployment.
+It should be called RDS Multi AZ Snap.
+Select delete and then confirm that deletion.
+And that will clear up all of the infrastructure that we've used in this demo lesson.
+It will return the account into the same state as it was at the start of this demo with one exception.
+And that one exception is the snapshot that we created of the RDS instance as part of this deployment.
+So that's everything you need to do in this demo lesson.
+I hope you've enjoyed it.
+I know it's been a fairly long one where you've been waiting a lot of the time in the demo for things to happen.
+But it's important for the exam and real world usage that you get the practical experience of working with all of these different features.
+So you should leave this demo lesson with some good experience of the resilience and recovery features available as part of the normal RDS product.
+Now at this point that's everything you need to do.
+So go ahead and complete this video.
+And when you're ready, I look forward to you joining me in the next.

@@ -1,0 +1,127 @@
+Welcome back, and in this fundamentals video, I want to briefly talk about Kubernetes, which is an open source container orchestration system.
+You use it to automate the deployment, scaling and management of containerized applications.
+At a super high level, Kubernetes lets you run containers in a reliable and scalable way,
+making efficient use of resources and lets you expose your containerized applications to the outside world or your business.
+It's like Docker, only with robots to automate it and super intelligence for all of the thinking.
+Now Kubernetes is a cloud agnostic product, so you can use it on premises and within many public cloud platforms.
+Now I want to keep this video to a super high level architectural overview, but that's still a lot to cover.
+So let's jump in and get started. Let's quickly step through the architecture of a Kubernetes cluster.
+A cluster in Kubernetes is a highly available cluster of compute resources, and these are organized to work as one unit.
+The cluster starts with the cluster control plane, which is the part which manages the cluster.
+It performs scheduling, application management, scaling and deployment and much more.
+Compute within a Kubernetes cluster is provided via nodes,
+and these are virtual or physical servers which function as a worker within the cluster.
+These are the things which actually run your containerized applications.
+Running on each of the nodes is software, and at minimum this is container D or another container runtime,
+which is the software used to handle your container operations.
+And next we have Kubelet, which is an agent to interact with the cluster control plane.
+Kubelet running on each of the nodes communicates with the cluster control plane using the Kubernetes API.
+Now this is the top level functionality of a Kubernetes cluster.
+The control plane orchestrates containerized applications which run on nodes.
+But now let's explore the architecture of control planes and nodes in a little bit more detail.
+On this diagram I've zoomed in a little.
+We have the control plane at the top and a single cluster node at the bottom,
+complete with the minimum Docker and Kubelet software running for control plane communications.
+Now I want to step through the main components which might run within the control plane and on the cluster nodes.
+Keep in mind this is a fundamental level video, it's not meant to be exhaustive.
+Kubernetes is a complex topic, so I'm just covering the parts that you need to understand to get started.
+Now the cluster will also likely have many more nodes.
+It's rare that you only have one node unless this is a testing environment.
+Now first I want to talk about pods, and pods are the smallest unit of computing within Kubernetes.
+You can have pods which have multiple containers and provide shared storage and networking for those pods,
+but it's very common to see a one container one pod architecture,
+which as the name suggests means each pod contains only one container.
+Now when you think about Kubernetes don't think about containers, think about pods.
+You're going to be working with pods and you're going to be managing pods.
+The pods handle the containers within them.
+Architecturally you would generally only run multiple containers in a pod
+when those containers are tightly coupled and require close proximity
+and rely on each other in a very tightly coupled way.
+Additionally, although you'll be exposed to pods, you'll rarely manage them directly.
+Pods are non-permanent things.
+In order to get the maximum value from Kubernetes you need to view pods as temporary things,
+which are created, do a job and are then disposed of.
+Pods can be deleted when finished, evicted for lack of resources or if the node itself fails.
+They aren't permanent and aren't designed to be viewed as highly available entities.
+There are other things linked to pods which provide more permanence, but more on that elsewhere.
+So now let's talk about what runs on the control plane.
+Firstly, I've already mentioned this one, the API, known formally as kube-api server.
+This is the front end for the control plane.
+It's what everything generally interacts with to communicate with the control plane
+and it can be scaled horizontally for performance and to ensure high availability.
+Next we have ETCD and this provides a highly available key value store,
+so a simple database running within the cluster which acts as the main backing store for data for the cluster.
+Another important control plane component is kube-scheduler
+and this is responsible for constantly checking for any pods within the cluster which don't have a node assigned.
+And then it assigns a node to that pod based on resource requirements, deadlines,
+affinity or anti-affinity, data locality needs and any other constraints.
+Remember nodes are the things which provide the raw compute and other resources to the cluster
+and it's this component which makes sure the nodes get utilized effectively.
+Next we have an optional component, the cloud controller manager
+and this is what allows Kubernetes to integrate with any cloud providers.
+It's common that Kubernetes runs on top of other cloud platforms such as AWS, Azure or GCP
+and it's this component which allows the control plane to closely interact with those platforms.
+Now it is entirely optional and if you run a small Kubernetes deployment at home
+you probably won't be using this component.
+Now lastly in the control plane is the kube controller manager
+and this is actually a collection of processors.
+We've got the node controller which is responsible for monitoring and responding to any node outages,
+the job controller which is responsible for running pods in order to execute jobs,
+the endpoint controller which populates endpoints in the cluster,
+more on this in a second but this is something that links services to pods.
+Again I'll be covering this very shortly.
+And then the service account and token controller which is responsible for account and API token creation.
+Now again I haven't spoken about services or endpoints yet,
+just stick with me, I will in a second.
+Now lastly on every node is something called kproxy known as kubeproxy
+and this runs on every node and coordinates networking with the cluster control plane.
+It helps implement services and configures rules allowing communications with pods from inside or outside of the cluster.
+You might have a kubernetes cluster but you're going to want some level of communication with the outside world
+and that's what kubeproxy provides.
+Now that's the architecture of the cluster and nodes in a little bit more detail
+but I want to finish this introduction video with a few summary points of the terms that you're going to come across.
+So let's talk about the key components.
+So we start with a cluster and conceptually this is a deployment of kubernetes.
+It provides management, orchestration, healing and service access.
+Within a cluster we've got the nodes which provide the actual compute resources and pods run on these nodes.
+A pod is one or more containers and is the smallest admin unit within kubernetes
+and often as I mentioned previously you're going to see the one container one pod architecture.
+Simply put it's cleaner.
+Now a pod is not a permanent thing, it's not long lived.
+The cluster can and does replace them as required.
+Services provide an abstraction from pods.
+So the service is typically what you will understand as an application.
+An application can be containerized across many pods but the service is the consistent thing, the abstraction.
+Service is what you interact with if you access a containerized application.
+Now we've also got a job and a job is an ad hoc thing inside the cluster.
+Think of it as the name suggests as a job.
+A job creates one or more pods, runs until it completes, retries if required and then finishes.
+Now jobs might be used as backend isolated pieces of work within a cluster.
+Now something new that I haven't covered yet and that's ingress.
+Ingress is how something external to the cluster can access a service.
+So you have external users, they come into an ingress, that's routed through the cluster to a service.
+The service points at one or more pods which provides the actual application.
+So an ingress is something that you will have exposure to when you start working with kubernetes.
+And next is an ingress controller.
+And that's a piece of software which actually arranges for the underlying hardware to allow ingress.
+For example there is an AWS load balancer ingress controller which uses application and network load balancers to allow the ingress.
+But there are also other controllers such as engine X and others for various cloud platforms.
+Now finally, and this one is really important, generally it's best to architect things within kubernetes to be stateless from a pod perspective.
+Remember pods are temporary.
+If your application has any form of long running state then you need a way to store that state somewhere.
+Now state can be session data but also data in the more traditional sense.
+Any storage in kubernetes by default is ephemeral, provided locally by a node.
+And thus if a pod moves between nodes then that storage is lost.
+Conceptually think of this like instant store volumes running on AWS EC2.
+Now you can configure persistent storage known as persistent volumes or PVs.
+And these are volumes whose life cycle lives beyond any one single pod which is using them.
+And this is how you would provision normal long running storage to your containerized applications.
+Now the details of this are a little bit beyond this introduction level video but I wanted you to be aware of this functionality.
+Okay so that's a high level introduction to kubernetes.
+It's a pretty broad and complex product but it's super powerful when you know how to use it.
+This video only scratches the surface.
+If you're watching this as part of my AWS courses then I'm going to have follow up videos which step through how AWS implements kubernetes with their EKS service.
+If you're taking any of the more technically deep AWS courses there may be other deep dive videos into specific areas that you need to be aware of.
+So there may be additional videos covering individual topics at a much deeper level.
+If there are no additional videos then don't worry because that's everything that you need to be aware of.
+Thanks for watching this video, go ahead and complete the video and when you're ready I look forward to you joining me in the next.

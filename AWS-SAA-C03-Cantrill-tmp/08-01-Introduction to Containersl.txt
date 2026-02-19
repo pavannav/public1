@@ -1,0 +1,174 @@
+Welcome back, this section will be focusing on another type of compute, container computing.
+To understand the benefits of the AWS products and services which relate to containers, you'll
+need to understand what containers are and what benefits container computing provides.
+In this lesson, I aim to teach you just that. It's all theory in this lesson, but immediately
+following this is a demo lesson where you'll have the chance to make a container yourself.
+We've got a lot to get through though, so let's jump in and get started.
+Before we start talking about containers, let's set the scene. What we refer to as virtualisation
+should really be called operating system or OS virtualisation. It's the process of running
+multiple operating systems on the same physical hardware. I've already covered the architecture
+earlier in the course, but as a refresher, we've got an AWS EC2 host running the Nitro
+hypervisor. Running on this hypervisor, we have a number of virtual machines. Part of
+this lesson's objectives is to understand the difference between operating system virtualisation
+and containers. And so the important thing to realise about these virtual machines is
+that each of them is an operating system with associated resources. What's often misunderstood
+is just how much of a virtual machine is taken up by the operating system alone. If you run
+a virtual machine with say 4GB of RAM and a 40GB disk, the operating system can easily
+consume 60-70% of the disk and much of the available memory, leaving relatively little
+for the applications which run in those virtual machines as well as the associated runtime
+environments. So with the example that's on screen now, it's obvious that the guest
+operating system consumes a large percentage of the amount of resource that's allocated
+to each virtual machine. Now what's the likelihood with the example on screen that many of the
+operating systems are actually the same? Think about your own business servers. How many
+run Windows? How many run Linux? How many do you think share the same major operating
+system version? This is duplication. On this example, if all of these guest operating systems
+used the same or similar operating system, it's wasting resources. It's duplication.
+And what's more, with these virtual machines, the operating system consumes a lot of system
+resources. So every operation that relates to these virtual machines, every restart,
+every stop, every start is having to manipulate the entire operating system. If you think
+about it, what we really want to do with this example is to run applications 1 through to
+6 in separate, isolated, protected environments. To do this, do we really need 6 copies of
+the same operating system taking up disk space and host resources? Well, the answer
+is no, not when we use containers. Containerization handles things much differently. We still
+have the host hardware, but instead of virtualization, we have an operating system running on this
+hardware. Running on top of this is a container engine, and you might have heard of a popular
+one of these called Docker. A container, in some ways, is similar to a virtual machine
+in that it provides an isolated environment which an application can run within. But where
+virtual machines run a whole isolated operating system on top of a hypervisor, a container
+runs as a process within the host operating system. It's isolated from all of the other
+processes, but it can use the host operating system for a lot of things, like networking
+and file I.O. For example, if the host operating system was Linux, it could run Docker as a
+container engine. Linux plus the Docker container engine can run a container. That container
+would run as a single process within that operating system, potentially one of many.
+But inside that process, it's like an isolated operating system. It has its own file systems
+isolated from everything else and it could run child processes inside it, which are also
+isolated from everything else. So a container could run a web server or an application server
+and do so in a completely isolated way. What this means is that architecturally a container
+would look something like this, something which runs on top of the base OS and container
+engine but consumes very little memory. In fact, the only consumption of memory or disk
+is for the application and any runtime environment elements that it needs, so libraries and dependencies.
+The operating system could run lots of other containers as well, each running an individual
+application. So using containers, we achieve this architecture, which looks very much like
+the architecture used on the previous example, which used virtualization. We're still running
+the same six applications. But the difference is that because we don't need to run a full
+operating system for each application, the containers are much lighter than the virtual
+machines. And this means that we can run many more containers on the same hardware versus
+using virtualization. This density, the ability to run more applications on a single piece
+of hardware is one of the many benefits of containers. Let's move on and look at how
+containers are architected. I want you to start off by thinking about what an EC2 instance
+actually is. And what it is, is a running copy of its EBS volumes, its virtual disks.
+An EC2 instance's boot volume is used, it's booted, and using this you end up with a running
+copy of an operating system running in a virtualized environment. A container is no different in
+this regard. A container is a running copy of what's known as a Docker image. Docker
+images are really special, though. One of the reasons why they're really cool technology-wise
+is they're actually made up of multiple independent layers. So Docker images are stacks of these
+layers and not a single monolithic disk image. And you'll see why this matters very shortly.
+Docker images are created initially by using a Docker file. And this is an example of a
+simple Docker file which creates an image with a web server inside it ready to run.
+So this Docker file creates this Docker image. Each line in a Docker file is processed one
+by one, and each line creates a new file system layer inside the Docker image that it creates.
+Let's explore what this means, and it might help to look at it visually. All Docker images
+start off being created either from scratch or they use a base image. And this is what
+this top line controls. In this case, the Docker image we're making uses CentOS 7 as
+its base image. Now this base image is a minimal file system containing just enough to run
+an isolated copy of CentOS. All this is is a super thin image of a disk. It just has
+the basic minimal CentOS 7 base distribution. And so that's what the first line of the Docker
+file does. It instructs Docker to create our Docker image using as a basis this base image.
+So the first layer of our Docker image, the first file system layer, is this basic CentOS
+7 distribution. The next line performs some software updates and it installs our web server,
+Apache in this case, and this adds another layer to the Docker image. So now our image
+is two layers, the base CentOS 7 image and a layer which just contains the software that
+we've just installed. This is critical. In Docker, the file system layers that make up
+a Docker image are normally read only, so every change you make is layered on top as
+another layer. Each layer contains the differences made when creating that layer. So then we
+move on in our Docker file and we have some slight adjustments made at the bottom. It's
+adding a script which creates another file system layer for a total of three. And this
+is how a Docker image is made. It starts off either from scratch or using a base layer
+and then each set of changes in the Docker file adds another layer with just those changes
+in and the end result is a Docker image that we can use which consists of individual file
+system layers. Now strictly speaking, the layers in this diagram are upside down. A
+Docker image consists of layers stacked on each other, starting with the base layer,
+so the layer in red at the bottom, and then the blue layer which includes the system updates
+and the web server should be in the middle, and the final layer of customizations in green
+should be at the top. It was just easier to diagram it in this way, but in actuality
+it should be reversed. Now let's look at what images are actually used for. A Docker image
+is how we create a Docker container. In fact, a Docker container is just a running copy
+of a Docker image with one crucial difference. A Docker container has an additional read
+write file system layer. File system layers, so the layers that make up a Docker image,
+by default they're read only, they never change after they're created, and so this special
+read write layer is added which allows containers to run. Anything which happens in the container,
+if log files are generated or if an application generates or reads data, that's all stored
+in the read write layer of the container. Each layer is differential and so it stores
+only the changes made against it versus the layers below. Together all stacked up they
+make what the container sees as a file system. But here is where containers become really
+cool because we could use this image to create another container, container two. This container
+is almost identical. It uses the same three base layers, so the CentOS 7 layer in red
+beginning AB, the web server and updates that are installed in the middle blue layer beginning
+8.1, and the final customization layer in green beginning 5.7. They're both the same in both
+containers. The same layers are used so we don't have any duplication. They're read only layers
+anyway and so there's no potential for any overwrites. The only difference is the read
+write layer which is different in both of these containers. That's what makes the containers
+separate and keeps things isolated. Now in this particular case if we're running two containers
+using the same base image, then the difference between these containers could be tiny. So rather
+than virtual machines which have separate disk images which could be tens or hundreds of gigs,
+containers might only differ by a few meg in each of their read write layers. The rest is reused
+between both of these containers. Now this example has two containers but what if it had 200? The
+reuse architecture that's offered by the way that containers do their disk images scales really
+well. Disk usage when you have lots of containers is minimized because of this layered architecture
+and the base layers, the operating systems, they're generally made available by the operating system
+vendors generally via something called a container registry and a popular one of these is known
+as dockerhub. The function of a container registry is almost revealed in the name. It's a registry
+or a hub of container images. As a developer or architect you make or use a docker file to
+create a container image and then you upload that image to a private repository or a public one such
+as the dockerhub and for public hubs other people will likely do the same including vendors of the
+base operating system images such as the centos example I was just talking about. From there these
+container images can be deployed to docker hosts which are just servers running a container engine,
+in this case docker. Docker hosts can run many containers based on one or more images and a
+single image can be used to generate containers on many different docker hosts. Remember a container
+is a single thing. You or I could take a container image and both use that to generate a container
+so that's one container image which can generate many containers and each of these are completely
+unique because of this read write layer that a container gets the solo use of. Now you can use
+the dockerhub to download container images but also upload your own. Private registries can require
+authentication but public ones are generally open to the world. Now I have to admit I have a bad
+habit when it comes to containers. I'm usually all about precision in the words that I use but I've
+started to use docker and containerization almost interchangeably. In theory a docker container is
+one type of container, a docker host is one type of container host and the dockerhub is a type of
+containerhub or a type of container registry operated by the company docker. Now even I start
+to use these terms interchangeably. I'll try not to but because of the popularity of docker
+and docker containers you will tend to find that people say docker when they actually mean
+containers so keep an eye out for that one. Now the last thing before we finish up and go to the
+demo I just want to cover some container key concepts just as a refresher. You've learned
+that docker files are used to build docker images and docker images are these multi-layer
+file system images which are used to run containers. Containers are a great tool for
+any solutions architect because they're portable and they always run as expected. If you're a
+developer and you have an application, if you put that application and all of its libraries into
+a container you know that anywhere that there is a compatible container host that that application
+can run exactly as you intended with the same software versions. Portability and consistency
+are two of the main benefits of using containerized computing. Containers and images are super
+lightweight. They use the host operating system for the heavy lifting but are otherwise isolated.
+Layers used within images can be shared and images can be based off other images. Layers are read
+only and so an image is basically a collection of layers grouped together which can be shared
+and reused. If you have a large container environment you could have hundreds or thousands
+of containers which are using a smaller set of container images and each of those images
+could be sharing these base file system layers to really save on capacity. So if you've got
+larger environments you could significantly save on capacity and resource usage by moving to
+containers. Containers only run what's needed so the application and whatever the application
+itself needs. Containers run as a process in the host operating system and so they don't need to be
+a full operating system. Containers use very little memory and as you will see they're super
+fast to start and stop and yet they provide much of the same level of isolation as virtual machines.
+So if you don't really need a full and isolated operating system you should give serious thought
+to using containerization because it has a lot of benefits. Not least is the density that you can
+achieve using containers. Containers are isolated and so anything running in them needs to be
+exposed to the outside world so containers can expose ports such as TCP port 80 which is used
+for HTTP and so when you expose a container port the services that that container provides can be
+accessed from the host and the outside world. And it's important to understand that some more
+complex application stacks can consist of multiple containers. You can use multiple containers in a
+single architecture either to scale a specific part of the application or when you're using
+multiple tiers. So you might have a database container, you might have an application container
+and these might work together to provide the functionality of the application. Okay so that's
+been a lot of foundational theory and now it's time for a demo. In order to understand AWS's
+container compute services you need to understand how containers work. This lesson has been the
+theory and the following demo lesson is where you'll get some hands-on time by creating your
+own container image and container. It's a fun way to give you some experience so I can't wait to
+step you through it. At this point though go ahead and finish this video and when you're ready
+you can join me in the demo lesson.

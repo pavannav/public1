@@ -1,0 +1,133 @@
+Welcome back and in this brief demonstration you'll have the opportunity to create an EC2 instance with WordPress bootstrapped in, ready and waiting to be configured.
+But this time you'll be using an enhanced CloudFormation template which uses CFN init and creation policies rather than the simple user data that you used in the previous demonstration.
+Now to get started just make sure you are logged in to the general AWS account as the IAM admin user and as always make sure you've got the Northern Virginia region selected.
+Now attached to this lesson are two one-click deployment links. Go ahead and use the first one which is the VPC link.
+Everything should be pre-populated. All you'll need to do is scroll down to the bottom, check the acknowledgement box and click on create stack.
+And then once it's moved into a create complete status you can resume and we'll carry on with the demo.
+Okay so I'll assume that that's now in a create complete status and now we're going to apply another CloudFormation template.
+So this is the template that we'll be using. It's just an enhancement of the one that you used in the previous lesson.
+This time instead of using a set of procedural instructions, so a script that are passed into the user data, this uses the CFN init system and creation policies.
+So let's have a look at exactly what that means. If I scroll down and locate the EC2 instance logical resource then here we've got this creation policy.
+This means that CloudFormation is going to create a hold point. It's not going to allow this resource to move into a create complete status until it receives a signal.
+And it's going to wait 15 minutes for this signal, so a time out of 15 minutes.
+Now scrolling down and looking at the user data, the only things we do in a procedural way, we use the CFN init command to begin the desired state configuration.
+That will either succeed or not and based on that we use the CFN signal command to pass that success or failure state back to the CloudFormation stack.
+And that's what uses this creation policy. So the creation policy will wait for a signal and it's this command which provides that signal, either a success signal or a failure signal.
+Now what we're interested in specifically for this demo lesson is this CFN init command.
+So this is the thing that pulls the desired state configuration from the metadata of this logical resource.
+I'll talk all about that in a second. But it pulls that down by being given the stack ID and it uses this substitution command.
+So instead of this being passed into the instance, what's actually passed instead of this variable name, so the stack ID variable name, is the actual stack ID.
+And then likewise, instead of this variable name, AWS double colon region, is passed to the actual region that this template is being applied into.
+So that's what the substitution function does. It replaces any variable or parameter names with the values of those variables or parameters.
+So the CFN init process is then able to consult the CloudFormation stack and retrieve the configuration information.
+That's all stored in the metadata section of this logical resource.
+Now I just want to draw your attention to this, double hyphen config sets WordPress underscore install.
+This tells us what set of instructions we want CFN init to run.
+So if I just expand the metadata section here, we've got one or more config sets defined.
+In this case, we've only got the one, which is WordPress underscore install.
+And this config set runs five individual items, one after the other.
+And these are called config keys. So install CFN, software install, configure instance, install WordPress and configure WordPress.
+Now these reference the config keys defined below.
+So you'll see they're the same name, install CFN, software install, configure instance, install WordPress and configure WordPress.
+You'll recognize a lot of the commands used because they're the same commands that install and configure WordPress.
+So in the software install config key, we're using the DNF package manager to install various software packages that we need for this installation,
+such as WGet, MariaDB, the Apache web server and various other utilities.
+Then another part is services. And we're specifying that we want these services to be enabled and to be running.
+So this means that the service will be set to start up on instance boot and it will make sure that it's running right now.
+The next config key is configure instance.
+The files component of this can create files with a certain content.
+So we're creating a file called etc update hyphen motd dot d forward slash 40 hyphen cow.
+This is the part that we had to do manually before.
+And this is the thing that adds the cows a banner.
+Then we're running some more procedural commands to set the database root password and to update this banner.
+Then we've got install WordPress, which uses the sources option to expand whatever is specified here into this directory.
+So this automatically handles the download and the un-gzip and un-tarring of this archive into this folder.
+And it can even do that with authentication if needed.
+We're creating another file this time to perform the configuration of WordPress and another file this time to create the database for WordPress.
+And then finally, we've got the configure WordPress, which fixes up the permissions and creates these databases.
+So this is doing the same thing as the procedural example in the previous demo.
+Instead of running all of these commands one by one, this is just using desired state.
+Now there is one more thing that I wanted to point out right at the top.
+This is the part that configures CFN in it to keep watching the logical resource configuration inside the CloudFormation stack.
+And if it notices that the metadata for EC2 instance inside this stack changes, then it will run CFN in it again.
+Remember how in the theory lesson I mentioned that this process could cope with stack updates.
+So it doesn't only run once like user data does.
+Well, this is how it does that.
+This configures this automatic update that keeps an eye on the CloudFormation stack and reruns CFN in it whenever any changes occur.
+This is well beyond what you need for the associate exam.
+I just want you to be aware of what this is and how it works.
+Essentially, we're setting up a process called CFNhub and making it watch the CloudFormation stack for any configuration changes.
+And then we're setting it up so that the CFNhub process is enabled and running so that it can watch the resource configuration constantly.
+So that's it for this template.
+What we'll do now is apply it.
+So go ahead and click on the second one click deployment link attached to this lesson.
+It should be called A4L EC2 CFN in it.
+So click that link.
+All you'll need to do is scroll down to the bottom and then click on Create Stack.
+Now this time, remember, we're using a creation policy.
+So CloudFormation is not going to move this logical ID and to create complete when EC2 signals that the launch process is completed.
+Instead, it's going to wait until the instance itself signals the successful completion of the CFN in it process.
+So because we're using this creation policy, it's going to hold until the instance operating system using CFN-signal
+provide a signal to CloudFormation to say, yep, everything's OK.
+And at that point, the logical resource will move into create complete.
+So that's going to take a couple of minutes.
+The EC2 instance will need to actually launch itself and pass its status checks.
+And then the CFN in it process will run, perform all of the configuration required, and then assuming the status code of that is OK,
+then CFN-signal will take that status code and respond to the CloudFormation stack with a successful completion.
+And then the process will move on.
+Then CloudFormation will mark the particular resource is complete and the stack is complete.
+Now that will take a few minutes.
+So just keep hitting refresh and you should see the status update after two to three minutes.
+But go ahead and pause the video and resume it once your stack moves into the create complete status.
+And there we go.
+So at this point, the stack has moved into the create complete status.
+And I just want to draw your attention to this line.
+You won't have seen this before.
+This is the line where our EC2 instance has run the CFN in it process successfully.
+And then the CFN-signal command has taken that success signal and delivered it to the CloudFormation stack.
+So this is the signal that CloudFormation was waiting for before moving this resource into a create complete status.
+And that's what's needed before the stack itself could move into a create complete status.
+So now we explicitly know that the configuration of this instance has actually been completed.
+So we're not relying on EC2 telling us that the instance status is now running with two out of two checks.
+Instead, the operating system itself, the CFN-init process, that's completed successfully.
+The CFN-signal process has explicitly indicated to CloudFormation that that whole process has been completed.
+So if we move across to the EC2 console, we should be able to connect to the instance exactly as we've done before.
+Look for the running instance and select it.
+Copy the public IP version 4 IP address and open that in a new tab.
+All being well, you should see the familiar WordPress installation screen.
+If you right click on that instance and put connect, go to instance connect and hit connect.
+That will connect you into the instance and you should be greeted by the cow themed login banner.
+This time if we use curl to show us the contents of user data, this time it's only a small number of lines
+because the only thing that runs is the CFN-init process and the CFN-signal process.
+Notice though how all of these variable names have been replaced with their values.
+So these stack IDs and the region.
+So this is how it knows to communicate with the right stack in the right region inside CloudFormation.
+If we do a CD space forward slash var forward slash log and then do a listing,
+we've still got these original two files.
+So cloud hyphen init dot log and cloud hyphen init hyphen output dot log.
+So these are primarily associated with the user data output.
+But now we've also got these new log files.
+So CFN hyphen init hyphen CMD dot log.
+And that is an output of the CFN-init process.
+So if we cat that, so sudo space cat space and then the name of that log file,
+this will show us an output of the CFN-init process itself.
+So we can see each of the individual config keys running
+and what individual operations are being performed inside each of those keys.
+So it's a more complex but a more powerful process.
+And at this point, that's everything I wanted to cover.
+It was just to give you practical exposure to an alternative to raw user data.
+And that was CFN-init.
+It's a much more powerful system, especially when combined with CloudFormation creation policies,
+which allow us to pause the progress of a CloudFormation stack,
+waiting for the resource itself to explicitly say,
+yes, I've finished off all of my bootstrapping process.
+You're good to carry on.
+And that's done using the CFN-signal command.
+Now at this point, let's just clean up the account, move back to CloudFormation.
+Once you're there, go ahead and delete the EC2 CFN-init stack.
+Wait for that process to complete.
+And once you've done that, go ahead and delete the A4LVPC stack.
+And that will return the AWS account into the state that you had it at the start of this demo.
+At that point, thanks for doing this demo. I hope it was useful.
+You can go ahead and complete this video now.
+And when you're ready, you can join me in the next.

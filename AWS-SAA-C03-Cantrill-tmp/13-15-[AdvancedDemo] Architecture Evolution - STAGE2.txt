@@ -1,0 +1,139 @@
+Welcome back to stage two of this advanced demo lesson, and again, I've included full instructions attached to this lesson and this stage of the demo will be another one where you're entering lots of commands because you're going to automate the build of the WordPress application instance.
+So again, I would recommend opening the instructions for this demo lesson and copy and pasting the commands rather than typing them out by hand.
+Now at this point in the advanced demo series, you're going to have a leftover instance that you used to manually install WordPress in the previous stage.
+It should be called WordPress hyphen manual.
+So I'm going to want you to go ahead and right click on that and select terminate instance and confirm that process to remove this instance from your AWS account.
+We're going to be setting up exactly the same single instance deployment of WordPress.
+So both the database and the application on the same instance.
+But instead of manually building this, we're going to be using a launch template.
+So from the EC2 console, just go ahead and click on launch templates under instances.
+The first step is to create a launch template for our WordPress application.
+So go ahead and click on create launch template.
+Now launch templates are actually a new version of launch configurations that were previously used with auto scaling groups.
+Launch templates allow you to either launch instances manually using the template or they can be part of auto scaling groups.
+But what a launch template allows you to do is to specify all of the configuration in advance to launch an instance.
+And that template can be used to launch one or many instances.
+So we're going to create a launch template which will automate the installation of WordPress MariaDB and perform all of the configuration.
+And a launch template can actually have many different versions, which is a feature we'll use throughout this demo series as we evolve the design.
+So the first step is to name this template and we're going to call it WordPress.
+Under template version description, go ahead and enter single server DB and app.
+And then check this box which says provide guidance to help me set up a template that I can use with EC2 auto scaling.
+We're not immediately going to set it up as part of an auto scaling group, but it will help us highlight any options which are required if we want to use it with an auto scaling group version.
+If we expand source template, you're able to specify a template which this template is based on.
+But in this case, we're creating one from scratch so we won't set any of those options.
+Now just scroll down. So the next thing we're going to define in this launch template is the AMI that we're going to use.
+So go ahead and click on quick start.
+And once this has changed, we're going to use the same AMI we've been using previously.
+So I want you to go ahead and click on Amazon Linux, specifically Amazon Linux 2023.
+It should be the SSD volume type.
+It should be listed as free tier eligible and just make sure that you've got 64 bit x86 selected and then scroll down further still.
+And in the instance type drop down, we're looking for the T series of instances.
+And then you need to select the one that's free tier eligible.
+In most cases, this will be T2.micro, but select whichever is free tier eligible.
+We want to keep this advanced demo as much as possible within the free tier.
+Scroll down again and for key pair, just make sure that it says don't include in the launch template.
+Move down further still to network settings.
+Then make sure select existing security group is selected.
+And then in the security groups drop down, click in that and make sure that you select the A4L VPC-SG WordPress.
+So this is the security group which will automatically be associated with any instances launched using this launch template.
+So select A4L VPC-SG WordPress and there will be some randomness after this.
+That's fine.
+Just make sure you select the SG WordPress group and then we can scroll down further still.
+Now we can leave storage volumes as default.
+We won't set any resource tags.
+We won't do any configuration of network interfaces, but I will want you to expand advanced details.
+There are a few things that we need to set within advanced details.
+The first is an IAM instance profile.
+So click in this drop down and then make sure that you pick A4L VPC-WordPress instance profile.
+Again, there will be some randomness.
+That's fine.
+What this is doing is creating the configuration which will attach an instance role to this EC2 instance.
+And this instance role is going to provide all the permissions required to interact with the parameter store and the elastic file system and anything else that this instance requires.
+And this was pre-created on your behalf using the CloudFormation template.
+Next, scroll down further still and look for credit specification.
+Remember, this is the same option that you set when launching an instance manually.
+Now, as before, it's always best to set this to unlimited.
+But if you are using a brand new AWS account, then it's possible that AWS won't allow you to use this option.
+So you should probably go ahead and pick standard.
+It won't make that much of a difference.
+I'm going to pick unlimited, but I do suggest if you are using a fairly new account, you go ahead and select standard.
+So that's the configuration for the instance, the base level configuration.
+What I want you to do now, though, is to scroll all the way down to the bottom and there's a user data box.
+This user data allows us to specify bootstrapping information to automatically configure our EC2 instances.
+So into this user data box, I want you to paste the entire code snippet within stage 2b of this stage's instructions.
+And again, they're attached to this lesson.
+The top line should be hashbang forward slash bin forward slash bash and then a space hyphen xe.
+And then if you scroll all the way down to the bottom, the last line should be rm space forward slash tmp forward slash db dot setup.
+And now we can see we've pasted this entire user data.
+Once you've done that, go ahead and click on create launch template.
+Now that user data that you just pasted in is essentially all of the commands that you ran in the previous stage of the demo.
+Only instead of pasting them one by one, you've defined them within the user data.
+So this simply automates the process end to end.
+So to test this, go ahead and click on launch templates towards the top of the screen.
+It should show that you have a single launch template.
+It's called WordPress.
+The default version is one and the latest version is one.
+And as we move throughout this demo series, the latest version and the default version will change.
+So just keep an eye on those as we go.
+For now though, I want you to click in the checkbox next to this launch template, click on actions and then launch instance from template.
+So this is going to launch an EC2 instance using this launch template.
+We're asked to choose a launch template and a version and define the number of instances.
+And we can leave all of these as the defaults.
+If we just scroll down, you'll see how it's pre-populating all of these values with the configuration from the launch template.
+And that's what we want.
+Under key pair name, just select to proceed without a key pair not recommended.
+And that's the default value.
+Scroll down further still, even the networking configuration is partially pre-populated.
+The only thing we need to do is specify a subnet that this instance will be launched into.
+And when we configure auto scaling groups to use this launch template, the auto scaling group will configure the subnets on our behalf.
+Because we're launching an instance directly from the launch template, we have to specify this subnet.
+So click in the subnet dropdown and then look for SN-PUB-A.
+Because we're going to deploy this WordPress instance into the public subnet in availability zone A.
+So select that, scroll down, look for the resource tag section and click on add tag.
+We're going to add a tag to the instance launched by this template.
+So into key, just type name and then for value, use WordPress-LT.
+And this will just tell us that this is an instance launched using the launch template.
+Once you've entered those, just scroll all the way down to the bottom and click launch instance.
+And this will launch an EC2 instance using this template.
+And this will automate everything that we had to do in the previous stage manually.
+So this saves us significant time and it enables us to use automation in later stages of this demo series.
+So now go ahead and click on the instance ID in this success box and this will take you to the EC2 console.
+Just give this instance a couple of minutes to finish its build process.
+Even though we're automating the process, it does still take some time to perform the installation and the configuration of all of those different components.
+So go ahead and just copy the public IP version 4 address of this instance into your clipboard.
+And then after you've waited a few minutes, open that in a new tab.
+If you get an error or it opens with a blank page, then you just need to give it a few minutes longer.
+But when it's finished, it should show the same WordPress installation screen.
+Once it does load the installation screen, we're going to follow the same process.
+So site title is Categram. Username is Admin.
+Enter the same password and then enter the fake test at test.com email address.
+Then click on Install WordPress.
+Then click on Login. Enter Admin again. Enter the password. Click on Login.
+It looks as though our automated WordPress build has worked because the dashboard has loaded.
+Click on Posts. Delete the default post. Click on Add New.
+For the title, The Best Animals again, click on the plus.
+Select Gallery. Click on Upload.
+And again, pick a selection of animal pictures and click on Open.
+Remember this is a new EC2 instance, so the one we previously terminated will have also deleted the data on that previous instance.
+Once these images have uploaded, click on Publish and then Publish again to upload the images to the EC2 instance and store the data within the database.
+So remember two components, the data stored in the database and the images or media stored locally on the EC2 instance.
+Click on View Post to make sure that this loads correctly.
+It does, so that means the automatic build has worked OK. Everything's functioning as we expect.
+In fact, this has been an automatic build of a functional WordPress application.
+Now the only thing that's changed from the previous stage of this advanced demo series is we've automated the build of this instance.
+It still has much the same limitations as the previous stage.
+So while we can improve the build time and we can use launch templates to support further automation,
+the database and application are still on the same instance, so neither can scale without the other.
+The database of the application is still located on that instance, meaning scale in or out operations risk this data.
+The WordPress content store is also stored locally on the instance,
+so again any scale in or out operations risk the media that's stored locally as well as the database.
+Customers still connect directly to the instance, which means we can't perform health checks or automatically heal any failed instances.
+For this we need a load balancer, which we'll be looking at in later stages of this demo series.
+And of course the IP address of the instance is still hard-coded into the database,
+so this is something else we need to resolve as we move through the demo series.
+With that being said though, that is everything that you needed to do in stage two of this demo series.
+So in this stage you've automated the build of the WordPress instance using a launch template.
+Now in stage three you're going to migrate the data from the local database on EC2 into RDS,
+and this will move the data out of the lifecycle of the EC2 instance, and this makes it easier to scale.
+So in stage three you're going to perform that migration and then update the launch template to take account of that configuration change.
+So go ahead and complete this stage of the demo lesson, and when you're ready I'll look forward to you joining me in the next.

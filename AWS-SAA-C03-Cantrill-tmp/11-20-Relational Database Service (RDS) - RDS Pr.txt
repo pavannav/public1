@@ -1,0 +1,90 @@
+Welcome back, and in this video I want to talk about a feature of RDS called RDS Proxy.
+Now this is something which is important to know in its own right, but it also supports many other architectures involving RDS.
+Now we've got a lot to cover, so let's jump in and get started.
+Before we talk about how RDS Proxy works, let's step through why you might want to use the product.
+First, opening and closing connections to databases takes time and consumes resources.
+It's often the bulk of many smaller database operations.
+If you only want to read and write a tiny amount, the overhead of establishing a connection can be significant.
+This can be especially obvious when using serverless, because if you have a lot of Lambda functions invoking,
+or accessing an RDS database, for example, then that's a lot of connections to constantly open and close,
+especially when you're only billed for the time that you're using compute, as with Lambda.
+Now another important element is that handling failure of database instances is hard.
+How long should you wait for the connection to work? What should your application do while waiting?
+When should it consider it a failure? How should it react?
+And then how should it handle the failover to the standby instance in the case of RDS?
+And doing all of this within your application adds significant overhead and risk.
+A database proxy is something that can help, but maybe you don't have any database proxy experience,
+and even if you do, can you manage them at scale? Well, that's where RDS Proxy adds value.
+At a high level, what RDS Proxy does, or indeed any database proxy, is change your architecture.
+Instead of your application connecting to a database every time they use it,
+instead they connect to a proxy, and the proxy maintains a pool of connections to the database which are open for the long term.
+Then any connections to the proxy can use this already established pool of database connections.
+It can actually do multiplexing where it can maintain a smaller number of connections to a database
+versus the connections to the proxy. A multiplex requests over the connection pool between the proxy and the database.
+So you can have a smaller number of actual connections to the database versus the connections to the database proxy.
+And this is especially useful for smaller database instances where resources are at a premium.
+So in terms of how an architecture might look using RDS Proxy, let's start with this.
+A VPC in US East 1 with three availability zones and three subnets in each of those availability zones.
+In AZB, we have a primary RDS instance replicating to a standby running in AZC.
+Then we have Categram, our application running in the web subnets in the middle here,
+and the application makes use of some Lambda functions which are configured to use VPC networking
+and run from the subnet in availability zone B, and so there's a Lambda ENI in that subnet.
+Without RDS Proxy, the Categram application servers will be connecting directly to the database every time they needed to access data.
+Additionally, every time one of those Lambda functions invoked, they would need to directly connect to the database
+which would significantly increase their running time. With RDS Proxy though, things change.
+So the proxy is a managed service and it runs only from within a VPC, in this case across all availability zones A, B and C.
+Now the proxy maintains a long-term connection pool, in this case to the primary node of the database running in AZB.
+These are created and maintained over the long term. They're not created and terminated based on individual application needs or Lambda function invocations.
+Our clients, in this case the Categram EC2 instances and Lambda functions, connect to the RDS Proxy rather than directly to the database instances.
+Now these connections are quick to establish and place no load on the database server because they're between the clients and the proxy.
+Now at this point, the connections between the RDS Proxy and database instances can be reused.
+This means that even if we have constant Lambda function invocation, they can reuse the same set of long-running connections to the database instances.
+More so, multiplexing is used so that a smaller number of database connections can be used for a larger number of client connections,
+and this helps reduce the load placed on the database server even more.
+RDS Proxy even helps with database failure or failover events because it abstracts these away from the application.
+The clients we have can connect to the RDS Proxy instances and wait, even if the connection to the backend database isn't operational.
+And this is a situation which might occur during failover events from the primary to the standby.
+In the event that there is a failure, the RDS Proxy can establish new connections to the new primary in the background.
+The clients stay connected to the same endpoint, the RDS Proxy, and they just wait for this to occur.
+So that's a high-level example architecture. Let's look at when you might want to use RDS Proxy.
+And this is more for the exam, but you need to have an appreciation for the types of scenarios where RDS Proxy will be useful.
+So you might decide to use it when you have errors such as too many connection errors,
+because RDS Proxy helps reduce the number of connections to a database.
+And this is especially important if you're using smaller database instances such as T2 or T3, so anything small or anything burst-related.
+Additionally, it's useful when using AWS Lambda, because you're not having the per-invocation database connection setup usage and termination.
+It can reuse a long-running pool of connections maintained by the RDS Proxy.
+And it can also use existing IAM authentication, which the Lambda functions have access to via their execution role.
+Now RDS Proxy is also useful for long-running applications such as SaaS apps where low latency is critical.
+So rather than having to establish database connections every time a user interaction occurs, they can use this existing long-running connection pool.
+RDS Proxy is also really useful where resilience to database failure is a priority.
+Remember your clients connect to the proxy and the proxy connects to the backend databases.
+So it can significantly reduce the time for a failover event and make it completely transparent to your application.
+So this is a really important concept to grasp, because your clients are connected to the single RDS Proxy endpoint.
+Even if a failover event happens in the background, instead of having to wait for the database CNAME to move from the primary to the standby,
+your applications are transparently connected to the proxy and they don't realize it's a proxy, they think they're connecting to a database.
+The proxy though is handling all of the interaction between them and the backend database instances.
+Now before we finish up, I want to cover some key facts about RDS Proxy.
+Think of these as the key things that you need to remember for the exam.
+So RDS Proxy is a fully managed database proxy that's usable with RDS and Aurora.
+It's auto-scaling and highly available by default, so you don't need to worry about it.
+And this represents a much lower admin overhead versus managing a database proxy yourself.
+Now it provides connection pooling, which significantly reduces database load.
+Now this is for two main reasons.
+Firstly, we don't have the constant opening and closing of database connections, which does put unnecessary stress on the database.
+But in addition, we can also multiplex to use a lower number of connections between the proxy and the database,
+relative to the number of connections between the clients and the proxy.
+So this is really important.
+RDS Proxy is only accessible from within a VPC, so you can't access this from the public internet.
+It needs to occur from a VPC or from private VPC connected networks.
+Accesses to the RDS Proxy use a proxy endpoint, and this is just like a normal database endpoint.
+It's completely transparent to the application.
+An RDS Proxy can also enforce SSL TLS connections, so it can enforce these to ensure the security of your applications.
+And it can reduce fail-over time by over 60% in the case of Aurora.
+This is somewhere in the region of 66% to 67% improvement versus connecting to Aurora directly.
+Critically, it abstracts the failure of a database away from your application.
+So the application connected to an RDS Proxy will just wait until the proxy makes a connection to the other database instance.
+So during a fail-over event where we're failing over from the primary to the standby,
+the RDS Proxy will wait until it can connect to the standby and then just continue fulfilling requests from client connections.
+And so it abstracts away from underlying database failure.
+Now at this point, that is everything I wanted to cover in this high-level lesson on RDS Proxy.
+So go ahead and complete the video, and when you're ready, I'll look forward to you joining me in the next.

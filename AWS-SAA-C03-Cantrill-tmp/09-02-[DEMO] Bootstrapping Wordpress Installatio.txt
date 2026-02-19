@@ -1,0 +1,195 @@
+Welcome back, and in this demo lesson you're going to get the experience of bootstrapping an EC2 instance using user data.
+So this is the ability to run a script during the provisioning process for an EC2 instance and automatically add a certain configuration to that instance during the build process.
+So this is an alternative to creating a custom AMI.
+Earlier in the course you created an Amazon machine image with the WordPress installation and configuration baked in.
+Now that's really quick and simple, but it does limit your ability to make changes to that configuration.
+So the configuration is baked into the AMI, and so you're limited as to what you can change during launch time.
+With bootstrapping you have the ability to perform all the steps in the form of a script during the provisioning process.
+And so it can be a lot more flexible.
+Now to get started we need to create the Animals for Life VPC within our general AWS account.
+So this is the management account of the organization.
+So make sure that you're logged into the IAM admin user of this account, and as always make sure you have the Northern Virginia region selected.
+Now attached to this lesson is a one-click deployment link, so go ahead and open that.
+This is going to take you to the quick create stack page, and everything should be pre-populated.
+The stack name should be bootstrap, everything else has appropriate defaults, so just scroll down to the bottom,
+check the capabilities acknowledgement box, and then go ahead and click on create stack.
+Now this will create the Animals for Life VPC, which contains the public subnets that we'll be launching our instance into.
+And so we're going to need this to be in a create complete state before we move on.
+So go ahead and pause the video, and once your stack changes from create in progress to create complete, then we're good to continue.
+Okay, so now that that stack has moved into a create complete state, we're good to continue.
+Now also attached to this lesson is another link, which is the user data that we're going to use for this demo lesson.
+So go ahead and open that link.
+This is the user data that we're going to use to bootstrap the EC2 instance.
+So what I want you to do is to download this file to your local machine and then open it in a code editor,
+or alternatively just copy all of the text on screen now and paste that into a code editor.
+So I've gone ahead and opened that file in my text editor, and if you look through all of the different commands
+contained within this userdata.txt file, then you should recognize some of them.
+These are basically the commands that we ran earlier in the course when we manually installed WordPress
+and when we created the Amazon machine image.
+So we're essentially installing the MariaDB database server, the Apache web server, WGet, and Kousei.
+We're installing PHP and its associated libraries.
+We're making sure that both the database and the web server are set to automatically start when the instance reboots
+and are explicitly started when this script is run.
+We're setting the root password of the MariaDB database server.
+We're downloading the latest copy of the WordPress installation archive.
+We're extracting it and we're moving the files into the correct locations.
+Then we're configuring WordPress by copying the sample configuration file into the final and proper file name,
+so wp-config.php, and then we're performing a search and replace on those placeholders
+and replacing them with our actual chosen values for the database name, the database user, and the database password.
+And then after that we're fixing up the permissions on the webroot folder with the WordPress installation files inside,
+so we're making sure that the ownership is correct, and then we're fixing up the permissions with a slightly improved version
+of what we've used previously.
+Then we're creating our db.setup script in the same way that we did when we were manually installing WordPress.
+We're logging into the database using the MySQL command line utility, authenticating as the root user with the root password,
+and then running this script.
+And this creates the WordPress database, the user sets the password and gives that user permissions on the database.
+And then finally we're configuring the kowsay utility, so we're setting up the message of the day file,
+we're outputting our Animals for Life custom greeting, and then we're forcing a refresh of the login banner.
+So these are all of the steps that you've previously done manually,
+so I hope it's still fresh in your memory just how annoying that manual installation was.
+Okay, so at this point this user data is ready to go, and I want to demonstrate to you how you can use this to bootstrap an EC2 instance.
+So let's go ahead and move back to the AWS console.
+Once we're at the AWS console, this CloudFormation one-click deployment has created the Animals for Life VPC.
+So what we're going to do is to click on the Services dropdown, and then move to the EC2 console,
+and go ahead and click on Launch Instance, followed by Launch Instance again.
+So first things first, the instance is going to be called A4L for Animals for Life, hyphen Manual WordPress.
+So go ahead and enter that in the box at the top.
+Then scroll down, select Amazon Linux, and then make sure Amazon Linux 2023 is selected in the dropdown,
+and then make sure that you've got 64-bit x86 selected.
+I want you to pick whichever type is free tier eligible within your account and region.
+In my case it's T2.micro, but you should pick the one that's free tier eligible.
+Under Key Pair, go ahead and pick Proceed Without a Key Pair.
+Then scroll down to Network Settings and click on Edit.
+And there are a few items on this page that we need to explicitly configure.
+The first is we need to select the Animals for Life VPC next to Network.
+So select A4L hyphen VPC1.
+Next to Subnet, I want you to go ahead and pick SN hyphen Web hyphen A.
+So that's the web or public subnet within availability zone A.
+Then make sure Auto Assign Public IP is set to Enable.
+We'll be using an existing security group, so check that box.
+And then in the dropdown, so click the dropdown and select the Bootstrap hyphen Instance Security Group.
+So Bootstrap was the name of the CloudFormation stack that we created using the one-click deployment.
+We won't be making any changes to the storage configuration.
+And next we need to scroll down to an option that we've not used before.
+We're going to enter some user data.
+So scroll all the way down.
+And under Advanced Details, expand this if it isn't already.
+And you're looking for the User Data box.
+What we're going to do is paste in the user data that you just downloaded.
+So in my case, this is the user data.txt which I downloaded.
+So I'm going to go ahead and select all of the information in this user data.txt,
+making sure I get everything including the last line.
+And I'm going to copy that into my clipboard.
+Now back at the AWS console, we need to paste that into the user data box.
+Now by default, EC2 accepts user data as Base64 encoded data.
+So we need to provide it with Base64 encoded data.
+And we're not, we're just giving it a normal text file.
+So in this case, the user interface can actually do what we're pasting in isn't.
+Then we don't need to do anything else.
+If we're pasting in data which is already Base64 encoded,
+we need to check this box below the user data box.
+We don't need to worry about that because we're not pasting in anything with Base64 encoding.
+So we can just paste in our user data directly into this box.
+And this will be run during the instance launch process.
+So this is where our automatic configuration comes from.
+This is what will bootstrap the EC2 instance.
+Okay, so that's everything we need to configure.
+So go ahead and click on launch instance.
+Now at this point, while this is launching,
+I want you to keep in mind that in the previous demo examples in this course,
+we manually launched an instance.
+And then once the instance was in a running state,
+we had to connect into it, download WordPress, install WordPress,
+and then configure WordPress,
+along with all of the other associated dependencies that WordPress requires.
+So that was a fairly time-intensive process that was open to errors.
+In the AMI example, we followed that same process,
+but at the end we created the Amazon machine image.
+So keep that in mind and compare it to what your experience is in this demo lesson.
+So now we've launched the instance, and it's now in a running state,
+and we've provided some user data to this instance.
+So I want you to leave it a couple of minutes after it's showing in a running state.
+Just give it a brief while to perform that additional configuration.
+After a few minutes, go ahead and right-click on that instance and select connect.
+We're going to be using EC2 instance connect, so make sure that's selected.
+Make sure the user is set to EC2-user, and then just click connect.
+Now what you should see, if we've given this enough time,
+is our custom Animals for Life login banner.
+And that means that the bootstrapping process has completed.
+Think about this for a minute.
+As part of the launch process, EC2 has provisioned us an EC2 instance,
+and it's also run a relatively complex installation and configuration script
+that we've supplied in the form of user data,
+and that's downloaded and installed WordPress and configured our custom login banner.
+If we go back to EC2, select instances,
+and then if we copy the public IP address into our clipboard,
+so copy the actual IP address, do not click on this link,
+because this will open it using HTTPS, which we haven't configured.
+If you take that IP address and open that in a new tab,
+you'll see the installation dialog for WordPress,
+and that's because the bootstrapping process using the user data
+has done all of the configuration process that previously we've had to do manually.
+Now if we go back to the instance,
+I want to demonstrate architecturally and operationally exactly how this works.
+What we can do is use the curl utility to review the instance metadata.
+Now because we're using Amazon Linux 2023,
+we need to do this slightly differently.
+We need to use version 2 of the metadata service.
+So first we need to run this command to get a token
+which we can use to authenticate to the metadata service.
+So run this.
+Next we can run this command, which gets us the metadata of the instance,
+and this uses the 169.254 address,
+or as I like to call it 169.254 repeating.
+Now if we use this with meta-data on the end,
+then we get the metadata service.
+But as we know, user data is a component of the metadata service,
+so instead of using forward slash latest forward slash metadata,
+we can replace metadata with user data,
+and this will allow us to see the user data supplied to the instance.
+And don't worry, all of these commands will be attached to the lesson.
+So you should recognize this.
+This is the user data that we passed into the instance.
+So this has performed a download, a configuration,
+and an installation of Apache, the database server, and WordPress,
+as well as our custom login banner.
+So that's how the user data gets into the EC2 instance,
+and there's a service running on the EC2 instance which takes this data
+and automatically performs these configuration steps.
+Essentially, this is run as a script on the operating system.
+Now something else we can do is to move into the forward slash var forward slash log folder,
+and this is a folder which contains many of the system logs.
+And if we do an ls space hyphen la,
+we'll see a collection of logs within this folder.
+There are two logs in particular that are really useful
+for diagnosing bootstrapping-related problems.
+These logs are cloud-init.log and cloud-init-output.log,
+and both of these are used for slightly different reasons.
+So what I want to do is to output one of these logs and show you the content.
+So we're going to output using sudo first to get admin permissions and then cat,
+and we're going to use the cloud-init-output.log,
+and I'm going to press enter,
+and that's going to show you the contents of this file.
+And you'll be able to see using this log file
+exactly what's been executed on this EC2 instance.
+So you'll be able to see all of the actual commands and the output from those commands
+as they've been executed on this EC2 instance.
+So you'll be able to see all of the WordPress-related downloads and copies,
+the replacements of the database usernames and passwords,
+the permissions fix section,
+the database creation, user creation,
+and then permissions on that database,
+as well as the command that actually executes those,
+and then right at the bottom is where we configure our custom login banner.
+So this is how you can see exactly what's been run on this EC2 instance,
+and if you ever encounter any issues with any of the demo lessons
+within this course or any of my courses,
+then you can use this file to determine exactly what's happened
+on the EC2 instance as part of the bootstrapping process.
+Okay, so this is the end of part one of this lesson.
+It was getting a little bit on the long side,
+and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one,
+so go ahead, complete the video,
+and when you're ready, join me in part two.

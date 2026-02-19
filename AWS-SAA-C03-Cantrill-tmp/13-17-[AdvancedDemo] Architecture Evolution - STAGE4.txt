@@ -1,0 +1,118 @@
+Welcome back to stage 4 of this advanced demo series. Now in stage 4, we're going to perform the last step before we can make this a truly elastic and scalable design and we're going to migrate the WP-content folder which stores these priceless animal images from the EC2 instance onto EFS which is the elastic file system.
+And this is a shared network file system that we can use to store images or other content in a resilient way outside of the life cycle of these individual EC2 instances.
+So to do that we need to move back to the AWS console, click on the Services drop dab. Once that's opened, click on Create File System.
+Now we're going to step through the full configuration options so rather than using this simplified user interface, go ahead and click on Customize.
+So the first step is to create the file system itself. So for name, go ahead and call this A4L-WordPress-Content.
+Leave the storage class as standard. These cat images are critical data and so we are going to leave automatic backups enabled and we're also going to leave life cycle management set to be the default so 30 days since the last access.
+For throughput mode, pick bursting which links the throughput to the size of the storage. Then expand additional settings. You've got two performance modes, general purpose and maxio.
+For this demonstration, go ahead and select general purpose. Maxio is for very specific high performance scenarios. For 99% of use cases, you should select general purpose.
+Now also go ahead and untick enable encryption of data at rest. If this were a production scenario, you would leave this on but for this demo which is focusing on architecture evolution, it simplifies the implementation if we disable it.
+So go ahead and make sure that encryption is disabled. Once you've done that, that's all of the file system specific options that we need to configure so go ahead and click on Next.
+In this part, you're configuring the EFS mount targets which are the network interfaces in the VPC which your instances will connect with.
+So in the virtual private cloud drop down, select it and then pick A4L-VPC. So this is the VPC that these mount targets are going to go into.
+Now each of the mount targets is secured by a security group. The first thing we need to do is to strip off the default security group for the VPC so click in the crosses next to each of these security groups.
+Now you should have three rows, one for each availability zone. So in my case, US East 1A, 1B and 1C and make sure that you've got the same selected. So one row for each availability zone, A, B and C.
+Now in the subnet drop down for availability zone 1A, I want you to go ahead and pick SN-App-A. So this should be 10.16.32.0.20.
+For the US East 1B row, I want you to go ahead and pick SN-App-B. This should be 10.16.96.0.20.
+And then finally for US East 1C, I want you to go ahead and pick SN-App-C, which should be 10.16.160.0.20.
+Now for all three rows within the security groups drop down, I want you to go ahead and select A4L-VPC-SGEFS.
+Again for each of these it will have some randomness after it but just make sure you pick the right one, A4L-VPC-SGEFS.
+And you need to pick that for each of the three rows. Make sure you pick the right one because if you don't it will impact your ability to connect.
+So there the mount targets configured and they'll be allocated with an IP address in each of these subnets automatically which will allow you to connect to them.
+At this point go ahead and click on next. You can configure some additional file system policies. This is entirely optional. We won't be using that.
+So just go ahead and click on next. And then on the review screen scroll all the way down to the bottom and just click on create.
+Now the file system itself will initially show as being in the creating state and it will then change to available.
+Go ahead and click on the file system itself, click on the network tab and then just scroll down and these are the mount targets which are being created.
+Now in order to configure our EC2 instance we will need all of these mount targets to be in the available state.
+But what we can do to save some time is we can note down the file system ID of this EFS file system.
+So this is this value. You can see it at the top header here or you can see it in this row at the top.
+Just note that down and copy that into your clipboard because we need to configure another parameter to point at this file system ID.
+Because remember when we're scaling things automatically it's always best practice to use the parameter store to store configuration information.
+So click on services, type sys which are the first few letters of systems manager and open that in a new tab.
+Once you're at the systems manager console go ahead and click on parameter store and then you need to click create parameter to create a new parameter.
+We're going to call this parameter forward slash A4L forward slash wordpress forward slash and then EFS for elastic file system, FS for file system and then ID.
+So EFS file system ID. For description put file system ID for wordpress content and then in brackets WP hyphen content.
+And that will help us know exactly what this parameter is for.
+As before we'll be picking the standard tier, the type will be string, the data type will be text and then into the value just go ahead and paste that file system ID.
+And once you've done all that you can go ahead and click on create parameter.
+Once that's done go back to the EFS console and if required just hit refresh and make sure that all of these mount targets are in the available state.
+This is what it should look like with all three showing a green tick and available.
+Once that's the case go to the EC2 console because now we're going to configure our EC2 instance to connect to this file system.
+So go to running instances, locate the wordpress hyphen LT instance, right click, select connect, choose session manager and then click on connect.
+And this will open session manager console to the EC2 instance.
+As always type sudo bash, press enter, cd and press enter and then type clear and press enter again just to clear the screen making it easier to see.
+Now even though EFS is based on NFS which is a standard in order to get EC2 instances to connect to EFS we need to install an additional tools package and to do that we use this command.
+So type or paste that in and press enter to install the EFS support package.
+Once that's installed again I'm going to clear the screen to make it easier to see.
+Then I'm going to move to the webroot folder by typing cd space forward slash var forward slash www forward slash html and what I'm going to do is to move the entire wp hyphen content folder somewhere else.
+So if I just go inside this folder to illustrate exactly what it looks like and then do a list you'll see that inside there are plugins, themes and uploads.
+And inside those folders are any media assets used by WordPress.
+So I'm just going to type cd space dot dot to move back up a level out of this folder and then I'm going to move this entire folder to the forward slash tmp folder which is a temporary folder.
+So mv space wp hyphen content forward slash space forward slash tmp and that moves that entire folder to the temporary folder.
+Then we're going to create a new folder so sudo space mkdir space wp hyphen content.
+This will be the mount point for the EFS file system so I'm making an empty directory.
+Then I'm going to clear the screen and then paste in the next two commands from the lesson instructions.
+And this populates an environment variable called EFS FS ID with the value from the parameter you just created in the parameter store.
+So this is now the file system ID of the EFS file system.
+Now there's a file called fstab which exists in the forward slash etc folder and inside there it's called fstab and this contains a list of file systems which are mounted on this EC2 instance.
+Initially this only has the single line for the boot volume.
+What we're going to do is add an additional line to this fstab file and this line is going to configure the EC2 instance so that it mounts our EFS file system on boot every single time.
+And this is this command so it echoes this line so the file system ID from the environment variable.
+We're going to mount it to the folder that we just created so the wp hyphen content folder and these are all of the file system options.
+So we're going to put that into the fstab file so if we now cap this file it's got this extra line and this means this file system will be mounted whenever the operating system starts.
+And we can force this just for now by running mount hyphen a space hyphen t space EFS space defaults and this will mount the EFS file system onto this EC2 instance.
+We can verify that by doing a df space hyphen k and the bottom line should show us that we've now got this EFS file system mounted as the wp hyphen content folder.
+So this is the folder that WordPress expects its media to be inside.
+Now all that remains is for us to migrate the existing data that we moved to the temporary folder back in to wp hyphen content and to do that we use this command.
+So we're using the mv command to move forward slash tmp forward slash wp hyphen content forward slash star so any files and folders and then we're moving it back into var www html wp hyphen content so this is the EFS file system.
+So run that and that will copy the data back to EFS which remember is now mounted where WordPress expects it to be.
+Now that might take a few moments to complete once it's done we just need to fix up the permissions.
+So run this command chown space hyphen big R space EC2 hyphen user colon Apache space and then slash var slash www so this just reestablishes permissions and ownership of everything in this particular part of the file system.
+Just make sure we won't have any problems going forward.
+Now at this point we're going to use the reboot command to restart this instance and if everything goes well the instance should start the EFS file system should be loaded and WordPress should have access to all of this wp hyphen content which is now running from a network file system.
+So go ahead type reboot and press enter if you press enter just to make sure that you are disconnected and I am so that's good.
+So now I need to wait a few minutes for this EC2 instance or at least its operating system to restart.
+So I'll go ahead and close down this session manager tab go back to the EC2 console after waiting a few minutes I'll right click select connect check session manager click on connect.
+Assuming the instance has restarted I'll be back at the prompt and if I do a DF space hyphen K if everything's working as expected the EFS file system will still be mounted into the directory that we configured.
+If I go back to the EC2 console and just copy down the instances public IP version 4 address either refresh the tab if you still got it open or paste in the IP address and reload that page.
+And if everything's working as expected all of these high quality critical cat pictures should still load from the WordPress blog.
+So now at this point when we're interacting with the application both the database and the wp hyphen content both exist away from the EC2 instance.
+And this means we're now in a position where we can scale the EC2 instance without worrying about the data or the media for any of the posts.
+And this means we can now further evolve this architecture to be fully elastic.
+Now there is one more thing that we need to do before moving on to the next stage of the demo and implementing this final step towards a fully elastic architecture.
+And that's that we need to update the launch template to include this updated configuration so that it uses EFS.
+To do that go back to the EC2 console go to launch templates select the launch template so check the box click on the actions drop down select modify template create new version.
+For template version description use app only uses EFS file system defined in and then the parameter store value that contains the file system ID so this is just the description.
+Now again because we're creating a new version it will populate all of the configuration with the previous template version.
+But I'll need you to scroll all the way down to the bottom expand advanced details and scroll all the way down.
+Again we're going to make some edits to the user data so expand this box a little bit to make it easier to read.
+What I'll need you to do is to put your cursor after the end of this top line and just press enter twice to make some space.
+And then paste in this set of configuration and again this is stored within the instructions for this stage of the demo series.
+That will just populate an environment variable with the file system ID that it will get from the parameter store.
+Scroll down and next you're looking for a software installation line.
+You're looking for this line the line that performs the installation of the MariaDB server the Apache web server and the wget utility.
+Position your cursor after the word stress and then press space and then I'll want you to add this text followed by a space which is Amazon-EFS-Utils.
+Next scroll down a little bit further and you're looking for the line that says systemctl starthttbd.
+Click on the end to position your cursor at the end of that line and then press enter twice to add some space.
+And then paste in this next block also contained within this lesson's instructions.
+What this does is to make a WP-content folder before we install WordPress.
+Configure the ownership of the entire folder tree and then add the line for EFS to the FS tab file and then mount this EFS file system in to var www.html.wp-content.
+And this means that when we're automatically provisioning this instance before we install WordPress we're creating and mounting this EFS file system.
+And then we go on to installing WordPress configuring the database and performing the final fix of all of the permissions of that folder structure.
+Next scroll down we're done with all of the launch template user data configuration just go ahead and click on create template version.
+We need to make this new version the default so click on launch templates.
+Select the WordPress launch template, click on actions, scroll down, select set default version, click in the drop down.
+Version 2 should currently be the default, change that to version 3 and click set as default version.
+So at this point you further evolved the architecture.
+Now we have both the database for WordPress stored in RDS and the WP-content data stored within the elastic file system.
+So we've solved many of the applications limitations.
+We can scale the database independently of the application, we've stored the media files separate from the instance
+so now we can scale the instance freely out or in without risking the media or the database.
+We do still have two final limitations which we'll be fixing together in the next stage of this demo series.
+One is that customers still connect to the instance directly so we don't have any health checks,
+we don't have any auto healing capabilities and we're limited to how we can scale.
+And then finally the IP address of the instance is still hard coded into the database
+and so even if we did provision additional instances WordPress would expect all of the data to be loaded from that one single original instance.
+And to allow us to scale we have to resolve both of those problems.
+At this point though you've done everything required in stage 4 so go ahead complete this video
+and when you're ready I'll look forward to you joining me in stage 5 of this advanced demo series.

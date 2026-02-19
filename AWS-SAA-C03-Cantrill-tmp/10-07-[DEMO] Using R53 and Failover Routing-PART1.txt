@@ -1,0 +1,179 @@
+Welcome to this demo lesson where you're going to get experience configuring failover routing as well as private hosted zones.
+Now with this demo lesson you have the choice of either following along in your own environment or watching me perform the steps.
+If you do wish to follow along in your own environment you will need a domain name that's registered within Route 53.
+Remember that was an optional step at the start of this course.
+So if you did register a domain of your own then you can do this demo lesson.
+In my case I registered animalsforlife1337.org.
+If you registered a domain it will be different and so wherever you see me use animalsforlife.org you need to replace it with your registered domain.
+If you didn't register one then you'll have to watch me perform all of these steps because you can't do this lesson without your own registered domain.
+In order to get started you need to make sure that you're logged in as the IAM admin user of the general AWS account which is the management account of the organization
+and you'll need to have the Northern Virginia region selected.
+Now we're going to need to create some infrastructure in order to perform this demo lesson.
+So attached to this lesson is a one click deployment link and you should go ahead and click that link now.
+That's going to take you to a quick create stack screen.
+Everything should be pre-populated, the stack name is DNS and failover demo.
+All you'll need to do is scroll down to the bottom, check this capabilities box and then click on create stack.
+That's going to take a few minutes and it's going to create infrastructure that we're going to need to continue with the demo lesson.
+So go ahead and pause the video, wait for your stack to move into a create complete state and then we're good to continue.
+Okay so the stack's now in a create complete state and it's created a number of resources, the most important one being a public EC2 instance.
+So we just need to test this first so if you just click in the search box and type EC2 and then right click to open that in a new tab.
+Once you're there click on instances running and you should see A4L-web, just select that.
+Under public IP version 4 just click on this symbol to copy the IP address into your clipboard.
+Make sure you don't click open address because that's going to try and use HTTPS which we don't want.
+So copy this IP address into your clipboard and then open that in a new tab and you should see the animals for life super minimal homepage.
+And if you see that it means everything's working as intended so go ahead and close down that tab.
+Now we also need to give this instance an elastic IP address so that it has a static public IP version 4 address.
+Now to give it an elastic IP on the menu on the left scroll down to the bottom.
+Under network and security select elastic IPs and then we need to allocate an elastic IP.
+Make sure US-EAST-1 is in this box, scroll down and click on allocate.
+Once the elastic IP address is allocated to this account, select it, click on actions and then associate elastic IP.
+Once we're at this screen make sure instances selected, click in this search box and then select A4L-web.
+Once selected click in the private IP address box and select the private IP address of this instance
+and then check the box to say allow this elastic IP address to be re-associated.
+Once all of that's complete click on associate and that now means that our EC2 instance has been allocated with a static IP version 4 address.
+Now we're configuring failover DNS and so the EC2 instance is going to be our primary record.
+So we're going to assume that this is the animals for life main website and we want to configure an S3 bucket which is running as the backup in case this EC2 instance fails.
+So the next thing we need to do is to create the S3 bucket.
+So click in the search box, type S3 and open that in a new tab.
+And then go to the S3 console and at this point we're going to create an S3 bucket and configure it as a static website.
+Now the naming of the S3 bucket is important.
+Earlier in the course you should have registered a domain name.
+In my case I registered animalsforlife1337.org so I'm going to create a bucket with the name www.animalsforlife1337.org.
+You need to create one which is called www. and then the domain name that you registered.
+So I'm going to click on create bucket.
+The bucket name is www.animalsforlife1337.org and it's going to be in the US East Northern Virginia region which is US-E-1.
+Then we're going to scroll down and we're going to need to uncheck block all public access because this bucket is going to be used to host a static website.
+I'll need to acknowledge that I'm okay with that so I'll do that.
+And then scroll all the way down to the bottom and then I'm going to click on create bucket.
+Then I'm going to go inside the bucket, click on upload and then add files.
+Now attached to this lesson is an assets file.
+I want you to go ahead and download that file then extract it.
+And where you've extracted it, it should create a folder called R53 underscore zones underscore and underscore failover.
+Go inside that folder and there'll be two more folders, one which is 01 underscore A4L website and another which is 02 underscore A4L failover.
+We're interested in the A4L failover.
+So go into that folder, select both these files, so index.html and minimal.jpeg, click on open and then upload those files.
+So we'll scroll down and click on upload.
+Once that's completed, click on close.
+Then we're going to enable static website hosting so click on properties.
+And to enable this, it's all the way down towards the bottom.
+Click on edit next to static website hosting and enable it.
+Make sure that host a static website is selected.
+And then for the index document and the error document, we're going to type index.html.
+And once both of those are entered, scroll down to the bottom and save changes.
+Now we've one final thing to do on this bucket.
+We need to add a bucket policy so that this bucket is public.
+So we need to click on permissions, scroll down and then under bucket policy, click on edit.
+And this bucket currently does not have a bucket policy.
+Now also inside the assets folder that you extracted earlier in this lesson, there's a file called bucket underscore policy dot json.
+This is the file, so you'll need to copy the contents of that file into your clipboard.
+And then inside this policy box, paste that in and then click on the icon next to the bucket ARN to copy that into your clipboard.
+And then we need to replace this placeholder with what you've just copied.
+So I want you to select from just to the right of the first speech mark all the way through to before the forward slash.
+So you should have ARN colon AWS colon S3 colon colon colon and then example bucket.
+And then go ahead and paste the text from your clipboard, which will overwrite that with the actual bucket ARN.
+So it should look like this.
+Once you've got that, scroll down and save the changes.
+So now we have the failover website configured, the static website running from the S3 bucket.
+So now we need to go ahead and move to the route 53 console where we're going to create a health check and configure the failover record.
+So click in the search box, type route 53, right click and open that in a new tab, then click on health checks.
+We're going to create a health check for the health check name type A4L health and it's going to be an end point health check.
+Scroll down. We're going to specify the end point by IP address.
+The protocol is going to be HTTP and we need the IP address of the EC2 instance.
+So if we go back to the EC2 console, the EC2 instance is now using the elastic IP.
+So if we scroll down and click on elastic IPs and copy the elastic IP into our clipboard, then go back to the route 53 console and paste that in.
+And the health check is going to be configured to health check the index dot HTML document.
+So in path, we need to click and type index dot HTML.
+Then we're going to expand advanced configuration and by default, a health check is checking every 30 seconds.
+So this is a standard health check.
+We need to change this to fast because we want our health check to react as fast as possible if our primary website fails.
+So select fast, scroll down to the bottom, click on next.
+We don't want to create an alarm because we don't want to take any action if this health check fails.
+We're just going to use it as part of our failover routing.
+So go ahead and make sure no is selected and then click create health check.
+Now, the health check is going to start off with an unknown status because it hasn't gathered enough information about the health of the primary website.
+It's going to take a few minutes to move from this status to either healthy or unhealthy.
+What we can do, though, is if we check this, we can click on the health checkers tab and start to see the results of the globally distributed set of health check endpoints.
+So we can see that we're already getting success HTTP status code 200.
+And this is telling us our primary website is already passing these individual checks.
+And after a couple of minutes, if we hit refresh, we should see that the status changes from unknown to healthy.
+So next we need to create the failover record.
+So click on hosted zones, locate the hosted zone for the domain that you registered at the start of the course and click it.
+Then click on create record.
+Now you can switch between two different modes, either the quick create record mode or the wizard mode.
+We're going to keep this demo simple.
+So click on switch to wizard.
+We're going to choose a failover record.
+So select failover and click next.
+We're going to call the record WWW.
+We're going to set a TTL of one minute.
+So click one M and that will change the TTL seconds to 60.
+Scroll down and we're going to define some failover records.
+So click define failover record.
+First we need to create the primary record.
+So click in this first drop down and we're going to pick IP address or another value depending on record type.
+So click that and then we need the elastic IP address.
+So go back to the EC2 console and copy the elastic IP into your clipboard and paste that into this box.
+And then for failover record type this is the primary record.
+So click on primary.
+We need to associate it with a health check.
+So click in that drop down and choose A4L health.
+Now once we do that it means that this primary record will only be returned if this health check is healthy.
+Otherwise the secondary record will be returned which we're going to define in a second.
+Under record ID just go ahead and type EC2.
+This needs to be unique within this set of records with the same name.
+So we're going to call one EC2 and the other S3.
+So this one's EC2 so define that failover record.
+And then we're going to define a new failover record so click that box again.
+This time in this drop down we need to scroll down and we're going to select alias to an S3 website endpoint.
+So select that, choose the region and it needs to be US-East-1.
+Once selected you should be able to click in this box and see the S3 bucket that you just created.
+So click on this to select that S3 bucket and we're going to set this as the secondary record.
+So click on secondary.
+We won't be associating this with a health check and we won't be evaluating the target health.
+This record will only ever be used if the primary fails its health check.
+And so we want this record to take effect whenever the health check associated with the primary fails
+and we're going to test that by shutting down the EC2 instance.
+So this record should then take over.
+So finally we need to enter S3 in the record ID and click on define failover record.
+Once we've done both of those we can go ahead and click on create records.
+So now that we have both of those records in place, the primary pointing at EC2 and the secondary at S3,
+if we copy down this full DNS name into our clipboard and open that in a new tab,
+that should direct towards the animalsforlife.org super minimal home page.
+Remember this is the website running on EC2.
+Now what we need to do is to simulate a failure.
+So go back to the EC2 console, scroll to the top, click on EC2 dashboard,
+then instances running, right click on this instance, select stop instance and confirm that by clicking stop.
+So now we've stopped this instance, it should begin failing the health check.
+So let's go back to the Route 53 console, click on health checks, select this A4 health health check,
+click on the health checkers tab and then click on refresh.
+And over the coming seconds we should start to see some failure responses in this status column.
+There we go, we're getting connection timed out and over the next minute or so
+we should see that the status of the health check overall should move from healthy to unhealthy.
+Let's click on refresh, it might take a minute or so for that to take effect so let's just give it a minute or so.
+And now we can see that it's moved into an unhealthy state.
+Now this means that our failover record will detect this and then it's going to start returning the secondary record rather than the primary.
+Now DNS does have a cache, remember we set the TTL value to 60 seconds, so one minute,
+but what we should find after that cache expires, if we go back to this tab which we have open to the www.animalsforlife.org website
+and if we now hit refresh we should see that it changes to the animalsforlife.org super minimal failover page
+and this is the website that's running on S3.
+So the failover record has used a health check, detected the failure of the EC2 instance and redirected us towards the backup S3 site.
+So now we can go ahead and reverse that process if we go back to the EC2 console.
+We can right click on this instance and start the instance.
+That will take a few minutes to move from the stopped state through the pending state and then finally to running.
+And once it's in a running state, if we go back to the Route 53 console and select this health check and then refresh on the health checkers,
+initially we'll see a number of different messages.
+If we keep hitting refresh, over the next few minutes we should see this change to an OK message.
+There we can see the first HTTP status code 200 if we keep refreshing.
+We'll see more of those, again more 200 statuses which means OK.
+Now that all of these are coming back OK, let's click refresh on the health check itself.
+It's still showing us unhealthy, let's give it a few more seconds.
+Now it's reporting us healthy again.
+If we go back to the tab that we have open to the website and click on refresh,
+now it should change back to the original EC2 based website and it does.
+So that means our failover record has worked in both directions.
+It's failed over to S3 and failed back to EC2.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video and when you're ready, join me in part two.

@@ -1,0 +1,307 @@
+Welcome back. This is part two of this lesson.
+We're going to continue immediately from the end of part one
+so let's get started. Now we're going to do something
+a little bit more complex. So both of those examples
+were where we actively executed
+the lambda function. We manually did it. We did it from the user interface
+but let's now look at an event driven workflow
+how we can get a lambda function to react when
+something occurs inside the AWS account.
+So we're going to go ahead and create another lambda function so move back
+to the lambda console and go to functions and this time we're going to create one called
+EC2 protect. So create function,
+author from start, the function name is EC2 protect
+then click on the runtime drop down and pick
+the runtime as I've included in the description for this lesson
+then scroll down again, expand
+change default execution role, pick to use an existing role
+click on the drop down and select the IAM role that you created
+earlier in this lesson. Once that's set scroll down and click on create function
+to create the lambda function.
+Also attached to this lesson is another file
+called 03 underscore lambda underscore
+instance underscore protect. So what I want you to do is to copy
+all of this into your clipboard. Now this function
+is slightly different. This function receives
+an event. We're going to run this function whenever an instance
+is moved into the stopped state and what this function will do
+is accept the event data which is this
+and from that event data it will determine which
+instance has been moved into a stopped state so it will look inside the JSON
+inside detail and then inside instance
+ID it will get the instance ID and it will immediately run
+start instances to start that instance back up
+so this is an example of a function that can run in an event
+driven way. So copy that into your clipboard
+move back to the lambda console and then just scroll down
+right click on lambda underscore function dot py
+on the left and select open. Select the existing skeleton code
+and delete it and then paste in what you've just copied
+into your clipboard and click on deploy. Now this time because we're running it
+in an event driven way we won't be supplying the list of instances
+manually via an environment variable. Instead
+we'll be creating a rule inside event bridge
+and that rule will monitor the event bus for this account
+and whenever it sees a specific instance move into a stopped state
+it will trigger this rule, pass this event through to a target and the target
+will be this lambda function. So when an event happens that a specific EC2
+instance that we're protecting
+moves from running to stopped it will generate an event
+the event bus will be monitored by event bridge
+looking for that particular event. When it finds that event it will pattern match
+that event
+and it will restart the EC2 instance. So let's look at how that works
+So I've created EC2 protect now
+next I want you to click on the services drop down and just look for Amazon
+event bridge, right click and open that in a new tab
+so we're going to create a rule inside
+event bridge. So click on create rule, we're going to call the rule
+EC2 protect and for description we'll type start protected
+instance. Now this rule will be an event
+pattern rule so click in event pattern
+click on next. Now this event rule is going to take effect
+whenever an EC2 instance changes state and so for event source
+we need it set to AWS events or event bridge partner events
+so go ahead and make sure that box is checked then scroll down
+we're going to come back to this sample event in a second
+what I want you to do is move down to the bottom and look within
+the event pattern box. The service
+that we're going to be looking for is an AWS service and the service name
+of course is EC2 so scroll down and we're looking for EC2
+select that and the type of event that we're looking to monitor
+and react to is an EC2
+instance state change notification
+so select that. Now to make this slightly
+easier to understand if you just scroll up
+and under sample events go ahead
+and type EC2 into the sample event search box
+and then scroll down until you find EC2
+instance state change notification
+and go ahead and click and this will generate a sample
+event this is the type of event that you'll see
+when this event rule is operating in a production setting
+this is the type of event that will be generated whenever
+an EC2 instance changes state so this is the event
+that will be captured by this rule and delivered to a target that we choose
+so you get all sorts of associated information
+such as the source of the event, the date and time of the event, the region
+as well as the resource that's being affected and then under detail
+we'll see the instance ID that has been changed
+and to what state it's changing into so this is the important information
+that will be used by our Lambda function. Now we
+only want this rule to trigger when an EC2 instance moves
+into the stopped state so we want to filter this
+a little bit more than any state so click on specific states and in the
+drop-down
+change it to stopped we want this rule to trigger
+when the state of an EC2 instance changes to stopped
+we also only want to protect a small number of instances we don't want to
+protect them
+so click in specific instance IDs
+and what I want you to do is to copy the instance ID of
+instance one into your clipboard. Now you should still have this but if you don't
+you can always go back to the
+EC2 console and just copy down the instance ID
+of instance one and you need to make sure you're using
+your instance one ID because it will be different than mine
+once you've got that instance ID paste it into the box
+and this means that this rule will only trigger
+when this state is reached on this particular
+instance so only for instance one. Click on next
+and it's here where we can select one or more targets
+now any events this rule captures will be sent to all of the targets
+in parallel. Now if you only have one target this doesn't matter
+but if you have multiple targets keep in mind it's done in parallel
+and there is no ordering so every target gets the event at the same time
+so we want a target to be a Lambda function and we want to use the
+EC2 protect Lambda function so go ahead and select
+EC2 protect and that's the only target we want to use
+click on next move on to the next screen
+and then go ahead and click on create rule to begin the creation process
+at this event bridge rule. So that rule is now active
+it's monitoring the default event bus of this
+AWS account. So let's have a look at exactly how it works
+so if we move to the EC2 running
+instances screen just refresh to make sure we've got the latest view
+now select instance two right click and then stop
+because we've not defined this as a protected instance we've not
+added it the list of instance IDs that are protected
+by the event bridge rule that we just created
+well this instance will be able to move from running
+to stopping and then finally stopped and there'll be no
+effect it'll remain in the stop state indefinitely
+but because we have set instance one
+as being protected we'll watch what happens if we try to stop
+instance one so right click and then get ready to click on stop
+now remember as soon as I click on stop
+what's happening is an event is being generated by
+EC2 it's an instance state
+change notification event that will go on to the default event bus for this
+account
+there's a rule which is monitoring that default
+account event bus the rule is looking for this instance ID
+and when it sees that rule it's going to send it to our lambda function it will
+invoke our lambda function
+it will pass in this instance ID so go ahead and stop instance
+and then confirm that stop operation and then just look
+at exactly what happens so it's currently in a stopping state
+keep refreshing it in real time it says stopping still
+keep doing this over and over again it's important that you see how this works
+in real time now it's moved to pending so what actually happened is it moved
+into a stopped state
+and then immediately once that happened that event rule triggered
+and it caused our lambda function EC2 protect
+to be invoked and that lambda function its sole responsibility
+is to start any instances that it sees
+in the event data so if we refresh again this protected instance
+has now moved back into a running state so that was a very
+simple example of an event driven
+workflow now if we click on services let's just look at exactly what's
+happened so we're gonna move
+to cloud watch logs so type cloud watch
+and open that in a new tab lambda functions by default
+log their output into a log group with the same
+name as the lambda function so if we just scroll down
+we'll see a log group called slash AWS slash lambda
+slash EC2 protect and this log group will show
+all invocations of this particular lambda function
+so let's go into that log group you'll have a log stream
+for each time period so in this case is only one because there was only one
+invocation so let's click on that and we'll see an output from the invocation
+of our lambda function now I've got the lambda function to actually do
+a print of any event data that it receives and this is the event data
+that it gets passed through to it when it's invoked
+so it's just a simple JSON structure that lists the details
+of exactly what happens with the event so this is the event data
+that's taken by event bridge and delivered through to this target which
+is a lambda function
+and the event structure differs depending on what service is generating the event
+and what event it is but they all follow a similar high-level structure they all
+have an ID
+they all have a detail type they all have a source they'll have an account and a
+time and a region
+the rest of this depends on exactly what service is generating the event and what
+event it is so that was a simple example of an event
+driven workflow now we can actually do more if we go back to event bridge
+we can create another rule and we're going to call this rule
+EC2 stop this is going to be a rule which stops
+EC2 instances inside our AWS account
+so let's just go back and what we'll do is start
+instance two I want to show you how different rules
+can compete with each other to do the same things so I want us to move into a
+position where we've got
+two running EC2 instances remember
+one of them is protected by this other pattern matching rule
+so if instance one is ever shut down it will automatically
+be started up so we're going to create a second rule that's going to be
+a scheduled rule that's going to stop EC2 instances
+at a particular time of day so instead of using a pattern matching rule we're
+going to create
+a schedule rule click on next and you can set with a schedule rule
+either to run at a fixed rate every either
+hours minutes or days or you can specify
+a cron expression and this is what a cron expression looks like
+let's just paste in one as an example the first field is the minutes
+the second field is the hour so this is 50 minutes past
+8 a.m. the third field is the days
+of the month the next field is the month
+the next field is the days of week and the next field
+is the year so in this particular case this would run
+every day at 50 minutes past 8
+now it's important to understand that this is in the UTC
+time zone so what I want you to do is to go
+onto Google and type what time is it in UTC
+so in my case it's currently 00
+so 31 minutes past midnight
+in the UTC time zone so I want you to create a rule
+which runs in a few minutes time so in my case
+it's 31 minutes past midnight so I'm going to create the rule
+to run in approximately four minutes time
+that gives me just enough time to explain the rest of the configuration
+so you should take your time in UTC
+and just add a few minutes and cron is in 24
+hour format so you need to both pick a time
+in a few minutes and make that conversion
+but you should choose a time that's relatively close to the time
+right now in UTC so scroll down
+and click on next the rest of this is exactly the same
+as a pattern matching rule so we need to select a target
+so make sure AWS service is checked
+click in the select target type drop-down
+and locate lambda function and select that
+and then under the function drop-down go ahead and pick
+EC2 stop because what we want to happen is when this schedule
+rule triggers we want to stop the EC2 instances
+once you've got all that configured scroll down again and click on next
+next again to move to the next screen and then scroll down
+and click on create rule so this rule in my case is going to run
+once every day which is in exactly two
+minutes time in my time zone now just think through what will happen
+when this occurs so firstly this EC2 stop
+rule is going to trigger in a couple of minutes it's going to run the lambda
+function
+EC2 stop and that lambda function will run
+against both of the instances that we've set it
+remember we declared an environment variable and we gave it the two
+instance IDs of our EC2 instances
+so in one minute now in my case it's going to run against both
+EC2 instances so I'm going to move to the instances console
+and I'm going to begin hitting refresh so you can see exactly
+what this looks like so this first rule is going to trigger
+the lambda function EC2 stop
+is going to be invoked and that's going to move both of these
+EC2 instances into a stop state
+they're going to go through stopping and then they're going to move into a stop
+state
+so now they both moved into a stopping state now keep in mind
+that this is a rule that's triggered and it's run this lambda function
+and it's changed the state from running and they're moving now
+into a stop state but in doing so both of these instances generate
+and remember we have the other rule which automatically looks
+if instance one moves into a stop state
+and when it does it runs the EC2
+protect lambda function which moves it back into a running state
+and there we go we can see that process has occurred in real time
+that lambda function stopped both of these EC2 instances and both of them
+actually reached a stop state both of those instances generated an event on
+the event bus
+when it went into each individual stage
+but we also have the rule EC2 protect which is looking
+if instance one moves into a stop state and when it does
+it runs the EC2 protect lambda function it delivers that event
+and that starts up instance one again so now you've just seen two
+automatic event driven rules operate one after the other
+one of them stopped both instances and another one
+started up instance one which is protected
+now this has been just a gentle introduction into exactly how
+lambda how event bridge and how event driven architecture works
+it's a simple example but it's something that you can use in real world
+production accounts for much larger and more complex systems
+but that's everything i wanted to cover in this demo
+so we do need to perform some tidy up so first go to the lambda console
+go to functions and delete each of these functions one by one
+you don't need to worry about the order just make sure that you delete each of
+them so start stop and protect once you've
+done that go to event bridge and delete both of those event rules
+that you created again the order isn't relevant just
+make sure that you do them both then go back to the iam console go to
+policies and then in the filter box just go ahead
+and type lambda locate the lambda start stop policy that we created at the
+start of the demo check the box then click on actions and
+then delete that policy and you'll need to confirm that
+deletion so go ahead and do that go to roles and we'll need to delete
+the role that we created for this lesson so look for ec2 start stop
+lambda role select that and then click on delete and
+then confirm that deletion and then finally click on
+services go to cloud formation that and click on delete and then confirm that
+deletion and that will return the account back
+into the same state as at the start of this demo lesson
+so i hope this has been useful i hope this has given you some practical
+experience of exactly how event driven architecture works how the
+event bridge works and how lambda works they've been
+simple examples but they cover all of the theory and
+practical implementation that you'll need for the exam and to
+get started in the real world but at this point that's everything i
+wanted to do in this demo lesson so go ahead complete the video and when
+you're ready i look forward to you joining me
+in the next

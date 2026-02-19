@@ -1,0 +1,106 @@
+Welcome back to part 2 of this lesson series going into a little bit more depth on Lambda.
+In this part of the series I'm going to be talking about Lambda networking, Lambda permissions and Lambda monitoring.
+Now this is a lot to cover in one lesson, so let's jump in and get started.
+Lambda has two networking modes and you need to be aware of both of them for the exam.
+First we have public, which is the default, and then second we have VPC networking.
+Now you need to understand the architecture of both of them, so let's step through them in a little bit more detail.
+For public networking we start with an AWS environment and inside it a single Lambda function.
+Now this is part of a wider application, let's say the Categram Enterprise application running in a VPC,
+which uses Aurora for the database, EC2 for compute and the Elastic File System for shared file storage.
+Now this is the default configuration for Lambda where it's running in the public AWS network.
+So Lambda, using this configuration, can access public space AWS services such as SQS and DynamoDB,
+or internet-based services such as IMDB if the Lambda function wanted to fetch the latest details of cat-themed movies and TV shows.
+So Lambda running by default using public networking means that it has network connectivity to public space AWS services and the public internet.
+It can connect to both of those from a networking perspective and as long as it has the required methods of authentication and authorization,
+then it can access all of those services.
+Now public networking offers the best performance for Lambda because no customer-specific networking is required.
+Lambda functions can run on shared hardware and networking with nothing specific to one particular customer.
+But this does mean that any Lambda functions running with this default have no access to services running within a VPC
+unless those services are configured with public addressing as well as security rules to allow external access.
+So this is a big limitation that you need to understand for the exam.
+So if the architecture on screen now, this Lambda function, could not access Aurora EC2 or the Elastic File System
+unless they had public addressing and the security was configured to allow that access.
+So in this example, without configuration changes, the Lambda function could access public services but would have no access to anything running inside the VPC.
+Now in most cases, in my experience, Lambda is used with this public networking model.
+But there are situations where this isn't enough.
+And for those situations, Lambda can be configured to run inside a VPC.
+Let's look at how.
+This time we have the same architecture, so a VPC running within AWS.
+But this time, the Lambda function is configured to run inside a private subnet at the bottom.
+Now this is the same subnet where the Categram Enterprise infrastructure is running from.
+And for the exam specifically, the key thing to understand about Lambdas running inside a VPC
+is that they obey all of the same rules as anything else running in a VPC, because they're actually running within that VPC.
+So to start with, this means that Lambda functions running inside a VPC can freely access other VPC-based resources,
+assuming any network ACLs and security groups allow that access.
+But the flip side of this means they can't access things outside of the VPC,
+unless networking configuration exists within the VPC to allow this external access.
+So by default, with this architecture, the Lambda function couldn't access DynamoDB or any internet-based endpoints,
+such as with this example, IMDB.
+Now if you face any exam questions or you need to design any solutions which involve Lambda functions running within a VPC,
+then just treat them like anything else running in that VPC.
+So this means that you could use a VPC endpoint, for example, a gateway endpoint, to provide access to DynamoDB.
+Because the Lambda function is running within the VPC, it could utilize a gateway endpoint to access DynamoDB.
+Or, in the case that the Lambda function needed access to AWS public services or the internet,
+you could deploy a NAT gateway in a public subnet and then attach an internet gateway to the VPC.
+Remember Lambda running within a VPC behaves like any other VPC-based service.
+The same gateways and configurations are needed to allow VPC-based Lambda functions to communicate with the AWS public zone and the public internet.
+Now you also need to give your Lambda functions EC2 network permissions via the execution role, which I'll cover very soon.
+Because the Lambda service needs to create network interfaces within your VPC, it requires these permissions.
+And this architecture of using network interfaces within a VPC is what I want to quickly cover now.
+Now there used to be disadvantages to running Lambda in a VPC, significant disadvantages.
+And the reason was the networking architecture that Lambda used.
+VPC-based Lambda functions don't actually run within your VPC. The way they work is similar to Fargate.
+So we have AWS and there's a Lambda service VPC and a customer VPC.
+Now let's keep things simple and say that we only have three Lambda functions.
+Now the way that this historically worked is that each of these Lambda functions, when invoked,
+would create an elastic network interface within the customer VPC and traffic would flow between this service VPC and the customer VPC.
+Now the problem is that configuring these elastic network interfaces on a per function, per invocation basis
+would take time and add delay to the execution of the Lambda function code.
+In addition, this architecture doesn't scale well because parallel function executions or concurrency
+required additional elastic network interfaces. And the more popular a system became, the worse the problem became.
+With larger systems, you had more and more performance issues and more and more issues with keeping VPC capacity available for larger and larger numbers of ENIs.
+Now luckily, this is the old architecture. This is the way that Lambda used to handle this private networking. It's not how it works anymore.
+With the new way, instead of requiring an elastic network interface per function execution,
+AWS analyze all of the functions running in a region in an account and build up a set of unique combinations of security groups and subnets.
+So for every unique one of those, one ENI is required in the VPC.
+So if all your functions used a collection of subnets but the same security groups, then one network interface would be required per subnet.
+If they all used the same subnet and all used the same security group, then all of your Lambda functions could use the single elastic network interface.
+So a single connection between the Lambda service VPC and your VPC is created for every unique combination of security groups and subnets used by your Lambda functions.
+Now the network interfaces using this architecture are created when you configure the Lambda function and typically this might take 90 seconds, but this is done once.
+So when you create the function or when you update the networking configuration, this networking configuration is created or updated.
+And that means that it isn't required every single time a Lambda function is invoked, so it doesn't delay your function invocations.
+Now this means that you can use private networking at scale without increasing the number of elastic network interfaces required.
+So where it used to be a bad idea performance wise to use VPC based Lambdas, this is no longer the case.
+So that's networking, so this is how you configure Lambda functions if you need them to have access to private VPC services.
+And it's important that you understand both the public and VPC networking model, especially for the exam because you will face questions on the exam about executing Lambda functions within a VPC.
+Again, one really important hint that I will provide is just treat Lambda functions running in a VPC like any other VPC based resource.
+And by now you should know how to architect a VPC so that services running in that VPC have access to everything that they need, so just treat Lambda functions in the same way.
+Now let's look at the security of Lambda functions. When it comes to Lambda permissions, there are actually two key parts of the permissions model that you need to understand.
+One of them is pretty well known and that's covered at the associate level, the other not so much.
+Now let's start with a typical Lambda environment. This is a runtime environment, the thing where your Lambda functions execute within.
+So this is running a runtime, in this case Python 3.8. It's allocated some resources and the code loads and runs within this environment.
+Now for this environment to access any AWS products and services, it needs to be provided with an execution role.
+This is a role which is assumed by Lambda and by doing so, the code within the environment gains the permissions of that role based on the role's permissions policy.
+So a role is created which has a trust policy which trusts Lambda and the permissions policy that that role has is used to generate the temporary credentials that the Lambda function uses to interact with other resources.
+So in many ways, this is just the same as an EC2 instance role. So this governs what permissions the function receives, which might be something like loading data from DynamoDB and storing output data into S3.
+Now this is the most well-known aspect of Lambda permissions, but there is another part. Lambda actually has resource policies.
+Now this, in many ways, is like a bucket policy on S3. It controls who can interact with a specific Lambda function.
+It's this resource policy which can be used to allow external accounts to invoke a Lambda function or certain services to use a Lambda function, such as SNS or S3.
+The resource policy is something changed when you integrate other services with Lambda and you can manually change it via the CLI or the API.
+Unless something's changed between creating this lesson and when you're watching it, it currently can't be changed using the console UI.
+So this is only something which can be manipulated using the CLI or the API.
+So that's how security works within a Lambda function. Now one more thing that I want to cover before finishing up with part two is logging.
+So Lambda uses CloudWatch, CloudWatch Logs and X-Ray for various aspects of its logging and monitoring.
+So any logging information generated from Lambda executions, that goes into CloudWatch Logs.
+So the output of Lambda functions, any messages that you output to the log, any errors, details on the duration of the execution, that's all stored into CloudWatch Logs.
+Any metrics, so details such as invocations, successes or failure numbers, any retries, anything to do with latency, that's all stored in CloudWatch.
+So CloudWatch is the thing that stores metrics and this is important to understand.
+Logging goes into CloudWatch Logs and any details on the number of invocations, successes or failures, anything around metrics, goes straight into CloudWatch.
+Now, Lambdas can also be integrated into X-Ray which I cover elsewhere in the course and this can be used to add distributed tracing capability.
+So if you need to trace the path of a user or the path of a session through a serverless application which uses Lambda, then you can use the X-Ray service.
+Now, I don't expect this to feature heavily on the exam but just remember the terms X-Ray and distributed tracing because that might come in handy for one or two exam questions if these topics do crop up.
+Now, one really important thing to remember for the exam is that for Lambda to be able to log into CloudWatch Logs to generate the output of any of the executions, you need to give Lambda permissions via the execution role.
+So there's actually a pre-built policy and role within AWS specifically designed to give Lambda functions the basic permissions that they require to log information into CloudWatch Logs.
+And one really common exam scenario is where you're trying to diagnose why a Lambda function is not working, there's nothing in CloudWatch Logs and one possible answer is that it doesn't have the required permissions via the execution role.
+Now, that's everything I wanted to cover in part two of this Lambda in-depth mini-series. So we've covered networking, both public and private, we've covered security and we've covered logging.
+So go ahead and complete this lesson and when you're ready, I look forward to you joining me in part three.

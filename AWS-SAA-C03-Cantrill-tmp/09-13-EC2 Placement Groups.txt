@@ -1,0 +1,103 @@
+Welcome back, and in this lesson I want to talk about an important feature of EC2, known as placement groups.
+Normally when you launch an EC2 instance, its physical location is selected by AWS, placing it on whatever EC2 host makes the most sense within the availability zone that it's launched in.
+Placement groups allow you to influence placement, ensuring that instances are either physically close together or not.
+As a solutions architect, understanding how placement groups work and why you would use them is essential, so let's jump in and get started.
+There are currently three types of placement groups for EC2. All of them influence how instances are arranged on physical hardware, but each of them do it for different underlying reasons.
+At a high level, we have cluster placement groups, and these are designed to ensure that any instances in a single cluster placement group are physically close together.
+We've got spread placement groups, which are the inverse, ensuring that instances are all using different underlying hardware, and then we've got partition placement groups,
+and these are designed for distributed and replicated applications which have infrastructure awareness, so where you want groups of instances but where each group is on different hardware.
+So I'm going to cover each of them in detail in this lesson. Once we talk about each of them, they'll all make sense.
+Now cluster and spread tend to be pretty easy to understand. Partition is less obvious if you haven't used the type of application which they support,
+but it will be clear once I've explained it and once you've finished with this lesson. Now let's start with cluster placement groups.
+Cluster placement groups are used when you want to achieve the absolute highest level of performance possible within EC2.
+With cluster placement groups, you create the group, and best practice is that you launch all of the instances which will be in the group all at the same time.
+This ensures that AWS allocate capacity for everything that you require. So for example, if you launch with nine instances, imagine that AWS place you in a location with the capacity for 12.
+If you want to double the number of instances, you might have issues. Best practice is to use the same type of instance as well as launching them all at the same time,
+because then AWS will place all of them in a suitable location with capacity for everything that you need.
+Now cluster placement groups, because of their performance focus, have to be launched into a single availability zone.
+Now how this works is that when you create the placement group, you don't specify an availability zone.
+Instead, when you launch the first instance or instances into that placement group, it will lock that placement group to whichever availability zone that instance is also launched into.
+The idea with cluster placement groups is that all of the instances within the same cluster placement group generally use the same rack, but often the same EC2 host.
+All of the instances within a placement group have fast, direct bandwidth to all other instances inside the same placement group.
+And when transferring data between instances within that cluster placement group, they can achieve single stream transfer rates of 10 GB per second versus the usual 5 GB per second, which is achievable normally.
+Now this is single stream transfer rates. While some instances do offer significantly faster networking, you're always going to be limited to the speed that a single stream of data, a single connection, can achieve.
+And inside a cluster placement group, this is 10 GB per second versus 5 GB per second, which is achievable normally.
+Now the connections between these instances, because of the physical placement, they're the lowest latency possible and the maximum packets per second possible within AWS.
+Now obviously to achieve these levels of performance, you need to be using instances with high performance networking, i.e. more bandwidth than the 10 GB per second single stream, and you should also use enhanced networking on all instances.
+So definitely to achieve the low latency and max packets per second, you do need also to use enhanced networking.
+So cluster placement groups are used when you really need performance. They're needed to achieve the highest levels of throughput and the lowest consistent latencies within AWS, but the trade-off is because of the physical location.
+If the hardware that they're running on fails, logically it could take down all of the instances within that cluster placement group.
+So cluster placement groups offer little to no resilience.
+Now some key points which you need to be aware of for the exam, you cannot span availability zones with cluster placement groups.
+This is locked when launching the first instance.
+You can span VPC peers, but this does significantly impact performance in a negative way.
+Cluster placement groups are not supported on every type of instance.
+It requires a supported instance type, and generally you should use the same type of instance to get the best results, though this is not mandatory, and you should also launch them at the same time.
+Also, this is not mandatory, but it is very recommended.
+Ideally, you should always launch all of the instances as the same type and at the same time when using cluster placement groups.
+Now cluster placement groups offer 10 GB per second of single stream performance, and the type of use cases where you would use them are any type of workloads which demand performance, so fast speeds and low latency.
+So this might be things like high performance compute or other scientific analysis, which demand fast node-to-node speed and low consistent latency.
+Now the next type of placement group I want to talk about is spread placement groups, and these are designed to ensure the maximum amount of availability and resilience for an application.
+So spread placement groups can span multiple availability zones, in this case availability zone A and availability zone B.
+Instances which are placed into a spread placement group are located on separate isolated infrastructure racks within each availability zone.
+So each instance has its own isolated networking and power supply separate from any of the other instances also within that same spread placement group.
+This means if a single rack fails either from a networking or power perspective, the fault can be isolated to one of those racks.
+Now with spread placement groups there is a limit to seven instances per availability zone, because each instance is in a completely separate infrastructure rack,
+and because there are limits on the number of these within each availability zone, you do have that limit of seven instances per availability zone for spread placement groups.
+Now the more availability zones in a region, logically the more instances can be a part of each spread placement group, but remember there's seven instances per availability zone in that region.
+Now again just some points that you should know for the exam. Spread placement groups provides infrastructure isolation,
+so you're guaranteed that every instance launched into a spread placement group will be entirely separated from every other instance that's also in that spread placement group.
+Each instance runs from a different rack, each rack has its own network and power source, and then just to stress again there is this hard limit of seven instances per availability zone.
+Now with spread placement groups you can't use dedicated instances or hosts, they're not supported, and in terms of use cases,
+spread placement groups are used when you have a small number of critical instances that need to be kept separated from each other,
+so maybe mirrors of a file server, or maybe different domain controllers within an organization,
+anywhere where you've got a specific application and you need to ensure as high availability for each member of that application as possible,
+where you want to create separate blast radiuses for each of the servers within that particular application,
+and ensure that if one fails there is as small a chance as possible that any of the other instances will fail.
+You have to keep in mind these limits, it's seven instances per availability zone,
+but if you want to maximize the availability of your application, this is the type of placement group to choose.
+Now lastly we've got partition placement groups, and these have a similar architecture to spread placement groups,
+which is why they're often so difficult to understand fully, and why it's often so difficult to pick between partition placement groups and spread placement groups.
+Partition placement groups are designed for when you have infrastructure where you have more than seven instances per availability zone,
+but you still need the ability to separate those instances into separate fault domains.
+Now a partition placement group can be created across multiple availability zones in a region, in this example AZ-A and AZ-B,
+and when you're creating the partition placement group you specify a number of partitions with a maximum of seven per availability zone in that region.
+Now each partition inside the placement group has its own racks with isolated power and networking,
+and there is a guarantee of no sharing of infrastructure between those partitions.
+Now so far this sounds like spread placement groups, except with partition placement groups you can launch as many instances as you need into the group,
+and you can either select the partition explicitly or have EC2 make that decision on your behalf.
+With spread placement groups remember you had a maximum of seven instances per availability zone,
+and you knew 100% that each instance within that spread placement group was separated from every other instance in terms of hardware.
+With partition placement groups each partition is isolated, but you get to control which partition to launch instances into.
+If you launch ten instances into one partition and it fails, you lose all ten instances.
+If you launch seven instances and put one into each separate partition then it behaves very much like a spread placement group.
+Now the key to understanding the difference is that partition placement groups are designed for huge scale parallel processing systems
+where you need to create groupings of instances and have them separated.
+You as the designer of a system can have control over which instances are in the same and different partitions so you can design your own resilient architecture.
+Partition placement groups offer visibility into the partitions, you can see which instances are in which partitions,
+and you can share this information with topology aware applications such as HDFS, HBase and Cassandra.
+Now these applications use this information to make intelligent data replication decisions.
+Imagine that you had an application which used 75 EC2 instances. Each of those instances had its own storage
+and that application replicated data three times across that 75 instances.
+So each piece of data was replicated on three instances and so essentially you had three replication groups, each with 25 instances.
+If you didn't have the ability to use partition placement groups then in theory all of those 75 instances could be in the same hardware
+and so you wouldn't have that resiliency. With partition placement groups if the application is topology aware
+then it becomes possible to replicate data across different EC2 instances knowing that those instances are in separate partitions
+and so it allows more complex applications to achieve the same types of resilience as you get with spread placement groups
+only that it has an awareness of that topology and it can cope with more than seven instances.
+So the difference between spread and partition placement is that with spread placement it's all handled for you
+but you have that seven instance per availability zone limit but with partition placement groups you can have more instances
+but you or your application which is topology aware needs to administer the partition placement.
+For larger scale applications that support this type of topology awareness this can significantly improve your resilience.
+Now some key points for the exam around partition placement groups, again seven partitions per availability zone
+instances can be placed into a specific partition or you can allow EC2 to automatically control that placement.
+Partition placement groups are great for topology aware applications such as HDFS, HBase and Cassandra
+and partition placement groups can help a topology aware application to contain the impact of a failure to a specific part of that application
+so by the application and AWS working together using partition placement groups
+it becomes possible for large scale systems to achieve significant levels of resilience
+and effective replication between different components of the application.
+Now it's essential that you understand the difference between all three for the exam
+so make sure before moving on in the course you are entirely comfortable about the differences between spread placement groups
+and partition placement groups and then the different situations where you would choose to use cluster, spread and partition.
+With that being said though that's everything I wanted to cover so go ahead and complete this lesson
+and when you're ready I look forward to you joining me in the next.

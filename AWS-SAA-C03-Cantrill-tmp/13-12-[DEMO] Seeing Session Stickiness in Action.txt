@@ -1,0 +1,130 @@
+Welcome back and in this demo lesson you're going to get the chance to quickly experience how Session Stickiness works with load balances.
+Now it's going to be a pretty brief demo lesson because I've tried to automate much of the infrastructure configuration that you've already done by this point in the course.
+I want to focus on this demo lesson purely on the Session Stickiness configuration.
+So let's jump in and get started and we're going to start by applying a CloudFormation template which will create the basic infrastructure that we need.
+So I'm going to move across to the AWS console.
+Now to start with make sure you're logged into an AWS account and the user that you're using has admin privileges on that account and you've got the Northern Virginia region selected.
+Now attached to this demo lesson and in the demo instructions is a one click link that you can use to deploy the infrastructure.
+So go ahead and click on that link.
+It'll take you to a quick create stack screen and all you'll need to do is to scroll all the way down to the bottom, check this capabilities box and then click on create stack.
+Now that can take anywhere from five to ten minutes to create.
+So while that's creating, let's talk through the architecture that you'll be using for this demo.
+The template which you're currently applying will create this architecture.
+So it creates a VPC and then inside of that three public subnets, one in each AZ.
+Then it creates an auto scaling group and linked to this is a launch template providing instance build directives.
+The auto scaling group is set to create six EC2 instances, two in each AZ and then it creates a load balancer configured to run from each public subnet.
+So this is the architecture that's going to exist in the AWS account once the cloud formation stack has finished creating.
+Now in this demo, you're first going to connect to the load balancer with session stickiness disabled.
+This means that each time you connect to the load balancer, the connection can be sent to any of the six instances,
+meaning that each of them has around a 16.66 recurring chance to get a connection.
+So you'll first connect to the load balancer in this configuration.
+Once you've seen how that looks, you're going to enable session stickiness and see how that affects the architecture.
+What will happen is the first time you connect to the load balancer with session stickiness enabled,
+a cookie called AWS ALB will be generated and returned to your browser.
+And unfortunately for this guy, it's not that type of cookie.
+What happens next is that any connections made while the cookie is valid are locked to one specific EC2 instance.
+And they'll be locked to that instance until the cookie expires or that instance fails its health check,
+at which point any connections will move to a different EC2 instance.
+Now at this point, let's move back to the console and just check how the cloud formation creation process is going.
+At this point, mine is still in a create in progress and you'll need this stack to be in a create complete state before moving on.
+So go ahead and pause the video and resume it once this changes to create complete.
+Okay, so now the stack is in a create complete status, we're good to move on.
+And the first thing we'll need to do is verify that all of the six EC2 instances are functioning as they should be.
+So to do that, go ahead and click on services and then type EC2 in the find services box and open that in a new tab.
+Then move to that tab and click on instances running.
+Now again, this might look a little bit different in your account, that's okay.
+What we need to do is select each of these instances in turn and we're looking for the instance public IP version 4 DNS name.
+So go ahead and locate the public IP version 4 DNS field and just copy that into your clipboard and then open that in a new tab.
+The instance should load and it should show an instance ID, a random color background and an animated cat GIF.
+Now I want you to go ahead and open each of the remaining five instances, each in its own tab.
+So let's do that next. So select the second instance, scroll down, locate the public DNS address and then open that in a new tab.
+You'll see this has a different color background and a different animated cat GIF.
+We'll do the third instance, again different color background, different cat GIF.
+We'll do the fourth, once again different background, different GIF.
+Do the fifth, different background, different GIF.
+And then finally the sixth instance.
+So we have each of the six EC2 instances all with a different background and a different cat GIF.
+Next scroll down on the menu on the left and click on load balances.
+You should see a load balancer which starts with ALB-ALB and then some random, that's fine.
+Select that and copy the load balancer DNS name into your clipboard and then open that in a new tab.
+So this opens the load balancer and if you refresh that a few times you'll see that it moves between all of the EC2 instances.
+Now it could load the same instance twice or it might cycle through the same EC2 instances.
+But you should see as you refresh it's cycling between all of the available instances.
+And that's because we don't have session stickiness enabled.
+It's just doing a round robin approach to select different backend instances within the target group.
+So each time we refresh there's a chance that it will move to a different backend instance.
+Now let's assume at this point that we have an application which doesn't handle state in an external way.
+So it stores the state on the EC2 instance itself.
+Well to enable session stickiness with application load balancers we do it on a target group basis.
+So click on target groups and then click on the target group to go into its configuration.
+Locate and click on the attributes tab.
+Click on edit next to attributes.
+To enable session stickiness all we have to do is check this box.
+Select load balancer generated cookie and then pick validity period for the cookie that's generated by the application load balancer.
+So go ahead and leave this value as 1 but then click on the drop down and change this from days to minutes.
+Once you've done that click on save changes and now session stickiness is enabled on this load balancer.
+If we go back to the tab that we have open to the load balancer and just keep hitting refresh
+you might notice initially that it changes to a new instance
+but at a certain point if you keep clicking it will lock to a specific EC2 instance and won't change.
+So now we're on this particular EC2 instance it's got this instance ID
+and even though we keep hitting refresh the background and the cat gif remains the same.
+Now the way that this works and I can demonstrate this using Firefox
+If I go to the menu bar click on tools then browser tools then web developer tools and then click on the storage tab
+you'll be able to see that as part of accessing this load balancer I've got two cookies
+and one of the cookies the one that we're interested in is AWS ALB.
+This is the cookie that controls the session stickiness.
+So every time I access this load balancer from the first point when this cookie is generated
+it passes this cookie back to the load balancer and it knows which back end EC2 instance I should be connected to
+and so I will stay connected to this back end instance until the cookie expires or this instance fails its health check.
+So let's test that what I want you to do is to copy down the instance ID that you're connected to
+and it will be different for you and just pay attention to the last few digits of the instance ID.
+Now if I go back to the EC2 console go to dashboard and then instances running
+locate the instance you just noted down the ID for, right click and then stop that instance and confirm.
+We'll give that instance a few moments to stop.
+If we go back to the load balancer tab and just keep hitting refresh now
+now that the instance is in a stopped state the load balancer detects that it's no longer valid
+and so I immediately switch to a brand new EC2 instance.
+The cookie generated by the load balancer is updated to lock me to this new EC2 instance
+and I wouldn't have any idea that this back end instance has failed and no longer responds to requests
+other than the fact that I can see that I've changed instances because I've created the instances to highlight
+which instance ID is being used.
+Now if I go back to the EC2 console, select this instance again, right click and this time start the instance
+even though this instance is started up again I won't reconnect to that original back end instance
+because now I'm locked to this instance and there's a chance that what might happen while you're doing this demo lesson
+is while that instance was in a stopped state because this has been configured to use elastic load balancer health checks
+it might have detected that this instance is in a failed state and so it's instructed the autoscaling group
+to terminate that instance and replace it with a new one.
+So don't be surprised if when you try to start this instance up it's in a terminated state.
+That's okay, the system is working as intended.
+So back to the load balancer tab, I'll just keep hitting refresh and what we'll see is after the cookie expires
+there's always a chance that we could be moved onto a new EC2 instance.
+To return the configuration back to how it was at the start of the demo we can go back to the EC2 console
+go down to target groups, open this target group, click on the attributes tab and then edit
+and then uncheck the stickiness box and save the changes.
+And at this point the cookie that's generated will no longer lock our connections to one specific backend instance
+and so over time if we keep refreshing this page we should be moved between different backend EC2 instances
+because again now we no longer have session stickiness.
+Now that's all I really wanted to highlight in this demo lesson, I just wanted to give you some practical exposure
+to how the session stickiness feature works of application load balancers.
+So this is something that you need to understand for the exam.
+Essentially if your application doesn't handle state externally to individual EC2 instances
+then you need the load balancer to make sure that any connections from a given user always end up on the same EC2 instance.
+And the way to do that is with application load balancer controlled session stickiness.
+Now remember this does come with some negatives.
+It means that the load balancer is not able to as efficiently distribute load across each of the backend instances.
+So while session stickiness is enabled it means customers are locked to one particular EC2 instance
+and even if customers locked to one instance generate much more load than customers locked to other instances
+the load balancer doesn't have the same level of flexibility to distribute connections.
+So where possible applications should be designed so they handle sessions externally to the instances
+and then you should not have session stickiness enabled.
+And this is the way to ensure well performing elastic architectures.
+Now at this point that's everything that you need to do in this demo lesson.
+All that remains is to tidy up the environment.
+So go back to the CloudFormation console.
+We can just go ahead and click on stacks.
+Click in the box next to the ALB stack.
+Click on delete and then click delete stack which will delete the stack and all of the infrastructure that it created at the start of this demo lesson.
+At this point congratulations you've successfully completed this demo lesson
+and implemented the architecture that's on screen now as well as experienced how an application load balancer handles session stickiness.
+So I hope you enjoyed the demo.
+Go ahead complete this video and when you're ready I'll look forward to you joining me in the next lesson.

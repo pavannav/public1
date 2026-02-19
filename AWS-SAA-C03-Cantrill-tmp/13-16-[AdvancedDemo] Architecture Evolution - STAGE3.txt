@@ -1,0 +1,201 @@
+Welcome back, and in stage 3 of this demo series, you're going to change the single server architecture that's on screen now and move towards something a little more scalable.
+You're going to migrate the database from the EC2 instance into a separate RDS instance, and that means each of these can scale independently, so you can grow or shrink the database independently of the EC2 instance.
+It also means that the data in the database lives past the lifecycle of the EC2 instance, and this is required for later stages in the demo, where we want to scale in and out based on load.
+So let's go ahead and do that. So you'll need to be at the AWS console, click on Services, and in the Find Services dropdown, type RDS, and then open that in a new tab.
+Now we're going to create a subnet group first, and a subnet group is what allows RDS to select from a range of subnets to put its databases inside.
+In this case, we'll be giving RDS a selection of three subnets, so SN-DB-AB and C, so three availability zones which it can choose to deploy database instances into.
+So to do that, look on the left-hand menu and just click on Subnet Groups. Click on Create DB Subnet Group. For name, call it WordPress RDS Subnet Group.
+Under description, just type RDS Subnet Group for WordPress. In the VPC dropdown, select the A4L VPC.
+Scroll down a little, and then under Availability Zones, click in the dropdown, and check the box next to US East 1A, 1B, and 1C, because we have database subnets in each of those availability zones.
+And these were created as part of the Infrastructure CloudFormation template that you applied at the start of this advanced demo.
+Once you've selected those availability zones, next we need to pick the subnets inside those availability zones that the databases will go into, so click in the Subnets dropdown.
+Now you could go to the VPC console and get the IP address ranges that correspond to the different database subnets, but I'm going to save us some time.
+So in US East 1A, you need to pick 10.16.16.0.20, that's the database subnet in Availability Zone A.
+In Availability Zone B, you need to pick 10.16.80.0.20, that's the database subnet in AZB.
+And then in US East 1C, you need to pick 10.16.144.0, because that's the database subnet in Availability Zone C.
+So now you've selected the three availability zones, the three subnets in those availability zones, so you can scroll down and click on Create.
+So that creates the database subnet group that RDS uses in order to select which subnets database instances should go into.
+The next step is to actually create the RDS instance itself, and to start with we're going to use a free tier eligible database.
+So go ahead and click on Databases, click on Create Database, select Standard Create.
+RDS is capable of using lots of different database engines, but we're going to select MySQL, so select MySQL.
+Scroll down and under Version, put the version number that's inside this lesson's description.
+AWS regularly make changes, and instead of using the version you see on this video, pick the one that's inside this lesson's description.
+Scroll down, under Templates, click on Free Tier, because this will make sure that we're only selecting options that are eligible under the free tier.
+And we want to keep the first part of this demo series completely within the AWS free tier.
+Now under DB Instance Identifier, we need to give this instance a name.
+So delete this placeholder, and then just enter A4L WordPress.
+Now for master username and password, we need to enter the values from the parameter store that we entered previously.
+So click on Services, start typing Sys, and then right click on Systems Manager and open in a new tab.
+Go to the parameter store, look for the DB user parameter, and then copy what's in the value field.
+And then go back to the RDS console and paste that in for master username.
+So that should be A4L WordPress user.
+Do the same for the master password, so for that you need to go back to parameter store.
+And this time you're looking for A4L WordPress DB password, so select that.
+Once you're here, click on Show, and then copy the value for this parameter.
+Once you've got that value, paste it into both the master and confirm password boxes.
+Scroll down further still, and now you need to pick the database instance size.
+Now because we've selected free tier eligible, we can only select db.t3.micro.
+Or in some cases this may be slightly different, but it's only going to allow you to pick free tier eligible instance types.
+So we can leave that selected. It is the default because we picked free tier only.
+Now scroll down to connectivity.
+Under the virtual private cloud VPC, click in the drop down and select the A4L VPC.
+So this defines the VPC that this database is going into.
+Once you've selected that, make sure for subnet group you've got WordPress RDS subnet group selected.
+Choose no for publicly accessible.
+And then for existing VPC security groups, I want you to go ahead and click on the cross next to default.
+And then click in the drop down and select A4L VPC-SG database.
+And again, this will have some randomness on the end, but that's perfectly okay.
+So select A4L VPC-SG database.
+Under availability zone preference, select US East 1A.
+This makes sure this database, just to start off with, is in the same availability zone as the EC2 instance.
+Scroll down further still, go past database authentication.
+And then expand additional configuration.
+And this is important because we need to set an initial database name.
+So for the initial database name, we'll need to go back to the parameter store.
+At this time we need the value for the A4L WordPress DB name parameter.
+So select that and then copy its value.
+So copy that into the clipboard, go back to the RDS console and paste that in for the initial database name.
+And that should be A4L WordPress DB.
+At this point we can leave everything else as default.
+So scroll all the way down to the bottom and click on create database.
+Now this can take anywhere up to 30 minutes to create the database.
+It will need to be fully ready before you move on to the next step.
+So now is a great time to pause this video, go and grab a coffee and wait for this database to become available.
+At which point you can resume the video.
+Now that this database instance is available, the next thing to do is to migrate the actual WordPress data.
+And to do that we need to move back to the EC2 console.
+So open the EC2 console, locate wordpress-lt and then select that instance.
+Right click, select connect, choose session manager and then click on connect.
+We're going to perform the migration from this instance itself.
+To start with run sudo bash and press enter, cd and press enter and then type clear and press enter.
+We're going to be running some commands which are in the text instructions for this stage of the demo series.
+The first set of commands will load data from the parameter store into environment variables within the operating system.
+So go ahead and copy all of the first block of commands and paste it in to this terminal.
+This will load the db password, the db root password, db user, db name and db endpoint all into environment variables.
+And make sure to press enter on the last line just to complete that command.
+Next we're going to export the data from the local MariaDB database instance and we'll do that using this command.
+So mysqldump space hyphen h space, and then uses these environment variables so the database end point,
+which will be local host and then a space hyphen u and then a space and then the database user,
+which is also an environment variable and then a space hyphen p and then db password which is an environment variable
+and then a space and then db name which is also an environment variable.
+variable. And then we direct the output of this command into a file called
+a4lwordpress.sql which is a database export file. So the best way is to copy
+and paste this out of the lesson instructions and then press enter and
+then run an ls space hyphen la and just make sure that you've got that a4l
+wordpress.sql file and this is an output of the current SQL database for
+WordPress. Now next we need to change the parameter in parameter store for db
+endpoint so that it points at our new RDS instance. So go back to the RDS
+console, click on the a4lwordpress instance and then copy this endpoint
+name into your clipboard. So it should start with a4lwordpress and then some
+random and then the region and then RDS and then amazonaws.com. So copy all
+of that into your clipboard and then either open the systems manager console
+and go to the parameter store or if you've still got it open in a previous
+tab then you can open that tab. So click on parameter store to list all the
+parameters. Now at this point we're going to delete one of these parameters and it
+needs to be a deletion because we're going to recreate it. Please make sure
+that you do delete it and recreate it rather than just editing the value for
+the existing parameter because that won't work. You'll need to select the
+checkbox next to a4lwordpress db endpoint and then click on delete and
+once you've done that click on delete parameters to confirm that deletion and
+we're going to create a new parameter with the same name. So click on create
+parameter. For name put forward slash a4l forward slash wordpress forward slash
+db endpoint which is the same name as before. For description put wordpress
+endpoint name. We're going to use the standard tier again it's going to be a
+string type. The data type is going to be text and then in the value paste in the
+rds endpoint that you just copied into your clipboard and once you've done
+that scroll down and click on create parameter. Go back to the session manager
+tab that you've got open to the instance and we need to refresh the
+environment variable with the updated parameter store parameter. So to do that
+copy and paste this next block of commands and this updates the db
+endpoint with the new rds DNS name. Once we've updated that then we can run the
+mysql command to load in the a4lwordpress.sql export into the rds
+instance and that's using this command. So again mysql hyphen H space and then
+the rds endpoint name which is in that environment variable and then specifying
+the db user db password and db name and then directing the command to load in
+the contents of this file. So if we paste all that in and press enter that imports
+that database export into rds. So now rds has the same data as our local Maria db
+installation. Now to finalize the migration we need to update the
+wordpress configuration file so instead of pointing at the local Maria db
+instance it points at rds and we can do that using said and perform a replace of
+local host with the contents of the db endpoint environment variable which
+remember now contains the DNS name for the rds instance and the location of the
+file that will be performing this replace on is slash var slash www slash
+html slash wp-config.php which is the wordpress configuration file. So paste
+that in and press enter and that's reconfigured wordpress now so that it
+talks to the rds instance for the database functionality. Lastly we can
+run these commands to both disable Maria db so it doesn't start every time the
+operating system boots and set it to stopped right now so now Maria db is no
+longer running on this ec2 instance so we can verify that the functionality of
+our application is still there by going back to the ec2 console selecting
+wordpress-lt just copy this public IP address into your clipboard if you
+already have it open in an existing tab you can refresh it should still load the
+blog and yet we've still got the same best animals blog post but now wordpress
+is loading the data for this blog post from the rds instance now to be really
+clear at this point wordpress when you create a blog post has two different
+sets of data it has the data of the blog post so the text the metadata the
+author the date and time the permissions the published status and many other
+things they're stored in the database but any media any content for this blog
+post is still stored locally in a directory called WP-content that is
+still on the ec2 instance or that we've migrated in this stage of the demo is
+the database itself from Maria DB through to RDS now before we finish with
+this stage of the demo series there's one final task and that's to update the
+launch template so we can launch additional ec2 instances but using this
+new configuration so pointing at the RDS instance so to do that go back to the
+ec2 console and click on launch templates click in the checkbox next to
+the WordPress launch template select the actions drop down and then locate and
+click modify template create new version now for the description we're going to
+put single server app only so we're indicating with this version of the
+launch template we no longer have the database inside the instance itself now
+because we're creating this from a previous version all of the boxes will
+be pre-populated what we need to do is to update the user data so go all the
+way down to the bottom and expand advanced details scroll all the way down
+to the bottom of that and find the user data box and I find it's easier if we
+just expand it to make it slightly easier to see there are a number of
+things which we need to adjust in this user data first just scroll down and you
+need to locate this block of commands so systemctl enable and systemctl start
+what we need to remove are the lines that refer to MariaDB so the top one is
+systemctl enable MariaDB select that and delete and then locate systemctl start
+MariaDB select that and delete so that prevents MariaDB starting on the EC2
+instance now because we're using an RDS instance we also need to remove this
+line which attempts to set the root password of the MariaDB database
+instance we don't need that anymore so delete that scroll all the way down to
+the bottom and look for this block so it starts with echo create database DB name
+and it finishes with rm forward slash tmp forward slash DB dot setup this is
+the block that creates the database within MariaDB creates the user and sets
+all of the permissions but because we're using RDS now we don't need to do any of
+this so we're going to delete this block as well once you've done that you can go
+ahead and click on create template version and this will create a new
+version but this time designed to use RDS once you've done that go back to the
+launch template screen and click on the launch template we need to change it so
+that the new version is the default version that's used whenever we launch
+instances from this template so click on the launch template once that's loaded
+you'll see we're currently on version 1 change this to version 2 and you'll see
+the updated details and then click on the actions drop-down select set default
+version in the dialog make sure that version 2 is shown under template
+version and then click on set as default version and at this point version 2 or
+the one which uses RDS is now set as default and this means when we use this
+template to launch any instances this is the version that will be used by default
+now at this point that's everything that I wanted you to do in stage 3 of this
+demo series so you've migrated the data for a working WordPress installation
+from a local MariaDB database instance through to RDS and that's essential to
+be able to scale this application because now the data is outside of the
+lifecycle of the EC2 instance so we know that for any scale in or out events it
+won't impact the relational or SQL based data it also means that we can scale the
+database independently of the WordPress application instances so that helps us
+reach the desired outcome of a fully elastic architecture now at this point
+we've actually fixed many of the limitations of this design at this point
+the only things that we need to fix are the application media so the WordPress
+content which still resides in a folder local to the EC2 instance so we need to
+migrate this out so that we can scale the instances in and out without risking
+that data the other things that are still limiting factors are that customers
+are still connecting directly to the instance so we need to resolve that by
+using a load balancer and the IP address of the instance is still hard-coded into
+the database so if this EC2 instance fails for whatever reason and we
+provision a new one it won't function because WordPress expects everything to
+be loaded from this IP address so that's something we need to resolve but
+at this point that's everything you need to do in stage three in stage four
+you'll be migrating these images from the EC2 instance into an elastic file
+system and that's one of the last stages that we need to do before we can make
+this a fully elastic design so go ahead complete this video and when you're
+ready I look forward to you joining me in stage four of this advanced demo
+series

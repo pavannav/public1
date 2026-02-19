@@ -1,0 +1,111 @@
+Welcome back to stage 5 of this advanced demo series, and in this stage you're going to be adding a load balancer, an auto scaling group, to provision and terminate instances automatically based on the load of the system.
+By adding a load balancer you'll also abstract connections away from individual instances which will allow elastic scaling and self-healing if any of the instances have problems.
+Now the first step to moving towards this elastic architecture is to create the load balancer. To do that, move to the EC2 console, scroll down, and toward the bottom under load balancing, click on load balancers.
+Go ahead and click on create load balancer, and it's going to be an application load balancer that we're creating, so click on create.
+We're going to be calling the load balancer A4L WordPress ALB. It's going to be an internet facing load balancer which means the nodes of the load balancer will be allocated with public IP addressing, and we want the IP address type for this demonstration to be IP version 4.
+Okay, so now we need to select the subnets that the load balancer nodes will be placed into.
+So first, make sure that the animals for life VPC is selected, so A4L VPC, and then check the box next to US East 1A, 1B, and 1C.
+For US East 1A, I want you to select the SN-PUB-A, which is the public subnet inside availability zone A, so US East 1A.
+For US East 1B, I want you to select the public subnet in AZB, so SN-PUB-B, and then lastly, for US East 1C, we'll be selecting the SN-PUB-C.
+So this configures the subnets that the load balancer nodes will be placed into, because they're public subnets, and because we have the scheme set to internet facing, these nodes will be provided with public IP addressing.
+Next, under security groups, click on the cross to delete the default security group, and then click in the drop down, and go ahead and select A4L VPC-SG load balancer.
+Now there will be some random afterwards, that's okay, just make sure you select A4L VPC-SG load balancer.
+Now scroll down, and under listeners and routing, make sure that the protocol is set to HTTP, and the port is set to 80.
+Application load balancers work using target groups, and so we need to define a target group to forward the traffic to.
+Now we don't currently have any target groups which have been created, so we need to go ahead and click on create target group.
+Now under basic configuration, the target type is going to be instances, so make sure that that's selected.
+Under target group name, just enter A4L WordPress ALB-TG.
+Scroll down further still, make sure the protocol is set to HTTP, and port is set to 80 on this screen as well.
+Make sure the VPC is set to A4L VPC. The protocol version by default should be HTTP 1, you can leave that as the default.
+Under health checks, make sure the health check protocol is HTTP, and the health check path is forward slash.
+Once that's set, go ahead and click next.
+Now we won't be adding any instances to the target group.
+These can either be added manually, or a target group can be integrated with an autoscaling group, and that's something that we'll be configuring later in this advanced demo.
+For now, just scroll down to the bottom and click create target group.
+Then go back to the previous tab, click on the refresh icon, and then select the A4L WordPress ALB-TG from the drop down.
+Now we won't be picking any add-on services, so you don't need to check the AWS Global Accelerator.
+Just scroll down to the bottom and click create load balancer.
+Next, click on view load balancer, and then select the load balancer that you've just started creating.
+And we'll need to create another parameter in the parameter store, so we'll need the DNS name of the load balancer.
+So go ahead and click on the little symbol next to that to copy that into your clipboard.
+Next, you'll need to move back to the parameter store.
+Now because we're automating this environment, we need to provide a way so that all of the EC2 instances know the DNS name of the load balancer,
+because this will be used as a workaround to the fact that the IP addresses are hard-coded into the database,
+so we need to provide an automatic way of exposing the load balancer DNS name to the EC2 instances.
+Click on create parameter. For the parameter name, forward slash A4L, forward slash WordPress, forward slash ALB for application load balancer,
+and then DNS name. So forward slash A4L, forward slash WordPress, forward slash ALB, DNS name.
+For description, put DNS name of the application load balancer for WordPress.
+We're going to be picking a standard tier parameter, it's going to be a string parameter, it's going to be a text for data type,
+and in value, go ahead and paste the DNS name of the load balancer, which you just copied into your clipboard,
+scroll down to the bottom, and click on create parameter.
+Now the next thing we're going to do is to update the launch template, and this is quite a complex update,
+so you need to understand exactly what we're doing.
+Currently, and I've mentioned this a few times throughout this demo series,
+the IP address of the first EC2 instance that's used for a WordPress deployment is hard-coded into the database.
+Now this is fine if it's a static IP address, but if it's not, or if you're using multiple EC2 instances,
+then you can't use IP addresses because they change both on an individual EC2 instance and if you're scaling using multiple instances.
+So we need to replace this hard-coded value with the DNS name of the load balancer.
+So that's what we're going to do, we're going to update the launch template with some final configuration
+so that it can adjust this configuration, replacing the IP address with the DNS name of the load balancer.
+So go back to the EC2 console, click on launch templates, select the WordPress launch template,
+and click on actions, modify template, create new version.
+Under the template version description, we're going to use app only, uses EFS file system defined in forward slash A4L,
+forward slash WordPress, forward slash EFS, FSID, and then ALB home added to the WP database.
+So we're going to make some on-the-fly adjustments to the WordPress database when every instance is provisioned
+to make sure that the load balancer DNS name is set to be the home URL for WordPress.
+So again, scroll all the way down to the bottom because we're using an older template as the foundation for this one,
+all of the values will be pre-populated, expand advanced details and scroll all the way down to user data,
+and then just expand this text entry to make it slightly easier to interact with.
+As with the previous step, position your cursor at the end of this top line and press enter twice.
+We need to add the first two lines of script which will bring in the application load balancer DNS name
+into an environment variable using systems manager parameter store.
+So now this instance when it's provisioning has the DNS name of the load balancer.
+Now next move all the way down to the bottom of this user data.
+So the last step that we want a machine to do when it's provisioning is to perform this update of the database.
+So there's a fairly large block of text which you need to copy from this stage's text instructions,
+it's stage five, and you need to paste this into the bottom of this file.
+So right at the bottom after these last two find statements, paste in this block.
+So this should start with the cat command on the top line of what you've just pasted in,
+and then all the way down at the bottom it should end with forward slash home forward slash ec2 hyphen user
+forward slash update underscore wp underscore ip dot sh.
+Essentially what this does is to bring in the WordPress configuration file to get the current authentication details for the database.
+So all these lines at the top are just designed to get the authentication information,
+so the DB name, the DB user, and the DB password.
+This line runs a database script to get the old value for the IP address,
+so the original IP address of the ec2 instance.
+So this is pulling in the original hard-coded IP address.
+Then we're going to take the load balancer DNS name and we're going to run a series of SQL commands
+to update the database moving from that hard-coded IP to using the ALB DNS name.
+Now what this is actually doing is this line here is creating a script file,
+and it's going to put into this script file everything until this EOF directive.
+So scrolling down this means that everything between these two lines is going to be stored in this script.
+Then we're going to make the script executable using chmod 755.
+We're going to echo the path to this script into etcrc.local,
+which is run every time the instance is started up,
+and then finally we're going to run this script the once to update this information right here and now.
+So this new version of the launch template essentially changes
+what this hard-coded IP address is every time to be the DNS name of the load balancer,
+and it means if we ever change the DNS name of this load balancer,
+this script will automatically correct this hard-coded value.
+Now this is a thing specific to WordPress,
+and there are many situations where you'll have applications which have certain nuances
+that you need to be aware of when creating elastic architectures.
+This is the one for WordPress.
+So now that we've made these changes,
+go ahead and click on Create Template Version to create that new version of this launch template.
+Click on Launch Templates, and for the final time we need to update the default version.
+So make sure this launch template is selected.
+Click on Actions, scroll down, select Set Default Version.
+Click in the drop-down.
+The current default version is version 3.
+We want to select version 4, so select that,
+and then click Set as Default Version.
+Now that means the launch template is updated,
+and we can now provision instances in a fully elastic way.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side,
+and I wanted to give you the opportunity to take a small break,
+maybe stretch your legs or make a coffee.
+Now part two will continue immediately from this point,
+so go ahead, complete this video,
+and when you're ready, I'll look forward to you joining me in part two.

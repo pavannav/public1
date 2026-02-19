@@ -1,0 +1,224 @@
+Welcome back, and in this lesson I want to cover application and network load balances in a little bit more detail.
+It's critical for the exam that you understand when to pick application load balances and when to pick network load balances.
+They're both used for massively different situations.
+Now we do have a lot to cover, so let's jump in and get started.
+I want to start by talking about consolidation of load balances.
+Historically, when using classic load balances, you connected instances directly to the load balancer,
+or you integrated an auto-scaling group directly with that load balancer.
+An architecture which looked something like this.
+So a single domain name, Categram.io, using a single classic load balancer,
+and this has attached a single SSL certificate for that domain,
+and then an auto-scaling group is attached to that,
+and the classic load balancer distributes connections over those instances.
+The problem is that this doesn't scale, because classic load balancers don't support SNI,
+and you can't have multiple SSL certificates per load balancer,
+and so every single unique HTTPS application that you have requires its own classic load balancer,
+and this is one of the many reasons that classic load balancers should be avoided.
+With this example, we have Categram and Dogagram, and both of these are HTTPS applications,
+and the only way to use these is to have two different classic load balancers.
+Compare this to the same application architecture, so both of these applications, Categram and Dogagram,
+only this time using a single application load balancer,
+so this is handling both applications, Categram and Dogagram.
+This time we can use listener-based rules, and I'll talk about what these do later in the lesson,
+but each of these listener-based rules can have an SSL certificate handling HTTPS for both domains.
+Then we can have host-based rules which direct incoming connections at multiple target groups,
+which forward these on to multiple auto-scaling groups.
+This is a two-to-one consolidation,
+so we've halved the number of load balancers required to deliver these two different applications.
+But imagine how this would look if we had a hundred legacy applications,
+and each of these used a classic load balancer.
+Moving from version 1 to version 2 offers significant advantages, and one of those is consolidation.
+So now I just want to focus on some of the key points about application load balancers.
+So these are things which are specific to the version 2 or application load balancer.
+First, it's a true layer 7 load balancer,
+and it's configured to listen on either HTTP or HTTPS protocols.
+So these are layer 7 application protocols,
+and an application load balancer understands both of these
+and can interpret information carried using both of those protocols.
+Now the flip side to this is that the application load balancer can't understand any other layer 7 protocols.
+So things such as SMTP, SSH, or any custom gaming protocols
+are not supported by a layer 7 load balancer such as the application load balancer,
+and that's important to understand.
+Now additionally, the application load balancer has to listen using HTTP or HTTPS listeners.
+It cannot be configured to directly listen using TCP, UDP, or TLS,
+and that does have some important limitations and considerations that you need to be aware of,
+and I'll talk about that later on in this lesson.
+Now because it's a layer 7 load balancer, it can understand layer 7 content.
+So things like the type of the content, any cookies which are used by your application,
+custom headers, user location, and application behavior.
+The layer 7 load balancer, so the application load balancer,
+is able to inspect all of the layer 7 application protocol information
+and make decisions based on that information,
+and that's something that the network load balancer cannot do.
+It has to be a layer 7 load balancer, so the application load balancer,
+to understand all of these individual components.
+Now an important consideration about the application load balancer is that any incoming connection,
+so HTTP or HTTPS, and remember HTTPS is just HTTP, which is transiting using SSL or TLS.
+In all of these cases, whichever type of connection is used,
+it's terminated on the application load balancer,
+and this means that you can't have an unbroken SSL connection
+from your customer through to your application instances.
+It's always terminated on the load balancer,
+and then a new connection is made from the load balancer through to the application.
+This is important because this is the type of thing that matters to security teams,
+and if your business operates in a fairly strict security environment,
+then this might well be very important,
+and in some cases, it can exclude using an application load balancer,
+so it can't do end-to-end unbroken SSL encryption between a client and your application instances,
+and it also means that all application load balancers which use HTTPS
+must have SSL certificates installed on that load balancer,
+because the connection has to be terminated on the load balancer,
+and then a new connection made to the instances.
+Now application load balancers are also slower than network load balancers,
+because there are additional levels of the networking stack which need to be processed,
+so the more levels of the networking stack which are involved,
+the more complexity, the slower the processing.
+So if you're facing any exam questions which are really strict on performance,
+then you might want to look at network load balancers rather than application load balancers.
+A benefit though that application load balancers offer is because they're layer 7,
+then they can evaluate the application health at layer 7.
+So in addition to just testing for a successful network connection,
+they can actually make an application layer request to the application
+to ensure that it's functioning correctly.
+Now application load balancers also have the concept of rules,
+and rules direct connections which arrive at a listener.
+So if you make a connection to a load balancer,
+what the load balancer does with that connection is determined by any rules,
+and rules are processed in priority order.
+You can have many rules which might affect a given set of traffic,
+and they're processed in priority order.
+And the last one to be processed is the default rule which is a catch-all,
+but you can add additional rules and each of these can have conditions.
+Now things that you can have inside the conditions of a rule
+include checking for things like host headers,
+HTTP headers,
+HTTP request methods,
+path patterns,
+query strings,
+and even source IP.
+So these rules could take different actions depending on which domain name you're asking for,
+Categram or Dogogram.
+They can perform different actions based on which path you're looking for,
+so images or API.
+They can even take different decisions based on query string
+and even make different decisions based on the source IP address
+of any customers connecting to that application load balancer.
+Now rules can also have actions.
+These are the things that the rules do with the traffic,
+so they can forward that traffic through to a target group,
+they can redirect traffic at something else,
+so maybe another domain name,
+they can provide a fixed HTTP response,
+a certain error code or a certain success code,
+and they can even perform certain types of authentication,
+so using OpenID or using Cognito.
+Now this is how it looks visually.
+This is a simple application load balancer deployment,
+a single domain, Categram.io.
+We've got one host-based rule with an attached SSL certificate,
+and the rule is using host header as a condition and forward as an action,
+so it's forwarding any connections for Categram.io
+to the target group for the Categram application.
+But what if you want additional functionality?
+Well, let's take a look.
+First, let's imagine that we want to use the same application load balancer
+for a corporate client who's trying to access Categram.io.
+Maybe users of Bowtie Incorporated who use the 1.3.3.7 IP address
+are attempting to access our load balancer,
+and we want to present them with an alternative version of the application.
+Well, we can easily handle that by defining a listener rule,
+but this time the condition will be the source IP address of 1.3.3.7.
+Now this rule would have an action to forward traffic at a separate target group,
+an autoscaling group, which handles a second set of instances
+dedicated for this corporate client.
+Because the application load balancer is a layer 7 device,
+it can see inside the HTTP protocol and make decisions
+based on anything within that protocol or anything up to layer 7.
+Now it's worth pointing out in addition that because this is a layer 7 load balancer,
+the connection from the load balancer to the instances for target group 2
+will be a separate set of connections.
+And that's why it's in a slightly different color of purple.
+The HTTP connection from our enterprise users are terminated on the load balancer
+and there's a separate set of connections through to our application instances.
+There's no option to pass through the encrypted connection to the instances.
+It has to be terminated.
+Now this might not matter, but it's something that you need to know for the exam.
+If you have to forward encrypted connections through to the instances
+without terminating them on the load balancer,
+then you need to use a network load balancer.
+Now because it's a layer 7 load balancer,
+you can also use rules which work on layer 7 elements of the protocol.
+You could route based on paths or anything else in the HTTP protocol such as headers.
+And you can also redirect traffic from a HTTP level.
+An example, let's say that this ALB was also handling traffic for Dogogram.
+Well, you could define a rule which matched the dogogram.io domain name
+and as an action, instead of forwarding,
+you could configure a redirect towards catagram.io,
+the obviously superior website.
+And these are just a small subset of the features which are available
+within the application load balancer.
+Because it's layer 7, you can pretty much perform routing decisions
+based on anything which you can observe at layer 7
+and that makes it a really flexible product.
+Before we finish this lesson, let's take a quick look at network load balancers.
+Network load balancers function at layer 4, so they're a layer 4 device,
+which means that they can interpret TCP, TLS and UDP protocols
+as well as TCP and UDP.
+But the flip side of this is that they have no visibility or understanding of HTTP or HTTPS
+and this means that they can't interpret headers,
+they can't see or interpret cookies and they've got no concept of session stickiness
+from a HTTP perspective because that uses cookies
+which the network load balancer cannot interpret because that's a layer 7 entity.
+Now, network load balancers are really, really, really fast.
+They can handle millions of requests per second
+and have around 25% of the latency of application load balancers.
+And again, this is because they don't have to deal with any of the computationally heavy upper layers
+of the networking stack, they only have to deal with layer 4.
+This also means that they're ideal to deal with any non-HTTP or HTTPS protocols.
+So examples might be SMTP email, SSH, game servers which don't use either of the web protocols
+and any financial applications which are not HTTP or HTTPS.
+So if you see any exam questions which talk about things which aren't web or secure web
+and don't use HTTP or HTTPS, then you should probably default to network load balancers.
+One of the downsides of not being aware of layer 7 is that health checks which are performed
+by network load balancers only check ICMP and basic TCP handshaking.
+So they're not application aware.
+You can't do detailed health checking with network load balancers.
+A benefit of network load balancers is that they can be allocated with static IP addresses
+which is really useful for whitelisting if you have any corporate clients.
+So corporate clients can decide to whitelist the IPs of network load balancers
+and allow them to progress straight through their firewall.
+And this is great for any strict security environments that you need to operate in.
+Another benefit is that they can forward TCP straight through to instances.
+Now if you're familiar with the networking stack, how this works is that upper layers
+build on layers below them.
+So because the network load balancer doesn't understand HTTP or HTTPS,
+then you can configure a listener to accept TCP only traffic
+and then forward that through to instances.
+And what that means is that any of the layers that are built on top of TCP
+are not terminated on the load balancer and so they're not interrupted.
+And this means that you can forward unbroken channels of encryption
+directly from your clients through to your application instances.
+And this is a really important thing to remember for the exam.
+So network load balancers and TCP listeners is how you can do unbroken end-to-end encryption.
+Network load balancers are also used for private link to provide services to other VPCs.
+And this is another really important thing to remember for the exam.
+Now just to finish up this lesson, I want to do a quick comparison of a number of facts
+that you can use to decide between network load balancing and application load balancing.
+And I find it easier to remember the things which you should be using a network load balancer for
+And then if the scenario is none of those, then you can default to using an application load balancer.
+So let's step through the reasons why you might choose to use a network load balancer.
+Well the first one is the one we've just discussed.
+If you want to perform unbroken encryption between a client and your instances,
+then use network load balancers.
+If you need to use static IPs for whitelisting, then again network load balancers.
+If you want the absolute best performance, so millions of requests per second, and low latency,
+then again network load balancers.
+If you need to operate on protocols which are not HTTP or not HTTPS,
+then you need to use network load balancers.
+And then finally if you have any requirement which involves private link,
+then you need to use network load balancers.
+And for anything else, default to using application load balancers
+because the additional functionality provided by these devices is often really valuable to most scenarios.
+Now with that being said, that's everything I wanted to cover about application load balancers
+and network load balancers for the exam.
+Go ahead and complete this video and when you're ready, I'll look forward to you joining me in the next.

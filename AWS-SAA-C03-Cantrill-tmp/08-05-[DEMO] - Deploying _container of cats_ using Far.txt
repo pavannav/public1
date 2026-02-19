@@ -1,0 +1,182 @@
+Welcome back, and in this demo lesson, you're going to be creating an ECS cluster with the Fargate cluster mode,
+and using the Container of Cats container that we created together earlier in this section of the course,
+you're going to deploy this container into your Fargate cluster.
+So you're going to get some practical experience of how to deploy a real container into a Fargate cluster.
+Now you won't need any CloudFormation templates applied to perform this demo because we're going to use the default VPC.
+All that you'll need is to be logged in as the IAM admin user inside the management account of the organization,
+and just make sure that you're in the Northern Virginia region.
+Once you've confirmed that, then just click in Find Services and type ECS, and then click to move to the ECS console.
+Once you're at the ECS console, step one is to create a Fargate cluster.
+So that's the cluster that our container is going to run inside.
+So click on Clusters, then Create Cluster.
+You'll need to give the cluster a name. You can put anything you want here, but I recommend using the same as me,
+and I'll be putting all the cats.
+Now Fargate mode requires a VPC.
+I'm going to be suggesting that we use the default VPC because that's already configured, remember,
+to give public IP addresses to anything deployed into the public subnets.
+So just to keep it simple and avoid any extra configuration, we'll use the default VPC.
+Now it should automatically select all of the subnets within the default VPC, in my case all six.
+If yours doesn't, just make sure you select all of the available subnets from this dropdown,
+but it should do this by default.
+Then scroll down and just note how AWS Fargate is already selected, and that's the default.
+If you wanted to, you could check to use Amazon EC2 instances or external instances using ECS anywhere,
+but for this demo, we won't be doing that.
+Instead, we'll leave everything else as default, scroll down to the bottom, and click Create.
+If this is the first time you're doing this in an AWS account,
+it's possible that you'll get the error that's shown on screen now.
+If you do get this error, then what I would suggest is to wait a few minutes,
+then go back to the main ECS console, go to Cluster again, and then create the All the Cats cluster again.
+So follow exactly the same steps, call the cluster All the Cats,
+make sure that the Animals for Life default VPC is selected and all those subnets are present,
+and then click on Create.
+You should find that the second time that you run this creation process, it works OK.
+Now this generally happens because there's an approval process that needs to happen behind the scenes.
+So if this is the first time that you're using ECS within this AWS account, then you might get this error.
+It's nothing to worry about, just rerun the process and it should create fine the second time.
+Once you've followed that process through again, or if it worked the first time,
+then just go ahead and click on the All the Cats cluster.
+So this is the Fargate-based cluster.
+It's in an active state, so we're good to deploy things into this cluster,
+and we can see that we've got no active services.
+If I click on Tasks, we can see we've got no active tasks.
+There's a tab here, Metrics, where you can see CloudWatch metrics about this cluster.
+And again, because this is newly created and it doesn't have any activity, all of this is going to be blank.
+For now, that's fine.
+What we need to do for this demonstration is create a task definition that will deploy our container,
+our container of Cats container, into this Fargate cluster.
+To do that, click on Task Definitions and create a new task definition.
+You'll need to pick a name for your task definition.
+Go ahead and put Container of Cats.
+And then inside this task definition, the first thing to do is set the details of the container for this task.
+So under Container Details, under Name, go ahead and put Container of Cats Web.
+So this is going to be the Web container for the Container of Cats task.
+Then next to the name, under Image URI, you need to point this at the Docker image that's going to be used for this container.
+So I'm going to go ahead and paste in the URI for my Docker image.
+So this is the Docker image that I created earlier in the course within the EC2 Docker demo.
+You might have also created your own container image.
+You can feel free to use my container image or you can use yours.
+If you want to keep things simple, you should go ahead and use mine.
+Yours should be the same anyway.
+Now just to be careful, this isn't a URL.
+This is a URI to point at my Docker image.
+So it consists of three parts.
+First, we have Docker.io, which is the Docker Hub.
+Then we have my username, so Acantral.
+And then we have the repository name, which is Container of Cats.
+So if you want to use your own Docker image, you need to change both the username and the repository name.
+Again, to keep things simple, feel free to use my Docker image.
+Then scrolling down, we need to make sure that the port mappings are correct.
+It should show what's on screen now.
+So Container Port 80, TCP, and then the port name should be the same or similar to what's on screen now.
+Don't worry if it's slightly different.
+And the application protocol should be HTTP.
+This is controlling the port mapping from the container through to the Fargate IP address.
+And I'll talk more about this IP address later on in this demo.
+Everything else looks good, so scroll down to the bottom and click on Next.
+We need to specify some environment details.
+So under operating system slash architecture, it needs to be Linux slash x86 underscore 64.
+Under task size for memory, go ahead and select 1 GB, and then under CPU, 0.5 vCPU.
+That should be enough resources for this simple Docker application.
+Scroll down and under monitoring and logging, uncheck use log collection.
+We won't be needing it for this demo lesson.
+That's everything we need to do. Go ahead and click on Next.
+This is just an overview of everything that we've configured,
+so you can scroll down to the bottom and click on Create.
+And at this point, the task definition has been created successfully.
+And this is where you can see all of the details of the task definition.
+If you want to see the raw JSON for the task definition itself, you don't need this for the exam.
+But this is actually what a task definition looks like.
+So it contains all of this different information.
+What it has got is one or more container definitions.
+So this is just JSON.
+This is a list of container definitions. We've only got the one.
+And if you're looking at this, you can see where we set the port mapping.
+So we're mapping port 80.
+You can see where it's got the image URL, which is where it pulls the Docker image from.
+This is exactly what a normal task and container definition look like.
+They can be significantly more complex, but this format is consistent across all task definitions.
+OK, so now it's time to launch a task.
+It's time to take the container and task definitions that we've defined
+and actually run up a container inside ECS using those definitions.
+So to do that, click on clusters and then select the all the cats cluster.
+Click on tasks and then click on run a new task.
+Now, first we need to pick the compute options and we're going to select launch type.
+So check that box.
+If appropriate for the certification that you're studying for,
+I'll be talking about the differences between these two in a different lesson.
+Once you've clicked on launch type, make sure fargate is selected in the launch type dropdown
+and latest is selected under platform version.
+Then scroll down and we're going to be creating a task.
+So make sure that task is selected.
+Scroll down again and under family, make sure container of cats is selected.
+And then under revision, select latest.
+We want to make sure the latest version is used.
+And we'll leave desired tasks at one and task group blank.
+Scroll down and expand networking.
+Make sure the default VPC is selected.
+And then make sure again that all of the subnets inside the default VPC are present under subnets.
+The default is that all of them should be, in my case, six.
+Now the way that this task is going to work is that when the task is run within fargate,
+an elastic network interface is going to be created within the default VPC.
+And that elastic network interface is going to have a security group.
+So we need to make sure that the security group is appropriate
+and allows us to access our containerized application.
+So check the box to say create a new security group.
+And then for security group name and description, use container of cats, hyphen SG.
+We need to make sure that the rule on this security group is appropriate.
+So under type, select HTTP.
+And then under source, change this to anywhere.
+And this will mean that anyone can access this containerized application.
+Finally, make sure that public IP is turned on.
+This is really important because this is how we'll access our containerized application.
+Everything else looks good.
+We can scroll down to the bottom and click on create.
+Now give that a couple of seconds.
+It should initially show last status.
+So the last status should be set to provisioning.
+And the desired state should be set to running.
+So we need to wait for this task provisioning to complete.
+So just keep hitting refresh.
+You'll see it first change into pending.
+Now at this point, we need this task to be in a running state before we can continue.
+So go ahead and pause the video and wait for both of these states.
+So last status and desired status, both of those need to be running before we continue.
+So pause the video, wait for both of those to change.
+And then once they have, you can resume and we'll continue.
+After another refresh, the last status should now be running and in green.
+And the desired state should also be running.
+So at that point, we're good to go.
+We can click on the task link below.
+We can scroll down and our task has been allocated a private IP version 4 address in the default VPC
+and also a public IP version 4 address also in the default VPC.
+So if we copy this public IP into our clipboard and then open a new tab and browse to this IP,
+we'll see our very corporate professional web application.
+If it fits, I sits in a container, in a container.
+So we've taken a Docker image that we created earlier in this section of the course.
+We've created a Fargate cluster, created a task definition with a container definition inside
+and deployed our container image as a container to this Fargate cluster.
+So it's a very simple example, but again, this scales.
+So you could deploy Docker containers, which are a lot more complex in what functionality they offer.
+In this case, it's just an Apache web server loading up a web page,
+but we could deploy any type of web application using the same steps that you've performed in this demo lesson.
+So congratulations, you've learned all of the theory that you'll need for the exam
+and you've taken the steps to implement this theory in practice
+by deploying a Docker image as a container on an ECS Fargate cluster.
+So great job. At this point, all that remains is to tidy up.
+So go back to the AWS console, just stop this container, click on stop,
+click on task definitions, and then go into this task definition.
+Select this, click on actions, deregister, and then click on deregister.
+Click back on task definitions and make sure there's no results there, that's good.
+Click on clusters, click on all the cats, delete the cluster.
+You'll need to type delete space all the cats, and then click on delete to confirm.
+And at that point, the Fargate cluster's been deleted, the running container's been stopped,
+the task definition's been deleted, and our account is back in the same state as when we started.
+So at this point, you've completed the demo, you've done great,
+and you've implemented some pretty complex theories,
+so you should already have a head start on any exam questions which involve ECS.
+We're going to be using ECS a lot more as we move through the course,
+and we're going to be using it in some of the Animals for Life demos
+as we implement progressively more complex architectures later on in the course.
+For now, I just wanted to give you the basics,
+but you've done really well if you've implemented this successfully without any issues.
+So at this point, go ahead, complete this video, and when you're ready, join me in the next.

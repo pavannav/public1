@@ -1,0 +1,110 @@
+Welcome back. In this lesson, I'm going to be covering a really useful product within AWS,
+the Elastic File System, or EFS.
+It's a product which can prove useful for most AWS projects because it provides
+network-based file systems which can be mounted within Linux EC2 instances
+and used by multiple instances at once.
+For the Animals for Life WordPress example that we've been using throughout the course so far,
+it will allow us to store the media for posts outside of the individual EC2 instances,
+which means that the media isn't lost when instances are added and removed,
+and that provides significant benefits in terms of scaling as well as self-healing architecture.
+In summary, we're moving the EC2 instances to a point where they're closer to being stateless.
+So let's jump in and step through the EFS architecture.
+The EFS service is an AWS implementation of a fairly common shared storage standard called NFS,
+the Network File System, specifically version 4 of the Network File System.
+With EFS, you create file systems which are the base entity of the product,
+and these file systems can be mounted within EC2 Linux instances.
+Linux uses a tree structure for its file system.
+Devices can be mounted into folders in that hierarchy,
+and EFS file system, for example, could be mounted into a folder called forward slash NFS forward slash media.
+What's more impressive is that EFS file systems can be mounted on many EC2 instances,
+so the data on those file systems can be shared between lots of EC2 instances.
+Now keep this in mind as we talk about evolving the architecture of the Animals for Life WordPress platform.
+Remember, it has a limitation that the media for posts, so images, movies, audio,
+they're all stored on the local instance itself.
+If the instance is lost, the media is also lost.
+EFS storage exists separately from an EC2 instance, just like EBS exists separately from EC2.
+Now EBS is block storage, whereas EFS is file storage,
+but Linux instances can mount EFS file systems as though they are connected directly to the instance.
+EFS is a private service. By default, it's isolated to the VPC that it's provisioned into.
+Architecturally, access to EFS file systems is via mount targets, which are things inside a VPC,
+but more on this next when we step through the architecture visually.
+Now even though EFS is a private service,
+you can access EFS file systems via hybrid networking methods that we haven't covered yet.
+So if your VPC is connected to other networks, then EFS can be accessed over those.
+So using VPC peering, VPN connections, or AWS Direct Connect,
+which is a physical, private networking connection between a VPC and your existing on-premises networks.
+Now don't worry about those hybrid products. I'll be covering all of them in detail later in the course.
+For now though, just understand that EFS is accessible outside of a VPC
+using these hybrid networking products as long as you configure this access.
+So let's look at the architecture of EFS visually.
+Architecturally, this is how it looks. EFS runs inside a VPC, in this case the Animals for Life VPC.
+Inside EFS, you create file systems and these use POSIX permissions.
+If you don't know what this is, I've included a link attached to the lesson, which provides more information.
+Super summarized though, it's a standard for interoperability, which is used in Linux.
+So a POSIX permissions file system is something that all Linux distributions will understand.
+Now the EFS file system is made available inside a VPC via mount targets.
+And these run from subnets inside the VPC.
+The mount targets have IP addresses taken from the IP address range of the subnet that they're inside
+and to ensure high availability, you need to make sure that you put mount targets in multiple availability zones.
+Just like NAT gateways, for a fully, highly available system,
+you need to have a mount target in every availability zone that a VPC uses.
+Now it's these mount targets that instances use to connect to the EFS file systems.
+Now it's also possible, as I touched on on the previous screen, that you might have an on-premises network.
+And this generally would be connected to a VPC using hybrid networking products such as VPNs or Direct Connect.
+And any Linux-based server that's running on this on-premises environment can use this hybrid networking
+to connect through to the same mount targets and access EFS file systems.
+Now before we move on to a demo where you'll get the practical experience of creating a file system
+and accessing it from multiple EC2 instances, there are a few things about EFS which you should know for the exam.
+First, EFS is for Linux-only instances.
+From an official AWS perspective, it's only officially supported using Linux instances.
+EFS offers two performance modes, general purpose and max.io.
+General purpose is ideal for latency-sensitive use cases, web servers, content management systems,
+it can be used for home directories, or even general file serving as long as you're using Linux instances.
+Now, general purpose is the default, and that's what we'll be using in this section of the course within the demos.
+Max.io, that can scale to higher levels of aggregate throughput and operations per second,
+but it does have a trade-off of increased latencies.
+So max.io mode suits applications that are highly parallel,
+so if you've got any applications or any generic workloads such as big data, media processing, scientific analysis,
+anything that's highly parallel, then it can benefit from using max.io,
+but for most use cases, just go with general purpose.
+There are also two different throughput modes, bursting and provisioned.
+Bursting mode works like GP2 volumes inside EBS, so it has a burst pool,
+but the throughput of this type scales with the size of the file systems.
+So the more data you store in the file system, the better performance that you get.
+With provisioned, you can specify throughput requirements separately from size.
+So this is like the comparison between GP2 and IO1.
+With provisioned, you can specify throughput requirements separate from the amount of data you store,
+so that's more flexible, but it's not the thing that's used by default.
+Generally, you should pick bursting.
+Now for the exam, you don't need to remember the raw numbers,
+but I have linked some in the lesson description if you want additional information,
+so you can see the different performance characteristics of all of these different options.
+Now Amazon EFS file systems have two storage classes available.
+We've got infrequent access or IA,
+and that storage class is a lower cost storage class,
+which is designed for storing things that are infrequently accessed.
+So if you need to store data in a cost-effective way,
+but you don't intend to access it often, then you can use infrequent access.
+Next we've got standard, and the standard storage class is used to store frequently accessed files.
+It's also the default, and you should consider it the default
+when picking between the different storage classes.
+Conceptually, these mirror the trade-offs of the S3 object storage classes.
+Use standard for data, which is used day-to-day and infrequent access
+for anything which isn't used on a consistent basis.
+And just like S3, you have the ability to use life-cycle policies,
+which can be used to move data between classes.
+Okay, so that's the theory of EFS.
+It's not all that difficult a product to understand,
+but you do need to understand it architecturally for the exam.
+And so to help with that, it's now time for a demo.
+I want you to really understand how EFS works.
+It's something that you probably will use if you use AWS for any real-world projects.
+Now the best way to understand it is to use it,
+and so that's what we're going to do in the next lesson, which is a demo.
+You're going to have the opportunity to create an EFS file system,
+provision some EC2 instances, and then mount that file system within both EC2 instances,
+create a test file, and see that that's accessible from both of those instances,
+proving that EFS is a shared network file system.
+But at this point, that's all of the theory that I wanted to cover.
+So go ahead, finish up this video,
+and when you're ready, I'll look forward to you joining me in the demo lesson.

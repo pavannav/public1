@@ -1,0 +1,133 @@
+Welcome back, this is part two of this lesson. We're going to continue immediately from the end of part one, so let's get started.
+Now the previous architecture can be evolved by using queues. A queue is a system which accepts messages.
+Messages are sent onto a queue, and messages can be received or polled off the queue.
+In many queues there's ordering, so in most cases messages are received off the queue in a FIFO, or First In First Out architecture.
+Although it's worth noting that this isn't always the case.
+Using a queue-based decoupled architecture, CatTube would look something like this.
+Bob would upload his newest video of whiskers laying on the beach to the upload component.
+And once the upload is complete, instead of passing this directly onto the processing tier, it does something slightly different.
+It stores the master 4K video inside an S3 bucket.
+And it also adds a message to the queue, detailing where the video is located, as well as any other relevant information, such as what sizes are required.
+This message, because it's the first message in the queue, is architecturally at the front of the queue.
+At this point, the upload tier, because it's uploaded the master video to S3 and added a message to the queue, it's finished this particular transaction.
+It doesn't talk directly to the processing tier, and it doesn't know or care if it's actually functioning.
+The key thing is that the upload tier doesn't expect an immediate answer from the processing tier.
+The queue has decoupled the upload and processing components.
+It's moved from a synchronous style of communication, where the upload tier expects and needs an immediate answer, and it needs to wait for that answer.
+Instead, it uses asynchronous or async communications, where the upload tier sends the message, and it can either wait in the background or just continue doing other things, while the processing tier does its job.
+Now, while this process is going on, the upload component is probably getting additional...
+Other messages that are added to the queue are behind the whiskers job, because with this queue, there is an order.
+It's a FIFO, or first in, first out queue.
+Now, at the other side of the queue, we have an auto-scaling group, which has been configured.
+It has a minimum size of zero, a desired size of zero, and a maximum size of 1337.
+So currently, it has no instances provisioned.
+But it has auto-scaling policies which provision or terminate instances based on what's called the queue length, and the queue length is just the number of items in the queue.
+Because there are messages on the queue added by the upload tier, the auto-scaling group detects this, and so the desired capacity is increased from zero to two.
+And because of this, instances are provisioned by the auto-scaling group.
+And these instances start polling the queue and receive messages that are at the front of the queue.
+Remember that these messages contain the data for the job, but they also contain the location of the S3 bucket and the location of the object in that bucket.
+So once these jobs are received from the queue by these processing instances, they can also retrieve the master video from the S3 bucket.
+Now, these jobs are processed by the instances, and then they're deleted from the queue, and this leaves only one job in the queue.
+At this point, maybe the auto-scaling group decides to scale back because of the shorter queue length.
+So it reduces the desired capacity from two to one.
+And this process terminates one of the processing instances.
+The instance that remains polls the queue and receives the one final message.
+It completes processing of that message, so it performs the transcoding on the videos, and it leaves zero messages in the queue.
+The auto-scaling group realizes this. It scales back the desired capacity from one to zero, and that results in the termination of the last processing EC2 instance.
+Using a queue architecture, so placing a queue in between two application tiers, decouples those tiers.
+One tier adds jobs to the queue and doesn't care about the health or the state of the other, and another tier can read jobs from that queue, and it doesn't care how they got there.
+This is unlike the example on the previous screen where application load balancers were used between tiers.
+While this did allow for high availability and scaling, the upload tier in the previous example still synchronously communicated with one instance of the processing tier.
+This way, using the queue architecture, no communication happens directly.
+The components are decoupled, the components can scale independently and freely, and in this case, the processing tier, which uses a worker fleet architecture,
+it can scale anywhere from zero to a near infinite number of instances based only on the length of the queue, so the number of messages in the queue.
+Now, this is a really powerful architecture because of the asynchronous communications that it uses,
+and it's an architecture that's commonly used in applications such as Captube, where customers upload things for processing,
+and you want to ensure that you've got a worker fleet behind the scenes that can scale to perform that processing.
+Now, you might be asking why this matters, at least in the topic of event-driven architectures, and I'm getting there, I promise.
+If you continue breaking down a monolithic application into smaller and smaller pieces, you'll end up at a microservice architecture,
+which is a collection of, as the name suggests, microservices, and microservices do individual things very well.
+In this example, we have the upload microservice, the processing microservice, and the store and manage microservice.
+A full application such as this, or there might just be lots of copies of the same service, such as this example,
+which is lucky because it's far easier to diagram.
+The upload service is a producer, the processing node is a consumer, and the data store and manage microservice performs both.
+Now, logically, producers produce data or they produce messages.
+Consumers, as the name suggests, consume data or messages, and then you've got microservices that can do both things.
+Now, the things that services produce and consume architecturally are events.
+Queues can be used to communicate events, as we saw with the previous example,
+but larger microservices architectures can get complex pretty quickly.
+With services needing to exchange data between partner microservices,
+if we do this with a queue architecture, then logically we're going to have a lot of queues.
+It works, but it can be complicated.
+Keep in mind, a microservice is just a tiny, self-sufficient application.
+It has its own logic, its own store of data, and its own input-output components.
+Now, if you hear the term event-driven architecture, I don't want you to be too apprehensive.
+Event-driven architectures are just a collection of event producers,
+which might be components of your application which directly interact with customers,
+or they might be parts of your infrastructure, such as EC2, or they might be systems monitoring components.
+They're bits of software which generate or produce events in reaction to something.
+If a customer clicks submit, that might be an event.
+If an error occurs when packing a customer order,
+or an error occurs during the upload of the Whiskr's holiday video, that's an event.
+Producers are things which produce events, and the inverse of this are consumers,
+pieces of software which are ready and waiting for events to occur.
+If they see an event which they care about, they will do something with that event, they will take an action.
+It might be displaying something for a customer, it might be to dispatch a human to resolve an order packing issue,
+or it might be to retry an upload.
+Components or services within an application can be both producers and consumers.
+Sometimes a component might generate an event, for example a failed upload,
+and then consume events to force a retry of that upload.
+Now the key thing to understand about event driven architectures,
+is that neither the producers or the consumers are sat around waiting for things to occur.
+They're not constantly consuming resources, they're not running at 100% CPU load, waiting for things to happen.
+With producers, events are generated when something happens,
+when a button is clicked, when an upload works, or when it doesn't work.
+These producers produce events, consumers are not waiting around for those events,
+they have those events delivered, and when they receive an event, they take an action and then they stop.
+They're not constantly consuming resources.
+Now applications would be really complex if every software component or service needed to be aware of every other component.
+If every application component required a queue between it and every other component to put events into and access them from,
+it would be a really complex application architecture.
+Best practice event driven architectures have what's called an event router,
+a highly available central exchange point for events,
+and the event router has what's known as an event bus,
+and you can think of this like a constant flow of information.
+When events are generated by producers, they're added to this event bus,
+and the router can deliver these to event consumers.
+The WordPress system that we've used to date, we've been running it on an EC2 instance,
+and an EC2 instance is essentially a consistent allocation of resources.
+Whether that WordPress is using low amounts of load or large amounts of load,
+we're still going to be billed for that EC2 instance, we're still consuming resources.
+I want you to imagine a system with lots of small services, all waiting for events.
+If events are received, the system springs into action.
+It allocates resources and it scales components up as required.
+It deals with those events and then it returns to the low or no resource usage, which is the default state.
+Event-driven architectures only consume resources as and when required.
+So with an event-driven architecture, there's generally nothing constantly running,
+nothing waiting for things. We're not constantly polling, hoping for things to happen.
+We have producers which generate events when something happens.
+So if you're browsing the Amazon.com website and you click on order,
+that generates an event and actions are taken based on that event.
+But the Amazon.com website is not constantly checking your browser each and every second
+to check if you've clicked submit on that order.
+So producers generate events when something happens.
+So when clicks happen, when errors occur, when criteria are met, when uploads complete, or any other actions.
+So producers, they generate event on things occurring.
+And these events are delivered to consumers of those events
+and that generally happens using an event router.
+An event router decides which consumers to deliver events to
+and when that occurs, when these events are delivered to the consumers, then actions are taken
+and then once the action is complete, the system returns to waiting.
+It goes into a dormant state and doesn't consume resources.
+So in summary, a mature event-driven architecture, it only consumes resources while handling events.
+When events are not occurring, it doesn't consume resources.
+And this is one of the key components of a serverless architecture
+which I'll be talking about more later in this section.
+Now I know that this has been a lot of theory, but I promise you as you continue through the course
+it will really make sense why I introduce this theory in detail at this point in the course
+and it really will help you within the exam.
+In the rest of this section, we're going to be covering more AWS specific and practical things
+but they'll all rely on your knowledge of this evolution of systems architecture.
+So thanks for watching this video.
+At this point though, you can go ahead, finish off this video
+and when you're ready, I'll look forward to you joining me in the next lesson.

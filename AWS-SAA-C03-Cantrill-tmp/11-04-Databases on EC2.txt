@@ -1,0 +1,182 @@
+Welcome back and in this lesson I want to cover something which can be argued is bad
+practice to do inside AWS and that's running databases directly on EC2.
+As you'll find out in this section of the course there are lots of AWS products which
+provide database services so running any database on EC2 at best requires some justification.
+In this lesson I want to step through why you might want to directly run databases on
+EC2 and why it's also a bad idea.
+It's actually always a bad idea to run databases on EC2.
+The argument really is whether the benefits to you or your business outweigh the fact
+that it is a bad idea.
+So let's jump in and take a look at some of the reasons why you should and shouldn't
+run databases on EC2.
+Usually when people think about running databases on EC2 they picture one of two things.
+First, a single instance and on this instance you're going to be running a database platform,
+an application of some kind and perhaps a web server such as Apache.
+Or you might picture a simple split architecture where the database is separated from the web
+server and application.
+So you'll have two instances, probably smaller instances than the single large one.
+And architecturally I hope this makes sense so far.
+So far in the course with the Animals for Life WordPress application stack example we've
+used the architecture on the left, a single EC2 instance with all of the application tiers
+or components on one single instance.
+Crucially one single instance running within a single availability zone.
+Now if you have a split architecture like on the right you can either have both EC2
+instances inside the same availability zone or you could split the instances across two.
+So AZA and AZB.
+Now when you change the architecture in this way, when you split up the components into
+separate instances, whether you decide to put those both in the same availability zone
+or split them, you need to understand that you've introduced a dependency into the
+architecture.
+The dependency that you've introduced is that there needs to be reliable communication
+between the instance running the application and the database instance.
+If not, the application won't work.
+And if you do decide to split these instances across multiple availability zones then you
+should also be aware that there is a cost for data when it's transiting between different
+availability zones in the same region.
+It's small but it does exist.
+Now that's in contrast to where communications between instances using private IPs in the
+same availability zone is free.
+So that's a lot to think about from an architectural perspective, but that's what we mean when
+we talk about running databases on EC2.
+This is the architecture, generally one or more EC2 instances with at least one of them
+running the database platform.
+Now there are some reasons why you might want to run databases on EC2 in your own environment.
+You might need access to the operating system of the database and the only way that you
+can have this level of access is to run on EC2 because other AWS products don't give
+you OS level access.
+This is one of those things though that you should really question if a client requests
+it because there aren't many situations where OS level access is really a requirement.
+Do they need it?
+Do they want it?
+Or do they only think that they want it?
+So if you have a client or if your business states that they do need OS level access,
+the first thing that you should do is question that statement.
+Now there are some database tuning things which can only be done with root level access
+and because you don't have this level of access with managed database products, then these
+values or these configuration options won't be tunable.
+But in many cases, and you'll see this later on in this section, AWS does allow you to
+control a lot of these parameters that historically you would need root access for without having
+root access.
+So again, this is one of those situations where you need to question any situation where
+it's presented to you that you need database root access.
+It's worth noting often that it's an application vendor demanding this level of access, not
+the business themselves.
+But again, it's often the case that you need to delve into the justifications.
+This level of access is often not required and a lot of software vendors now explicitly
+support AWS's managed database products.
+So again, verify any suggestion of this level of access.
+Now something that is often justified is that you might need to run a database or a database
+version which AWS don't provide.
+This is certainly possible and more so with emerging types of databases or databases with
+really niche use cases.
+You might actually need to implement an application with a particular database that is not supported
+by AWS and any of its managed database products.
+And in that case, the only way of servicing that demand is to install that database on
+EC2.
+So that's one often justified reason for running databases on EC2.
+Or it might be that a particular project that you're working on has really, really detailed
+and specific requirements and you need a very specific version of an OS and a very specific
+version of a DB in combination which AWS don't provide.
+Or you might need or want to implement an architecture which AWS also don't provide.
+Certain types of replication done in certain ways or at certain times.
+Or it could be something as simple as the decision makers in your organization just
+want a database running on EC2.
+You could argue that they're being unreasonable to just demand a database running on EC2.
+But in many cases, you might not have a choice.
+So it can always be done.
+You can run databases on EC2 as long as you're willing to accept the negatives.
+So these are all valid.
+Some of them I would question or fight or ask for justification.
+But situations certainly do exist which require you to use databases on EC2.
+And I'm stressing these because I've seen tricky exam questions where the right answer
+is to use a database on EC2.
+So I want to make sure that you've got fresh in your mind some of the styles of situations
+where you might actually want to run a database on EC2.
+But now let's talk about why you really shouldn't put a database product on EC2.
+Even with the previous screen in mind, even with all of those justifications, you need
+to be aware of the negatives.
+And the first one is the admin overhead.
+The admin overhead of managing the EC2 instance as well as the database host, the database
+server.
+Both of these require significant management effort.
+Don't underestimate the effort required to keep an EC2 instance patched or keep a database
+host running at a certain compatible level with your application.
+You might not be able to upgrade or you might have to upgrade and keep the database version
+running in a very narrow range in order to be compatible with the application.
+And whenever you perform upgrades or whenever you're fault finding, you need to do it out
+of core usage hours, which could mean additional time, stress and cost for staff to maintain
+both of these components.
+Also don't forget about backups and disaster recovery management.
+So if your business has any disaster recovery planning, running databases on an EC2 adds
+a lot of additional complexity.
+And in this area, when you're thinking about backups and DR, many of AWS's managed database
+products we'll talk about throughout this section include a lot of automation to remove
+a lot of this admin overhead.
+Perhaps one of the most serious limitations though is that you have to keep in mind that
+EC2 is running in a single availability zone.
+So if you're running on an EC2 instance, keep in mind you're running on an EBS volume,
+in an EC2 instance both of those are within a single availability zone.
+If that zone fails, access to the database could fail and you need to worry about taking
+EBS snapshots or taking backups of the database inside the database server and putting those
+on storage somewhere, maybe S3.
+Again, it's all admin overhead and risk that your business needs to be aware of.
+Another issue is features.
+Some of AWS's database products genuinely are amazing.
+A lot of time and effort and money have been put in on your behalf by AWS to make these
+products actually better than what you can achieve by installing database software on
+EC2.
+So by limiting yourself to running databases on EC2, you're actually missing out on some
+of the advanced features and we'll be talking about all of those throughout this section
+of the course.
+Another aspect is that EC2 is on or off.
+EC2 does not have any concept of serverless because explicitly it is a server.
+You're not going to be able to scale down easily or keep up with bursty style demand.
+There are some AWS managed database products we'll talk about in this section which can
+scale up or down rapidly based on load and by running a database product on EC2 you do
+limit your ability to scale and you do set a base minimum cost of whatever the hourly
+rate is for that particular size of EC2 instance.
+So keep that in mind.
+So again if you're being asked to implement this by your business you should definitely
+fight this fight and get the business to justify why they want the database product
+on EC2 because they're missing out on some features and they're committing themselves
+to costs that they might not need to.
+There's also replication so if you've got an application that doesn't need replication
+there are the skills to set this up, the setup time, the monitoring and checking for
+its effectiveness and all of this tends to be handled by a lot of AWS's managed database
+products.
+So again there's a lot of additional admin overhead that you need to keep in mind.
+And lastly we've got performance.
+This relates in some way to when I talked about features moments ago.
+AWS do invest a considerable amount of time into optimization of their database products
+and implementing performance based features.
+And if you simply take an off the shelf database product and implement it on EC2 you're not
+going to be able to take advantage of these advanced performance features.
+So keep that in mind.
+If you do run database software directly on EC2 you're limiting the performance that you
+can achieve.
+But with that out of the way that's all of the theory and logic that I wanted to cover
+in this lesson.
+So now you have an idea about why you should and why you shouldn't run your own database
+on an EC2 instance.
+In the next lesson which is a demo we're going to take the single instance WordPress deployment
+that we've been using so far in the course and we're going to evolve it into two separate
+EC2 instances.
+One of these is going to be running Apache and WordPress so it's going to be the application
+server and the other is going to be running a database server MariaDB.
+Now this kind of evolution is best practice at least as much as it can ever be best practice
+to run a self-managed database platform.
+Now the reason we're doing this is we want to split up our single monolithic application
+stack.
+We want to get it to the point so the database is not running on the same instance as the
+application itself because once we've done that we can move that database into one of
+AWS's managed database products later in this section and that will allow us to take advantage
+of these features and performance that these products deliver.
+It's never a good idea to have a single monolithic application stack when you can avoid it.
+So the way that we're running WordPress at the moment is not best practice for an enterprise
+application.
+So by splitting up the application from the database as we go through the course it will
+allow us to scale each of these independently and take advantage independently of different
+AWS products and services which can help us improve each component of our application.
+So with that being said go ahead and finish up this video and then when you're ready
+you can join me in the next lesson which is going to be a demo where we're going to split
+up this monolithic WordPress architecture into two separate compute instances.

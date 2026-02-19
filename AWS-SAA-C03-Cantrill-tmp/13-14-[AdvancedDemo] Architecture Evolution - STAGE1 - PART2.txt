@@ -1,0 +1,119 @@
+Welcome back. This is part two of this lesson. We're going to continue immediately from the end of part one
+So let's get started now that we've created all of those
+We need to go ahead and install WordPress on our EC2 instance. So move back to instances
+By now the instance should be in the running state right click select connect
+Change it to session manager and then go ahead and click on connect and this will allow us to connect into the EC2
+Instance without worrying about direct network access or having an SSH key pair
+Once you're connected go ahead and type sudo bash and press enter
+Then type cd and press enter and then type clear and press enter and that will just clear the screen to make everything easy to see
+Now at this point there are a lot of commands that you'll need to type in to manually install WordPress
+Now you can copy and paste these out of the text instructions for this stage of the demo lesson
+But while you're doing so I want you to imagine that you'd have to type these in one by one
+Because I want you to get an appreciation for just how long this install would take if you were doing it entirely manually
+So first we need to set some environment variables on this instance with the parameters that we've just stored in parameter store
+So go ahead and copy all of this set of commands out of this stage's instructions
+And this will set environment variables on this instance with values from the parameter store
+And again imagine how long this would take if you had to type all of this manually
+Once we've got those variables configured next we need to just update the operating system on the instance
+Make sure it's running with all the patches and just update the package repositories
+And we can do that with this command the next set of commands in this stage's instructions install prerequisites
+So this is the MariaDB database server the Apache web server wget some libraries and a stress test utility
+So go ahead and paste in the next block of commands to install all of these packages
+Now again, this is something that we will automate later in this demo series
+But I want you to have an appreciation for just how long this takes. I'll type clear again to clear the screen
+And then the next set of commands will start up the web server and the database server and ensure that both of them
+Start up automatically when the instance operating system is first started
+So if we restart this instance both of these services will start up automatically
+Again, make sure you press enter on the last command to make sure that starts up successfully
+So that's the Apache web server and MariaDB that are both started and set to automatically start on operating system boot
+Again, i'll clear the screen and the next command that you'll run sets the root password for the MariaDB
+Database server. So this is mysql admin and you're setting the password for the root user and we're using the environment
+Variable that we created earlier with values taken from the parameter store
+So that sets the root password for the local database instance next
+We're going to download and install wordpress and we do that with the next block of commands
+So this first downloads the wordpress package
+It moves into the webroot directory it expands that package and then clears up after itself. So now we have wordpress installed
+Again, i'll clear the screen to make it easier to see this next set of commands replaces some placeholders in the
+WP-config.php file which is the configuration for wordpress and it replaces the placeholders with values
+Taken earlier from the parameter store
+So this is how we're configuring wordpress to be able to connect to the local MariaDB database server
+The next block of commands that we use will fix up the permissions of all of this directory structure
+So we don't have any problems accessing these files or any other security issues
+Again, make sure you press enter on the last command and then we're almost done
+The last step is to actually create the wordpress database
+Create the wordpress database user set the password and then grant permission on that database to that user
+So these are all steps that we need to do because we're using a self-managed MariaDB database instance
+So paste in this next block of commands and press enter
+So this has created a db.setup file with a number of sql commands
+And then it's used the mysql utility to run those commands which have created the database the database user and set permissions
+And then it's cleared up the temporary file after all of that's been done
+And at this point, that's all of the configuration needed. We've installed wordpress. We've installed MariaDB
+We've started them both up. We've corrected permissions and adjusted the configuration files
+Now you've had the ability to copy and paste these commands from the lesson instructions
+But imagine if you had to type them in all one by one
+It would take much longer and is also something that's prone to many errors
+That's something important to keep in mind as we move through this advanced demo
+So the next step is to move back to the ec2 console
+Make sure you've got the wordpress hyphen manual instance selected and then copy down the ip version 4
+Public ip address into your clipboard
+And make sure that you do copy the public ip address and don't click on the open address link because that uses
+HTTPS which we're not using so go ahead and open that in a new browser tab
+Now this is going to take you to the setup screen for wordpress. We're going to perform a quick setup
+So under site title, I want you to enter Categram
+Under username, I want you to enter admin. We'll keep things simple
+For password enter the animals for life password that we've been using in previous steps
+Under email go ahead and enter a fake email address and then click on install wordpress
+That'll perform the final installation steps at which point you can click on login
+You'll need to enter the admin username together with the password that you've just chosen and then click on login
+So this is the wordpress dashboard and this suggests that our wordpress application is working. Absolutely fine
+So to test it just go to posts. We're going to delete the default post of hello worlds
+Once done go ahead and click on add new you can just close down this welcome to block editor dialogue
+Under title use the best animal and then s because we might have more than one animal and then just put an exclamation mark
+At the end for effect click on the plus underneath that title select gallery
+Click on upload select some animal pictures to upload if you don't have any you can go to google images and download some
+Cat or dog or gerbil or guinea pig pictures anything that you want chickens snakes
+Just select a couple of animal pictures to upload and then click on open and then once they've uploaded you can go ahead
+And click on publish and then publish again
+And this will publish this post and what it's doing in order to publish it
+Is it's uploading the images into a local image store?
+That's called wp hyphen content and in addition to that
+It's storing the metadata for this post into the local maria db database
+So there are two different places that data is stored the local content store as well as the database
+So keep that in mind as we move on throughout this lesson at this point click on view post
+Just verify the post loads it does so that means everything's working as expected
+Now the configuration that you've just implemented has a number of important limitations
+The first is that the application and database have been built manually which takes time and doesn't allow automation
+It's been slow and annoying and that's very much the intention
+Additionally, the database and the application are on the same instance. Neither of them can scale without the other
+The database of the application is stored on an ec2 instance and that means that scaling in or out
+Risks data in this database
+The application media so the content is stored also
+Local to the instance in a folder called wp hyphen content and this means again any scaling events in or out
+Risks this media
+Additionally customer connections are directly to an instance
+Which prevents us from doing any form of scaling automatic healing or any health checks?
+One final part about wordpress that isn't commonly known is the ip address of the instance is actually hard coded
+into the database
+Now where this starts to exhibit problems is when running inside aws because ec2 instances don't have static ip addresses
+If we go back to the ec2 console right click on this instance and then stop the instance
+Remember a stop and start of an instance force the change of the public ip address of the instance
+So restarting it isn't enough. You need to stop and then start
+Watch what happens when the instance fully moves into a stopped state
+First it loses this public ip address and it moves into the stop state if I right click and then start
+That will take a few moments
+But what will happen is once it's fully started it will have a different ip version for public address
+So now if I copy that ip address into my clipboard move back to the tab where the website was previously open
+And then open this new ip address in a different browser tab and note how it doesn't load even though the ip address is correct
+It's not loading our wordpress website
+The reason for that is the application is hard coded with the ip address that was used to install
+WordPress and so what it's attempting to do now is reference the old ip address
+It's trying to contact the previous ec2 instance
+Now this is crucial because it prevents us from scaling the application
+If we create new ec2 instances, they'll all point back at this instance
+Even if we fix the database and content issues
+We need to resolve the ability of wordpress to scale and don't worry. We'll look at that later in this demo series
+For now, that's everything you needed to do in stage one of this advanced demo
+You've manually created a wordpress application with the application and database running on the same instance
+In stage two, you're going to automate this process
+So go ahead complete this part of the demo series and when you're ready
+I look forward to you joining me in stage two

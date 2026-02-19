@@ -1,0 +1,287 @@
+Welcome to this demo lesson where you're going to migrate
+from the monolithic architecture on the left of your screen
+towards a tiered architecture on the right. Essentially you're going to split
+the WordPress application architecture. You're going to move the database
+from being on the same server as the application to being on a different
+server
+and this will form step one of moving this architecture
+from being a monolith through to being a fully elastic
+architecture. Now this is the first stage of many
+but it is a necessary one. Now in order to perform this demonstration you're
+going to need
+some infrastructure. Before we apply the infrastructure just make sure that
+you're logged in
+to the general AWS account, so the management account of the organization
+and as always you need to have the Northern Virginia
+region selected. Now once you've got both of those set there's a one
+click deployment link attached to this lesson so go ahead
+and click on that link. What this is going to do is deploy
+the animals for life base infrastructure. It's going to deploy
+the monolithic WordPress application instance
+and it's also going to deploy a separate MariaDB
+database instance that you're going to use as part of the migration.
+Now everything set, the stack name should be set to a suitable default
+all you need to do is to scroll all the way down to the bottom,
+check this capabilities box and click on create stack.
+Now also attached to this lesson is a lesson commands document which contains
+all the commands you'll be using throughout this demo.
+So go ahead and open that in a new tab, you'll be referencing it constantly
+as you're making the adjustments to the WordPress architecture.
+Now we're going to need this CloudFormation stack to be fully complete
+before we can continue so go ahead and pause the video and resume
+once the CloudFormation stack moves into a create complete state.
+So now the stack's moved into a create complete state
+we're good to continue. Now this has created the base
+animals for life infrastructure which includes
+a number of EC2 instances so let's take a look at those. Let's click
+on services and then locate and open EC2
+in a brand new tab. Once you're at the EC2 console if you do see any dialogues
+around user interface updates then just go ahead
+and close those down and then click on instances running.
+Once you're here you'll see two EC2 instances
+one will be called A4L-WordPress
+and this is the monolith so this is the EC2 instance which contains
+the WordPress application and the built-in database
+so this is the WordPress installation that we're going to migrate
+from and then this instance A4L-DB-WordPress
+this contains a standalone MariaDB
+installation so we're going to migrate
+the database for WordPress from this instance
+onto the DB instance and this will create
+a tiered application architecture rather than the monolith
+which we currently have. So step number one is to perform
+the WordPress installation so to do that I want you to go ahead
+and copy the public IP version 4 address
+of the WordPress EC2 instance into your clipboard
+and then open it in a new tab. Now be careful not to use the
+open address link that will use HTTPS which we're not currently using
+so copy the IP address into your clipboard and open that in a new tab
+now when you do that you'll see a familiar WordPress installation dialogue
+we're going to create a simple blog for site title
+go ahead and call it the best cats for username
+pick admin and then for the password instead of using the randomly selected
+one
+go ahead and use this same complex password
+that we've used for the CloudFormation template so this is
+animals for life but with number substitution
+so if you go back to your CloudFormation tab and go to the parameters tab
+this is the same password that we use for the DB password and the DB root password
+now of course in production this is incredibly bad practice
+we're just doing it in this demo to keep things simple and avoid
+any mistakes so back to the WordPress installation screen
+site title the best cats username admin
+this for the password and then just go ahead and type a fake
+email so I don't want to use my real email for this I'm going to type test
+at test.com you can do the same and then go ahead and click
+on install WordPress so this is installed the WordPress application and
+it's using
+the Maria DB server that's on the same
+EC2 instance so part of the same monolith
+so we're going to login we'll need to type admin
+and then use the animals for life strong password and click on login
+and once we logged in we're going to create a simple blog post
+so click on posts we're going to select the existing hello world post
+select trash this time then click on add new
+then we're going to add a new post we can close down this
+introduction dialogue and for title go ahead and type
+the best cats ever and then some exclamation points
+next click on this plus sign and we're going to add a gallery
+now at this point you're going to need some images to
+upload to this blog post I've attached an images link to this lesson so if you go
+ahead and click that link it will download a zip file
+if you extract that zip file it's going to contain
+four image files all four of my cats
+so at this point once you've downloaded and extracted that file
+go ahead and click on upload locate those images there should be four
+select them all and click on open that will add these images to this blog post
+and once you've added them all you can go ahead and click on publish
+and then publish again and this will publish this blog post
+so it will add data to the database that's running
+on the monolithic application instance as well as store these
+images on the local instance file system
+now making a point of mentioning that these images are stored
+on the file system because as you'll see later in the course
+this is one of the things that we need to migrate
+when we're moving to a fully elastic architecture
+we can't have images stored on the instances themselves we need to move
+that to a shared file system
+for now though we're focusing on the database
+so at this point we have the working blog the images for this blog
+are stored on the local file system of A4L-wordpress
+and the data for that blog post is stored on the MariaDB database that's
+also running on this EC2 instance
+so the next step of this demo lesson is that you're going to migrate
+the data from A4L-wordpress
+onto A4L-DB-wordpress
+and this is an isolated MariaDB
+instance this is dedicated for the database
+so to do this migration select
+A4L-wordpress right click
+we're going to connect to this instance we'll be using
+EC2 instance connect so just make sure that the username is set to
+EC2-user and then click on connect
+now this is where you're going to be using the commands that are stored
+within the lesson commands document
+so you need to make sure that you have this ready to reference
+because it's far easier to copy and paste these commands and then adjust
+any placeholders rather than type them out manually because that's prone
+to errors the first step is to get the data from the database that's running
+on this monolithic application instance and store it
+in a file on disk so that's the first thing we need to do
+a backup of the database into a .sql file
+now to do that we use this command so it's a utility
+called mysqldump it uses the hyphen
+u to specify the user that we're going to be using to connect
+to the database then we use hyphen p to specify
+that we want to provide a password and we could
+either provide the password on the command line or we could have it prompt us
+now if we supply the password with no spaces next to this hyphen p
+then it will accept it as input on this command
+if we don't specify anything so there's a space here then it's going to ask us
+for the password the next thing we specify is the database name that we
+want to do the dump of
+in this case it's a4lwordpress which is the database
+for the animals for life WordPress instance now if we just run this command
+on its own it would
+output the dump so all of the data in the database to standard
+output which in this case is our screen we don't want it to do that we want it
+to store
+the results in a file called a4lwordpress.sql
+and so we use this symbol which means that it's going to take the
+output of this component of the command and it's going to redirect it
+into this file so let's go ahead and run this command
+and it's going to prompt us for the password for this database
+now to get that go back to cloud formation make sure parameters
+are selected and it's this password that we need
+which is the db password so copy that into your clipboard
+go back to the instance paste that in
+press enter and that will output all the data in the database
+to this file now you won't see any indication of success or failure
+but if you do an ls space hyphen la
+and press enter one of the files that you'll see is
+a4lwordpress.sql so now we have a copy of the WordPress database containing
+our blog post the next thing we need to do is to take
+this file this backup of the database and inject it
+into the new database that we want to use
+so the dedicated MariaDB EC2 instance
+and to do that we're going to use this command so this command has two
+components
+the first component is this which connects to the MariaDB database instance
+the second component is this which takes the backup
+that we've just made and it feeds it in to this command
+so this backup contains all the necessary definitions
+to create a new database and inject the data required
+this component to the command just allows us to connect to this new
+dedicated MariaDB instance
+now there are some placeholders that we need to change the database name
+that we're going to use is the same so a4lwordpress
+we're still going to want to be prompted for a password so hyphen p
+is what we use this time though we're going to connect
+using a user called a4lwordpress so we're not using the root user
+we're going to connect to the separate MariaDB database instance
+using a user a4lwordpress
+the only thing that we need to change is that we need to connect
+to a non local host so when we use the mysqldump command
+we didn't specify a host to connect to and this defaulted
+to local host so the current machine in the case of this command we're operating
+with a separate server this dedicated EC2 instance
+which is running the MariaDB database server so
+a4l-db-wordpress
+we need to connect to this so what we'll need to connect to this
+is the private IP version 4 address
+of this separate database instance so select it
+look for private IP version 4 addresses
+and then click on the icon next to this to copy the private
+IP version 4 address of this separate database server
+into your clipboard then return to the application
+instance and we need to replace the placeholder here
+with that value so make sure that you're one space
+after the end of this placeholder and just delete this
+leave a space between hyphen H and where the cursor is
+and then paste in that IP address so this is going to connect to the separate
+EC2 instance using its private IP it's going to use the
+a4l-wordpress user it will prompt us for a password
+it will perform the operation on the a4l-wordpress database
+and it's going to use the contents of this backup file
+to perform those tasks so go ahead and press enter
+and you'll be prompted for a password now again it's the same password
+this has all been set up as part of the CloudFormation one-click deployment
+this lesson is about the migration process not setting up
+a database server so I've automated this component
+of the infrastructure so copy the DB password
+into your clipboard go back to the instance paste it in
+and press enter so now we've uploaded our WordPress
+application database into this separate
+MariaDB database server the next step is to configure WordPress to point
+at this new database server so to do that
+cd forward slash var
+forward slash www forward slash html
+and press enter and then we're going to run a sudo
+space nano which is a text editor
+space wp-config.php
+and this is the WordPress configuration file so press enter
+now what we're looking for if we scroll down is we're looking for the line
+which says define and then a space
+and then db host so this is the database host
+that WordPress attempts to connect to and currently
+it's set to local host which means it will use the database
+on the same ec2 instance as the application
+we're going to delete this local host so delete
+until we have two single quotes and then make sure that you still have
+the private ip version 4 address of this
+separate database instance in your clipboard
+if you don't just go ahead and copy it again from the ec2 console
+and then paste that in place of local host
+so now you should see db underscore host and this now represents this private ip
+address and now the private ip address that you
+should use here will be different you need to use your private ip address
+of your a4l-db-wordpress ec2 instance so now that you've updated this
+configuration file press ctrl o and enter to save
+and then ctrl x to exit out of editing this file
+now this now means that the WordPress instance
+is going to be communicating with the separate
+MariaDB database instance let's verify that let's go back to the tab that we
+have to our WordPress application and let's just go ahead and do a
+refresh if everything's working as expected
+we should see that the blog reloads successfully
+now this means that this blog is now pointing at this separate MariaDB
+database instance to be doubly sure of this though
+let's go back to the WordPress instance and let's shut down
+the MariaDB database server and we do that using this command
+so sudo service MariaDB and then stop
+so type or copy and paste that command in and press enter
+and that's going to stop the MariaDB database service
+which is running on a4l-wordpress so now the only MariaDB database that we have
+running is on the a4l-db-wordpress ec2 instance
+now we can go back to the WordPress tab and hit refresh
+and assuming it loads in as it does in my case
+this now confirms that WordPress is communicating
+with this dedicated MariaDB ec2 instance
+now the reason why I wanted to step you through all of these tasks
+in this demo lesson is the time a firm believer
+that in order to understand best practice architecture
+you need to understand bad architecture and as I mentioned in the theory lesson
+there is almost no justification for running your own
+self-managed database server on an ec2 instance
+in almost all situations it's preferable to use the rds service but I need you to
+understand exactly how the architecture works
+when you're self-managing a database and how to migrate from a monolithic
+all-in-one architecture through to having a separate
+self-managed database in the demo lesson that's coming up
+next in the course you're going to migrate from this
+through to an rds instance so that's step two
+but at this point you've done everything that I wanted you to do
+in this demo lesson you've implemented the architecture
+that's on screen now on the right all we need to do
+is to tidy up all of the infrastructure that we've used
+within this lesson so to do that it's nice and easy
+just go back to the cloud formation console
+make sure that you have the monolith to ec2
+db stack selected click on the delete button
+and then confirm that deletion and that stack deleting will clean up
+all of the infrastructure that we've used throughout this demo lesson
+and it will return the account into the same state as it was at the start of the
+lesson at this point you've completed all of
+the tasks that I want you to do so I hope you've enjoyed this demo lesson
+go ahead and complete this video and when you're ready I'll look forward to
+you joining me in the next

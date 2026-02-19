@@ -1,0 +1,76 @@
+Welcome back and in this lesson I want to talk about data security within the
+RDS product. I want to focus on four different things. Authentication, so how
+users can log into RDS. Authorization, how access is controlled. Encryption in
+transit between clients and RDS. And then encryption at rest, so how data is
+protected when it's written to disk. Now we've got a lot to cover so let's jump
+in and get started. With all of the different engines within RDS you can use
+encryption in transit which means data between the client and the RDS instance
+is encrypted via SSL or TLS and this can actually be set to mandatory on a per
+user basis. Encryption at rest is supported in a few different ways
+depending on the database engine. By default it's supported using KMS and EBS
+encryption so this is handled by the RDS host and the underlying EBS based
+storage. As far as the RDS database engine knows it's just writing
+unencrypted data to storage. The data is encrypted by the host that the RDS
+instance is running on. KMS is used and so you select a customer master key or
+CMK to use, either a customer managed CMK or an AWS managed CMK and then this
+CMK is used to generate data encryption keys or DEKs which are used for the
+actual encryption operations. Now when using this type of encryption then the
+storage, the logs, the snapshots and any replicas are all encrypted using the
+same customer master key and importantly encryption cannot be removed
+once it's added. Now these are features supported as standard with RDS. In
+addition to KMS EBS based encryption Microsoft SQL and Oracle support TDE.
+Now TDE stands for transparent data encryption and this is encryption which
+is supported and handled within the database engine. So data is encrypted
+and decrypted within the database engine itself not by the host that the
+instance is running on and this means that there's less trust. It means that
+you know data is secure from the moment it's written out to disk by the
+database engine. In addition to this RDS Oracle supports TDE using cloud HSM and
+with this architecture the encryption process is even more secure with even
+stronger key controls because cloud HSM is managed by you with no key exposure
+to AWS it means that you can implement encryption where there is no trust chain
+which involves AWS and for many demanding regulatory situations this is
+really valuable. Visually this is how the encryption architecture looks.
+Architecturally let's say that we have a VPC and inside this a few RDS instances
+running on a pair of underlying hosts and these instances use EBS for
+underlying storage. Now we'll start off with Oracle on the left which uses TDE
+and so cloud HSM is used for key services. Because TDE is native and
+handled by the database engine the data is encrypted from the engine all the way
+through to the storage with AWS having no exposure outside of the RDS instance to
+the encryption keys which are used. With KMS based encryption KMS generates and
+allows usage of CMKs which themselves can be used to generate data encryption
+keys known as DEKs. These data encryption keys are loaded onto the RDS hosts as
+needed and are used by the host to perform the encryption or decryption
+operations. This means the database engine doesn't need to natively support
+encryption or decryption it has no encryption awareness. From its
+perspective it's writing data as normal and it's encrypted by the host before
+sending it on to EBS in its final encrypted format. Data that's transferred
+between replicas as with MySQL in this example is also encrypted as are any
+snapshots of the RDS EBS volumes and these use the same encryption key. So
+that's at rest encryption and there's one more thing that I want to cover
+before we finish this lesson and that's IAM authentication for RDS. Normally
+logins to RDS are controlled using local database users. These have their own
+usernames and passwords they're not IAM users and are outside of the control of
+AWS. One gets created when you provision an RDS instance but that's it. Now you
+can configure RDS to allow IAM user authentication against a database and
+this is how. We start with an RDS instance on which we create a local
+database user account configured to allow authentication using an AWS
+authentication token. How this works is that we have IAM users and roles in this
+case an instance role and attached to those roles and users are policies. These
+policies contain a mapping between that IAM entity so the user or role and a
+local RDS database user. This allows those identities to run a generate DB
+auth token operation which works with RDS and IAM and based on the policies
+attached to the IAM identities it generates a token with a 15 minute
+validity. This token can then be used to log in to the database user within RDS
+without requiring a password. So this is really important to understand by
+associating a policy with an IAM user or an IAM role. It allows either of those
+two identities to generate an authentication token which can be used
+to log into RDS instead of a password. Now one really important thing to
+understand going into the exam is that this is only authentication. This is not
+authorization. The permissions over the RDS database inside the instance are
+still controlled by the permissions on the local database user so
+authorization is still handled internally. This process is only for
+authentication which involves IAM and only if you specifically enable it on
+the RDS instance. Now that's everything I wanted to cover about encryption in
+transit, encryption at rest as well as RDS IAM based authentication. So thanks
+for watching go ahead and complete this video and when you're ready I'll look
+forward to you joining me in the next.

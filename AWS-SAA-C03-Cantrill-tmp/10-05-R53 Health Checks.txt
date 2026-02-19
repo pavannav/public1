@@ -1,0 +1,125 @@
+Welcome back. In this video I want to cover the health check feature within Route 53.
+Health checks support many of the advanced architectures of Route 53 and so it's essential
+that you understand how they work as an architect, developer or engineer. So let's jump in and
+get started.
+First, let's quickly step through some high level concepts of health checks. Health checks
+from but are used by records inside Route 53. You don't create the checks within records.
+Health checks exist separately. You configure them separately. They evaluate something's
+health and they can be used by records within Route 53.
+Health checks are performed by a fleet of health checkers which are distributed globally.
+This means that if you're checking the health of systems which are hosted on the public
+internet, then you need to allow these checks to occur from the health checkers. If you
+think they're bots or exploit attempts and block them, then it will cause false alarms.
+Health checks, as I just indicated, they're not just limited to just AWS targets. You
+can check anything which is accessible over the public internet. It just needs an IP address.
+The checks occur every 30 seconds by default or this can be increased to every 10 seconds
+at an additional cost. The checks can be TCP checks where Route 53 tries to establish a
+TCP connection with the endpoint and this needs to be successful within 10 seconds.
+You can have HTTP checks where Route 53 must be able to establish a TCP connection with
+the endpoint within 4 seconds and in addition the endpoint must respond with a HTTP status
+code in the 200 range or 300 range within 2 seconds after connecting. And this is more
+accurate for web applications than a simple TCP check.
+And finally, with HTTP and HTTPS checks, you can also perform string matching. Route 53
+must be able to establish a TCP connection with the endpoint within 4 seconds and the
+endpoint must respond with a HTTP status code in the 200 or 300 range within 2 seconds and
+Route 53 health checker, when it receives the status code, it must also receive the
+response body from the endpoint within the next 2 seconds. Route 53 searches the response
+body for the string that you specify. The string must appear entirely in the first 5,120
+bytes of the response body or the endpoint fails the health check. This is the most accurate
+because not only do you check that the application is responding using HTTP or HTTPS but you
+can also check the content of that response versus what the application should do in normal
+circumstances. Based on these health checks, an endpoint is either healthy or unhealthy.
+It moves between those states based on its health based on the checks conducted. Now
+lastly the checks themselves can be one of three types. You can have endpoint checks
+and these are checks which assess the health of an actual endpoint that you specify. You
+can use CloudWatch alarm checks which react to CloudWatch alarms which can be configured
+separately and can involve some detailed InOS or in-app tests if you use the CloudWatch
+agent, which we cover elsewhere in the course. Finally, checks can be what's known as calculated
+checks, so checks of other checks, so you can create health checks which check application
+wide health with lots of individual components. Now you're going to get the opportunity to
+actually implement a health check in a demo lesson which is coming up very shortly in
+this section of the course. But what I want to do before that is to just give you an overview
+of exactly how the console looks when you're creating a health check. So let's move across
+to the console. Okay, so we're at the AWS console, logged in to the general account
+in the Northern Virginia region. So to create a health check we need to move to the Route
+53 console, so I'm going to go ahead and do that. Remember how earlier in the theory component
+of this lesson I mentioned how health checks are created externally from records. So rather
+than going into a hosted zone, selecting a record and configuring a health check there,
+to create a health check we go to the menu on the left and click on health checks. Then
+we'll click on create health check and this is where we enter the information required
+to create the health check. First we need to give it a name, so let's just say that
+we use the example of test health check. I mentioned that there are three different types
+of health checks. We've got an endpoint health check and this checks the health of the particular
+endpoint. We can use status of other health checks, so this is a calculated health check
+and as I mentioned this allows you to create a health check which monitors the application
+as a whole and involves the health status of individual application components and then
+finally we can use the status of a cloud watch alarm to form the basis of this health check.
+If we select endpoint for now, then you're able to pick either IP address or domain name.
+So you can specify the domain name of an application endpoint or you can use IP address.
+If you pick domain name then what this configures is that all of the Route 53 health checkers
+will resolve this domain name first and then perform a health check on the resulting IP
+address. Now in either case you've got the option of either picking TCP, which does a
+simple TCP check, in which case you need to specify either the IP version 4 or IP version
+6 address together with a port number. If you choose to use the more extensive HTTP
+or HTTPS health check then you're asked to specify the same IP address and port number,
+so that will be used to establish the TCP connection. You can also specify the host
+name and if you specify that it will pass this value to the endpoint as a host header,
+so if you've got lots of different virtual hosts configured then this is how you can
+specify a particular host that the website should deliver. You're also able, because
+this is HTTP, you can specify a path to use for this health check. You can either specify
+the route path or you can specify a particular path to check. If you change this to HTTPS
+then all of this information is the same, only this time it will use secure HTTP rather
+than normal HTTP. Now if we scroll down and expand advanced configuration it's here where
+you can select the request interval. So the default is every 30 seconds or you can specify
+fast and have the checks occur every 10 seconds. Now this is a check every 10 seconds from
+every health checker involved within this health check. So the actual frequency of the
+health checks occurring on the endpoint will be much more frequent. This is one check every
+10 seconds from every health checker. You can specify the failure threshold, so this is the
+number of consecutive health checks that an endpoint must pass or fail for route 53 to change
+the current status. So if you want to allocate a buffer and allow for the opportunity of the odd
+failed check not to influence the health state then you can specify a suitable value in this box.
+It's here where you can specify a simple check so HTTP or HTTPS or you can elect to use string
+matching to do more rich checks of application health. So if you know that your application
+should deliver a certain string and the request body then you can specify that here. Now you can
+also configure a number of advanced options, one of them is latency graph so you can show the latency
+of the checks against this endpoint. You can invert the health check status so if the health
+check of an application is unhealthy you can invert it to healthy and vice versa. So this is
+a fairly situational option that I haven't found much use for. You also have the option of disabling
+the health check, this might be useful if you're performing temporary maintenance on an application
+and if you check this box then even if the application endpoint reports as unhealthy it's
+considered healthy. You also get the option of specifying the health checker regions, you can
+use the recommended suggestion and the health checkers will come from these locations or you
+can select customize and pick the particular regions that you want to use. In most cases you
+would use the recommended options. Now if we just go ahead and enter some sample values here, so I'm
+going to use 1.1.1.1, I'm going to leave the host name blank, I'm going to set the port number to
+80 and then I'll scroll down and just enter a search string, again we're not going to create this
+so I'll just enter a placeholder, click on next and it's here where you can configure what happens
+when the health check fails. Now this is completely optional, we can use health checks within resource
+records only, we don't have to configure any notification but if we do want to configure a
+notification then we can create an alarm and we can send this to either an existing or new SNS
+topic and this is a method of how we can integrate this with other systems so we can have other AWS
+services configured to respond to notifications on this topic or we could integrate external
+systems so that when a health check fails external action is taken. But this is what I wanted to show
+you, I just wanted to give you an overview of how it looks creating a health check within the console
+UI. Now don't worry you're actually going to be doing this in a demo lesson which is coming up
+elsewhere in this section but I wanted to give you that initial exposure to how the console looks
+when creating a health check. At this point let's go ahead and finish up the theory component of this
+lesson by returning to the architecture. Now you've seen how a health check is created,
+architecturally health checks look something like this. Let's assume that somewhere near the UK we
+have an application, Categram, and we point a Route 53 record at this application so let's
+assume that this is Categram.io. What we can do is to associate a health check with this resource
+record and doing so means that our application will be health checked by a globally distributed
+set of health checkers. So each of these health checkers performs a periodic check of our
+application. Based on this check they report the resource as healthy or unhealthy. If more than
+18% of the health checkers report as healthy then the health check overall is healthy otherwise it's
+reported as unhealthy and in most cases records which are unhealthy are not returned in response
+to queries. Now you're going to see throughout this section of the course and the wider course
+itself how health checks can be used to influence how DNS responds to queries and how applications
+can react to component failure. So Route 53 is an essential design and operational tool that you
+can use to influence how resolution requests occur and how they're routed through to your various
+different application components and so understanding health checks is essential to be able to design
+Route 53 infrastructure, integrate this with your applications and then manage it day-to-day as an
+operational engineer. So it's really important that you understand this topic end-to-end no
+matter which stream of the AWS certifications that you're currently studying for. Now that's
+everything that I wanted to cover in this video. Go ahead and complete the video and when you're
+ready I'll look forward to you joining me in the next.

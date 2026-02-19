@@ -1,0 +1,186 @@
+Welcome back, and in part three of this series, I want to finish off and talk about some advanced elements of lambda.
+Now, we've got a lot to cover, so let's jump in and get started.
+First, I want to talk about the ways a lambda function can be invoked.
+We've got three different methods for invoking a lambda function.
+We've got synchronous invocation, asynchronous invocation, and invocation using event source mappings.
+And I want to step through each of them visually so that you can understand in detail how they work, because this is essential for the exam.
+So let's start off with synchronous invocation of lambda.
+With this model, you might start off with a command line or API directly invoking a lambda function.
+The lambda function is provided with some data, and it executes that data.
+Now, all this time, the command line or API is waiting for a response because it's synchronous.
+It needs to wait here until the lambda function completes its execution.
+So the lambda function finishes and it returns that data, whether it's a success or a failure.
+Now, synchronous invocation also happens if lambda is used indirectly via the API gateway, which is the use case for many serverless architectures.
+So we might have some clients using a web application via API gateway, and this proxies through to one or more lambda functions.
+Again, the lambda function performs some processing, all the while the client is waiting for a response within their web application.
+And then when the lambda function responds, this goes back via the API gateway and back through to the client.
+The common factors with both of these approaches is that the client sends a request which invokes lambda,
+and the result, be it a success or failure, is returned during that initial request.
+The client is waiting for any data to be returned.
+Another implication of a synchronous invocation is that any errors or retries have to be handled within the client.
+The lambda function runs once, it returns something, and then it stops.
+If there's a problem or data isn't processed correctly, then the client needs to rerun that request, and this happens at the client side.
+So synchronous invocation is generally used when it's a human, directly or indirectly, invoking a lambda function.
+Next, let's look at asynchronous invocation.
+And this is typically used when AWS services invoke lambda functions on your behalf.
+Let's use an example, an S3 bucket with S3 events enabled.
+So we upload a new image of whiskers to this S3 bucket.
+This causes an event to be generated and sent through to lambda.
+And this is an asynchronous invocation, so S3 isn't waiting around for any kind of response.
+It basically just forgets about it at this point.
+Once it's sent that event through to lambda, it doesn't continue waiting, it doesn't worry about this event at all.
+Now maybe as part of processing this image, it's generating a thumbnail, or maybe performing some kind of analysis,
+and storing that data into DynamoDB.
+But again, S3 isn't waiting around for any of this, it's asynchronous.
+Lambda is responsible for any reprocessing in the event that there's a failure,
+and this reprocessing value is configurable between 0 and 2 times.
+Now a key requirement for this is that the function code needs to be idempotent.
+And this is important, if you've never heard this term before, let me explain.
+Let's say that you had $10 in your bank account and I wanted to increase this value to $20.
+Now there are two ways that I could do this if I operated the bank.
+I could simply add $10 to your balance, increasing it from 10 to 20, or I could explicitly set the balance to 20.
+Now if I set the balance to 20 and this operation failed at some undetermined point in this process,
+then I could simply rerun the process, safe in the knowledge that even running it again on your balance
+would only, at worse, set the value to $20 again.
+This is known as an idempotent operation.
+You can run it as many times as you want and the outcome will be the same.
+Now if I performed the operation where I added $10 to your account and the operation failed,
+it could have failed before it added the $10 or after.
+If it failed after and I rerun the operation, well now you'd have $30.
+And this is an example of something which is not idempotent.
+When Lambda retries an operation, it doesn't really provide any other information.
+The function just reruns.
+So logically in this example, you would need to make sure that your function code isn't additive or subtractive.
+It just needs to perform its intended task.
+With this example, it needs to set your balance to $20.
+Generally when designing a Lambda function which is used in this way,
+the Lambda function needs to finish with a desired state.
+It needs to make something true.
+If you're using Lambda functions which are designed in a non-idempotent way,
+you can end up with some questionable results.
+Now Lambda can be configured to send any events which it can't process after those automatic retries
+to a dead letter queue which can be used for diagnostic processing.
+And a new feature of Lambda is the ability to create destinations.
+So events processed by Lambda functions can be delivered to another destination
+such as SQS, SNS, another Lambda function and even EventBridge.
+And separate destinations can be configured based on successful processing or failures.
+So this is asynchronous invocation.
+It's generally used by AWS services which are capable of generating events
+and sending those events to Lambda.
+It means that Lambda can automatically reprocess failed events
+and the original source of the event isn't waiting for processing to complete.
+But there is a third type of invocation.
+The last type of invocation is known as event source mapping
+and this is typically used on streams or queues which don't generate events.
+So things where some kind of polling is required.
+Let's look at an example.
+Let's say that we have a Kinesis data stream and into this stream
+a fleet of producer vans driving around scanning with LIDAR and imaging equipment
+are all producing data which is being put into a Kinesis stream.
+Now Kinesis is a stream-based product.
+Generally consumers can read from a stream but it doesn't generate events when data is added.
+So historically this wouldn't have been an ideal fit for Lambda
+which is an event-driven service.
+So what happens is that we have a hidden component called an event source mapping
+which is polling queues or streams looking for new data and getting back source batches.
+So batches of source data from this data source.
+Now these source batches are then broken up as required based on a batch size
+and sent into a Lambda function as event batches.
+Now a single Lambda function invocation could in theory receive hundreds of events in a batch.
+It depends on how long each event takes to process.
+Remember Lambda has a 15 minute timeout.
+So you need to carefully control this event batch size to ensure
+that the Lambda function doesn't terminate before completing this batch.
+Now there's one really important thing that you need to understand about event source mapping.
+With asynchronous invocations an event is delivered to Lambda from the source
+and Lambda doesn't need permissions to the source service unless it actually wants to read more data from that source.
+For example if an object is added to an S3 bucket then S3 generates and delivers an event
+which contains details of that event.
+So which object was uploaded and perhaps some other metadata.
+But unless you need to read additional data from S3 maybe to get the actual object
+well then the Lambda function doesn't need S3 permissions.
+With event source mapping invocation the source service isn't delivering an event.
+The event source mapping is reading from that source
+and so the event source mapping uses permissions from the Lambda execution role to access the source service.
+And this is really important to know because it does come up in the exam.
+So even if a Lambda function receives an event batch containing Kinesis data
+even though the Lambda function doesn't directly read from Kinesis
+the execution role needs Kinesis permissions because the event source mapping
+uses them on its behalf to retrieve that data.
+Now any batches which consistently fail can be sent to an SQS queue or an SNS topic
+for further processing or analysis.
+Now that's the third type of invocation this is event source mapping invocation
+and that's the method used when Lambda functions are processing SQS queues, Kinesis streams, DynamoDB streams
+and even Amazon managed streaming for Apache Kafka.
+And this last one is something that we won't be covering within the course
+but it's important to know all of the different types of products that use event source mapping based invocation.
+With that being said that's all of the three types of invocation I wanted to cover
+so let's move on to a different topic, this time Lambda versions.
+With Lambda functions it's possible to define specific versions of Lambda functions
+so you could have different versions of a given function
+for example version 1, version 2 and version 3.
+Now as it relates to Lambda a version of a function is actually the code plus the configuration of that Lambda function
+so the resources and any environment variables in addition to any other configuration information.
+Now when you publish a version that version is immutable, it never changes once it's published
+and it even has its own Amazon resource name
+so once you publish a version you can no longer change that version.
+There's also the concept of $latest and $latest points at the latest version of a Lambda function.
+Now this can obviously change as you publish later and later versions of the function
+so this is not immutable.
+You can also create aliases so for example dev, stage and prod
+and these can point at a particular version of a Lambda function
+and these can be changed so these aliases are not immutable.
+So generally with large scale deployments of Lambda you'd be producing Lambda function versions
+for all of the major changes and using aliases so that different components of your serverless application
+can point at those specific immutable version numbers so that's important to know for the exam.
+So the last thing I want to talk about is Lambda startup times
+and to understand that you need to understand how Lambda functions are actually executed.
+Lambda code runs inside a runtime environment and this is also referred to as an execution context.
+Think of this as a small container which is allocated an amount of resource which runs your Lambda code.
+When a Lambda function is first invoked, let's say by receiving an S3 event,
+this execution context needs to be created and configured and this takes time.
+First the environment itself is created and this requires physical hardware
+then any runtimes which are required are downloaded and installed, let's say this is for Python 3.8
+then the deployment package is downloaded and then installed and this takes time.
+Now this process is known as a cold start
+and all in this process can take hundreds of milliseconds or more
+which can be significant if a Lambda function is performing a task which touches a human who is expecting a response.
+Now if this is an S3 event then maybe this extra time isn't such a big deal
+but you need to be aware that this cold start occurs because an execution context is being created and configured
+any prerequisites are being downloaded and installed, the deployment package is being downloaded and installed
+and that's all before the function itself can execute.
+Now if the same Lambda function is invoked again without too much of a gap
+then it's possible that Lambda will use the same execution context
+and this is known as a warm start, it doesn't need to set up the environment or download the deployment package
+because all of that is already contained within the execution context
+this time the context just receives the event and immediately begins processing.
+A warm start means the code can be running within milliseconds because there's no lengthy build process
+a Lambda function which invokes again fairly soon after a cold start can reuse an execution context
+but if too long a time period goes between invocations then the context can be deleted which results in another cold start
+also one function invocation runs at a time per context
+so if you need 20 invocations of a function at once then this can result in 20 cold starts.
+Now you can make this process more efficient, you can actually use a feature known as provisioned concurrency
+where you can inform AWS in advance and execution context can be provisioned for you in advance for Lambda invocations
+you might use these when you know that you have periods of higher load on a serverless application
+or if you're preparing for a new production release of a serverless application and want to pre-create all of these execution environments.
+Now there are also other things that you can do to improve performance
+you can use the temp space to pre-download things within an execution context
+for example maybe you're using some animal images as part of your processing
+well if another function uses the same execution context then it too will have access to those same animal images
+without having to download them a second time.
+Now you do need to be careful because your functions need to be able to cope with the environment being new and clean every time
+they can never assume the presence of anything.
+From a code perspective you can create other things like database connections outside of the Lambda function handler code
+so when you create a Lambda function generally most things go within the Lambda function handler
+but if you create anything outside of the Lambda function handler then these will be made available for any future function invocations in the same context
+so anything that you define within a Lambda function handler is limited to that one specific invocation of that Lambda function
+but for anything which you anticipate there being a potential for reuse you can declare that outside of the Lambda function handler
+and in theory that will be available for any other invocations of the Lambda function which occur within that same execution context
+but again you need to make sure that your function doesn't require or expect that.
+Every single time a function invokes it should be absolutely fine with recreating everything.
+You should by default assume that execution contexts are stateless and any invocation of a Lambda function is going to be operating in a completely freshly created environment
+but if you want to be efficient your functions should also be able to reuse common aspects that persist through different function invocations.
+Now again these are all deep dive things that you need to be aware of for the exam.
+I've covered a lot of these elements across all three parts of this Lambda deep dive mini-series
+but at this point that's everything I wanted to cover in part three and this is the last part of this mini-series
+so thanks for watching go ahead and complete this video and when you're ready I look forward to you joining me in the next lesson.

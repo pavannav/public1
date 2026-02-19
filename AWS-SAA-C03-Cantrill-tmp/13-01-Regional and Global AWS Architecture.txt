@@ -1,0 +1,92 @@
+Welcome back. In this lesson, I want to talk about the regional and global AWS architecture.
+So let's jump in and get started.
+Now throughout this lesson, I want you to think about an application that you're familiar with, which is global.
+And for this example, I'll be talking about Netflix, because this is an application that most people have at least heard of.
+Now Netflix can be thought of as a global application, but it's also a collection of smaller regional applications which make up the Netflix global platform.
+So these are discrete blocks of infrastructure which operate independently and duplicated across different regions around the world.
+As a solutions architect, when we're designing solutions, I find that there are three main types of architectures.
+Small scale architectures which will only ever exist in one region or one country.
+Then we have systems which also exist in one region or country, but where there's a DR requirement, so if that region fails for some reason, then it fails over to a secondary region.
+And then lastly, we have systems that operate within multiple regions and need to operate through failure in one or more of those regions.
+Now depending on how you architect systems, there are a few major architectural components which will map onto AWS products and services.
+So at a global level, first we have global service location and discovery.
+So when you type netflix.com into your browser, what happens? How does your machine discover where to point at?
+Next we've got content delivery, so how does the content or data for an application get to users globally?
+Are their pockets of storage distributed globally or is it pulled from a central location?
+Lastly, we've got global health checks and failover, so detecting if infrastructure in one location is healthy or not and moving customers to another country as required.
+So these are the global components. Next we have regional components, starting with the regional entry point, and then we have regional scaling and regional resilience, and then the various application services and components.
+So as we go through the rest of the course, we're going to be looking at specific architectures, and as we do, I want you to think about them in terms of global and regional components.
+Which parts can be used for global resilience and which parts are local only?
+So let's take a look at this visually, starting with the global elements.
+So let's keep using Netflix as an example, and let's say that we have a group of users who are starting to settle down for the evening and want to watch the latest episode of Ozarks.
+So the Netflix client will use DNS for the initial service discovery. Netflix will have configured the DNS to point at one or more service endpoints.
+Let's keep things simple at this point and assume that there is a primary location for Netflix in a US region of AWS, maybe US East 1, and this will be used as the primary location.
+And if this fails, then Australia will be used as a secondary.
+Now another valid configuration would be to send customers to their nearest location, in this case sending our TV fans to Australia.
+But in this case, let's just assume we have a primary and a secondary region.
+So this is the DNS component of this architecture, and Route 53 is the implementation within AWS.
+Now because of its flexibility, it can be configured to work in any number of ways.
+The key thing for this global architecture though is that it has health checks, so it can determine if the US region is healthy and direct all sessions to the US while this is the case,
+or direct sessions to Australia if there are problems with the primary region.
+Now regardless of where infrastructure is located, a content delivery network can be used at the global level.
+This ensures that content is cached locally as close to customers as possible, and these cached locations are located globally, and they all pull content from the origin location as required.
+So just to pause here briefly, this is a global perspective.
+The function of the architecture at this level is to get customers through to a suitable infrastructure location,
+making sure any regional failures are isolated and sessions moved to alternative regions.
+It attempts to direct customers at a local region, at least if the business has multiple locations,
+and lastly it attempts to improve caching using a content delivery network such as CloudFront.
+If this part of our architecture works well, customers will be directed towards a region that has infrastructure for our application, and let's assume this region is one of the US ones.
+At this point the traffic is entering one specific region of the AWS infrastructure.
+Depending on the architecture, this might be entering into a VPC or using public space AWS services,
+but in either case now we're architecturally zoomed in, and so we have to think about this architecture now in a regional sense.
+The most effective way to think about systems architecture is a collection of regions making up a whole.
+If you think about AWS products and services, very few of them are actually global.
+Most of them run in a region, and many of those regions make up AWS.
+Now it's efficient to think in this way, and it makes designing a large platform much easier.
+For the remainder of this course we're going to be covering architecture in depth,
+so how things work, how things integrate, and what features products provide.
+Now the environments that you will design will generally have different tiers,
+and tiers in this context are high-level groupings of functionality or different zones of your application.
+Initially, communications from your customers will generally enter at the web tier.
+Generally this will be a regional-based AWS service, such as an application load balancer or API gateway,
+depending on the architecture that the application uses.
+The purpose of the web tier is to act as an entry point for your regional-based applications or application components.
+It abstracts your customers away from the underlying infrastructure.
+It means that the infrastructure behind it can scale or fail or change without impacting customers.
+Now the functionality provided to the customer via the web tier is provided by the compute tier,
+using services such as EC2, Lambda, or containers which use the Elastic Container Service.
+So in this example, the load balancer will use EC2 to provide compute services through to our customers.
+Now we'll talk throughout the course about the various different types of compute services,
+which you can and should use for a given situation.
+The compute tier, though, will consume storage services, another part of all AWS architectures,
+and this tier will use services such as EBS, which is the Elastic Block Store, EFS, which is the Elastic File System,
+and even S3 for things like media storage.
+You'll also find that many global architectures utilize CloudFront, the global content delivery network within AWS,
+and CloudFront is capable of using S3 as an origin for media.
+So Netflix might store movies and TV shows on S3, and these will be cached by CloudFront.
+Now all of these tiers are separate components of an application and can consume services from each other,
+and so CloudFront can directly access S3, in this case, to fetch content for delivery to a global audience.
+Now in addition to file storage, most environments require data storage,
+and within AWS this is delivered using products like RDS, Aurora, DynamoDB, and Redshift for data warehousing.
+But in order to improve performance, most applications don't directly access the database.
+Instead, they go via a caching layer.
+So products like Elastic Cache for general caching, or DynamoDB Accelerator, known as DAX, when using DynamoDB.
+This way, reads to the database can be minimized.
+Applications will instead consult the cache first, and only if the data isn't present in the cache
+will the database be consulted and the contents of the cache updated.
+Now caching is generally in-memory, so it's cheap and fast.
+Databases tend to be expensive based on the volume of data required versus cache and normal data storage.
+So where possible, you need to offload reads from the database into the caching layer to improve performance and reduce costs.
+Now lastly, AWS have a suite of products designed specifically to provide application services.
+So things like Kinesis, Step Functions, SQS, and SNS, all of which provide some type of functionality to applications.
+Either simple functionality like email or notifications, or functionality which can change an application's architecture,
+such as when you decouple components using queues.
+Now as I mentioned at the start of this lesson, you're going to be learning about all of these components
+and how you can use them together to build platforms.
+For now, just think of this as an introduction lesson.
+I want you to get used to thinking of architectures from a global and regional perspective,
+as well as understanding that application architecture is generally built using components from all of these different tiers.
+So the web tier, the compute tier, caching, storage, the database tier, and application services.
+Now at this point, that's all of the theory that I wanted to go through.
+Remember, this is just an introduction lesson.
+So go ahead, finish this lesson, and when you're ready, I'll look forward to you joining me in the next.

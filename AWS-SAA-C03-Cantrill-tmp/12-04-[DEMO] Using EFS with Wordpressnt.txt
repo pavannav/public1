@@ -1,0 +1,166 @@
+Welcome back, and in this demo lesson you're going to experience the difference that EFS can make to our WordPress application architecture.
+Now this demo lesson has three main components. First, we're going to deploy some infrastructure automatically using the one-click deployments.
+Then I'm going to step through the CloudFormation template and explain exactly how this architecture is built.
+And then right at the end, you're going to have the opportunity to see exactly what benefits EFS provides.
+So to get started, make sure that you're currently logged in to the general AWS account, so the management account of the organization.
+And as always, you need to have the Northern Virginia region selected.
+Now this lesson actually has two one-click deployments.
+The first deploys the base infrastructure and the second deploys a WordPress EC2 instance which has been enhanced to utilize EFS.
+So you need to apply both of these templates in order and wait for the first one to finish before applying the second.
+So we're going to start with the base VPC RDS EFS template first. So this deploys the base VPC, the Elastic File System and an RDS instance.
+Now everything should be pre-populated. The stack should be called EFS demo-VPC-RDS-EFS.
+Just scroll all the way down to the bottom, check the capabilities box and click on create stack.
+While that's going, let's switch over to the CloudFormation template and just step through exactly what it does.
+So this is the template that you're deploying using the one-click deployment.
+It's deploying the base Animals for Life VPC, an EFS file system as well as mount targets and an Aurora database cluster.
+So if we just scroll down, we can see all of the VPC and networking resources used by the base Animals for Life VPC.
+Continue scrolling down, we'll see the subnets that this VPC contains, IP version 6 information.
+We'll see an RDS security group, a database subnet group. We've got the database instance.
+Then we've got an instance security group which controls access to all the resources in the VPC that we use that security group on.
+Then we have a rule which allows anything with that security group attached to it to communicate with anything else.
+We have a role that the WordPress instance will use and note that this includes permissions on the Elastic File System.
+Then we have the instance profile that that instance uses.
+Then we have the CloudWatch agent configuration and this is all automated.
+And if we just continue scrolling down, here we can see the Elastic File System.
+So we create an EFS file system and then we create a file system mount target in each application subnet.
+So we've got mount target 0, which is in application subnet A, which is in US East 1A.
+We've got mount target 1, which is in application subnet B, which logically is in US East 1B.
+And then finally target 2, which is in subnet app C, which is in availability zone 1C.
+So we create the VPC, the database and the Elastic File System in this first one-click deployment.
+Now we need this to be in a create complete state before we continue with the demo lessons.
+Go ahead and pause the video, wait for this to move into a create complete status and then we can use the second one-click deployment.
+Okay, that stack's now finished creating, which means we can move on to the second one-click deployment.
+Now there are actually two WordPress one-click deployments which are attached to this lesson.
+We're going to use them both, but for now I want you to use the WordPress one one-click deployment.
+So go ahead and click on that link. This will create a stack called EFS demo-wordpress1.
+Everything should be pre-populated. Just go ahead and click on create stack.
+Now this is going to use the infrastructure provided by that first one-click deployment.
+So it's going to use EFS demo-VPC-RDS-EFS.
+And let's quickly step through exactly what this is doing while it's provisioning.
+So this is the CloudFormation template that is being used and we can skip past most of this.
+What I want to focus on is the resource that's being created. So that's WordPress EC2.
+So this is using cross-stack references to import a lot of the resources created in that first CloudFormation stack.
+So it's importing the instance profile to use. It's importing the WebA subnet.
+So it knows where to place this instance and it's importing the instance security group that's created in that previous CloudFormation stack.
+Now in addition to this, if we look through the user data for this WordPress instance,
+one major difference is that it's mounting the EFS file system into this folder.
+So forward slash var, forward slash www, forward slash HTML, forward slash wp-content.
+Now if you remember from earlier demo lessons, this is the folder which WordPress uses to store its media.
+So now instead of this folder being on the local EC2 file system, this is now the EFS file system.
+The EFS file system is mapped into this folder on this WordPress instance.
+Other than that, everything else is the same.
+WordPress is installed. It's configured to use the RDS instance.
+The Cowsay custom login banner is displayed.
+It automatically configures the CloudWatch agent and then it signals CloudFormation that it's finished provisioning this instance.
+Now what we'll end up with when this stack has finished creating is an EC2 instance
+which will use the services provided by this original stack.
+So let's just refresh this. It's still in progress, so go ahead and pause the video
+and wait for this stack to move into a create complete state and then we're good to continue.
+So this stack's now finished creating and if we move across to the EC2 console,
+so click on services, locate EC2, right click and open that in a new tab,
+then click on instances running and you'll see that we have this A4L WordPress instance.
+Now if we select that, copy the IP address into your clipboard and then open that in a new tab,
+we need to perform the WordPress installation.
+So go ahead and enter the site title, the best cats, and add some exclamation points.
+For username we need to use admin, then for the password go back to the CloudFormation stack
+and click on parameters and we're going to use the DB password, so copy that into your clipboard,
+then go back, paste it into the password box and then put test at test.com for the email address
+and click install WordPress.
+Then as before we need to login, so click on login, admin for username, re-enter that password
+and click on login.
+Then we need to go to posts, we need to click on trash below hello world to delete that post,
+then click on add new, close down this dialog, for title put the best cats ever and some exclamation points,
+then click on the plus, click gallery, click upload, there's a link attached to this lesson
+with four cat images, so go ahead and download that link and extract it, locate those four images,
+select them and click on open, and then once you've done that, click on publish and publish again
+and then click on view post.
+Now what that's doing in the background is it's adding these images to the WP-content folder
+which is on the EC2 instance, but now we have that folder mounted using EFS
+and so the images are being stored on the elastic file system rather than the local instance file system.
+The cat pictures are there but what we're going to do to validate this is to go back to instances,
+right click on this A4L-wordpress instance and click on connect,
+and then connect to this instance using EC2 instance connect.
+Now once we connect it to the instance, use cd space forward slash var forward slash www forward slash html
+and then do an ls space hyphen la to do a full listing, you'll see that we have this WP-content folder.
+So type cd space wp hyphen content and press enter, then we'll clear the screen and do an ls space hyphen la
+and then inside this folder we have plugins, themes and uploads.
+Go into the uploads folder, do an ls space hyphen la, depending on when you do this demo lesson,
+you should see a folder representing the year, so move into that folder,
+then a folder representing the month, again this will vary depending on when you do the demo lesson.
+Move into that folder and then you should see all four of my cat images.
+And if you do a df space hyphen k, you'll be able to see that this folder,
+so forward slash var forward slash www forward slash html WP hyphen content,
+this is actually mounted using EFS, so this is an EFS file system.
+Now this means the local instance file system is no longer critical,
+it no longer stores the actual media that we upload to these posts.
+So what we can do is we can go back to CloudFormation, go to stacks,
+select the EFS demo hyphen WordPress 1 stack and then click on delete and delete that stack.
+So that's going to terminate the EC2 instance that we've just used to upload that media.
+We need to wait for that stack to fully delete before continuing,
+so go ahead and pause the video and wait for this stack to disappear.
+So that stack's disappeared and now there's a second WordPress one click deployment link
+attached to this lesson, remember there are two, so now go ahead and click on the second one.
+This one should create a stack called EFS demo hyphen WordPress 2,
+scroll to the bottom and click on create stack,
+that's going to create a new stack and a new EC2 instance.
+While we're doing this just close down all of these additional tabs at the top of the screen,
+close them all down apart from the CloudFormation one.
+We're going to need to wait for this to finish provisioning and move into the create complete state,
+so again pause the video, wait for this to change into create complete and then we're good to continue.
+After a few minutes the WordPress 2 stack has moved into a create complete state,
+click on services, open the EC2 console in a new tab, click on instances running,
+you'll see a new A4L hyphen WordPress instance.
+This is a brand new instance which has been provisioned using the one click deployment link
+that you've just used, so the WordPress 2 one click deployment link.
+If we select this, copy the public IP address into your clipboard and open that in the new tab,
+it again loads our WordPress blog.
+If we open the blog post, now we can see these images because they're being loaded from EFS,
+from the file system that EFS provides.
+So no longer are we limited to only operating from a single EC2 instance for our WordPress application
+because now there's nothing which gets stored specifically on that EC2 instance,
+instead everything's stored on EFS and accessible from any EC2 instance that we decide to give permissions to.
+Now what we can do to demonstrate this, if we go back to CloudFormation,
+now remember attached to this lesson are two WordPress one click deployments,
+we initially applied number one, then we deleted that and applied number two,
+so now I want you to reapply number one.
+So again, click on the WordPress 1 one click deployment,
+this again will create a new stack, this time called EFS demo hyphen WordPress 1,
+click on create stack, you'll need to wait for this to move into a create complete state,
+so pause the video and resume it once the stack changes to create complete,
+after a few minutes this stack also moves into create complete,
+let's click on resources, we can see it's provisioned a single EC2 instance,
+so let's click on this to move directly to this new instance, select it,
+copy this instance's IP address into your clipboard and open that in a new tab,
+and again we have our WordPress blog and if we click on the post it loads those images,
+so now we have a number of EC2 instances, we have two EC2 instances,
+both with WordPress installed, both using the same RDS database
+and both using the shared file system provided by EFS,
+and it means that if any posts are edited or any images uploaded on either of these two EC2 instances,
+then those updates will be reflected on all other EC2 instances,
+and this means that we've now implemented this architecture that's on screen now,
+and this is what's going to support us when we evolve this architecture more
+and add scalability in an upcoming section of the course,
+for now though we've just been focused on the shared file system,
+now all that remains at this point is for us to tidy up the infrastructure that we've used in this demo lesson,
+so close down all of these tabs, we need to be at the cloud formation console,
+we need to start by deleting EFS demo, WordPress 1 and WordPress 2,
+so pick either of those, click delete and then delete stack, then select the other, delete and then delete stack,
+now we need both of these to finish deleting and then we can delete this last stack,
+so go ahead and pause the video, wait for both of these to disappear and then we can resume,
+both of those have deleted, so now we can click the final stack,
+EFS demo hyphen VPC hyphen RDS hyphen EFS, so select that, delete and then delete stack,
+and that's everything that you need to do in this demo lesson,
+and once that stack's finished deleting the account will be in the same state as it was at the start of this demo,
+now I hope you've enjoyed this demo lesson and that it's been useful,
+what you've implemented in this demo is one more supportive step towards us moving this architecture
+from being a monolith through to being fully elastic,
+now the application is in this state where we have a single shared RDS database for all of our application instances
+and we're also using a shared file system provided by EFS,
+and this means that we can have one single EC2 instance, we could have two EC2 instances or even 200,
+all of them sharing the same database and the same shared file system provided by EFS,
+now in an upcoming section of this course we're going to extend this further by creating a launch template
+which automatically builds EC2 instances as part of this application architecture,
+we're going to utilise auto-scaling groups together with application load balancers to implement an architecture
+which is fully elastic and resilient, and this has been one more supportive step towards that objective,
+at this point though that's everything that you needed to do in this demo lesson,
+so go ahead, complete this video and when you're ready I'll look forward to you joining me in the next.

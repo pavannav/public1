@@ -1,0 +1,238 @@
+Welcome back, and in this demo lesson you're going to get some experience of how to provision
+an RDS instance and how to migrate a database from an existing self-managed MariaDB database
+instance through to RDS.
+So over the next few demo lessons in this section of the course, you're going to be
+evolving your database architecture.
+We're going to start with a single database instance, then we're going to add multi-AZ
+capability as well as talking about backups and restores, but in this demo lesson specifically
+we're going to focus on provisioning an RDS instance and migrating data into it.
+Now in order to get started with this demo lesson, as always make sure that you're logged
+into the general AWS account, so the management account of the organization, and you need
+to have the Northern Virginia region selected.
+Now attached to this lesson is a one-click deployment link that you'll need to use to
+provision this demo lesson's infrastructure.
+So go ahead and click on that link now.
+That's going to move you to a quick create stack screen.
+The stack name should be pre-populated with migrate to RDS.
+Scrolling down, all of the parameter values will be pre-populated.
+All you need to do is to click on the capabilities checkbox and then create stack.
+There's also a lesson commands document linked to this lesson, and I'd suggest you go ahead
+and open that in a new tab, because you'll be referencing it as you move through this
+demo lesson.
+Now you'll notice that this will look similar to the previous demo lesson's lesson commands
+document, but it has one small difference.
+The initial command where you're doing the backup of the source database, because that
+source database is going to be stored on a separate MariaDB database running on a separate
+EC2 instance, instead of taking the backup from the local instance, in this case it's
+connecting to a separate EC2 instance.
+Otherwise, most of these commands are similar to the ones you used in the previous demo
+lesson.
+Now you're going to need to wait for this stack to move into a create complete state
+before you continue the demo.
+So go ahead and pause the video, wait for your stack to change to create complete, and
+then you're good to continue.
+Okay, so that CloudFormation stack has now moved into a create complete state, and it's
+created a familiar set of infrastructure.
+Let's go ahead and click on the services dropdown, and then move to the EC2 console and just
+take a look.
+So if we click on instances, you'll see that we have the same two instances as you saw
+in the previous demo lesson.
+So we have A4L-WordPress, which is running the Apache web server and the WordPress application,
+and then we have A4L-DB-WordPress, and this is running the separate MariaDB database instance.
+So what we need to do in order to perform this migration is first create the WordPress
+blog itself and the sample blog post, and this is the same thing that we did in the
+previous demo.
+So we should be able to go through this pretty quickly.
+So go ahead and select the A4L-WordPress instance and copy its public IP version 4 address into
+your clipboard, and then open that in a new tab, and again make sure not to use the open
+address because this uses HTTPS.
+So copy the public IP version 4 address and then open that in a new tab.
+Again we're going to call the site the best cats, we're going to use admin for the username,
+and then for the password let's go back to the cloud formation tab, make sure you've
+got the migrate to RDS stack selected and then click on parameters.
+We're going to use the same database password, so copy that into your clipboard and replace
+the automatically generated one with the animals for life complex password, and then enter
+test at test.com into the email box and click on install WordPress.
+Once installed click on login, you'll need to use the admin username and the same password,
+click on login, then we're going to go to posts, we're going to select the existing
+hello world post, select trash this time, then click on add new, close down this dialogue,
+for title we're going to use the best cats ever, click on the plus, select gallery.
+At this point go ahead and click the link that's attached to this lesson to download
+the blog images, once downloaded extract that zip file and you'll get four images.
+Once you've got those images ready click on upload, locate those images, select them
+and click on open.
+Wait for them to load in, select publish and publish again, and that saved the images onto
+the application instance and added the data for this post onto the separate MariaDB database.
+So now we have this simple working blog, let's go ahead and look at how we can provision
+an RDS instance and how we can migrate the data into that RDS instance.
+So move back to the AWS console, click on the services drop down and type RDS into the
+search box and open that in a new tab.
+Now as I've mentioned in the theory parts of this section, RDS is a managed database
+server as a service product from AWS.
+It allows you to create database instances and those instances can contain databases
+that your applications can make use of.
+Now to provision an RDS instance the first thing that we need to do is to create a subnet group.
+Now a subnet group is how we inform RDS which subnets within a VPC we want to use for our
+database instance.
+So first we need to create a subnet group.
+So select subnet groups on the menu on the left and then create a DB subnet group.
+Now we're going to use A4L SN group, so Animals for Life subnet group for both the name and
+for the description and then select the VPC drop down and we're going to select the A4L-VPC1 VPC.
+So this is the Animals for Life VPC which has been created by the one click deployment
+that you used at the start of this demo.
+Now once we've selected a name and a description and a VPC for this subnet group then what
+we need to do is select the subnets that this database will be going into.
+So we're going to select the database subnets in US East 1A, US East 1B and US East 1C.
+So click on the availability zone drop down and pick those three availability zones.
+So 1A, 1B and 1C.
+Once we've selected the availability zones that this subnet group is going to use next
+we pick the subnets.
+So click on the drop down.
+Now we want to pick the database subnets within the Animals for Life VPC and all we can see
+here are the IP address ranges.
+So to help us with this click on the services drop down, type VPC and then open that in
+another new tab.
+Once that loads go ahead and click on subnets, sort the subnets by name and then locate SN-DBADBBDBC
+and just move your cursor across to the right hand side and note what the IP address ranges
+are for those different database subnets.
+So 16, 80 and 144.
+Go back to the RDS console, click on the subnets drop down and we need to pick each
+of those three subnets.
+So 16, 80 and 144.
+So these represent the database subnets in availability zone 1A, 1B and 1C.
+And then once we've configured all of that information we can go ahead and click on create
+to create this subnet group.
+So this subnet group is something that we use when we're provisioning an RDS instance
+and as I mentioned moments ago it's how RDS determines which subnets to place database
+instances into.
+Now when we're only using a single database instance then that decision is fairly easy
+but RDS deployments can scale up to use multiple replicas in multiple different availability
+You can have multi AZ instances, read replicas, Aurora has a cluster architecture which we'll
+talk about later in this section and so subnet groups are essential to inform RDS which subnets
+to place things into.
+So now that we've configured that subnet group let's go ahead and provision our RDS database
+instance.
+So to do that click on databases and then we're going to create a database.
+So click on create database.
+Now when you're creating a database you have the option of using standard create where
+you have visibility of all of the different options and then easy create which applies
+some best practice configurations.
+Now I want you to get the maximum experience possible so we're going to use standard create.
+Now when you're creating an RDS database instance you have the ability to pick from many different
+So some of these are commercial like Oracle or Microsoft SQL Server and with some of these
+you have the option of either paying for a license included with RDS or you can bring
+your own license.
+For other database engines there isn't a commercial price to pay for their usage and so they're
+much cheaper to use but you should select the engine type which is compatible with your
+application.
+Now we're going to be talking about Amazon Aurora in dedicated lessons later in this
+section of the course.
+Amazon Aurora is an AWS designed database product which has compatibility with MySQL
+and PostgreSQL.
+For this demo lesson though we're going to use MySQL.
+So go ahead and select MySQL and it's going to be using MySQL Community Edition.
+So now let's just scroll down and step through some of the other options that we get to select
+when provisioning an RDS instance.
+Now for all of these database engines you have the ability to pick different versions
+of that engine and this is fairly critical because there are different major and minor
+versions that you can select from and different versions of these have different limitations.
+So for example we're going to be talking about snapshots later in this section and if you
+want to take a snapshot of an RDS database and then import that into an Aurora cluster
+you need to pick a compatible version and then Aurora serverless which we'll be talking
+about later on in this section has even more restrictions.
+Now to keep things simple I want you to ignore what version I pick in this video and instead
+look in this lesson's description and pick the version that I indicate in the lesson
+because I'll keep this updated if AWS make any changes.
+Now you can choose to use a template.
+These templates give you access to only the options which are relevant for the type of
+deployment that you're trying to use.
+So in production you would pick the production template.
+If you have any smaller or less critical dev or test workloads then you could pick this
+template.
+If you want to ensure that you can only select free tier options then you should pick this
+template and that's what we're going to do in this demo because we want this demo to
+fall under the free tier.
+So click on the free tier template.
+I'll be talking about availability and durability later in this section because we've selected
+free tier only we don't have the ability to create a multi-AZ RDS deployment and now we
+need to provide some configuration information about the database instance specifically.
+So the first thing that we need to do is to provide a database instance identifier.
+So this is the way that you can identify one particular instance from any other instances
+in the AWS account in the current region so this needs to be unique.
+So we're going to use A4L WordPress for this database instance.
+Then we need to pick a username which will be given admin privileges on this database
+instance and we're going to replace admin with A4L WordPress.
+So we're going to use this for both the database identifier and the admin user of this database.
+Now for the password for this admin user we're going to move back to the cloud formation
+console and we're going to use this same animals for life complex password so copy that into
+your clipboard and paste it in for the password and the confirm password box and this just
+keeps things consistent between the self-managed database and the RDS database.
+Scroll down further still and it's here where you can select the database instance class
+to use.
+Now because we've selected free tier only we're limited as to what database size and
+type we can pick.
+If we'd have selected production or dev test from the templates above we would have access
+to a much wider range of database instance classes both standard, memory optimized and
+burstable.
+But because we've selected the free tier template we're limited as to what we can select.
+Now this might change depending on when you're watching this demonstration but at the point
+I'm recording this video it's db.t3.micro.
+So don't be concerned if you see something different in this box.
+Just make sure that you select the type of instance which falls under the free tier.
+Then continue scrolling down and we need to pick the size of storage and the type of
+storage to use for this RDS instance.
+Now whether you need to select this is dependent on what engine type you pick.
+If you select Aurora which we'll be talking about later on in this section then you don't
+need to pre-allocate storage.
+If you're using the MySQL version of RDS then you do need to set a type of storage and a
+size of storage.
+Now we're going to use the minimum which is 20gib because our requirements for this database
+are relatively small and if we wanted to, if this was production, we could set storage
+autoscaling and this allows RDS to automatically increase the storage when a particular threshold
+is met.
+But again because this is a demo and it's only using a very small blog we don't need
+storage autoscaling so go ahead and uncheck that option.
+Now we need to select a VPC for this RDS instance to go into so click in the drop down and
+select the Animals for Life VPC so that's A4L-VPC1 and then we need to pick a subnet
+group.
+Now this is the thing that we've just created, we only have one in this account so there's
+nothing else to select but this is how we can advise RDS on which subnets to use inside
+the VPC.
+Scroll down further still and we can specify whether we want this database to be publicly
+accessible so this is whether we want instances and devices outside the VPC to be able to
+connect to this database.
+This obviously comes with some security trade-offs and because we don't need that in this demonstration
+because the only thing that we want to connect to this RDS instance is our WordPress instance
+which is in the same VPC then we can select not to use public access.
+So make sure the no option is selected.
+Now the way that you control access to RDS is you allocate a VPC security group to that
+instance so we could either choose an existing security group or we could create a new one
+so it's this security group which surrounds the network interfaces of the database and
+controls access to what can go into that database so we want to create a new VPC security group
+so check that option.
+We're going to call the security group A4LVPC-RDS-SG and we need to remember to update this so that
+our WordPress instance can communicate with our RDS instance and we'll do that in the
+next step.
+If we wanted to pick a specific availability zone for this instance to go into then we
+could select one here or we can leave it up to RDS to pick the most suitable and that's
+what we'll do we'll select no preference.
+Continue scrolling down we won't change the database authentication option because we
+want to allow password authentication.
+Continue scrolling down and we're going to expand additional configuration.
+By default an RDS instance is created with no database on that instance.
+In this case because we're migrating an existing WordPress database into RDS we're going to
+go ahead and create an initial database and to keep things easy and consistent we're
+going to use the same name so A4LWordPress.
+Now you can enable automatic backups for RDS instances and I'll be talking about these
+in a separate theory lesson.
+If you do select automatic backups then you can also pick a backup retention period as
+well as a backup window so we've got advanced monitoring various log exports we don't
+need to use any of those you can also set the maintenance window for an RDS instance
+so when maintenance will be performed you can enable deletion protection if you want
+if this is a production database we don't need to do that what we're going to do is
+scroll all the way down to the bottom and then click on create database.
+Now this process can take some time I've seen it take anywhere from 5 to 45 minutes and
+we're going to need this to be finished before we move on to the next step so this seems
+like a great time to end this video it gives you the opportunity to grab a coffee or stretch
+your legs wait for this database creation to finish and then when you're ready I'll
+look forward to you joining me in part two of this video.

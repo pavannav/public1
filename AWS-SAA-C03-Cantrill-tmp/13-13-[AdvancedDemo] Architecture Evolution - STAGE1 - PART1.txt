@@ -1,0 +1,185 @@
+Welcome back, and in this advanced demo lesson you're going to get the chance to experience how to do a practical architecture evolution.
+Now one of the things that I find very common amongst my students is that they complete the certification and as soon as they get their first job interview,
+many of them which have an architectural scenario component, they struggle on how to get started, how to design an architecture for a given scenario.
+So in this advanced demo series you're going to step through and evolve an architecture yourself.
+So you'll start with a single EC2 instance running the WordPress blogging engine, and this single instance will be running the application itself,
+the database, and it will be storing the content for all of the blog posts.
+And for this example we're going to assume it's an animal pictures blog.
+Now crucially in this first stage you're going to build this server manually to experience all of the different components that need to operate to produce this web application.
+Once you've built the instance manually, next you'll replicate the process but using a launch template to provide automatic provisioning of this WordPress application,
+but crucially it will still be the one single WordPress instance.
+Next you'll perform a database migration, moving the MySQL database off the EC2 instance and running it on a dedicated RDS instance.
+So now the database, the data of this application will exist outside the lifecycle of the EC2 instance,
+and this is the first step of moving towards a fully elastic scalable architecture.
+Next, once you've migrated the database, instead of storing the content locally on the EC2 instance,
+you'll provision the Elastic File System, or EFS, which provides a network-based resilient shared file system,
+and you'll migrate all of the content for the WordPress application from the instance to this elastic file system.
+Once done, these are all the components required to move this architecture to be fully elastic,
+and that is being able to scale out or in based on load on that system.
+So the next step will be to move away from your customers connecting directly to this single EC2 instance,
+instead you'll provision an auto-scaling group which will allow instances to scale out or in as required,
+and you'll configure an elastic load balancer to point at that auto-scaling group,
+so your customers will connect in via the application load balancer rather than connecting to the instances directly,
+and this will abstract your customers away from the instances.
+It will allow your system to be fully resilient, self-healing, and fully elastically scalable.
+So by completing this advanced demo lesson, you'll learn how to get started with scenario-based questions as part of job interviews.
+With that being said, let's go ahead and get started, and to do that we need to move to the AWS console.
+To get started, you're going to need to be logged in to a full AWS account without any restrictions.
+You should be logged in as an admin user.
+If you're watching this demo as part of any of my courses, then you need to use the general AWS account,
+so that's the management account of the AWS organization which we've set up in the course,
+and as always, please make sure that you've selected the Northern Virginia region.
+Now attached to this lesson are two links.
+One of them is a one-click provision for the base infrastructure of this advanced demo lesson,
+and the other is a link to the GitHub repository which contains text-based instructions for every stage of this advanced demo.
+So to start with, go ahead and click on the one-click provisioning link.
+This is going to take you to the quick create stack page, and everything should be pre-populated.
+The stack name should say A4LVPC.
+All you need to do is check this acknowledgement box and then go ahead and click on create stack.
+Now you'll need to wait for this stack to move from create in progress to create complete before you can continue with the demo,
+so go ahead and pause the video and you can resume it once this stack is in a create complete state.
+So now this stack's moved into the create complete state,
+the first stage of this advanced demo series is to manually create a single instance WordPress deployment.
+Now this CloudFormation template has created the architecture that you can see on screen now,
+so the VPC together with the three-tier architecture, so database, application and public,
+split across three different availability zones.
+So what you're going to do in this first part of this demo series is to create this single EC2 instance,
+and you're going to do it manually so that you can experience all of the associated limitations.
+So make sure that you do have the text-based instructions open,
+and the link for those is attached to this lesson because it will make it easier
+because you can copy and paste any commands or any configuration items.
+The first thing to do though is to click on services,
+and then type EC2 into the services drop-down and click on EC2 to move to the EC2 console.
+We're going to be launching our WordPress instance,
+so what I need you to do is to click on launch instance and then again on launch instance.
+Now you should be fairly familiar with creating an EC2 instance,
+so we're going to go through this part relatively quickly.
+So first, you need to name the EC2 instance,
+so go ahead and enter wordpress-manual in the name box,
+and then scroll down and select Amazon Linux, specifically Amazon Linux 2023,
+and just make sure that it's shown as free tier eligible.
+Additionally, make sure that it says 64-bit x86.
+Once set, scroll down again and go to the instance type box,
+click in the drop-down and just make sure that you have a free tier eligible instance selected.
+For most people this should be T2.micro,
+but just make sure that it's an equivalent sized instance which is under the free tier.
+Continue scrolling down and under the key pair box,
+just click in the drop-down and select proceed without a key pair
+because we won't be connecting to this instance using an SSH key,
+we'll be using a session manager.
+Once selected, scroll down further still and click on edit next to network settings.
+In the VPC box, make sure that A4L VPC is selected.
+This is the Animals for Life VPC created by the one-click deployment.
+Then under subnet, make sure that SN-PUB-A is selected.
+This is the public subnet in availability zone A.
+Below this, make sure that for both auto-assign public IP and auto-assign IPv6 IP,
+both of these need to be set to enable.
+Once done, scroll down again and next to firewall security groups,
+check the box to say to select an existing security group.
+And then in the drop-down, make sure that you pick A4L VPC-SG WordPress.
+Now this will be followed by some randomness and that's okay,
+just make sure that it's the SG-WordPress security group.
+This will allow us to connect into this instance using TCP port 80, which is HTTP.
+Once selected, scroll down and we won't be making any changes to the storage,
+we'll be using the default of HGIB of GP3 storage.
+Below this, expand advanced details and there are a couple of things that we need to change.
+First, click on the drop-down under IAM instance profile
+and just make sure that you select the A4L VPC-WordPress instance profile.
+And again, this will have some randomness after it and that's okay.
+Scroll down and next you're looking for a box which says credit specification.
+Now for this, my preference is that you select unlimited
+because this will make the performance of the EC2 instance potentially better
+than not selecting anything at all or selecting standard.
+Now on brand new AWS accounts, it's relatively common that you can't select unlimited.
+AWS don't allow you generally to select unlimited until the account has a billing history.
+So you might want to select standard here to avoid any problems.
+I'm going to select unlimited because my account allows it,
+but if you've got a new AWS account, then go ahead and select standard.
+If you do choose to select unlimited and you do receive an error,
+then you can go ahead and repeat this process but select standard.
+So go ahead and select standard in your case and then scroll down
+and that's everything that we need to set at this point.
+Everything else looks good, so go ahead and click on launch instance.
+So now that our instance is provisioning, just go ahead and click on instances at the top
+and that will allow us to monitor the progress.
+Now we'll need this to be in a running state before we perform the WordPress installation,
+but there's one more set of steps that I want to do first.
+Now throughout this advanced demo lesson, we're going to be taking this single instance WordPress application
+and moving it towards a fully scalable or an elastically scalable design.
+Now to do that, we need to move away from statically setting any configuration options.
+So we're going to make use of the parameter store, which is part of Systems Manager,
+and we're going to create some parameters that our automatic build processes later in this demo will utilize.
+For now we're going to be performing everything manually, but we'll still be using these variables
+because it will simplify what we have to type in the C2 instance.
+So go ahead and click on services, start typing Systems Manager,
+and then once you see it populated in the list, you can right click and open that in a new tab.
+Once you're at the Systems Manager console, on the left, under application management,
+just locate parameter store and click it to move to the parameter store console,
+and we're going to create a number of parameters.
+Now if you're watching this demo as part of my courses, you may already have some parameters listed on this screen.
+If you have any existing ones which begin with forward slash A4L, then go ahead and delete them before continuing.
+So go ahead and click on create parameter, and the exact naming for each of these is in the full instructions
+contained on the GitHub repository which is attached to this lesson.
+So make sure you've got that open, it'll make it significantly easier and less prone to errors.
+We're going to create a number of parameters for WordPress, and the first is the database username.
+So the username that will have permissions on the WordPress database.
+So I want you to set the name to forward slash A4L, forward slash WordPress, forward slash DB user.
+For description, WordPress database user.
+You can set the tier for the parameter to standard or advanced.
+To keep things in the free tier, we're going to use standard.
+It's going to be a string parameter.
+The data type is going to be text, and the value needs to be our actual database username.
+So for this demonstration, we're going to use A4L WordPress user.
+So enter that and click on create parameter.
+Now we're going to be moving quicker now, now that you've seen the process.
+Our next parameter is going to be the database name.
+So enter this in the name field.
+For description, WordPress database name.
+Again, standard, string, data type of text.
+And the value is going to be the WordPress database name.
+So A4L WordPress DB.
+Scroll down and click on create parameter.
+Next is going to be the database endpoint.
+So the host name that WordPress will connect to.
+So for name, enter this, A4L WordPress DB endpoint.
+For the description, WordPress endpoint name.
+Again, standard, string, text for data type.
+And then to start with, because the database is on the same instance as the application,
+the value will be local host.
+So enter that and go ahead and click on create parameter.
+Next we'll be creating a parameter to store the password of the WordPress user.
+So click on create parameter.
+This time it's A4L WordPress DB password.
+For description, WordPress DB password.
+Again, standard tier, but this time it's going to be a secure string.
+For KMS key source, use current account.
+And then for KMS key ID, it will be alias AWS SSM,
+which is the default KMS key for this service.
+For value, go ahead and enter a strong password.
+Again, this is for the WordPress user that has permissions to access the database.
+So if this were production, it would need to be a strong password.
+Now I recommend that you use the same password as I'm using in this demo.
+It uses number letter substitution,
+and I know that it works with all of the different system components.
+Now I've included this password in the text-based instructions,
+and I do recommend that you use it in your demo as well.
+Go ahead and enter something in this value,
+and then scroll down and click on create parameter.
+And then last time, click on create parameter again.
+For name this time, A4L WordPress DB root password.
+And this is the root password for the local database server that's running on the EC2 instance.
+So for description, WordPress DB root password.
+Standard again, and then again secure string because we're storing a password.
+KMS key source is my current account.
+Leave everything else as default, and then enter another strong password.
+If this were production, generally this would be different from the previous password,
+but as this is a demo, you should use the same strong password as you used previously.
+Whichever you choose, go ahead and enter that into the value box,
+and then click on create parameter.
+Okay, so this is the end of part one of this lesson.
+It was getting a little bit on the long side,
+and I wanted to give you the opportunity to take a small break,
+maybe stretch your legs or make a coffee.
+Now part two will continue immediately from this point,
+so go ahead, complete this video,
+and when you're ready, I'll look forward to you joining me in part two.

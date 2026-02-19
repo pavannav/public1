@@ -1,0 +1,65 @@
+Welcome back, this is part two of this lesson. We're going to continue immediately from the end of part one, so let's get started.
+Okay, so all three of these mount targets are now in an available state, and that means we can connect into this EFS file system from any of the availability zones within the Animals for Life VPC.
+So what we need to do is test out this process and we're going to interact with this file system from our EC2 instances.
+So move back to the tab where we have the EC2 console open, and at this point I'll want you to either, and this depends on your browser, I'll either want you to right click and duplicate this tab to open another identical copy.
+If you can't do this in your browser, then just open a new tab and copy and paste this URL into that tab. You'll end up with two separate tabs open to the same EC2 screen.
+So on the first tab we're going to connect to A4L-EFS instance A, so right click and then select connect. We're going to use instance connect, so make sure the username is EC2-user, and then click on connect.
+Now right now this instance is not connected to this EFS file system, and we can verify that by running a df space hyphen k and press enter.
+You'll see that nowhere here is listed this EFS file system, these are all volumes directly attached to the EC2 instance, and of course the boot volume is provided by EBS.
+Now within Linux all devices or all file systems are mounted into a folder, so the first thing that we need to do to interact with EFS is to create a folder for the EFS file system to be mounted into.
+And we can do that using this command, so sudo mkdir hyphen p space forward slash EFS forward slash wp hyphen content.
+Now the hyphen p option just means that everything in this path will be created if it's not already, so this will create forward slash EFS if it doesn't already exist, so press enter to create that folder.
+So I'm going to clear the screen to keep this easy to see, and the next thing I need to do is to install a package of tools which allows this instance or specifically the operating system to interact with the EFS product.
+Now the command I'm going to use to install these tools is sudo to give us admin permissions, and then dnf, which is the package manager for this operating system, and then a space hyphen y to automatically acknowledge any prompts, and then a space, and then install, because I want to install a package, and then a space, and then the name of the tools that I want to install is amazon hyphen EFS hyphen utils.
+So this is a set of tools which allows this operating system to interact with EFS, so go ahead and press enter, and that will install these tools, and then we can configure the interaction between this operating system and EFS.
+Again I'm going to clear the screen to keep this easy to see, and I want to mount this EFS file system in that folder that we've just created, but specifically I want it to mount every time the instance is restarted, so of course that means we need to add it to the fs tab file.
+Now if you remember this file from elsewhere in the course, it's contained within the forward slash etc folder, so we need to move into that folder, cd space forward slash etc, and then the file is called fs tab, so we need to run sudo to give us admin permissions, and then nano, which is a text editor, and then the name of the file, which is fs tab, so press enter, and the file will likely have only one or two lines, which is the root and or base.
+The root and or boot volume of this instance, so let's just move to the end, because we're going to add a new line, and this is contained within the lesson commands document, but we're going to paste in this line, so this line tells us that we want to mount this file system id, so file system id colon forward slash, we want to mount that into this folder, so forward slash EFS, forward slash wp hyphen content,
+we tell it that the file system type is EFS, remember EFS is actually based on NFS, which is the network file system, but this is one provided by AWS as a service, and so we use a specific AWS file system, which is EFS, and the support for this has been installed by that tools package, which we just installed.
+Now the exact functionality of this is beyond the scope of this course, but if you do want to research further, then go ahead and investigate exactly what these options do.
+What we need to do though is to point it at our specific EFS file system, so this is this component of the line, all the way from the start here to this forward slash.
+So to get the file system id, we need to go back to the EFS console, and we need to copy down this full file system id, and yours will be different, so make sure you copy your own file system id into the clipboard, then go back here, and select the colon, and then delete all the way through to the start of this line.
+And once you've done that, paste in your file system id. What it should look like is the file system id, then a colon, and then a forward slash.
+So at this point we need to save this file, so control O to save, and then enter, and control X to exit. Again I'm going to clear the screen to make it easier to see.
+Then I'll run a df space hyphen k, and this is what the file systems currently attached to this instance look like.
+Then we're going to mount the EFS file system into the folder that we've created, and the way that we do this is with this command, so sudo mount, and then we specify the name of the folder that we want to mount.
+Now the way that this works is that this uses what we've just defined in the fstab file, so we're going to mount into this folder whatever file system is defined in that file.
+So that's the EFS file system, and if we press enter, after a few moments, it should return back to the prompt, and that's mounted that file system.
+There we go, we're back at the prompt, and if we do a df space hyphen k again, we'll see that now we've got this extra line at the bottom, so this is the EFS file system mounted into this folder.
+Now to show you that this is in fact a network file system, let's go ahead and move into that folder using this command, and now that we're in that folder, we're going to create a file.
+So we're going to use sudo so that you have admin privileges, and then we're going to use the command touch, which if you remember from earlier in the course, just creates an empty file, and we're going to call this file amazingtestfile.txt.
+Go ahead and press enter, and then do an ls space hyphen la, and you'll see that we now have this file created within this folder, and while we're creating it on this EC2 instance, it's actually put this file on a network file system.
+Now to verify that, let's move back to the other tab that we have open to the EC2 console, the one that's still on this running instances screen, and now let's go ahead and connect to instance B.
+So right click on instance B, select connect, again instance connect to verify the username is as it should be, and click on connect.
+So now we're on instance B, let's do a df space hyphen k to verify that we don't currently have any EFS file system mounted.
+Next we need to install the EFS tools package so that we can mount this file system.
+So let's go ahead and install that package, clear the screen to make it easier to see, then we need to create the folder that we're going to be mounting this file system into.
+We'll use the same command as on instance A, then we need to edit the fs tab file to add this file system configuration.
+So we'll do that using this command, so sudo space nano space forward slash etc forward slash fs tab, press enter.
+Remember this is instance B, so it won't have the line that we added on instance A, so we need to go down to the bottom, paste in this placeholder,
+and then we need to replace the file system ID at the start with the actual file system ID, so delete this, leaving the colon and forward slash.
+Go back to the EFS console, copy the file system ID into your clipboard, move back to this instance, paste that in, everything looks good.
+Save that file with control O, press enter, exit with control X, then we're back at the prompt, clear the screen.
+We'll use the sudo mount forward slash efs forward slash wp-content command again to mount the EFS file system onto this instance,
+and again it's using the configuration that we've just defined in the fs tab file, press enter.
+After a few moments you'll be placed back at the prompt, we can verify whether this is mounted with df space hyphen k.
+It has mounted by the looks of things, it's at the bottom.
+So now if we move into that folder, so cd forward slash efs forward slash wp-content forward slash and press enter,
+we're now in that folder, and if we do a listing, so ls space hyphen la, what we'll see is the amazing testfile.txt which was created on instance A.
+So this proves that this is a shared network file system where any files added on one instance are visible to all other instances.
+So EFS is a multi-user network-based file system that can be mounted on both EC2 Linux instances as well as on-premises physical or virtual servers running Linux.
+Now this is a simple example of how to use EFS, for now we've done everything that we need to do in this demo lesson,
+so we just need to clean up all of the infrastructure that we've used.
+To do that, go back to the EFS console, we're going to go ahead and delete this file system,
+so we should already have it selected, just select delete.
+You'll need to confirm that process by pasting in the file system id, so go ahead and put your file system id,
+and then select confirm, now that can take some time to delete, and you'll need to wait for this process to complete.
+Once it has completed, we're going to go ahead and move across to the CloudFormation console,
+you should still have this open in a tab, if you don't, just type CloudFormation in the search box at the top,
+and then move to the CloudFormation console.
+You should still have the stack name of implementing EFS, which is the stack you created at the start with the one-click deployment,
+go ahead and select this stack, then click on delete and confirm that deletion.
+And once that finishes deleting, that's all of the infrastructure gone that we've created in this demo lesson.
+So I hope this has been a fun and enjoyable demo lesson, where you've gained some practical experience of working with EFS.
+At this point though, that is everything that you need to do in this demo lesson,
+so go ahead and complete the video, and when you're ready, I'll look forward to you joining me in the next.

@@ -1,0 +1,206 @@
+Welcome back and welcome to this demo where together we'll be installing the CloudWatch Agent
+to capture and inject logging data for three different log files into CloudWatch logs
+as well as giving us access to some metrics inside the OS that we wouldn't have otherwise had visibility of.
+So it's going to be a really good demonstration to show you the power of CloudWatch and CloudWatch logs
+when combined with the CloudWatch Agent.
+Now in order to do this demo you're going to need to deploy some infrastructure.
+To do so just make sure that you're logged in to the general AWS account,
+so the management account of the organization,
+and as always make sure you've got the Northern Virginia region selected.
+Now attached to this lesson is a one-click deployment URL
+which will deploy the infrastructure that you'll be using during this demo.
+So go ahead and click on that link.
+This will take you to a quick create stack screen.
+The stack name should be pre-populated with CWAgent.
+You just need to scroll all the way down to the bottom,
+acknowledge the capabilities and click on create stack.
+Also attached to this lesson is a lesson commands document
+which will contain all of the commands you'll be using during this demo lesson.
+So go ahead and open that in a new tab.
+Now you're going to need to let this CloudFormation stack move into a create complete state
+before you continue the demo.
+So go ahead and pause the video,
+wait for the status to change to create complete,
+and then you're good to continue.
+OK, so now this stack is in a create complete state,
+then we're good to continue the demo.
+Now during this demo lesson you're going to be installing the CloudWatch agent
+on an EC2 instance,
+and this EC2 instance has been provisioned by this one-click deployment.
+So the first thing that we need to do is to move across to the EC2 console
+and connect to this instance.
+Once you're at the EC2 console, click on instances running.
+You should see one single EC2 instance called A4L WordPress.
+Just go ahead and select this, right click on it, select connect.
+We're going to connect into this instance using EC2 instance connect,
+so make sure that's selected.
+Make sure also that the username is set to ec2-user
+and then connect into the instance.
+Now if everything's working as it should be,
+you should see the Animals for Life custom login banner
+when you log into the instance.
+In my case, I do see that, and that means everything's working as expected.
+So this demonstration's going to have a number of steps.
+First we need to download the CloudWatch agent,
+then we need to install the agent,
+then we need to generate the configuration file
+that this install of the agent,
+as well as any future installs that the agent could use,
+and then we need to get the CloudWatch agent to read this config
+and start capturing and injecting those logs into CloudWatch logs.
+So step one is to download and install the agent,
+and the command to do this is inside the lesson commands document,
+which is attached to this lesson,
+and that will install the agent, but crucially, it won't start it.
+What we need to do before we can start the agent
+is to generate the config file
+that we'll use to configure this and any future agents,
+but because we also want to store that config file inside the parameter store
+and because we also want to give this instance permissions
+to interact with CloudWatch logs,
+before we continue, we need to attach an IAM role to this instance,
+an EC2 instance role, so that's the next step.
+So we need to move back to the EC2 console, click on Services,
+and then open the IAM console because we'll be creating an IAM role
+to attach to this instance.
+You'll need to go to Roles, Create Role,
+it'll be an AWS service role using EC2, so select EC2,
+and then click on Next.
+We'll need to attach two managed policies to this role,
+so I've included the names of those managed policies
+in the lesson commands document.
+The first is CloudWatch Agent Server Policy,
+so make sure you type that in the filters policy and then check that box.
+And the second is Amazon SSM Full Access,
+so type that in the box, select that policy,
+and then scroll down and click on Next.
+And we'll call this role CloudWatch Role,
+so enter CloudWatch Role and click on Create Role.
+And once we've done that, we can attach this role to our EC2 instance,
+so we need to move back to the EC2 console.
+Go to Instances, right-click on the instance,
+go to Security, and then Modify IAM Role,
+and then click on the drop-down and select CloudWatch Role,
+which is the role that you've just created.
+Then click Update IAM Role.
+Now that we've allocated that instance with the permissions
+that it needs to perform the next set of steps,
+go ahead and connect to that instance again.
+The tab may have timed out that you previously had open,
+so if it doesn't respond, you need to close it down and reopen it.
+If it does respond, that's fine, keep the existing tab.
+Once we're back in the terminal for the instance,
+we need to start the CloudWatch Agent Configuration Wizard,
+and the command to do that is also in the Lesson Commands document
+attached to this lesson.
+So go ahead and paste that in and press Enter,
+and that will start off the configuration wizard for the CloudWatch Agent.
+Now for most of these values, we can accept the defaults,
+but we need to be careful because there are a number of them that we can't.
+So press Enter and accept the default for the operating system.
+It should automatically detect Linux.
+Press Enter, it should automatically detect that it's running on an EC2 instance.
+Press Enter to use the root user.
+Again, that should be the default.
+Press Enter for StatsD.
+Press Enter for the StatsD port.
+Press Enter for the interval.
+Press Enter for the aggregation interval.
+Press Enter to monitor metrics from CollectD.
+Again, that's the default.
+Press Enter to monitor host metrics, so CPU and memory.
+Press Enter to monitor CPU metrics per core.
+Press Enter for the additional dimensions.
+Press Enter to aggregate EC2 dimensions.
+Press Enter for the default resolution, so 60 seconds.
+For the default metric config that you want,
+the default will be basic.
+Go ahead and enter 3 for advanced.
+This captures additional operating system metrics that we might actually want.
+So use 3 for this value.
+Press Enter to indicate that we're satisfied with the above config.
+Next we'll move to the log configuration part of this wizard.
+So press Enter for the default of no,
+we don't have an existing CloudWatch log agent config to import.
+Press Enter, which is the default for yes, we do want to monitor log files.
+You'll be asked for the log file path to monitor.
+So the first one that we want to monitor.
+And again, these are in the lesson commands document.
+So the first log path is forward slash var, forward slash log, forward slash secure.
+Press Enter.
+You'll be asked for the log group name.
+The default is just the log name itself, so secure.
+But we're going to enter the full path.
+I always prefer using the full path for the log group names for any system logs.
+So we're going to enter var log secure again.
+You'll be asked for the log stream name.
+Remember in the theory part of this lesson,
+I talked about how a log stream will be named after the instance which is injecting those logs.
+So the default choice is to do that, to use the instance ID.
+We're just going to accept the default for the log group retention value.
+The default will be yes, we do want to specify additional log files.
+So press Enter.
+The log file path for this one will be var log HTTPD access underscore log.
+So enter that.
+The log group name again will default to the name of the actual log.
+We want the full path.
+So enter the full path again.
+Press Enter.
+The log stream name, the default for this is again the instance ID, which is fine.
+Just press Enter.
+Go ahead and accept the default for the log group retention in days.
+Press Enter again.
+We've got one more log file that we want to enter.
+This time the log file path is var log HTTPD error underscore log.
+Again, the log group name will default the name of the actual log.
+We want to use the full path.
+So enter the same thing again.
+The default choice for log stream name will be again the instance ID.
+That's fine.
+Press Enter.
+Go ahead and accept the default for the log group retention in days.
+And now we've finished adding log files.
+We won't want to log any additional files.
+So press 2.
+And that will complete this logging section of this wizard.
+It's asking us to confirm that we're happy with this configuration file.
+And it's telling us that the configuration file is stored at forward slash opt forward slash AWS
+forward slash Amazon hyphen cloud watch hyphen agent forward slash bin
+and then config dot JSON in that folder.
+Now that's where it stores it on the local file system.
+But we can also elect to store this JSON configuration inside the parameter store.
+And I thought that since we've previously talked about the theory of the parameter store
+and done a little bit of interaction, it would be useful for you to see exactly how it can be used
+in a more production like setting.
+So the default is to store the configuration in the parameter store.
+So we're going to allow that.
+Press Enter.
+It'll ask us for the parameter name to use.
+And the default is Amazon cloud watch hyphen Linux.
+And that's fine.
+So press Enter.
+It'll ask us for the region to use because parameter store is like many other services
+a regional service and the default region is the one where the instance is in.
+So it automatically detects that we're in US East one, which is Northern Virginia.
+So go ahead and accept that default choice.
+It'll ask us for the credentials that it can use to send that configuration into the parameter store.
+Now, these credentials will be obtained from the role that we've attached to this instance in the previous step.
+So you can accept the default choice.
+It'll use those credentials to store that configuration inside the parameter store.
+And if we move back to the EC2 console and we switch back to the parameter store,
+so just type SSM to move to systems manager, which is the parent product of parameter store.
+If we go down to the parameter store item on the menu on the left,
+we'll be able to see this single parameter Amazon cloud watch hyphen Linux.
+And if we open that up and just scroll down,
+we can see that the value is a JSON document with the full configuration of the cloud watch agent.
+So we can now use this parameter to configure the agent on this EC2 instance,
+as well as any other EC2 instances we want to deploy.
+So if you create the cloud watch configuration once and then store it into parameter store,
+then when you create EC2 instances at scale,
+as you'll see how to do later in the course when we talk about auto scaling groups,
+then you can use the parameter store to deploy this type of configuration at scale in a secure way.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side, and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video, and when you're ready, join me in part two.

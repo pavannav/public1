@@ -1,0 +1,241 @@
+Welcome back and in this lesson I want to talk through how we implement DNSSEC using Route 53.
+Now if you haven't already watched my DNS and DNSSEC fundamentals video series,
+you should pause this video and watch those before continuing.
+Assuming that you have, let's jump in and get started.
+Now you should be familiar with this architecture.
+This is how Route 53 works normally.
+In this example I'm using the animalsforlife.org domain,
+so a query against this would start with our laptop,
+go to a DNS resolver,
+then to the root servers looking for details of the .org top-level domain,
+and then it would go to the .org top-level domain name servers looking for animalsforlife.org,
+and then it would proceed to the four name servers which are hosting the animalsforlife.org zone using Route 53.
+On the right hand side here we have an AWS VPC using the plus two address which is the Route 53 resolver,
+and those instances can query the animalsforlife.org domain from inside the VPC.
+Now enabling DNSSEC on a Route 53 hosted zone is done from either the Route 53 console UI or the CLI,
+and once initiated the process starts with KMS.
+This part can either be done separately or as part of enabling DNSSEC signing for the hosted zone,
+but in either case an asymmetric key pair is created within KMS, meaning a public part and a private part.
+Now you can think of these conceptually as the key signing keys or KSKs,
+but in actual fact the KSK is created from these keys, these aren't the actual keys,
+but this is a nuance which isn't required at this level.
+So these keys are used to create the public and private key signing keys which Route 53 uses,
+and these keys need to be in the US East 1 region, that's really important so keep that in mind.
+Next Route 53 creates the zone signing keys internally,
+This is really important to understand, both the creation and the management of the zone signing keys
+is handled internally within Route 53, KMS isn't involved.
+Next Route 53 adds the key signing key and the zone signing key public parts into a DNS key record within the hosted zone.
+This tells any DNSSEC resolvers which public keys to use to verify the signatures on any other records in this zone.
+Next the private key signing key is used to sign those DNS key records and create the RR-SIG DNS key record,
+and these signatures mean that any DNSSEC resolver can verify that the DNS key records are valid and unchanged.
+Now at this point that's signing within the zone configured, which is step one.
+Next Route 53 has to establish the chain of trust with the parent zone.
+The parent zone needs to add a DS record or delegated signer record,
+which is a hash of the public part of the key signing key for this zone, and so we need to make this happen.
+Now how we do this depends on if the domain is registered via Route 53.
+If so, the registered domains area of the Route 53 console or the equivalent CLI command can be used to make this change.
+Route 53 will liaise with the appropriate top level domain and add the delegated signer record.
+Now if we didn't register the domain using Route 53 and are instead just using it to host the zone,
+then we're going to need to perform this step manually.
+Once done, the top level domain, in this case .org, will trust this either using the key signing or zone signing keys.
+As part of enabling this, you should also make sure to configure CloudWatch alarms.
+Specifically create alarms for DNSSEC internal failure and DNSSEC key signing keys needing action.
+Both of these indicate a DNSSEC issue with the zone which needs to be resolved urgently.
+Either an issue with the key signing key itself or a problem interacting with KMS.
+Lastly, you might want to consider enabling DNSSEC validation for VPCs.
+This means for any DNSSEC enabled zones, if any records fail validation due to a mismatched signature or otherwise not being trusted, they won't be returned.
+This doesn't impact non-DNSSEC enabled zones which will always return results.
+And this is how to work with the Route 53 implementation of DNSSEC.
+What I wanted to do now is step you through an actual implementation of DNSSEC for a hosted zone within Route 53.
+And to do that, we're going to need to move across to my AWS console.
+Okay, so now we're at the AWS console and I'm going to step you through an example of enabling DNSSEC on a Route 53 domain.
+And to get started, I'm going to make sure I'm in an AWS account where I have admin permissions.
+In this case, I'm logged in as the IAM admin user, which is an IAM identity with admin permissions.
+As always, I'm going to make sure that I have the Northern Virginia region selected.
+And once I've done that, I'm going to go ahead and open Route 53 in a new tab.
+In my case, it's already inside recently visited services.
+If it's not, you can just search for it in the search box at the top.
+But I'm going to go ahead and open Route 53.
+So I'm going to go to the Route 53 console and click on hosted zones.
+And in my case, I've got two hosted zones, animalsforlife.org and animalsforlife1337.org.
+I'm going to go ahead and DNSSEC enable animalsforlife.org.
+So I'm going to go ahead and go inside this hosted zone.
+Now, if I just go ahead and move across to my command prompt, and if I run this command,
+so dig animalsforlife.org and then DNS key with plus DNSSEC,
+this will query this domain attempting to look for any DNS key records using DNSSEC.
+And as you can see, there are no DNSSEC results returned,
+which is logical because this domain is not enabled for DNSSEC.
+So moving back to this console, I'm going to click on DNSSEC signing under the domain
+and then click on enable DNSSEC signing.
+Now, if this were a production domain, the order of these steps really matters.
+And you need to make sure that you wait for certain time periods before conducting each of these steps.
+Specifically, you need to make sure that you're making changes,
+taking into consideration the TTL values within your domain.
+I'll include a link attached to this video which details all of these time critical prerequisites
+that you need to make sure you consider before enabling DNS signing.
+In my case, I don't need to worry about that because this is a fresh, empty domain.
+The first thing we're going to do is create a key signing key.
+And as I mentioned earlier in this video, this is done using a KMS key.
+So the first thing I'm going to do is to specify a KSK name, so a key signing key name.
+And I'm going to call it A4LKSK for Animals for Life key signing key.
+Next, you'll need to decide on which key to use within KMS to create this key signing key.
+Now, unfortunately, the user interface is a little bit inconsistent.
+AWS have decided to rename CMKs to KMS keys.
+So you might see the interface looking slightly different when you're doing this video.
+Regardless, you need to create a KMS key.
+So check the box saying create customer managed CMK or create KMS key,
+depending on what state the user interface is in.
+And you'll need to give a name to this key.
+And again, this is creating an asymmetric KMS key.
+So I'm going to call it A4LKSK and then KMS key.
+And once I've done that, I can go ahead and click on create KSK and enable signing.
+Now, behind the scenes, this is creating an asymmetric KMS key
+and using this to create the key signing key pair that this hosted zone is going to use.
+Now, this part of the process can take a few minutes,
+and so I'm going to skip ahead until this part has completed.
+OK, so that's completed, and that means that we now have an active key signing key within this hosted zone.
+And that means it's also created a zone signing key within this hosted zone.
+If I go back to my terminal and I rerun this same command and press enter,
+you'll see that we still get the same empty results.
+And this can be because of caching, so I need to wait a few minutes before this will update.
+If I run it again, now we can see for the same query, it now returns DNS key records.
+So one for 256, which represents the zone signing key, so the public part of that key pair,
+and one for 257, which represents the key signing key, again, the public part of that key pair.
+And then we have the corresponding RR SIG DNS key record,
+which is a signature of these using the private key signing key.
+So now internally we've got DNS sex signing enabled for this hosted zone.
+And what we need to do now is create the chain of trust with the parent zone,
+in this case the .org top level domain.
+Now to do that, because I've also registered this domain using Route 53,
+I can do that from the registered domains area of the console, so I'll open that in a brand new tab.
+I'm going to go there, and then I'm going to go to the animalsforlife.org registered domain.
+And this is the area of the console where I can make changes,
+and Route 53 will liaise with the .org top level domain and enter those changes into the .org zone.
+Now the area that I'm specifically interested in is the DNSSEC status.
+Currently this is set to disabled.
+What I'm going to do is to click on manage keys,
+and it's here where I can enter the public key,
+specifically it's going to be the public key signing key of the animalsforlife.org zone.
+And I'm going to enter it so that it creates the delegated signer record in the .org domain,
+which establishes this chain of trust.
+So first I'm going to change the key type to KSK,
+then I'm going to go back to our hosted zone,
+and I'm going to click on view information to create DS record.
+Then I'm going to expand, establish a chain of trust,
+and depending on what type of registrar you used,
+you either need to follow the bottom instructions or these if you used Route 53.
+And I did, so I can go ahead and use the Route 53 registrar details.
+Now the first thing you need to do is to make sure that you're using the correct signing algorithm.
+So it's ECDS AP 256 SHA-256.
+So I'm going to go ahead and move back to the registered domains console,
+click on the algorithm dropdown,
+and select the matching signing algorithm.
+So ECDS AP 256 SHA-256.
+Next I'll go back, and I'll need to copy the public key into my clipboard.
+So remember a delegated signer record is just a hash of the public part of a key signing key.
+So this is what I'm copying into my clipboard,
+this is the public key of this key signing key.
+So I'm going to go back and paste this in, and then click on add.
+Now this is going to initiate a process where Route 53 are going to make the changes
+to the animalsforlife.org part of the .org top level domain zone.
+So specifically in the .org top level domain zone,
+there's going to be an entry for animalsforlife.org,
+by default for normal DNS this is going to contain name server records,
+which delegate through to Route 53.
+What this process is going to do is also add a DS record,
+which is a delegated signer record,
+and it is going to contain a hash of this public key.
+Now that will take a few minutes to take effect,
+that's not a process which only involves Route 53,
+it also involves the .org top level domain.
+So it can take a few minutes.
+It can actually take anywhere up to a few hours,
+and depends somewhat on the top level domain,
+as well as the relationship with that entity which Route 53 has.
+So I'm just going to go ahead and refresh this.
+We can see that the DNSSEC status has changed,
+and we've now got this entry.
+So now if I move back to my terminal,
+I'm going to clear the screen to make it easier to see,
+and now I'm going to run this command,
+so dig space org,
+because I want to do a query on the .org top level domain,
+space ns,
+and then a space plus short,
+and this will give me a listing of the authoritative name servers
+for the .org top level domain,
+and I'm going to pick one of those servers.
+So I'm going to go ahead and pick the top one,
+then I'm going to run this command,
+so dig animalsforlive.org, which is my hosted zone,
+then a space.
+I want to query DS records, so delegated signers,
+then an at sign,
+and then the host name of the .org top level domain name server,
+so this is going to mean that we're querying one specific name server,
+and then press Enter.
+If I'm not getting any DS record returned,
+again, it's because of DNS caching,
+and again, there is a delay between when you make the changes within Route 53
+and when this takes effect within the DNS hierarchy,
+so I'll clear the screen again,
+rerun that command,
+again, I'm not getting any DS record returned,
+so at this point I'm going to skip ahead to when the .org top level domain
+have updated with the changes that we've just made.
+After about five more minutes, this was added,
+so note I've run the same command,
+so dig animalsforlive.org,
+and then DS for delegated signer,
+and then at, and then one of the .org TLD name servers.
+So I'm querying for the delegated signer record for my domain,
+and we can see here in the Answers section,
+we've got it here, so animalsforlive,
+DS for delegated signer,
+and then here we've got the record,
+and this record contains a hash of my public key signing key
+that's used for the animalsforlive.org domain.
+So now I've established the chain of trust from the .org top level domain
+through to my hosted zone inside AWS,
+and then because I've enabled DNSSEC signing,
+it means if I create any records within this domain,
+then they too will be signed.
+So if I test that, if I go ahead and click on create record,
+I'm going to use simple routing,
+define a simple record,
+I'm going to call this test,
+so test.animalsforlive.org,
+it's going to be an A record type,
+I'm going to choose IP address or another value,
+and then I'm just going to enter a test IP address,
+so 1.1.1.1 and a TTL of one minute,
+and then I'm going to define that simple record
+and create the record.
+Now if I just refresh this,
+inside the hosted zone for the UI,
+you won't see anything which looks different.
+However, if I move back to my terminal,
+clear the screen to make it easy to see,
+and do a dig test.animalsforlive.org,
+and then a space and then A and press enter,
+that's going to do a normal DNS query for this A record.
+So we can see it, test.animalsforlive.org,
+it's an A record and then it points at 1.1.1.1.
+If I run the same command only now,
+put plus DNSSEC and press enter,
+now we can see in addition to the normal DNS query result,
+now we have the DNSSEC rrsig,
+and this is a signature of the record above
+using the private part of the zone signing key,
+and this signature can be verified
+using the DNS key record,
+which contains the public zone signing key.
+So now we have an end-to-end chain of trust
+from the DNS root all the way through to this resource record.
+Now that's everything I wanted to cover in this video,
+I just wanted to give you an overview of how to implement
+DNSSEC within Route 53,
+both from a theory and practical perspective.
+At this point that's the end of the video,
+so go ahead and complete the video,
+and when you're ready I'll look forward to you joining me in the next.

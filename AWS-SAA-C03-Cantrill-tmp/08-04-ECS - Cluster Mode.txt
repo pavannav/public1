@@ -1,0 +1,91 @@
+Welcome back, and in this lesson I want to briefly discuss the two different cluster modes that you can use when running containers within ECS.
+So that's EC2 mode and Fargate mode.
+The cluster mode defines a number of things, but one of them is how much of the admin overhead surrounding running a set of container hosts that you manage versus how much AWS manage.
+So the technical underpinnings of both of these are important, but one of the main differentiating facts is what parts you're responsible for managing and what parts AWS manage.
+There are some cost differences we'll talk about and certain scenarios which favour EC2 mode and others which favour Fargate mode, and we'll talk about all of that inside this lesson.
+At this level it's enough to understand the basic architecture of both of these modes and the situations where you would pick one over the other.
+So we've got a lot to cover, so let's jump in and get started.
+The first cluster mode available within ECS is EC2 mode.
+Using EC2 mode we start with the ECS management components, so these handle high level tasks like scheduling, orchestration, cluster management and the placement engine which handles where to run containers, so which container hosts.
+Now these high level components exist in both modes, so that's EC2 mode and Fargate mode.
+With EC2 mode an ECS cluster is created within a VPC inside your AWS account.
+Because an EC2 mode cluster runs within a VPC it benefits from the multiple availability zones which are available within this VPC.
+For this example let's assume we have two, AZA and AZB.
+With EC2 mode EC2 instances are used to run containers, and when you create the cluster you specify an initial size which controls the number of container instances, and this is handled by an auto-scaling group.
+We haven't covered auto-scaling groups yet in the course, but they're a way that you can control horizontal scaling for EC2 instances.
+So adding more instances when requirements dictate and removing them when they're not needed.
+But for this example let's say that we have four container instances.
+Now these are just EC2 instances, you will see them in your account, you'll bill for them, you can even connect to them.
+So it's important to understand that when these are provisioned you will be paying for them regardless of what containers you have running on them.
+So with EC2 cluster mode you are responsible for these EC2 instances that are acting as container hosts.
+Now ECS provisions these EC2 container hosts, but there is an expectation that you will manage them generally through the ECS tooling.
+So ECS using EC2 mode is not a serverless solution, you need to worry about capacity and availability for your cluster.
+ECS uses container registries, and these are where your container images are stored.
+Remember in a previous lesson I showed you how to store the container of CATS images on Docker Hub, and that's an example of a container registry.
+AWS of course have their own which is called ECR, I've previously mentioned that, and you can choose to use that or something public like Docker Hub.
+Now in the previous lesson I spoke about tasks and services which are how you direct ECS to run your containers.
+Well tasks and services use images on container registries and via the task and service definitions inside ECS container images are deployed onto container hosts in the form of containers.
+Now in EC2 mode ECS will handle certain elements of this, so ECS will handle the number of tasks that are deployed if you utilise services and service definitions.
+But at a cluster level you need to be aware of and manage the capacity of the cluster, because the container instances are not something that's delivered as a managed service, they are just EC2 instances.
+So ECS using EC2 mode offers a great middle ground, if you want to use containers in your infrastructure but you absolutely need to manage the container host, capacity and availability, then EC2 mode is for you.
+Because EC2 mode uses EC2 instances, then if your business has reserved instances then you can use those, you can use EC2 spot pricing, but you need to manage all of this yourself.
+It's important to understand that with EC2 mode even if you aren't running any tasks or any services on your EC2 container hosts you are still paying for them while they're in a running state, so you're expected to manage the number of container hosts inside an EC2 based ECS cluster.
+So whilst ECS as a product takes away a lot of the management overhead of using containers, in EC2 cluster mode you keep some of that overhead and some flexibility, so it's a great middle ground.
+Fargate mode for ECS removes even more of the management overhead of using containers within AWS.
+With Fargate mode you don't have to manage EC2 instances for use as container hosts, as much as I hate using the term serverless.
+Fargate is a cluster model which means you have no servers to manage, because of this you aren't paying for EC2 instances regardless of whether you're using them or not.
+Fargate mode uses the same surrounding technologies, so you still have the Fargate service handling schedule and orchestration, cluster management and placement, and you still use registries for the container images, as well as use task and service definitions to define tasks and services.
+What differs is how containers are actually hosted.
+Core to the Fargate architecture is the fact that AWS maintain a shared Fargate infrastructure platform.
+This shared platform is offered to all users of Fargate, but much like how EC2 isolates customers from each other, so does Fargate.
+You gain access to resources from a shared pool, just like you can run EC2 instances on shared hardware, but you have no visibility of other customers.
+With Fargate you use the same task and service definitions, and these define the image to use, the ports and how much resources you need.
+But with Fargate these are then allocated to the shared Fargate platform.
+You still have your VPC, a Fargate deployment still uses a cluster and a cluster uses a VPC, which operates in availability zones, in this example AZ-A and AZ-B.
+Where it starts to differ though is four ECS tasks, which remember they're now running on this shared infrastructure, but from a networking perspective they're injected into your VPC.
+Each of the tasks is injected into the VPC and it gets given an elastic network interface, this has an IP address within the VPC.
+At that point they work just like any other VPC resource and they can be accessed from within that VPC and from the public internet if the VPC is configured that way.
+So this is really critical for you to be aware of, tasks and services are actually running from the shared infrastructure platform and then they're injected into your VPC,
+they're given network interfaces inside a VPC and it's using these network interfaces in that VPC that you can access them.
+So if the VPC is configured to use public subnets which automatically allocate an IP version 4 address, then tasks and services can be given public IP version 4 addressing.
+Fargate offers a lot of customizability, you can deploy exactly how you want into either a new VPC or a custom VPC that you have designed and implemented in AWS.
+With Fargate mode, because tasks and services are running from the shared infrastructure platform, you only pay for the containers that you're using based on the resources that they consume.
+So you have no visibility of any host costs, you don't need to manage hosts, provision hosts or think about capacity and availability, that's all handled by Fargate.
+You simply pay for the container resources that you consume.
+Now one final thing before we move to a demo where we're going to implement a container inside a Fargate architecture.
+For the exam, and as a solutions architect in general, you should be able to advise when a business or a team should use ECS.
+There are actually three main options.
+Using EC2 natively for an application, so deploying an application as a virtual machine.
+Using ECS in EC2 mode, so using a containerized application but running in ECS using an EC2 based cluster.
+Or using a containerized application running in ECS but in Fargate mode, so there's a number of different options.
+Picking between using EC2 and ECS should in theory be easy.
+If you use containers, then pick ECS.
+If you're a business which already uses containers for anything, then it makes sense to use ECS.
+In the demo that we did earlier in this section, we used an EC2 instance and Docker to create a Docker image.
+That's an edge case though.
+If you're wanting to just quickly test containers, you can use EC2 as a Docker host.
+But for anything production usage, it's almost never a good idea to do that.
+The normal options are generally to run an application inside an operating system inside EC2 or to utilize ECS in one of these two different modes.
+Containers in general make sense if you're just wanting to isolate your applications.
+Applications which have low usage levels, applications which all use the same OS, applications where you don't need the overhead of virtualization.
+You would generally pick EC2 mode when you have a large workload and your business is price conscious.
+If you care about price more than effort, you'll want to look at using spot pricing or reserved pricing or make use of reservations that you already have.
+Running your own fleet of EC2-based ECS hosts will probably be cheaper, but only if you can minimize the admin overhead of managing them.
+So scaling, sizing, as well as correcting any faults.
+So if you have a large consistent workload, if you're heavily using containers, but if you are a price conscious organization, then potentially pick EC2 mode.
+If you're overhead conscious, even with large workloads, then Fargate makes more sense.
+Using Fargate is much less management overhead versus EC2 mode because you don't have any exposure to container hosts or their management.
+So even large workloads, if you care about minimizing management overhead, then use Fargate.
+For small or burst style workloads, Fargate makes sense because with Fargate, you only pay for the container capacity that you use.
+Having a fleet of EC2-based container hosts running constantly for non-consistent workloads just makes no sense. It's wasting the capacity.
+The same logic is true for batch or periodic workloads. Fargate means that you pay for what you consume.
+EC2 mode would mean paying for the container instances even when you don't use them.
+Okay, I hope this starts to make sense. I hope the theory that we've covered starts to give you an impression for when you would use ECS,
+and then when you do use the product, how to distinguish between scenarios which suit EC2 mode versus Fargate mode.
+So next up we have a demo lesson, and I'm going to get you to take the container of cats docker image that we created together earlier in this section
+and run it inside an ECS Fargate cluster. By configuring it practically, it's going to help a lot of the facts and architecture points
+that we've discussed through this section stick, and these facts sticking will be essential to being able to answer any container-based questions in the exam.
+I know the container of cats is a simple example, but the steps that you'll be performing will work equally well in something that's a lot more complex.
+As we go through the course, we're going to be revisiting ECS. It will feature in some architectures for the animals for life business later in the course.
+For now though, I want you to just be across the fundamentals, enough to get started with ECS and enough for the associate AWS exams.
+So go ahead, complete this lesson, and when you're ready, you can join me in the next lesson which will be an ECS Fargate demo.

@@ -1,0 +1,140 @@
+Welcome back, and in this video, which is the first of this series, I'm going to step through the architecture of the relational database service known as RDS.
+Now this video will focus on the architecture of the product, with upcoming videos going into specific features in more depth.
+Now we do have a lot to cover, so let's jump in and get started.
+Now I've heard many people refer to RDS as a Database as a Service, or DBAAS product.
+Details are important, and you need to understand why this is not the case.
+A database as a service product is where you pay money, and in return, you get a database.
+This isn't what RDS does. With RDS, you pay for and receive a database server.
+So it would be more accurate to call it a database server as a service product.
+Now this matters because it means that on this database server, or instance, which RDS provides, you can have multiple databases.
+RDS provides a managed version of a database server that you might have on-premises.
+Only with RDS, you don't have to manage the hardware, the operating system, or the installation, as well as much of the maintenance of the DB engine.
+And RDS, of course, runs within AWS.
+Now with RDS, you have a range of database engines to use, including MySQL, MariaDB, PostgresQL, and then commercial databases such as Oracle and Microsoft SQL.
+Some of these are open source, and some are commercial, and so there will be licensing implications.
+And if appropriate for the exam that you're working towards, there will be a separate video on this topic.
+Now there's one specific term that I want you to disassociate from RDS, and that's Amazon Aurora.
+You might see Amazon Aurora discussed commonly along with RDS, but this is actually a different product.
+Amazon Aurora is a custom database engine and product created by AWS, which has compatibility with some of the above engines, but it was designed entirely by AWS.
+Many of the features I'll step through while talking about RDS are different for Aurora, and most of these are improvements.
+So in your mind, separate Aurora from RDS.
+So in summary, RDS is a managed database server as a service product.
+It provides you with a database instance or a database server, which is largely managed by AWS.
+Now you don't have access to the operating system or SSH access.
+Now I have a little asterisk here because there is a variant of RDS called RDS custom, where you do have some more low level access.
+But I'll be covering that in a different video if required.
+In general, when you think about RDS, think no SSH access and no operating system access.
+Now what I think might help you at this point is to look at a typical RDS architecture visually.
+And then over the remaining videos in this series, I'll go into more depth on certain elements of the product.
+So RDS is a service which runs within a VPC.
+So it's not a public service like S3 or DynamoDB.
+It needs to operate in subnets within a VPC in a specific AWS region.
+And for this example, let's use US East 1.
+And to illustrate some cross region bits of this architecture, our second region will be AP Southeast 2.
+And then we're going to have within US East 1 a VPC.
+And let's use three availability zones here, A, B and C.
+Now the first component of RDS which I want to introduce is an RDS subnet group.
+This is something that you create and you can think of this as a list of subnets which RDS can use for a given database instance or instances.
+So in this case, let's say that we create one which uses all three of the availability zones.
+In reality, this means adding any subnets in those three availability zones which you want RDS to use.
+And in this example, I'm going to actually create another one.
+We're going to have two database subnet groups and you'll see why in a second.
+In the top database subnet group, let's say I add two public subnets.
+And in the bottom database subnet group, let's say three private subnets.
+So when launching an RDS instance, whether you pick to have it highly available or not,
+and I'll talk about how this works in an upcoming video, you need to pick a DB subnet group to use.
+So let's say that I picked the bottom database subnet group and launched an RDS instance,
+and I chose to pick one with high availability.
+So it would pick one subnet for the primary instance and another for the standby.
+It picks at random unless you indicate a specific preference,
+but it will put the primary and standby within different availability zones.
+Now because these database instances are within private subnets,
+it means that they would be accessible from inside the VPC or from any connected networks,
+such as on-premises networks connected using VPNs or Direct Connect,
+or any other VPCs which appeared with this one.
+And I'll cover all of those topics elsewhere in the course if I haven't already done so.
+Now I could also launch another set of RDS instances using the top database subnet group,
+and the same process would be followed assuming that I picked to use multi-AZ.
+RDS would pick two different subnets in two different availability zones to use.
+Now because these are public subnets, we could also, if we really wanted to,
+elect to make these instances accessible from the public internet by giving them public addressing.
+And this is something which is really frowned upon from a security perspective,
+but it's something that you need to know is an option when deploying RDS instances into public subnets.
+Now you can use a single DB subnet group for multiple instances,
+but then you're limited to using the same defined subnets.
+If you want to split databases between different sets of subnets, as with this example,
+then you need multiple DB subnet groups.
+And generally as a best practice, I like to have one DB subnet group for one RDS deployment.
+I find it gives me the best overall flexibility.
+OK, so another few important aspects of RDS which I want to cover.
+First, RDS instances can have multiple databases on them.
+Second, every RDS instance has its own dedicated storage provided by EBS.
+So if you have a multi-AZ pair primary and standby, each has their own dedicated storage.
+Now this is different than how Amazon Aurora handles storage, so try to remember this architecture.
+For RDS, each instance has its own dedicated EBS provided storage.
+Now if you choose to use multi-AZ, as in this architecture,
+then the primary instances replicate to the standbys using synchronous replication.
+Now this means that data is replicated to the standby as soon as it's received by the primary.
+It means the standby will have the same set of data as the primary,
+so the same databases and the same data within those databases.
+Now you can also decide to have read replicas.
+I'll be covering what these are and how they work in another dedicated video.
+But in summary, read replicas use asynchronous replication,
+and they can be in the same region but also other AWS regions.
+These can be used to scale read load or to add layers of resilience
+if you ever need to recover in a different AWS region.
+Now lastly, we also have backups of RDS.
+There is a dedicated video covering backups later on in this section of the course,
+but just know that backups occur to S3.
+It's to an AWS managed S3 bucket, so you don't see the bucket within your account,
+but it does mean that data is replicated across multiple availability zones in that region.
+So if you have an AZ failure, backups will ensure that your data is safe.
+If you use multi-AZ mode, then backups occur from the standby instance,
+which means no negative performance impact.
+Now this is the basic product architecture.
+I'll be expanding on all of these key areas in dedicated videos,
+as well as giving you the chance to get practical experience
+via some demos and mini-projects if appropriate.
+For now, let's cover one final thing before we finish this video,
+and that's the cost architecture of RDS.
+So before I finish the video, I want to talk about RDS costs,
+which is a database server as a service product.
+You're not really billed based on your usage.
+Instead, like EC2, which RDS is loosely based on,
+you're billed for resource allocation,
+and there are a few different components to RDS's cost architecture.
+First, you've got the instance size and type.
+Logically, the bigger and more feature-rich the instance, the greater the cost.
+And this follows a similar model to how EC2 is billed.
+The fee that you see is an hourly rate, but it's billed per second.
+Next, we have the choice of whether Multi-AZ is used or not.
+Because Multi-AZ means more than one instance,
+there's going to be additional cost.
+Now how much more cost depends on the Multi-AZ architecture,
+which I'll be covering in detail in another video.
+Next is a per-gig monthly fee for storage,
+which means the more storage you use, the higher the cost.
+And certain types of storage, such as provisioned IOPS, cost more.
+And again, this is aligned to how EBS works,
+because the storage is based on EBS.
+Next is the data transfer costs,
+and this is a cost per gig of data transfer in and out of your DB instance
+from or to the internet and other AWS regions.
+Next, we have backups and snapshots,
+so you get the amount of storage that you pay for
+for the database instance in snapshot storage for free.
+So if you have 2 TB of storage, then that means 2 TB of snapshots for free.
+Beyond that, there is a cost, and this cost is gig per month of storage.
+So the more data is stored, the more it costs.
+The longer it's stored, the more it costs.
+1 TB for 1 month is the same cost as 500 GB for 2 months.
+So it's a per-GB month cost.
+And then finally, we have any extra costs based on using commercial DB engine types.
+And again, I'll be covering this, if appropriate,
+in a dedicated video elsewhere in the course.
+Okay, so at this point, that is everything I wanted to cover in this video.
+As I mentioned at the start, this is just an introduction to RDS architecture.
+We're going to be going into more detail on specific key points in upcoming videos,
+but for now, that's everything I wanted to cover.
+So go ahead and complete the video, and when you're ready,
+I'll look forward to you joining me in the next.

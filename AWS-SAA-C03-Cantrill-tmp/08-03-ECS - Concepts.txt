@@ -1,0 +1,106 @@
+Welcome back and in this lesson I want to introduce the Elastic Container Service or ECS.
+In the previous lesson you created a Docker image and tested it by running up a container
+all using the Docker container engine running on an EC2 instance and this is always something that
+you can do with AWS. But ECS is a product which allows you to use containers running on infrastructure
+which AWS fully manage or partially manage. It takes away much of the admin overhead of
+self-managing your container hosts. ECS is to containers what EC2 is to virtual machines and
+ECS uses clusters which run in one of two modes. EC2 mode which uses EC2 instances as container
+hosts and you can see these inside your account they're just normal EC2 hosts running the ECS
+software. We've also got Fargate mode which is a serverless way of running Docker containers
+where AWS manage the container host part and just leave you to define and architect your environment
+using containers. Now in this lesson I'll be covering the high level concepts of the product
+which apply to both of those modes and then in the following lesson I'll talk in a little bit more
+detail about EC2 mode and Fargate mode. So let's jump in and get started. ECS is a service that
+accepts containers and some instructions that you provide and it orchestrates where and how
+to run those containers. It's a managed container based compute service. I mentioned this a second
+ago but it runs in two modes EC2 and Fargate which radically changes how it works under the surface
+but for what I need to talk about in this lesson we can be a little abstract and say that ECS
+lets you create a cluster. I'll cover the different types of cluster architectures in the
+following lesson. For now it's just a cluster. Clusters are where your containers run from.
+You provide ECS with a container image and it runs that in the form of a container in the cluster
+based on how you want it to run. But let's take this from the bottom up architecturally and just
+step through how things work. First you need a way of telling ECS about container images that
+you want to run and how you want them to be run. Containers are all based on container images as
+we talked about earlier in this section. These container images will be located on a container
+registry somewhere and you've seen one example of that with the Docker Hub. Now AWS also provide
+a registry it's called the Elastic Container Registry or ECR and you can use that if you want.
+ECR has a benefit of being integrated with AWS so all of the usual permissions and scalability
+benefits apply but at its heart it is just a container registry. You can use it or use
+something else like Docker Hub. To tell ECS about your container images you create what's known as
+a container definition. The container definition tells ECS where your container image is. Logically
+it needs that. It tells ECS which port your container uses. Remember in the demo we exposed
+port 80 which is HTTP and so this is defined in the container definition as well. The container
+definition provides just enough information about the single container that you want to define.
+Then we have task definitions and a task in ECS represents a self-contained application.
+A task could have one container defined inside it or many. A very simple application might use
+a single container just like the container of Kat's application that we demoed in the previous
+lesson or it could use multiple containers maybe a web app container and a database container.
+A task in ECS represents the application as a whole and so it stores whatever container
+definitions are used to make up that one single application. I remember the difference by thinking
+of the container definition as just a pointer to where the container is stored and what port
+is exposed. The rest is defined in the task definition. At the associate level this is
+easily enough detail but if you do want extra detail on what's stored in the container definition
+versus the task definition I've included some links attached to this lesson which give you an
+overview of both. Task definitions store the resources used by the task so CPU and memory.
+They store the networking mode that the task uses. They store the compatibility so whether the task
+will work on EC2 mode or Fargate and one of the really important things which the task definition
+stores is the task role. A task role is an IAM role that a task can assume and when the task
+assumes that role it gains temporary credentials which can be used within the task to interact
+with AWS resources. Task roles are the best practice way of giving containers within ECS
+permissions to access AWS products and services and remember that one because it will come up in at
+least one exam question. When you create a task definition within the ECS UI you actually create
+a container definition along with it but from an architecture perspective I definitely wanted you
+to know that they're actually separate things. This is further confused by the fact that a lot
+of tasks that you create inside ECS will only have one container definition and that's going
+to be the case with the container of cats demo that we're going to be doing at the end of this
+section when we deploy our docker container into ECS but tasks and containers are separate things
+a task can include one or more containers a lot of tasks do include one container which doesn't
+help with the confusion. Now a task in ECS it doesn't scale on its own and it isn't by itself
+highly available and that's where the last concept that I want to talk to you about in this lesson
+comes in handy and that's called an ECS service and you configure that via a service definition.
+A service definition defines a service and a service is how for ECS we can define how we want
+a task to scale how many copies we'd like to run it can add capacity and it can add resilience
+because we can have multiple independent copies of our task running and you can deploy a load
+balancer in front of a service so the incoming load is distributed across all of the tasks
+inside a service so for tasks that you're running inside ECS that are long running and business
+critical you would generally use a service to provide that level of scalability and high
+availability it's the service that lets you configure replacing failed tasks or scaling or
+how to distribute load across multiple copies of the same task. Now we're not going to be using
+a service when we demo the container of cats demo at the end of this section because we'll only be
+wanting to run a single copy you can run a single copy of a task on its own but it's the service
+wrapper that you use if you want to configure scaling and high availability and it's tasks
+or services that you deploy into an ECS cluster and this applies equally to whether it's EC2 based
+or fargate based and I'll be talking about the technical differences between those two
+in the next lesson but for now the high level building blocks are the same you create a cluster
+and then you deploy tasks or services into that cluster now just to summarize a few of the really
+important points that I've talked about in this lesson first is the container definition this
+defines the image and the ports that will be used for a container it basically points at a container
+image that's stored on a container registry and it defines which ports are exposed from that container
+it does other things as well and I've included a link attached to this lesson which gives you a
+full overview of what's defined in the container definition but at the associate level all you need
+to remember is a container definition defines which image to use for a container and which
+ports are exposed a task definition applies to the application as a whole it can be a single container
+so a single container definition or multiple containers and multiple container definitions
+but it's also the task definition where you specify the task role so the security that
+the containers within a task get what can they access inside AWS it's an IAM role that's assumed
+and the temporary credentials that you get are what the containers inside the task can use to
+access AWS products and services so task definitions include this task role the
+containers themselves and you also specify at a task definition level the resources that your
+task is going to consume and I'll be showing you that in the demo lesson at the end of this section
+the task role obviously I've just talked about is the IAM role that's assumed by anything that's
+inside the task so the task role can be used by any of the containers running as part of a task
+and that's the best practice way that individual containers can access AWS products and services
+and then finally we've got services and service definitions and this is how you can define
+how many copies of a task you want to run and that's both for scaling and high availability
+so you can use a service and define that you want say five copies of a task running you can put a
+load balancer in front of those five individual tasks and distribute incoming load across those
+so it's used for scaling it's used for high availability and you can control other things
+inside a service such as restarts the certain monitoring features that you've got access to
+in there services are generally what you use if it's a business critical application or something
+in production that needs to cope with substantial incoming load in the demo that's at the end of
+this section we won't be using a service we'll be just deploying a task into our ECS cluster
+with that being said though that's all of the high level ECS concepts that I wanted to talk about
+in this lesson it's just enough to get you started so the next lesson makes sense and then so when
+you do the demo and get some practical experience with ECS everything will start to click at this
+point though go ahead complete this video and when you're ready you can join me in the next
+lesson where I'll be talking about the different ECS cluster modes

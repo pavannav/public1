@@ -1,0 +1,156 @@
+Welcome back, in this lesson I want to cover a little bit more theory, it's something
+which you'll need to understand from now on in the course because the topics that we'll
+discuss and the examples that we'll use to fully understand those topics will become
+ever more complex.
+Horizontal and vertical scaling are two different ways that a system can scale to handle increasing
+or in some cases decreasing load placed on that system.
+So let's quickly step through the difference and look at some of the pros, cons and requirements
+of each.
+Scaling is what happens when systems need to grow or shrink in response to increases
+or decreases of load placed upon them by your customers.
+From a technical perspective, you're adding or removing resources to a system.
+A system can in some cases be a single compute device, such as an EC2 instance, but in some
+cases could be hundreds, thousands, tens of thousands or even hundreds of thousands or
+more of individual devices.
+Vertical scaling is one way of achieving this increase in capacity, so this increase of
+resource allocation.
+The way it works is simple.
+Let's say for example we have an application and it's running on an EC2 instance and let's
+say that it's a T3.large which provides two virtual CPUs and eight GIB of memory.
+The instance will service a certain level of incoming load from our customers, but at
+some point, assuming the load keeps increasing, the size of this instance will be unable to
+cope and the experience for our customers will begin to decrease.
+Customers might experience delays, unreliability or even outright system crashes.
+So the commonly understood solution is to use a bigger server.
+In the virtual world of EC2, this means resizing the EC2 instance.
+We have lots of sizes to choose from.
+We might pick a T3.extralarge which doubles the virtual CPU and memory, or if the rate
+of increase is significant, we could go even further and pick another size up, a T3.2XL,
+which doubles that again to eight virtual CPUs and 32 GIB of memory.
+Let's talk about a few of the finer points though of vertical scaling.
+When you're actually performing vertical scaling with EC2, you're actually resizing an EC2
+instance when you scale, and because of that, there's downtime, often a restart during
+the resize process, which can potentially cause customer disruption.
+But it goes beyond this.
+Because of this disruption, it means that you can only scale generally during pre-agreed
+times, so within outage windows.
+If incoming load on a system changes rapidly, then this restriction of only being able to
+scale during outage windows limits how quickly you can react, how quickly you can respond
+to these changes by scaling up or down.
+Now as load increases on a system, you can scale up, but larger instances often carry
+a price premium, so the increasing cost going larger and larger is often not linear towards
+the top end.
+And because you're scaling individual instances, there's always going to be an upper cap on
+performance, and this cap is the maximum instance size.
+While AWS are always improving EC2, there will always be a maximum possible instance
+size, and so with vertical scaling, this will always be the cap on the scaling of an individual
+compute resource.
+Now there are benefits of vertical scaling.
+It's really simple, and it doesn't need any application modification.
+If an application can run on an instance, then it can run on a bigger instance.
+Vertical scaling works for all applications, even monolithic ones, where the whole code
+base is one single application, because it all runs on one instance, and that one instance
+can increase in size.
+Horizontal scaling is designed to address some of the issues with vertical scaling,
+so let's have a look at that next.
+Horizontal scaling is still designed to cope with changes to incoming load on a system,
+but instead of increasing the size of an individual instance, horizontal scaling just adds more
+instances.
+The original one instance turns into two as load increases, maybe two more are added.
+Eventually maybe eight instances are required.
+As the load increases on a system, horizontal scaling just adds additional capacity.
+The key thing to understand with horizontal scaling is that with this architecture, instead
+of one running copy of your application, you might have two, or ten, or hundreds of copies,
+each of them running on smaller compute instances.
+This means they all need to work together, all need to take their share of incoming load
+placed on the system by customers, and this generally means some form of load balancer.
+And a load balancer is an appliance which sits between your servers, in this case instances,
+and your customers.
+When customers attempt to access the system, all that incoming load is distributed across
+all of the instances running your application.
+Each instance gets a fair amount of the load, and for a given customer, every mouse click,
+every interaction with the application could be on the same instance, or randomised across
+any of the available instances.
+Horizontal scaling is great, but there are a few really important things that you need
+to be aware of as a solutions architect.
+When you think about horizontal scaling, sessions are everything.
+When you log into an application, think about YouTube, about Netflix, about your email,
+the state of your interaction with that application is called a session.
+You're using this training site right now, and if I deleted your session right at this
+moment, then the next time you interacted with the site, you would be logged out.
+You might lose the position of the video that you're currently watching.
+On Amazon.com, or your home grocery shopping site, the session stores what items are in
+your cart.
+With a single application running on a single server, the sessions of all customers are
+generally stored on that server.
+With horizontal scaling, this won't work.
+If you're shopping on your home grocery site and you add some cat cookies to your cart,
+this might be using instance 1.
+When you add your weekly selection of donuts, you might be using instance 10.
+Without changes, every time you moved between instances for a horizontally scaled application,
+you would have a different session, or no session.
+You would be logged out, the application, put simply, would be unusable.
+With horizontal scaling, you can be shifting between instances constantly.
+That's one of the benefits.
+It evens out the load.
+And so, horizontal scaling needs either application support, or what's known as off-host sessions.
+If you use off-host sessions, then your session data is stored in another place, an external
+database.
+And this means that the servers are what's called stateless.
+They're just dumb instances of your application.
+The application doesn't care which instance you connect to, because your session is externally
+hosted somewhere else.
+That's really the key consideration with horizontal scaling.
+It requires thought and design so that your application supports it.
+But if it does support it, then you get all of the benefits.
+The first one of those benefits is that you have no disruption while you're scaling.
+Because all you're doing is just adding instances, the existing ones aren't being impacted.
+So customer connections remain unaffected.
+Even if you're scaling in, so removing instances, because sessions should be off-host, so externally
+hosted, connections can be moved between instances, leaving customers unaffected.
+So that's a really powerful feature of having externally hosted sessions together with horizontal
+scaling.
+It means all of the individual instances are just dumb instances.
+It doesn't matter to which instance a particular customer connects to at a particular time.
+Because the sessions are hosted externally, they'll always have access to their particular
+state in the application.
+And there's no real limits to horizontal scaling, because you're using lots of smaller,
+more common instances.
+You can just keep adding them.
+There isn't the single instance size cap which vertical scaling suffers from.
+Horizontal scaling is also often less expensive.
+You're using smaller commodity instances, not the larger ones which carry a premium.
+So it can be significantly cheaper to operate a platform using horizontal scaling.
+And finally, it can allow you to be more granular in how you scale.
+With vertical scaling, if you have a large instance and go to an extra large, which is
+one step above it, you're pretty much doubling the amount of resources allocated to that
+system.
+With horizontal scaling, if you're currently using five small instances and you add one
+more, then you're scaling by around 20%.
+The smaller instances that you use, the better granularity that you have with horizontal
+scaling.
+Now there's a lot more to this.
+Later in the course in the High Availability and Scaling section, I'll introduce elasticity
+and how we can use horizontal scaling as a component of highly available and fault-tolerant
+designs.
+But for now, I'll leave you with a visual exam power-up.
+Visuals often make things easier to understand, and they help especially with memory recall.
+So when it comes to remembering the different types of scaling methods, picture this.
+Two types of scaling.
+First, horizontal scaling, and this adds and removes things.
+So if we're scaling Bob, one of our regular course guest stars, then scaling Bob in a
+horizontal way would mean moving to two Bob, which is scary enough, but if the load required
+it, we might even have to move to four Bob.
+And if we needed huge amounts of capacity, if four Bob wasn't enough, if you needed
+more and more and more, and even more Bob, then horizontal scaling has you covered.
+There isn't really a limit.
+We can scale Bob infinitely.
+In this case, we can have so many Bobs, we can scale Bob up to a near infinite level
+as long as we're using horizontal scaling.
+Scaling Bob in a vertical way, that starts off with a small Bob, then moves to a medium
+Bob, and if we really need more Bob, then we can scale to a large Bob.
+In the exam, when you're struggling to remember the difference between horizontal scaling
+and vertical scaling, picture this image.
+I guarantee with this, you will not forget it.
+But at this point, that's all of the theory that I wanted to cover.
+Go ahead, complete the video, and when you're ready, you can join me in the next.

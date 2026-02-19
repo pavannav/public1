@@ -1,0 +1,126 @@
+Welcome back and in this video I want to cover Route 53 interoperability. What I
+mean by that is using Route 53 to register domains or to host zone files
+when the other part of that is not with Route 53. Generally both of these things
+are performed together by Route 53 but it's possible for Route 53 just to do
+one or the other. So let's start by stepping through exactly what I mean.
+When you register a domain using Route 53 it actually does two jobs at the same
+time. While these two jobs are done together, conceptually they're two
+different things. Route 53 acts as a domain registrar and it provides domain
+hosting. So it can do both, which is what happens initially when you register a
+domain or it can be a domain registrar alone or it can host domains alone. It
+might only do one of them if for example you register a domain elsewhere and you
+want to use it with Route 53 and I want to take the time in this video to
+explain those edge case scenarios. So let's quickly step through what happens
+when you register a domain using Route 53. So first it accepts your money, the
+domain registration fee. This is a one-off fee or more specifically a once
+a year or once every three year fee for actually registering the domain. Next it
+allocates four Route 53 DNS servers called name servers. Then it creates a
+zone file which it hosts on the four name servers that I've just talked about.
+So that's the domain hosting part, allocating those servers and creating
+and hosting the zone file. If you hear me mention domain hosting that's what it
+means. Then once the domain hosting is sorted, Route 53 communicates with the
+registry for the specific top-level domain that you're registering your
+domain within. So they have a relationship with the registry. So Route
+53 is acting as the domain registrar, the company registering the domain on
+your behalf with the domain registry and the domain registry is the company or
+entity responsible for the specific top-level domain. So Route 53 gets the
+registry to add an entry for the domain, say for example animalsforlife.org.
+Inside this entry it adds four name server records and it points these
+records at the four name servers that I've just been talking about. This is
+the domain registrar part. So the registrar registers the domain on your
+behalf. That's one duty and then another entity provides DNS or domain hosting
+and that's another duty. Often these are both provided by Route 53 but they don't
+have to be. So fix in your mind these two different parts. The registrar which is
+the company who registers the domain on your behalf and the domain hosting which
+is how you add and manage records within hosted zones. So let's step through this
+visually looking at a few different options. First we have a traditional
+architecture where you register and host a domain using Route 53. So on the left
+conceptually we have the registrar role and this is within the registered
+domains area of the Route 53 console. On the right we have the DNS hosting role
+and this is managed in the public hosted zone part of the Route 53 console. So
+step one is to register a domain within Route 53. For now let's assume that it's
+the animalsforlife.org domain. So you liaise with Route 53 and you pay the fee
+required to register a domain which is a per year or per three year fee. Now
+assuming nobody else has registered the domain before the process continues.
+First the Route 53 registrar liaisers with the Route 53 DNS hosting entity and
+it creates a public hosted zone which allocates four Route 53 name servers to
+host that zone which are then returned to the registrar. I want to keep driving
+home that conceptually the registrar and the hosting are separate functions of
+Route 53 because it makes everything easier to understand. Once the registrar
+has these four name servers it passes all of this along through to the .org
+top level domain registry. The registry is the manager of the .org top level
+domain zone file and it's via this entity that records are created in the
+top level domain zone for the animalsforlife.org domain. So entries are
+added for our domain which point at the four name servers which are created and
+managed by Route 53 and that's how the domain becomes active on the public DNS
+system. At this point we've paid once for the domain registration to the registrar
+which is Route 53 and we also have to pay a monthly fee to host the domain so
+the hosted zone and with this architecture this is also paid to Route
+53. So this is a traditional architecture and this is what you get if
+you register and host a domain using Route 53 and this is the default
+configuration. So when you register a domain while you might see it as one
+step it's actually two different steps done by two different conceptual
+entities the registrar and the domain host and it's important to distinguish
+between these two whenever you think about DNS. But now let's have a look at
+two different configurations where we're not using Route 53 for both of these
+different components. This time Route 53 is acting as a registrar only so we
+still pay Route 53 for the domain they still liaise on our behalf with the
+registry for the top level domain but this time a different entity is hosting
+the domain so the zone file and the name servers and let's assume for this
+example it's a company called Hover. This architecture involves more manual
+steps because the registrar and the DNS hosting entity are separate. So as the
+DNS admin you would need to create a hosted zone. The third party provider
+would generally charge a monthly fee to host that zone on name servers that they
+manage. You would need to get the details of those servers once it's been
+created and pass those details on to Route 53 and Route 53 would then liaise
+with the .org top level domain registry and set those name server records within
+the domain to point at the name servers managed in this case by Hover. With this
+configuration which I'll admit I don't see all that often in the wild the
+domain is managed by Route 53 but the zone file and any records within it are
+managed by the third party domain hosting provider in this case Hover. Now
+the reason why I don't think we see this all that often in the wild is the
+domain registrar functionality that Route 53 provides it's nothing special.
+With this architecture you're not actually using Route 53 for domain
+hosting and domain hosting is the part of Route 53 which adds most of the value.
+If anything this is the worst way to manage domains. Let's look at another
+more popular architecture which I see fairly often in the wild and that's
+using Route 53 for domain hosting only. Now you might see this either when a
+business needs to register domains via a third party provider maybe they have an
+existing business deal or business discount or you might have domains
+which have already been historically registered with another provider and
+where you want to get the benefit that Route 53 DNS hosting provides. With this
+architecture the domain is registered via a third party domain registrar in
+this case Hover. So it's the registrar in this example who liaise with the top
+level domain registry but we use Route 53 to host the domain. So at some point
+either when the domain is being created or afterwards we have to create a public
+hosted zone within Route 53. This creates the zone and the name servers to host
+the zone obviously for a monthly fee. So once this has been created we pass those
+details through to the registrar who liaise with the registry for the top
+level domain and then those name server records are added to the top level
+domain meaning the hosted zone is now active on the public internet. Now it's
+possible to do this when registering the domain so you could register the domain
+with Hover and immediately provide Route 53 name servers or you might have a
+domain that's been registered years ago and you now want to use Route 53 for
+hosting and record management. So you can use this architecture either while
+registering a domain or after the fact by creating the public hosted zone and
+then updating the name server records in the domain via the third party registrar
+and then the .org registry. Now I know that this might seem complex but if you
+just keep going back to basics and thinking about Route 53 as two things
+then it's much easier. Route 53 offers a component which registers the domain so
+this is the registrar and it also offers a component which hosts the zone files
+and provides managed DNS name servers. If you understand that both of those are
+different things and when you normally register a domain using Route 53 both of
+them are being used. A hosted zone is created for you and then via the
+registrar part it's added to the domain record by the top-level domain registry.
+If you understand that so see these as two completely different components as
+providers on the market and so generally for my own domains I will use Route 53
+for both the registrar and the domain hosting components but depending on your
+architecture depending on any legacy configuration you might have a
+requirement to use different entities for these different parts and that's
+especially important if you're a developer looking at writing applications
+that take advantage of DNS or if you're an engineer looking to implement or
+fault-find these type of architectures. Now with that being said that's
+everything I wanted to cover in this theory video I just wanted to give you a
+brief overview of some of the different types of scenarios that you might find
+in more complex Route 53 situations. At this point go ahead and complete this
+video and when you're ready I'll look forward to you joining me in the next.

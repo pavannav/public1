@@ -1,0 +1,167 @@
+Welcome back. This is part two of this lesson. We're going to continue immediately from the end of part one, so let's get started.
+Okay, so the instance is now in an available state. Let's just close down this informational dialog at the top.
+And let's just minimize this menu on the left. Let's maximize the amount of screen space that we have for this specific purpose.
+So I just want us to go inside this database instance and explore together the information that we have available.
+So I talked in the theory lesson how every RDS instance is given an endpoint name and an endpoint port,
+so this is the information that we'll use to connect to this RDS instance.
+Networking-wise, this instance has been provisioned in US-EAST-1A, it's in the Animals for Life VPC,
+and it's used our A4L subnet group that we created at the start of this demo.
+And that means that it's currently utilizing all three database subnets in the Animals for Life VPC,
+but it's chosen, because we only deployed one instance, to use US-EAST-1A.
+Now this is the VPC security group that we're going to need to configure.
+So right-click on this and open it in a new tab and move to that tab.
+This is the security group which controls access to this RDS instance.
+So let's expand this at the bottom.
+So currently it has my IP address being the only source allowed to connect into this RDS instance.
+So the only inbound rule on the security group protecting this RDS instance is allowing my IP address.
+So we're going to click on Edit and then click on Add Rule,
+and we're going to add a rule which allows our other instances to connect to this RDS instance.
+So first, in the Type dropdown, click and then type mysql to get the same option as the line above,
+and then click to select.
+Next, go ahead and type instance into the source box,
+and then select the Migrate to RDS-Instance security group.
+Now this is the security group that's used by any instances deployed by our one-click deployment.
+And this allows those instances to connect to our RDS instance, and that's what we want.
+So go ahead and select that and then click on Save Rules.
+And this means now that our WordPress instance can communicate with RDS.
+So now let's move back to the RDS tab,
+and then make sure we're inside the A4L WordPress database instance.
+So that's the connectivity and the security tab.
+We also have the monitoring tab,
+and it's here where you can see various CloudWatch-provided metrics about the database instance.
+You also have logs and events related to this instance.
+So if we go and have a look at recent events,
+we can see all of the events such as when the database instance was created,
+when its first backup was created,
+and you can explore those because they might be different in your environment.
+You can click on the Configuration tab and see the current configuration of the RDS instance.
+The Maintenance and Backups tab is where you can configure the maintenance and backup processes,
+and then of course you can tag the RDS instance.
+Now in other lessons in this section of the course, and depending on what course you're taking,
+I will be talking about many of these options, what you can modify,
+and which actions you can perform on RDS instances.
+But for now, we're just going to move on with this demo.
+So the next step is that we need to migrate our existing data into this RDS instance.
+So what we're going to do is to click on the Connectivity and Security tab,
+and we're going to leave this open.
+We're going to need this endpoint name and port very shortly.
+You should still have a tab open to the EC2 console.
+If you don't, you can reach that by going on Services and then opening EC2 in a new tab.
+But I want you to select the A4L-WordPress instance,
+and then right-click and connect to it using Instance Connect.
+So go ahead and do that.
+Once you've done that, we're going to start referring to the lesson commands document,
+so make sure you've got that open.
+We're going to use this command to take a backup of the existing MariaDB database.
+So we need to replace a placeholder.
+What we need to do is delete this and replace it with the private IP address of the MariaDB EC2 instance.
+So go back to the EC2 console, select the DB-WordPress instance,
+and copy the private IP version 4 address into your clipboard,
+and then let's move back to the WordPress instance and paste that in.
+Go ahead and press Enter, and it will prompt you for the password.
+And the password is the same Animals for Life strong password that we've been using everywhere.
+Copy that into your clipboard.
+So this is the password for the A4L-WordPress user on the MariaDB EC2 instance.
+So paste that in and press Enter, and then ls-la to confirm that we now have this
+A4L-WordPress.sql database backup file.
+And we do, so that's good.
+So as we did in the previous demo lesson, we're going to take this backup file
+and we're going to import it into the new destination database,
+which is going to be the RDS instance.
+To do that, we'll use this command,
+but we're going to need to replace the placeholder hostname
+with the CNAME of the RDS instance.
+So go ahead and delete this placeholder,
+then go back to the RDS console,
+and I'll want you to copy the endpoint name into your clipboard.
+So select it, right-click, and then copy.
+We won't need the port number because this is the standard MySQL port,
+and if you don't specify it, most applications will assume this default.
+So just make sure that you have the endpoint DNS name or endpoint CNAME in your clipboard.
+And then back on the WordPress EC2 instance,
+go ahead and paste this database name into this command and press Enter.
+And again, you'll be asked for the password,
+and that's the same animals4life strong password,
+so copy that into your clipboard, paste that in, and press Enter.
+And that's imported this a4lwordpress.sql file into the RDS instance.
+So now we need to follow the same process and change WordPress
+so that it points at the RDS instance.
+And we do that by moving to where the WordPress configuration file is,
+so cd space forward slash var, forward slash www, forward slash html, and press Enter.
+And then sudo, so we have admin privileges, nano, which is a text editor,
+and then wp-config.php, and press Enter.
+Then we need to scroll down, and we're looking for where it says dbhost,
+and currently it has a host name here.
+Now if you go back to the EC2 console and you look at the a4l-db-wordpress instance,
+you'll see that its private IP version 4 DNS name is what's listed inside this configuration item.
+So it's currently pointing at this dedicated database instance.
+What we need to do is replace that, and we're going to replace it with the RDS database DNS name,
+or the CNAME of this RDS instance, so copy that into your clipboard,
+and then go ahead and delete this private DNS name for the MariaDB EC2 instance,
+and then paste in the RDS endpoint name, also known as the RDS CNAME.
+Once you've done that, Ctrl-O and Enter to save, and Ctrl-X to exit.
+And now our WordPress instance is pointing at the RDS instance for its database.
+Now we can verify that by checking WordPress, move back to instances,
+select the WordPress instance, copy the public IP version 4 address into your clipboard,
+don't use this open address link, open that in a new tab,
+go ahead and just click on the best cats ever to verify the functionality,
+and it does look as though it's working.
+And to verify that, if we go back to the EC2 console,
+select the A4L-DB-WordPress instance and right-click, and then stop that instance,
+now the original database that was providing database services to WordPress
+is going to move into a stopped state, and if our WordPress blog continues functioning,
+we know that it's using the RDS instance.
+So let's keep refreshing and wait for this to change into a stopped state.
+There we go, it's stopped, and if we go back to our WordPress page and refresh,
+it still loads, and so we know that it's now using RDS for its database services.
+So at this point, that's everything that I wanted you to do in this demo lesson.
+You've stepped through the process of provisioning an RDS instance,
+so you've created a subnet group, provisioned the instance itself,
+explored the functionality of the instance, including how to provide access to it
+by selecting a security group and then editing that security group to allow access,
+you've performed a database migration, and you've explored how the RDS instance is presented in the console.
+So that's everything that you need to do within this demo lesson.
+And don't worry, we're going to be exploring much more of the advanced functionality of RDS
+as we move through this section of the course.
+For now though, I want us to clear up the infrastructure that we've created as part of this demo lesson.
+Now, because we've provisioned RDS manually outside of CloudFormation,
+unfortunately, there is a little bit more manual work involved in the cleanup.
+So I want you to go to the RDS console, move to Databases, select this database,
+click on Actions, and then select Delete.
+Now, it will prompt you to create a final snapshot, and we're not going to do that.
+We're not going to retain automated backups, and so you'll need to acknowledge that upon instance deletion,
+automated backups, including any system snapshots and pointing time recoveries, will no longer be available.
+And don't worry, I'll be talking about backups and recovery in another lesson in this section of the course.
+For now, just acknowledge that and then type delete me into this box and confirm the deletion.
+Now, this deletion is going to take a few minutes.
+It's not an immediate process. It will start in a deleting state,
+and we need to wait for this process to be completed before we continue the cleanup.
+So go ahead and pause this video and wait for this instance to fully delete before continuing.
+Now that the instance has been deleted, it vanishes from this list.
+Next, we need to delete the subnet group that we created earlier.
+So click on Subnet Groups, select the subnet group, and then delete it.
+You'll need to confirm that deletion. Once done, it too should vanish from that list.
+Next, go to the tab you've got open to the VPC console.
+Scroll down and select Security Groups.
+Now look through this list and locate the security group that you created as part of provisioning the RDS instance.
+It should be called A4LVPC-RDS-SG.
+Select that, click on Actions, and then Delete Security Group, and you'll need to confirm that process as well.
+Once that's deleted, the final step is to go to the CloudFormation console,
+and then you'll need to delete the CloudFormation stack that was created using the one-click deployment at the start of the demo.
+It should be called Migrate to RDS. Select it, click on Delete, and confirm that deletion.
+And once deleted, the account will be returned into the same state as it was at the start of the demo lesson.
+So all of the infrastructure that we've used will be removed from the account,
+and the account will be in the same state as at the start of the demo.
+Now I hope you've enjoyed this demo, and know we're repeating the same WordPress installation
+and then the creation of the blog post over and over again,
+but I want you to get used to different parts of this process over and over again.
+You need to know why not to use a database on EC2.
+You need to know why not to perform a lot of these processes manually.
+From this point onward in the course, we're going to be using RDS
+to evolve our WordPress design into something that is truly elastic.
+And so all of these processes, the things I'm having you repeat,
+are really useful to aid in your understanding of all of these different components.
+So from this point onward, we're going to be automating the creation of RDS
+and focusing on the specific pieces of functionality that you need to understand.
+But at this point, that's everything that you need to do in this demo.
+So go ahead, complete the video, and when you're ready, I look forward to you joining me in the next.

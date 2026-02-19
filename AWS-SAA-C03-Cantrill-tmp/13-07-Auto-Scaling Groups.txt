@@ -1,0 +1,98 @@
+Welcome back and in this lesson I'm going to be covering EC2 autoscaling groups which is how we can configure EC2 to scale automatically based on demand placed on the system.
+Autoscaling groups are generally used together with elastic load balancers and launch templates to deliver elastic architectures.
+Now we've got a lot to cover so let's jump in and get started.
+Autoscaling groups do one thing. They provide autoscaling for EC2. Strictly speaking they can also be used to implement a self-healing architecture as part of that scaling or in isolation.
+Now autoscaling groups make use of configuration defined within launch templates or launch configurations and that's how they know what to provision.
+An autoscaling group uses one launch configuration or one specific version of a launch template which is linked to it.
+You can change which of those is associated but it's one of them at a time and so all instances launched using the autoscaling group are based on this single configuration definition either defined inside a specific version of a launch template or within a launch configuration.
+Now an autoscaling group has three super important values associated with it. We've got the minimum size, the desired capacity and the maximum size and these are often referred to as min, desired and max and can often be expressed as x, y or z.
+For example 1, 2, 4 means one minimum, two desired and four maximum.
+Now an autoscaling group has one foundational job which it performs. It keeps the number of running EC2 instances the same as the desired capacity and it does this by provisioning or terminating instances.
+So the desired capacity always has to be more than the minimum size and less than the maximum size. If you have a desired capacity of two but only one running EC2 instance then the autoscaling group provisions a new instance.
+If you have a desired capacity of two but have three running EC2 instances then the autoscaling group will terminate an instance to make these two values match.
+Now you can keep an autoscaling group entirely manual so there's no automation and no intelligence. You just update values and the autoscaling group performs the necessary scaling actions.
+Normally though scaling policies are used together with autoscaling groups. Scaling policies can update the desired capacity based on certain criteria.
+For example CPU load and if the desired capacity is updated then as I've just mentioned it will provision or terminate instances and visually this is how it looks.
+We have an autoscaling group and these run within a VPC across one or more subnets. The configuration for EC2 instances is provided either using launch templates or launch configurations.
+And then on the autoscaling group we specify a minimum value in this case one and this means there will always be at least one running EC2 instance in this case the cat pictures blog.
+We can also set a desired capacity in this example two and this will add another instance if a desired capacity is set which is higher than the current number of instances. If this is the case then instances are added.
+Finally we could set the maximum size in this case to four which means that two additional instances could be provisioned but they won't immediately be because the desired capacity is only set to two and there are currently two running instances.
+We could manually adjust the desired capacity up or down to add or remove instances which would automatically be built based on the launch template or launch configuration.
+Alternatively we could use scaling policies to automate that process and scale in or out based on sets of criteria.
+Architecturally autoscaling groups define where instances are launched. They're linked to a VPC and subnets within that VPC are configured on the autoscaling group.
+Whatever subnets are configured will be used to provision instances into. When instances are provisioned there's an attempt to keep the number of instances within each availability zone even.
+So in this case if the autoscaling group was configured with three subnets and the desired capacity was also set to three then it's probable each subnet would have one EC2 instance running within it.
+But this isn't always the case. The autoscaling group will try and level capacity where available.
+Scaling policies are essentially rules. Rules which you define which can adjust the values of an autoscaling group and there are three ways that you can scale autoscaling groups.
+The first is not really a policy at all. It's just to use manual scaling and I just talked about doing that.
+This is where you manually adjust the values at any time and the autoscaling group handles any provisioning or termination that's required.
+Next there's scheduled scaling which is great for sale periods where you can scale out the group when you know there's going to be additional demand or when you know a system won't be used so you can scale in outside of business hours.
+Scheduled scaling adjusts the desired capacity based on schedules and this is useful for any known periods of high or low usage.
+For the exam if you have known periods of usage then scheduled scaling is going to be a great potential answer.
+Then we have dynamic scaling and there are three subtypes.
+What they all have in common is they are rules which react to something and change the values on an autoscaling group.
+The first is simple scaling and this, well, it's simple. This is most commonly a pair of rules. One to provision instances and one to terminate instances.
+You define a rule based on a metric and an example of this is CPU utilization.
+If the metric, for example, CPU utilization is above 50% then adjust the desired capacity by adding one and if the metric is below 50% then remove one from the desired capacity.
+Using this method you can scale out meaning adding instances or scale in meaning terminating instances based on the value of a metric.
+Now this metric isn't limited to CPU. It can be many other metrics including memory or disk input output.
+Some metrics need the CloudWatch agent to be installed. You can also use some metrics not on the EC2 instances.
+For example, maybe the length of an SQS queue which will cover elsewhere in the course or a custom performance metric within your application such as response time.
+We also have stepped scaling which is similar but you define more detailed rules and this allows you to act depending on how out of normal the metric value is.
+So maybe add one instance if the CPU usage is above 50% but if you have a sudden spike of load maybe add three if it's above 80% and the same could happen in reverse.
+Step scaling allows you to react quicker the more extreme the changing conditions.
+Step scaling is almost always preferable to simple except when your only priority is simplicity.
+And then lastly we have target tracking and this takes a slightly different approach.
+It lets you define an ideal amount of something say 40% aggregate CPU and then the group will scale as required to stay at that level.
+Provisioning or terminating instances to maintain that desired amount or that target amount.
+Now not all metrics work for target tracking but some examples of ones that are supported are average CPU utilization, average network in, average network out and the one that's relevant to application load balances request count per target.
+Now lastly there's a configuration on an auto scaling group called a cooldown period and this is a value in seconds.
+It controls how long to wait at the end of a scaling action before doing another.
+It allows auto scaling groups to wait and review chaotic changes to a metric and can avoid costs associated with constantly adding or removing instances because remember there is a minimum billable period.
+Since you'll build for at least the minimum time every time an instance is provisioned regardless of how long you use it for.
+Now auto scaling groups also monitor the health of instances that they provision.
+By default this uses the EC2 status checks.
+So if an EC2 instance fails, EC2 detects this, passes this on to the auto scaling group and then the auto scaling group terminates the EC2 instance then it provisions a new EC2 instance in its place.
+This is known as self-healing and it will fix most problems isolated to a single instance.
+The same would happen if we terminated an instance manually.
+The auto scaling group would simply replace it.
+Now there's a trick with EC2 and auto scaling groups.
+If you create a launch template which can automatically build an instance then create an auto scaling group using that template.
+Set the auto scaling group to use multiple subnets in different availability zones.
+Then set the auto scaling group to use a minimum of one, a maximum of one and a desired of one.
+Then you have simple instance recovery.
+The instance will recover if it's terminated or if it fails and because auto scaling groups work across availability zones the instance can be re-provisioned in another availability zone if the original one fails.
+It's cheap, simple and effective high availability.
+Now auto scaling groups are really cool on their own but their real power comes from their ability to integrate with load balancers.
+Take this example that Bob is browsing to the cat blog that we've been using so far and he's now connecting through a load balancer and the load balancer has a listener configured for the blog and points at a target group.
+Instead of statically adding instances or other resources to the target group then you can use an auto scaling group configured to integrate with the target group.
+As instances are provisioned within the auto scaling group then they're automatically added to the target group of that load balancer.
+And then as instances are terminated by the auto scaling group then they're removed from that target group.
+This is an example of elasticity because metrics which measure load on a system can be used to adjust the number of instances.
+These instances are effectively added as load balancer targets and any users of the application because they access via the load balancer are abstracted away from the individual instances and they can use the capacity added in a very fluid way.
+And what's even more cool is that the auto scaling group can be configured to use the load balancer health checks rather than EC2 status checks.
+Application load balancer checks can be much richer, they can monitor the state of HTTP or HTTPS requests and because of this they're application aware which simple status checks which EC2 provides are not.
+Be careful though, you need to use an appropriate load balancer health check. If your application has some complex logic within it and you're only testing a static HTML page then the health check could respond as OK even though the application might be in a failed state.
+And the inverse of this, if your application uses databases and your health check checks a page with some database access requirements, well if the database fails then all of your health checks could fail meaning all of your EC2 instances will be terminated and reprovisioned when the problem is with the database not the instances.
+And so you have to be really careful when it comes to setting up health checks.
+Now the next thing I want to talk about is scaling processes within an auto scaling group. So you have a number of different processes or functions performed by the auto scaling group and these can be set to either be suspended or they can be resumed.
+So first we've got launch and terminate and if launch is set to suspend then the auto scaling group won't scale out if any alarms or schedule actions take place and the inverse is if terminate is set to suspend then the auto scaling group will not terminate any instances.
+We've also got add to load balancer and this controls whether any instances provisioned are added to the load balancer.
+Next we've got alarm notification and this controls whether the auto scaling group will react to any cloud watch alarms.
+We've also got AZ rebalance and this controls whether the auto scaling group attempts to redistribute instances across availability zones.
+We've got health check and this controls whether instance health checks across the entire group are on or off.
+We've also got replace unhealthy which controls whether the auto scaling group will replace any instances marked as unhealthy.
+We've got scheduled actions which controls whether the auto scaling group will perform any scheduled actions or not and then in addition to those you can set a specific instance to either be standby or in service.
+And this allows you to suspend any activities of the auto scaling group on a specific instance.
+So this is really useful if you need to perform maintenance on one or more EC2 instances you can set them to standby and that means they won't be affected by anything that the auto scaling group does.
+Now before we finish I just want to talk about a few final points and these are really useful for the exam.
+Auto scaling groups are free. The only costs are for the resources created by the auto scaling group and to avoid excessive costs use cool downs within the auto scaling group to avoid rapid scaling.
+To be cost effective you should also think about using more smaller instances because this means you have more granular control over the amount of compute and therefore costs that are incurred by your auto scaling group.
+So if you have two larger instances and you need to add one that's going to cost you a lot more than if you have 20 smaller instances and only need to add one.
+Smaller instances mean more granularity which means you can adjust the amount of compute in smaller steps and that makes it a more cost effective solution.
+Now auto scaling groups are used together with application load balancers for elasticity so the load balancer provides the level of abstraction away from the instances provisioned by the auto scaling group.
+So together they're used to provision elastic architectures.
+And lastly an auto scaling group controls the when and the where so when instances are launched and which subnets they're launched into.
+Launch templates or launch configurations define the what so what instances are launched and what configuration those instances have.
+Now at this point that's everything I wanted to cover in this lesson. It's been a huge amount of theory for one lesson but these are really essential concepts that you need to understand for the exam.
+So go ahead and complete this lesson and when you're ready I look forward to you joining me in the next.

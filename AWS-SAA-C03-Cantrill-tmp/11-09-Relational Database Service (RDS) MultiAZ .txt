@@ -1,0 +1,195 @@
+Welcome back and in this video I want to talk through the ways in which
+RDS offers high availability. Historically there was one way
+Multi-AZ. Over time RDS has been improved
+and now there's Multi-AZ instance deployments
+and Multi-AZ cluster deployments and these offer different benefits and
+trade-offs and so in this video
+I want to step through the architecture and functionality of both.
+Now we do have a lot to cover so let's jump in and get started straight away.
+Historically the only method of providing high availability which
+RDS had was Multi-AZ. So again this is now called Multi-AZ
+instance deployment. With this architecture
+RDS has a primary database instance containing
+any databases that you create and when you enable
+Multi-AZ mode this primary instance
+is configured to replicate its data synchronously
+to a standby replica which is running in another
+availability zone and this means that this standby also has a copy
+of your databases. Now in Multi-AZ instance mode
+this replication is at the storage level. This is actually less efficient
+than the cluster Multi-AZ architecture but more on this later
+in this video. The exact method that RDS uses to do this replication depends on
+the database engine that you pick.
+MariaDB, MySQL, Oracle and PostgreSQL
+use Amazon failover technology whereas Microsoft SQL instances
+use SQL server database mirroring or always on
+availability groups. In any case this is abstracted away
+all you need to understand is that it's a synchronous replica.
+Now architecturally how this works is that all accesses to the databases
+are via the database CNAME. This is a DNS name
+which by default points at the primary
+database instance. With Multi-AZ instance architecture
+you always access the primary database instance.
+There's no access to the standby with the primary instance.
+Other things though such as backups can occur from the standby
+so data is moved into S3 and then replicated across multiple
+availability zones in that region. Now this places no
+extra load on the primary because it's occurring from the standby
+and remember this is important because all accesses so reads and writes
+from this Multi-AZ architecture will occur to and from
+the primary instance. Now in the event that anything happens to the primary
+instance this will be detected by RDS
+and a failover will occur. This can be done manually if you're testing or if
+you need to perform maintenance but generally
+this will be an automatic process. What happens in this scenario is the database
+CNAME changes.
+Instead of pointing at the primary it points at the standby
+which becomes the new primary. Because this is a DNS change
+it generally takes between 60 to 120 seconds for this to occur
+so there can be brief outages. This can be reduced by removing any DNS caching in
+your application
+for this specific DNS name. If you do remove this caching it means that the
+second RDS has finished the failover
+and the DNS name has been updated your application will use this name
+which is now pointing at the new primary instance.
+So this is the architecture when you're using the older
+Multi-AZ instance architecture.
+I want to cover a few key points of this architecture before we look
+at how Multi-AZ cluster architecture works.
+So let's move on. So just to summarize replication between
+primary and standby is synchronous and what this means is that data is written
+to the primary
+and then immediately replicated to the standby before being viewed
+as committed. Now Multi-AZ does not come
+within the free tier because of the extra cost for the standby replica
+that's required and Multi-AZ with the instance architecture means that you
+only have
+one standby replica and that's important
+it's only one standby replica and this standby replica cannot be used
+for reads or writes. Its job is to simply sit there
+and wait for failover events. A failover event can take
+anywhere from 60 to 120 seconds to occur
+and Multi-AZ mode can only be
+within the same region so different availability zones within the same
+AWS region. Backups can be taken from the standby replica to improve
+performance
+and failovers will occur for various different reasons
+such as availability zone outage, the failure of the primary instance,
+manual failover, instance type change so when you change the type
+of the RDS instance and even when you're patching software
+so you can use failover to move any consumers of your database onto a
+different
+instance, patch the instance which has no consumers
+and then flip it back so it does offer some great features which can help you
+maintain
+application availability. Now next I want to talk about Multi-AZ
+using a cluster architecture and when you watch the Aurora video
+you might be confused between this architecture and Amazon Aurora
+so I'm going to stress the differences between Multi-AZ
+cluster for RDS and Aurora in this video
+and this is to prepare you for when you watch the Aurora video
+it's really critical for you to understand the differences between
+Multi-AZ cluster mode for RDS
+and Amazon Aurora. So we start with a similar
+VPC architecture only now in addition to the single client device
+on the left I'm adding two more. With this mode
+RDS is capable of having one
+writer replicate to two reader
+instances and this is a key difference between this
+and Aurora. With this mode of RDS Multi-AZ
+you can have two readers only
+these are in different availability zones than the writer instance but there
+will
+only be two whereas with Aurora you can have more
+a difference between this mode of Multi-AZ
+and the instance mode is that these readers are usable
+you can think of the writer like the primary instance within Multi-AZ
+instance mode in that it can be used for writes
+and read operations. The reader instances
+unlike Multi-AZ instance mode these can be utilized while they're in this state
+they can be used only for read operations
+this will need application support since your application needs to understand
+that it can't use the same
+instance for reads and writes but it means that you can use this Multi-AZ
+mode
+to scale your read workloads unlike Multi-AZ
+instance mode. Now in terms of replications between the writer
+and the readers well data is sent to the writer
+and it's viewed as being committed when at least one
+of the readers confirms that it's been written. It's resilient at that point
+across multiple availability zones within that region
+now the cluster that RDS creates to support this architecture
+is different in some ways and similar in others
+versus Aurora. In RDS Multi-AZ mode
+each instance still has its own local storage
+which as you'll see elsewhere in this course is different
+than Aurora. Like Aurora though you access the cluster
+using a few endpoint types. First is the cluster endpoint and you can think of
+this like the database CNAME
+in the previous Multi-AZ architecture
+it points at the writer and can be used for reads and writes against the
+database
+or administration functions. Then there's a reader endpoint and this points
+at any available reader within the cluster
+and in some cases this does include the writer instance. Remember
+the writer can also be used for reads. In general operation though
+this reader endpoint will be pointing at the dedicated
+reader instances and this is how reads within the cluster scale
+so applications can use the reader endpoint to balance their read operations
+across readers within the cluster. Finally there are
+instance endpoints and each instance in the cluster
+gets one of these. Generally it's not recommended to use them directly
+as it means any operations won't be able to tolerate
+the failure of an instance because they don't switch over to anything
+if there's an instance failure so you generally only use these for testing and
+fault-finding.
+So this is the Multi-AZ cluster architecture
+before I finish up with this video I just want to cover a few key points about
+this specific type
+of Multi-AZ implementation
+and don't worry you're going to get the chance to experience RDS practically
+in other videos in this part of the course. So first
+RDS using Multi-AZ in cluster mode means one
+writer and two reader DB instances
+in different availability zones. So this gives you a higher level
+of availability versus instance mode because you have
+this additional reader instance versus the single standby instance
+in Multi-AZ instance mode. In addition Multi-AZ cluster mode
+runs on much faster hardware so this is Graviton architecture
+and uses local NVMe SSD storage
+so any writes are written first to local superfast storage
+and then flushed through to EBS. So this gives you the benefit
+of the local superfast storage in addition
+to the availability and resilience benefits of EBS.
+In addition when Multi-AZ uses cluster mode
+then readers can be used to scale read operations
+against the database. So if your applications support it
+it means you can set read operations to use the reader
+endpoint which frees up capacity on the writer instance
+and allows your RDS implementation to scale
+to higher levels of performance versus
+any other mode of RDS. And again you'll see when you're watching the Aurora video
+Aurora as a database platform can scale
+even more and I'll detail exactly how in that separate video.
+Now when using Multi-AZ in cluster mode replication is done
+using transaction logs and this is much more efficient.
+This also allows a faster failover. In this mode
+failover rather than taking 60 to 120 seconds
+can occur in as little as 35 seconds
+plus any time required to apply the transaction logs to the reader instances
+but in any case this will occur much faster than the 60 to 120 seconds which
+is needed when using Multi-AZ instance mode.
+And again just to confirm when running in this mode
+writes are viewed as committed when they've been sent
+to the writer instance and stored and replicated to at least one
+reader which has confirmed that it's written that data.
+So as you can see these are completely different
+architectures and in my opinion Multi-AZ
+in cluster mode adds some significant benefits
+over instance mode and you'll see how this functionality
+is extended again when I talk about Amazon Aurora
+but for now that's everything I wanted to cover in this video so thanks for
+watching
+go ahead and complete the video and when you're ready I look forward to you
+joining me
+in the next.

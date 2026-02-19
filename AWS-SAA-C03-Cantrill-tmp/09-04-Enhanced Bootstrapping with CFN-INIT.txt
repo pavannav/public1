@@ -1,0 +1,121 @@
+Welcome back, and in this lesson I'm going to be covering a topic which is probably slightly beyond what you need for the Solutions Architect Associate exam,
+but additional understanding of CloudFormation is never a bad thing, and it will help you answer any automation style questions in the exam,
+and so I'm going to talk about it anyway.
+CloudFormation in it is a way that you can pass complex bootstrapping instructions into an EC2 instance.
+It's much more complex than the simple user data example that you saw in the previous lesson.
+Now we do have a lot to cover so let's jump in and step through the theory before we move to another demo lesson.
+In the previous lesson I showed you how CloudFormation handled user data.
+It works in a similar way to the console UI where you pass in base64 encoded data into the instance operating system, and it runs as a shell script.
+Now there's another way to configure EC2 instances, a way which is much more powerful.
+It's called cfn-init and it's officially referred to by AWS as a helper script which is installed on EC2 operating systems such as Amazon Linux 2.
+Now cfn-init is actually much more than a simple helper script, it's much more like a simple configuration management system.
+User data is what's known as procedural, it's a script, it's run by the operating system line by line.
+Now cfn-init can also be procedural, it can be used to run commands just like user data.
+But it can also be desired state, where you direct it how you want something to be.
+What's the desired state of an EC2 instance?
+And it will perform whatever is required to move the instance into that desired state.
+So for example, you can tell cfn-init that you want a certain version of the Apache web server to be installed,
+and if that's already the case, if Apache is already installed and it's the same version, then nothing is done.
+However, if Apache is not installed, then cfn-init will install it, or it will update any older versions to that version.
+cfn-init can do lots of pretty powerful things. It can make sure packages are installed, even with an awareness of versions,
+it can manipulate operating system groups and users, it can download sources and extract them onto the local instance,
+even using authentication, it can create files with certain contents, permissions and ownerships,
+it can run commands and test that certain conditions are true after the commands have run,
+and it can even control services on an instance, so ensuring that a particular service is started or enabled to be started on the boot of the OS.
+cfn-init is executed like any other command by being passed into the instance as part of the user data,
+and it retrieves its directives from the CloudFormation stack,
+and you define this data in a special part of each logical resource inside CloudFormation templates called aws double colon CloudFormation double colon init,
+and don't worry, you'll get a chance to see this very soon in the demo.
+So the instance runs cfn-init, it pulls this desired state data from the CloudFormation stack that you put in there via the CloudFormation template,
+and then it implements the desired state that's specified by you in that data.
+So let's quickly look at this architecture visually.
+The way that cfn-init works is probably going to be easier to understand if we do take a look at it visually.
+Once you see the individual components, it's a lot simpler than I've made it sound on the previous screen.
+It all starts off with a CloudFormation template, and this one creates an EC2 instance,
+and you'll see this in action yourself very soon.
+Now the template has a logical resource inside it called EC2 instance, which is to create an EC2 instance.
+It has this new special component metadata and aws double colon CloudFormation double colon init,
+and this is where the cfn-init configuration is stored.
+The cfn-init command itself is executed from the user data that's passed into that instance.
+So the CloudFormation template is used to create a stack, which itself creates an EC2 instance,
+and the cfn-init line in the user data at the bottom here is executed by the instance.
+This should make sense now.
+Anything in the user data is executed when the instance is first launched.
+Now if you look at the command for cfn-init, you'll notice that it specifies a few variables,
+specifically a stack ID and a region.
+Remember this instance is being created using CloudFormation,
+and so these variables are actually replaced for the actual values before this ends up inside the EC2 instance.
+So the region will be replaced with the actual region that the stack is created in,
+and the stack ID is the actual stack ID that's being created by this template,
+and these are all passed in to cfn-init.
+This allows cfn-init to communicate with the CloudFormation service and receive its configuration,
+and it can do that because of those variables passed into the user data by CloudFormation.
+Once cfn-init has this configuration, then because it's a desired state system,
+it can implement the desired state that's specified inside the CloudFormation by you.
+And another amazing thing about this process, so about cfn-init and its associated tools,
+is that it can also work with stack updates.
+Remember that the user data works once.
+Well cfn-init can be configured to watch for updates to the metadata on an object in a template,
+and if that metadata changes, then cfn-init can be executed again,
+and it will update the configuration of that instance to the desired state specified inside the template.
+It's really powerful.
+Now this is not something that user data can do.
+User data only works the once when you launch the instance.
+Now in the demo lesson, which immediately follows this one,
+you're going to experience just how cool this cfn-init process is.
+The WordPress CloudFormation template that you used in the previous demo,
+which included some user data, I've updated that,
+and I've supplied a new version which uses this CloudFormation-init process, or cfn-init.
+So you'll get to see how it's different and exactly how that looks when you apply it into your AWS account.
+Now there's one more really important feature of CloudFormation which I want to cover.
+As you start performing more advanced bootstrapping, it will start to matter more and more.
+This feature is called CloudFormation Creation Policies and CloudFormation Signals.
+So let's look at that next.
+On the previous example, there was another line passed into the user data, the bottom line, cfn-signal.
+Without this, the resource creation process inside CloudFormation is actually pretty dumb.
+You have a template which is used to create a stack, which creates an EC2 instance.
+Let's say you pass in some user data, this runs, and then the instance is marked as complete.
+The problem though is we don't actually know if the resource actually completed successfully.
+CloudFormation has created the resource and passed in the user data,
+but I've already said that CloudFormation doesn't understand the user data, it just passes it in.
+So if the user data has a problem, if the instance bootstrapping process fails,
+and from a customer perspective the instance doesn't really work, CloudFormation won't know.
+The instance is going to be marked as complete regardless of how the configuration is inside that instance.
+Now this is fine when we're creating resources like a blank EC2 instance when there is no post-launch configuration.
+If EC2 reports to CloudFormation that it successfully provisioned an instance, then we can rely on that.
+If we're creating an S3 bucket and S3 reports to CloudFormation that it's worked okay, then it's worked okay.
+But what if there's extra configuration happening inside the resource, such as this bootstrapping process?
+We need a better way, a way that the resource itself, the EC2 instance in this case,
+can inform CloudFormation if it's being configured correctly or not.
+This is how creation policies work, and this is a creation policy.
+A creation policy is something which is added to a logical resource inside a CloudFormation template.
+You create it and you supply a timeout value. This one has 15 minutes.
+And this is used to create a stack which creates an instance.
+So far the process is the same, but at this point CloudFormation waits.
+It doesn't move the instance into a create complete status when EC2 signals that it's been created successfully.
+Instead, it waits for a signal, a signal from the resource itself.
+So even though EC2 has launched the instance, even though its status checks pass,
+and it's told CloudFormation that the instance is provisioned and ready to go,
+CloudFormation waits. It waits for a signal from the resource itself.
+The CFN signal command at the bottom is given the stack ID, the resource name and the region,
+and these are passed in by the CloudFormation stack when the resource is created.
+So the CFN signal command understands how to communicate with the specific CloudFormation stack that it's running inside.
+The hyphen E space dollar question mark part of that command represents the state of the previous command.
+So in this case, the CFN init command is going to perform this desired state configuration.
+And if the output of that command is an OK state, then the OK is sent as a signal by CFN signal.
+If CFN init reports an error code, then this is sent using CFN signal to the CloudFormation stack.
+So CFN signal is reporting to CloudFormation the success or not of the CFN init bootstrapping,
+and this is reported to the CloudFormation stack.
+If it's a success code, so if CFN init worked as intended, then the resource is moved into a create complete state.
+If CFN signal reports an error, the resource in CloudFormation shows an error.
+If nothing happens for 15 minutes, the timeout value, then CloudFormation assumes it's erred
+and doesn't let the stack create successfully. The resource will generate an error.
+Now you'll see creation policies feature in more complex CloudFormation templates,
+either within EC2 instance resources or within auto-scaling groups that we'll be covering later in the course.
+Now you won't need to know the technical implementation details of this for the Solutions Architect Associates exam,
+but I do expect the knowledge of this architecture will help you in any automation related questions.
+And now it's time for a quick demonstration.
+I just want you to have some experience in using a template which uses CFN init,
+and also one which uses the creation policy.
+So I hope this theory has been useful to you, and when you're ready for the demo,
+go ahead and complete this video and you can join me in the next.

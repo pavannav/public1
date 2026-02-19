@@ -1,0 +1,104 @@
+Welcome back, and in this first technical lesson of this section of the course, we'll be stepping through what an event-driven architecture is, and comparing it to other architectures available within AWS.
+As a Solutions Architect, this matters because you're the one who needs to design a solution using a specific architecture around a given set of business requirements.
+So you need to have a good base level understanding of all of the different types of architectures available to you within AWS.
+You can't build something unless you fully understand the architectures. So let's jump in and get started because we've got a lot to cover.
+Now to help illustrate how an event-driven architecture works, let's consider an example.
+And the example that I want to use is a popular online video sharing platform that you've all probably heard of.
+Yes, that's right, it's CatTube.
+One of the popular ways that CatTube is used is for people to upload holiday videos of their cats.
+So Bob uploads a 4K quality video of whiskers on holiday to CatTube.
+Now at this point, CatTube begins some processing and it generates lots of different versions of that video at various different quality levels.
+For example, 1080p, 720p and 480p.
+Now this is only part of the application, but it happens to be the most intensive in terms of resource usage.
+The website also needs to display videos, manage playlists and channels, and store and retrieve data to and from a database.
+Now there are a few ways that we could architect this solution.
+Historically, the most popular systems architecture was known as a monolithic architecture.
+Now think of this as a single black box with all of the components of the application within it.
+So in this example I'm just showing a subset, but we've got the upload component where Bob uploads his collection of videos where whiskers is on holiday,
+the processing component which does the conversion of videos,
+and then we have the store and manage component which interacts with the underlying persistent storage.
+Now this architecture has a number of considerations, a number of important things to keep in mind.
+Because it's all one entity, it fails together as an entity.
+If one component fails, it impacts the whole thing end to end.
+If uploading fails, it could also affect processing as well as store and manage.
+Logically, you know that they're separate things.
+You know that uploading is different than processing, which is different than store and manage.
+But if they're all contained in a single monolithic architecture, one code base, one big monolithic component,
+then the failure of any part of that monolith can affect everything else.
+The other thing to consider when talking about monoliths is they also scale together.
+They're highly coupled. All of the components generally expect to be on the same server,
+directly connected, and have the same code base. You can't scale one without the other.
+Generally with monolithic architectures, you need to vertically scale the system,
+because everything expects to be running on the same piece of compute hardware.
+And finally, and this is one of the most important aspects of monolithic architectures that you need to be aware of,
+they generally build together. All of the components of a monolithic architecture are always running,
+and because of that they always incur charges. Even if the processing engine is doing nothing,
+even if no videos are being uploaded, the system capacity has to be enough to run all of them.
+And so they always have allocated resources, even if they aren't consuming them.
+So using a monolithic architecture tends to be one of the least cost-effective ways to architect systems,
+ranging from small to enterprise scale.
+Now we've seen earlier in the course how we can evolve a monolithic design into a tiered one.
+With a tiered architecture, the monolith is broken apart.
+What we have now is a collection of different tiers, and each of these tiers can be on the same server,
+or different servers. With this architecture,
+the different components are still completely coupled together,
+because each of the tiers connects to a single endpoint of another tier.
+The upload tier needs to be able to send data directly at the processing tier.
+And again, this could be on the same server or a different server.
+With the WordPress example that you looked at earlier in the course,
+it separated the database component of the monolithic application onto its own RDS instance,
+and left the EC2 instance running the Apache web server and the WordPress application.
+But both of those services still needed to communicate with each other.
+They were very tightly coupled.
+Now the immediate benefit of a tiered architecture versus a monolith
+is that these individual tiers can be vertically scaled independently.
+Put simply, you can increase the size of the server that's running each of these application tiers.
+What this means is that if the processing tier, for example, requires more CPU capacity,
+then it can be increased in size to cope with that additional load
+without having to increase the size of the upload or the store and manage tiers.
+But this architecture can be evolved even more.
+Instead of each tier directly connecting to each other tier,
+we can utilize load balances located between each of the tiers.
+Remember in the previous section I mentioned internal load balances?
+This is an example of when internal load balances are useful.
+It means that in this example, the upload tier is no longer communicating
+with a specific instance of the processing tier.
+And it means that the store and manage tier is not communicating
+with a specific instance of the processing tier,
+both of them are going via a load balancer.
+And if you remember from the section of the course where I talked about load balances,
+this means it's abstracted.
+It allows for horizontal scaling, meaning additional processing tier instances can be added.
+Communication occurs via the load balances, so the upload and store and manage tiers
+have no exposure to the architecture of the processing tier,
+whether it's one instance or a hundred.
+This means that the processing tier is now able to be scaled horizontally
+by adding additional instances, and it's now highly available.
+If one instance fails, the load balancer just redistributes the connections
+across the working instances.
+So by abstracting away from individual instance architecture for the individual tiers,
+using load balances now means we can scale each tier independently,
+either vertically or horizontally.
+Now this architecture isn't perfect for two main reasons.
+First, the tiers are still coupled.
+The upload tier, for example, expects and requires the processing tier to exist and to respond.
+While the load balancer means that we can have multiple instances for the processing tier,
+for example, the processing tier has to exist.
+If it fails completely, then the upload tier itself will fail,
+because the upload tier expects at least one instance of the processing tier to answer it.
+If there's a backlog in processing, if the processing tier slows down
+and it starts to take longer to accept jobs for processing,
+then that can also impact the upload tier and the customer experience.
+The other issue with this architecture is that even if there's no jobs to be processed,
+the processing tier has to have something running,
+otherwise there'll be a failure when the upload tier attempts to add an upload job.
+So it's not possible to scale the individual tiers of the application back down to zero,
+because the communication is synchronous.
+The upload tier expects to perform a synchronous communication with the processing tier.
+It expects to ask for a job to be entered, and it requires an answer.
+So while the tiered architecture improves things, it doesn't solve all of the problems.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side, and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video, and when you're ready, join me in part two.

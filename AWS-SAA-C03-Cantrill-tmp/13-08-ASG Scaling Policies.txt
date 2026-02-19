@@ -1,0 +1,116 @@
+Welcome back and in this lesson I want to cover in a little bit more detail
+something I've touched on earlier and that's auto scaling group scaling
+policies. So let's just jump in and get started. One thing many students get
+confused over is whether scaling policies are required on an auto scaling
+group. Now you'll see in demos elsewhere in the course that this is not the case.
+They can be created without any auto scaling policies and they work just fine.
+When created without any scaling policies it means that an auto scaling
+group has static values for min size, max size and desired capacity. Now if you
+hear the term manual scaling that actually refers to when you manually
+adjust these values. Now this is useful in testing or urgent situations or when
+you need to hold capacity at a fixed number of instances, for example as a
+cost control measure. Now in addition to manual scaling we also have different
+types of dynamic scaling which allow you to scale the capacity of your auto
+scaling group in response to changing demand. So there are a few different
+types of dynamic scaling and I want to introduce them here and then cover them
+in a little bit more detail. At a high level each of these adjusts the desired
+capacity of an auto scaling group based on a certain criteria. First we have
+simple scaling and with this one you define actions which occur when an alarm
+moves into an alarm state. For example by adding one instance if CPU utilization
+is above 40% or removing one instance if CPU utilization is below 40%. This helps
+infrastructure scale out and in based on demand. The problem is that this
+scaling is inflexible, it's adding or removing a static amount based on the
+state of an alarm. So it's simple but it's not all that efficient. Step scaling
+increases or decreases the desired capacity based on a set of scaling
+adjustments known as step adjustments that vary based on the size of the alarm
+breach. So you can define upper and lower bounds for example you can pick a
+CPU level which you want say 50% and you can say that if the actual CPU is
+between 50 and 60% then do nothing. If the CPU is between 60 and 70% then add
+one instance or if the CPU is between 70 and 80 add two instances and then
+finally if the CPU is between 90 and 100% then add three instances and you
+can do the same in reverse. The same steps changes as CPU is below 50% only
+removing rather than adding instances. Now generally step scaling is always
+better than simple because it allows you to adjust better to changing load
+patterns on the system. Next we have target tracking which comes with a
+predefined set of metrics. Currently this is CPU utilization, average network in,
+average network out and ALB request count per target. Now the premise is
+simple enough you define an ideal value so the target that you want to track
+against for that metric for example you might say that you want 50% CPU on
+average. The auto scaling group then calculates the scaling adjustment based
+on the metric and the target value all automatically. The auto scaling group
+keeps the metric at the value that you want and it adjusts the capacity as
+required to make that happen. So the further away the actual value of the
+metric is from your target value the more extreme the action either adding or
+removing compute. Then lastly it's possible to scale based on an SQS queue
+and this is a common architecture for a workup pool where you can increase or
+decrease capacity based on approximate number of messages visible so as more
+messages are added to the queue the auto scaling group increases in capacity to
+process messages and then as the queue empties the group scales back to reduce
+costs. Now one really common area of confusion is the difference between
+simple scaling and step scaling. AWS recommends step scaling versus simple at
+this point in time but it's important to understand why so let's take a look
+visually. Let's start with some simple scaling and I want to explain this using
+the same auto scaling group but at three points in time. The auto scaling group is
+initially configured with a minimum of one a maximum of four and a desired of
+one and that means right now we're going to have one out of a maximum of four
+instances provisioned and operational and let's also assume that the current
+average CPU is 10%. Now with simple scaling we create or use an existing
+alarm as a guide. Let's say that we decide to use the average CPU utilization
+so we create two different scaling rules the first which says that if average
+CPU is above 50% then add two instances and another which removes two
+instances if the CPU is below 50%. With this type of scaling if the CPU suddenly
+jumped to say 60% then the top rule would apply and this rule would add two
+instances changing the desired capacity from one to three. This value is still
+within the minimum of one and the maximum of four and so two additional
+instances would be provisioned with room for a fourth. If the CPU usage dropped to
+say 10% then the second rule would apply and the desired capacity would be
+reduced by two or set to the minimum so in this case it would change from three
+to one two instances would be terminated and the auto scaling group
+would be running with one instance and a capacity for three more as required. Now
+this works but it's not very flexible whatever the load whether it's 1% over
+what you want or 50% over two instances are added and the same is used in
+reverse whether it's 1% below what you want or 50% below the same two
+instances are always removed so with simple scaling you're adding or removing
+the same amount no matter how extreme the increases and decreases in the
+metric that you're monitoring. With step scaling it's more flexible so with step
+scaling you're still checking an alarm but for step scaling you can define
+rules with steps so you can define an alarm which alarms when the CPU is above
+50% and one which alarms when the CPU is below 50% and you can create steps
+which adjust capacity based on how far away from that value it is so in this
+case if the CPU usage is between 50 and 59% do nothing between 60 and 69% add
+one between 70 and 79% add two and then between 80 and 100 add three and the
+same in reverse so between 40 and 49 do nothing between 30 and 39 remove one
+between 20 and 29 remove two and then between 0 and 19 remove three so let's
+say that we had an auto scaling group at six points in time so we start with the
+auto scaling group on the left and let's say that it has 5% load and let's say
+that we have the same minimum one maximum four as the previous example the
+policy is trying to remove three instances with this level of CPU but as
+the auto scaling group has the minimum of one the auto scaling group starts
+with one instance with a capacity for a further three as required if our
+application receives a massive amount of incoming load let's say that the CPU
+usage increases to a hundred percent and this is an extreme example but based on
+the scaling policy this would add three instances taking us to the maximum
+value of four so our auto scaling group now has four instances running which is
+also the maximum value for that group now at this point with the same amount
+of incoming load the increased number of instances is probably going to reduce
+the average CPU let's say that it reduces it to 55% well this causes no
+change instances and neither added or removed because anything in the range of
+40 to 59 means zero change next say that the load on the system reduces so CPU
+drops to 5% and this removes three instances dropping the desired capacity
+down to one with the option for a further three instances as required next
+the average CPU stays at five but the minimum of the auto scaling group is one
+so the number of instances stay the same even though the step scaling rule should
+attempt to remove three instances at this level so we always have the minimum
+number of instances as defined within the minimum value of the auto scaling
+group now maybe we end the day with some additional load on the system let's say
+for example that the CPU usage goes to 60% and this adds one additional
+instance so you should be able to see by now that step scaling is great for
+variable load where you need to control how systems scale out and in it allows
+you to handle large increases and decreases in load much better than
+simple scaling so based on how extreme the increase or decrease is determines
+how many units of compute are added or removed it's not static like simple
+scaling and that's the main difference between simple and step the ability to
+scale in different ways based on how extreme the load changes are with that
+being said though that's everything I wanted to cover in this lesson go ahead
+and complete the video and when you're ready I'll look forward to you joining
+me in the next

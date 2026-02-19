@@ -1,0 +1,202 @@
+Welcome back, this is part two of this lesson. We're going to continue immediately from the end of part one, so let's get started.
+The last step to enabling that functionality though is to create an auto-scaling group, which allows for the automatic provisioning and termination of the EC2 instances.
+So to do that, on the EC2 console, scroll down to the bottom under auto-scaling and select auto-scaling groups.
+Click on create an auto-scaling group. We're going to call the auto-scaling group A4L WordPress ASG.
+Then for the launch template, click in the drop-down and select the WordPress launch template.
+This is the one that you've been working on throughout this advanced demo series.
+And then under version, you can either pick an explicit version or set to use the latest.
+We're going to pick the latest, so select latest, which should be version four.
+Scroll down to the bottom, because now the auto-scaling group has been configured with the launch template and version to use.
+Next, we need to carry on and set other options for this auto-scaling group, so click on next.
+For networking, it's here where we provision exactly which subnets are going to be used to provision our instances into.
+So click on the VPC drop-down and make sure that the A4L VPC is selected.
+So this is the Animals for Life VPC. And then under subnets, we need to select the three public subnets.
+So SN-PUB-A, SN-PUB-B, and SN-PUB-C.
+So this allows the auto-scaling group to automatically provision instances into any of these subnets as required.
+At this point, go ahead and click on next.
+Now it's here where we can integrate the auto-scaling group with the load balancer.
+Load balancers actually work for EC2 with static instance registration.
+Instances are registered with a target group within a load balancer configuration.
+What auto-scaling groups do when you integrate them is it links this with a target group.
+So any instances provisioned by the auto-scaling group are added to the target group,
+and anything which the auto-scaling group terminates is removed from the target group.
+So we need to attach to an existing load balancer.
+Make sure choose from your load balancer target groups is checked.
+Click in the drop-down and select the A4L WordPress ALB-TG target group, which is the one that we just created.
+Under health checks, we can actually pick to use ELB health checks,
+which are much more feature-rich than the normal EC2 status checks.
+So we will be using ELB health checks.
+Scroll down, check enable group metrics collection within CloudWatch, and then click on next.
+To start with, we're going to select one desired capacity, one minimum capacity, and one maximum capacity.
+It's the job of an auto-scaling group to keep the number of running instances to be the same as the desired capacity.
+This is the value that changes up or down, and the minimum and maximum capacity provide limits to this.
+So for now, we're going to leave desired, minimum, and maximum all at one,
+and we're not going to configure any automatic scaling policies.
+For now, it's going to be a static auto-scaling group, so go ahead and click on next.
+We won't be adding any notifications for any scaling events, so click on next.
+Now we want to make sure that any instances provisioned by this auto-scaling group are recognizable.
+So we're going to click on add tag.
+Under key, we're going to type name, and then under value, wordpress-asg,
+and make sure this tag new instances is selected,
+and this means that any instances launched by this auto-scaling group will be tagged with this name.
+Go ahead and click on next, scroll down to the bottom,
+and click on create auto-scaling group to create this auto-scaling group.
+Now if we just click on instances, right click on this existing wordpress-lt instance,
+and then select terminate instance and confirm.
+Let's just get rid of that old instance that was created directly using the launch template.
+While that's terminating, scroll down and just open a new tab to the auto-scaling group's console,
+click on the auto-scaling group, click on activity, and then just hit refresh.
+Now what you should see, because we've created this auto-scaling group with a desired capacity of one,
+and because it has zero running instances,
+it's going to begin the creation of an instance in order to bring the running number of instances
+to be equal to the desired number of instances, which is one.
+So at this point it's going to automatically provision an EC2 instance.
+If we go to the EC2 console and instances and then hit refresh,
+we should see a new EC2 instance, and it should be called wordpress-asg,
+and this is the EC2 instance that's been automatically provisioned by the auto-scaling group.
+But that's just a simple, static auto-scaling group.
+What we want to do is add some intelligence, so let's do that.
+So we're going to move to the auto-scaling groups console,
+and we're going to add some scaling policies.
+So click on the auto-scaling group, select automatic scaling,
+click on create dynamic scaling policy,
+and we want to create two policies.
+We want to add instances when the average CPU utilization is above 40%,
+and we want to remove instances when the average CPU utilization is below 40%.
+So to do that we need to use simple scaling policies.
+Remember, target tracking scaling adjusts automatically
+and aims to try to keep a certain value at a certain level.
+So for scaling policy name, we're going to call this one high CPU,
+and we need to define a cloud watch alarm.
+So go ahead and click on create cloud watch alarm,
+click on select metric, then EC2, and then buy auto-scaling group.
+And if you don't see a list, you might just need to wait a couple more minutes
+for all of this to be populated.
+A few moments later.
+A few moments later.
+What you need to do is to scroll down,
+and you're looking for CPU utilization next to A4L WordPress ASG.
+So select that and then click on select metric.
+Now we want to create an alarm, which goes into an alarm state
+whenever the average CPU utilization is above 40%.
+So scroll down, threshold type is going to be static,
+whenever CPU utilization is should be set to greater,
+and then the value needs to be 40, so greater than 40%.
+So go ahead and click on next.
+If you see anything next to notification, then click on remove
+because we won't be configuring a notification.
+Click on next again.
+And then for the alarm name, we're going to use WordPress high CPU.
+So enter that and click on next.
+Scroll down and click on create alarm.
+Then move back to the previous tab
+where you should still have open the create scaling policy
+and just click on the refresh icon
+and then click in the cloud watch alarm drop down
+and select WordPress high CPU.
+Now for action, whenever the CPU is above 40%,
+we need to add one capacity unit.
+So make sure that take the action is set to add
+and change this to one and make sure it says capacity unit.
+So add one capacity unit.
+And then go ahead and click on create.
+Next we're going to create the other side of this.
+Click on create dynamic scaling policy.
+It's going to be a simple scaling policy.
+This time it's going to be called low CPU.
+We'll need to create another cloud watch alarm.
+So click on create cloud watch alarm, select metric again,
+EC2 again, by auto scaling group again,
+locate CPU utilization and click on select metric.
+This time though, scroll down.
+It's going to be static again,
+but instead of greater, it's going to be lower.
+And again, 40 in this threshold box.
+Click on next.
+Click on remove.
+Again, we don't want a notification.
+Click on next again.
+For the alarm name, WordPress low CPU.
+So enter that and click next.
+Scroll down and click on create alarm.
+Once again, go back to the create scaling policy tab.
+Click on refresh.
+This time click in the dropdown and select WordPress low CPU.
+Only this time the action is going to be to remove one capacity unit.
+So remove one capacity unit.
+Then go ahead and click on create.
+So now we have two scaling policies.
+When the CPU is above 40%, we add one capacity unit.
+And when the CPU is below 40%, we remove one capacity unit.
+Now to make this work, we need to click on the details tab
+and adjust the auto scaling group settings
+so that the maximum capacity of the auto scaling group is more than one.
+Because if it's one, then the desired capacity can never increase beyond that value.
+So click on edit and change the maximum capacity to equal three.
+So it should be desired one, minimum one, maximum three.
+And then click on update.
+Now at this point, that is actually a fully scalable architecture.
+We can test this by simulating some load.
+Now to simulate this, move back to the EC2 console
+and connect using the session manager to this instance.
+So WordPress hyphen ASG.
+Right click, go to connect, session manager, and then click on connect.
+Once connected, type sudo bash and press enter.
+And then we're going to run a command called stress.
+And the whole function of stress is to stress the CPU of this EC2 instance.
+So in this case, stress is going to use two cores and it's going to run for 3,000 seconds.
+This command again is within this lesson's instructions, which are attached to this lesson.
+So go ahead and paste that in and press enter.
+And that begins stressing out the CPU on this EC2 instance.
+Now what should happen at this point is the auto scaling group is going to detect the increase in CPU.
+It's going to trigger the automatic scaling rule.
+So when CPU is above 40%, it will add one capacity unit.
+This will add one to the desired capacity value of the auto scaling group.
+And because desired capacity will be at two and the number of running instances will be at one,
+it will provision a new instance.
+Now this instance will be provisioned using the launch template.
+It will be added to the target group of the load balancer,
+and then we can cope with more load in our application.
+Now this can take up to 20 minutes.
+So at this point, go ahead and pause the video and keep refreshing this activity history,
+because at some point you should see one additional EC2 instance,
+which begins the provisioning process.
+So pause the video and resume it once you see an additional line in this activity history.
+After a few minutes, you'll note that auto scaling groups have detected an increase in CPU utilization.
+The high CPU alarm was triggered, and this causes an increase of the desired capacity from one to two.
+Now how this translates if we go to the EC2 console and hit refresh,
+is that an additional EC2 instance is being provisioned in a different availability zone.
+And this is automatic behavior.
+You can configure auto scaling groups to perform these automated scaling actions based on lots of different criteria.
+Auto scaling groups also allow us to perform self-healing.
+So if I right click on this new EC2 instance that's being provisioned,
+and then terminate and confirm that with yes terminate,
+then the auto scaling group will detect that the number of running instances has decreased by one,
+and it will automatically provision a new instance to operate in its place.
+So this is an example of a self-healing architecture,
+and the same will be true if any of these instances fail the health checks provided by the load balancer.
+If they fail the health check, they'll be terminated and re-provisioned automatically by the auto scaling group.
+And there we go, we can see that we've now got a new instance which is being provisioned as part of that auto healing process.
+Now if we move back to the EC2 console, and then we move down to load balancers,
+click there, select the load balancer, scroll down, copy the DNS name into your clipboard,
+and then open that in a new tab, you can see that we can now access this WordPress application using the load balancer.
+And doing it with this method means that any sessions in general won't experience any disruption
+through these scaling or auto healing processes.
+And so this is a way that we've implemented a self-healing, resilient application architecture.
+Now at this point, you've completed everything required for stage five of this advanced demo series.
+You've actually now implemented a fully scalable, elastic, self-healing architecture.
+You've removed all of the limitations of WordPress.
+You've split the application and database into separate pieces of compute.
+You've moved the data into an RDS instance.
+You've moved the WordPress content onto a shared EFS file system.
+You've added a load balancer and auto scaling group to allow automatic scaling actions.
+And the load balancer abstracts the sessions so they no longer connect directly to the EC2 instances.
+And at this point, the architecture can scale in and out based on the CPU load.
+Now this is a simple example, but it illustrates how you can evolve the architecture
+of a simple application like WordPress from being a simple single server design
+to something that's highly scalable and highly resilient.
+And it just requires knowledge of the nuances of the application as well as knowledge of AWS products and services.
+Now at this point, that's everything that you need to do in this advanced demo series.
+The only thing that's left is to clean up the account and return it to the same state as it was at the start of the demo series.
+And that's what we're going to do in the next and final part.
+So go ahead and complete this video and when you're ready, I'll look forward to joining you in the next.

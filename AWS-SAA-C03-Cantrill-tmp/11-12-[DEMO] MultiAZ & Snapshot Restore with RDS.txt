@@ -1,0 +1,179 @@
+Welcome back, and in this demo lesson, we're going to continue implementing this architecture.
+So in the previous demo lesson, you migrated a database from a self-managed MariaDB running on EC2 into RDS.
+In this demo lesson, you're going to get the experience working with RDS's Multi-Availability Zone mode,
+as well as creating snapshots, restoring those snapshots, and experimenting with RDS failover.
+Now in order to complete this demo lesson, you're going to need some infrastructure.
+So let's move across to our AWS console.
+You need to be logged in to the general AWS account, so that's the management account of the organization,
+and as always, make sure that you have the Northern Virginia region selected.
+Now attached to this lesson is a one-click deployment link, so go ahead and open that.
+This will take you to a quick create stack page, and everything should be pre-populated and ready to go.
+So the stack name is rds-multi-az-snap.
+All of the parameters have default values.
+Multi-Az is currently set to false, so leave that at false.
+Check the capabilities box at the bottom, and then click on create stack.
+Now this infrastructure will take about 15 minutes to apply,
+and we need it to be in a create complete state before we continue.
+So go ahead, pause the video, and resume it once CloudFormation has moved into a create complete state.
+Okay, so now that this stack has moved into a create complete state,
+we need to complete the installation of WordPress and add our test blog post,
+because we're going to be using those throughout this demo lesson.
+Now this is something that you've done a number of times before, so we can speed through this.
+So click on the services dropdown, move to the EC2 console.
+We need to go to running instances, and we'll need the public IP version 4 address of A4L-WordPress.
+So go ahead and copy the public IP version 4 address into your clipboard.
+Don't use this open address.
+Open that in a new tab.
+Calling the site, as always, the best cats.
+For username, put admin.
+For the password, we'll be using the animals for life strong password,
+and then as always, test at test.com for the email address.
+Enter all of that and click on install WordPress.
+Then you'll need to log in.
+Admin for the username, enter the password, click on login.
+Once we're logged in, go to posts.
+Click on trash under hello world to delete the existing post, and then add a new post.
+Close down this dialogue.
+For the title of the post, the best cats ever, click on the plus, select gallery.
+At this point, go ahead and click the link that's attached to this lesson to download the blog images.
+Once downloaded, extract that zip file, and you'll get four images.
+Once you've got those images ready, click on upload, locate those images, select them, and click on open.
+And that will add those to the post.
+Once they're fully loaded in, we can go ahead and click on publish, and then publish again,
+and that will publish this post to our blog.
+And as a reminder, that stores these images on the local instance file system,
+and adds the post metadata to the database, and that's now running within RDS.
+Now I want to step through a few pieces of functionality of RDS,
+and I want you for a second to imagine that this blog post is actually a production enterprise application,
+maybe a content management system.
+And I want to view all of the actions that we perform in this demo lesson
+through the lens of this being a production application.
+So go ahead and return to the AWS console, click on services, and we're going to move back to RDS.
+The first thing that we're going to do is to take a snapshot of this RDS instance.
+So just close down any additional dialogues that you see, go to databases,
+then I'll want you to select the database that's been created by the one-click deployment link
+that you used at the start of this demo lesson,
+then select actions, and then we're going to take a snapshot.
+Now a snapshot is a point-in-time copy of the database.
+When you first do a snapshot, it takes a full copy of that database,
+so it consumes all of the capacity of the data that's being used by the RDS instance.
+So this initial snapshot is a full snapshot containing all of the data within that database instance.
+Now we're going to take a snapshot and we're going to call it
+A4Lwordpress hyphen with hyphen cat hyphen post hyphen MySQL hyphen
+and then the version number without any dots or spaces.
+Now depending on when you're watching this video,
+doing this lesson, you might have been using a different version of SQL.
+And so in the lesson description for this lesson,
+I've included the name of the snapshot that you need to use.
+So go ahead and check that now and include that in this box.
+So that informs us what it is, what it contains,
+and the version number that this snapshot refers to.
+So go ahead and enter that and then click on take snapshot.
+And that's going to begin the process of creating this snapshot.
+Now the process takes a variable amount of time.
+It depends on the speed of AWS on that particular day.
+It depends on the amount of data contained within the database.
+And it also depends on whether this is the first snapshot or a subsequent snapshot.
+Now the way that snapshots work within AWS is the first snapshot
+contains a full copy of all of the data of the thing being snapshotted
+and any subsequent snapshot only contains the blocks of data
+which have changed from that last previous successful snapshot.
+So of course the first snapshot always takes the longest
+and everything else only takes the amount of time required to copy the changed data.
+So if we just give this a few minutes, let's keep refreshing.
+Mine's still reporting at 0% complete,
+so we need to allow this to complete before we move on.
+So go ahead and pause the video and resume it once your snapshot has completed.
+And there we go, our snapshot's now moved into an available status and the progress.
+Again, just to reiterate, this snapshot has been taken.
+It's a copy of an RDS MySQL database of a particular version
+and it contains our WordPress database together with the cat post that we just added.
+And that's important to keep in mind as we move on with the demo lesson.
+Now you could go ahead and take another snapshot and this one would be much quicker to complete.
+It would only contain any data changed between the point that you take it
+and when you took this previous snapshot.
+I'm not going to demonstrate that in this video, but you can do that.
+And for production usage, you may use snapshots in addition to the normal automated backups provided by RDS.
+Snapshots that you take manually live past the lifecycle of the RDS instance
+and if you want to tidy them up, you have to do that manually or by using scripts that you create.
+So snapshots that are taken manually are not managed by RDS in any way.
+And that's important to understand from a DR and the cost management perspective.
+Now the next thing I want to demonstrate is the Multi-AZ mode of RDS.
+So if we go back to the RDS console, just expand this menu and go to databases.
+Currently, this database is using a single RDS instance.
+So this RDS instance is not resilient to the failure of an availability zone within this region.
+Now to change that process, we can provision a standby replica in another availability zone.
+And that's known as Multi-AZ.
+Now it's worth noting that this is not included within the AWS free tier.
+So there will be a small charge to do this optional step.
+To enable Multi-AZ mode, make sure that you have the database instance selected and then click on modify.
+Now it's on this screen that we can change a lot of the options which relate to this entire RDS instance.
+We've got the option to adjust the database identifier, provide a new database admin password.
+We can change the DB instance size or type if we want.
+We can adjust the amount of storage available to the database instance, even enable storage autoscaling.
+But what we're looking for specifically is adjusting the availability and durability settings.
+Currently, this is set to do not create a standby instance.
+And we're going to modify this. We're going to change it to create a standby instance.
+And this is something that's recommended for any production usage.
+This creates a standby replica in a different availability zone.
+So it picks another availability zone, specifically another subnet,
+that's available within the database subnet group that was created by the one-click deployment.
+So we're going to set that option, then scroll down and then select continue.
+Now because we have a maintenance window defined on this RDS instance,
+we have two different options of when to apply this change.
+We can either apply the change during the next scheduled maintenance window,
+or remember this is a definable value that you can set when you create an RDS instance or you modify its settings.
+Or we can specify that we want to apply immediately the change that we're making.
+And for this demo lesson, that's what we're going to do.
+Now it does warn you that any changes could cause a performance impact and even an outage.
+So it's really important that if you are applying changes immediately,
+you understand the impact of those changes.
+So make sure that you have apply immediately selected and then click on modify DB instance.
+Now a multi-AUZ deployment is essentially an automatic standby replica in a separate availability zone.
+What happens behind the scenes is that the primary database instance is synchronously replicated
+into this standby replica inside a different availability zone.
+Now this provides a few benefits. It provides data redundancy benefits.
+It means that any operations which can interrupt I.O., such as system backups, will occur from the standby replica,
+so won't impact the primary database and that provides a real advantage for production RDS deployments.
+But the main reason beyond performance is that it helps protect any databases in the primary instance against failure of an availability zone.
+So if the availability zone of the primary instance fails,
+then the CNAME of the database will be changed to point at the standby replica
+and that will minimize any disruption to your application and its users.
+Now if we just hit refresh we can see the status is modifying and what's happening behind the scenes
+is AWS are taking a snapshot of the primary DB instance.
+It's restoring that snapshot into the standby replica which is in a different availability zone
+and then it's setting up synchronous replication between the primary and the standby replica.
+So this is a process which happens behind the scenes,
+but it does mean that we need to wait for this process to be complete.
+Until the process is complete this is not a Multi-AZ deployment.
+So go ahead and pause the video and wait for the status to change away from modifying.
+We need this to be in an available state in order to continue with the demo.
+So go ahead and pause the video and resume it once this modification has completed.
+OK, so the status has now changed to available and in my case it took about 10 minutes to enable Multi-AZ mode,
+so that's the provisioning of a standby replica in another availability zone.
+Now the likelihood of an AZ failure happening while I'm recording this demo lesson is relatively small,
+but we can simulate a failure.
+To do that if we have the database instance selected and then select the actions dropdown and then reboot,
+we can use the option reboot with failover.
+If we choose this option then part of the process is that a simulated failover occurs.
+So the CNAME, the database endpoint, that's moved so that it now points at the standby replica
+and then the old primary instance is restarted.
+So that's what we're going to do to simulate this process.
+So go ahead and select to reboot the database instance,
+make sure that you have reboot with failover selected and then click on confirm.
+And this will begin the process of rebooting the database instance.
+Now if we go back to the WordPress blog and we click on view post,
+you'll see that right away it's not immediately loading.
+And that's because the failover from the primary to the standby isn't immediate.
+Failover times are typically 60 to 120 seconds.
+So that's important to keep in mind if you're deploying RDS in a business critical situation.
+It doesn't offer immediate failover.
+So let's just stop this and hit reload again.
+And now we can see that the page is starting to load
+because the CNAME for the database has been moved from pointing at the primary
+to pointing at the standby replica, which is the new primary.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video and when you're ready, join me in part two.

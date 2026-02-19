@@ -1,0 +1,59 @@
+Welcome back. So far in the course you've had a brief exposure to CloudWatch and CloudWatch logs
+and you know that CloudWatch monitors certain performance and reliability aspects of EC2
+but crucially only those metrics that are available on the external face of an EC2 instance.
+There are situations when you need to enable monitoring inside an instance
+so have access to certain performance counters of the operating system itself.
+So be able to look at the processes running on an instance, the memory consumption of those processes
+so have access to certain operating system level performance metrics that you cannot see outside the instance.
+You also might want to allow access to system and application logging from within the EC2 instance
+so application logs and system logs also from within the operating system of an EC2 instance.
+So in this lesson I want to step through exactly how this works and what you need to use to achieve it.
+So let's get started.
+Now a quick summary of where we're at so far in the course relevant to this topic.
+So I just mentioned you know now that CloudWatch is the product responsible for storing and managing metrics within AWS
+and you also know that CloudWatch logs is a subset of that product aimed at storing, managing and visualizing any logging data.
+But neither of those products can natively capture any data or any logs that's happening inside of an EC2 instance.
+The products aren't capable of getting visibility inside of an EC2 instance natively.
+The inside of an instance is opaque to CloudWatch and CloudWatch logs by default.
+To provide this visibility the CloudWatch agent is required and this is a piece of software which runs inside an EC2 instance.
+So running on the operating system it captures OS visible data and sends it into CloudWatch or CloudWatch logs
+so that you can then use it and visualize it within the console of both of those products.
+And logically for the CloudWatch agent to function it needs to have the configuration and permissions to be able to send that data into both of those products.
+So in summary in order for CloudWatch and CloudWatch logs to have access inside of an EC2 instance
+then there's some configuration and security work required in addition to having to install the CloudWatch agent.
+And that's what I want to cover over the remainder of this lesson and the upcoming demo lesson.
+Architecturally the CloudWatch agent is pretty simple to understand.
+We've got an EC2 instance on its own, for example the Animals for Life WordPress instance from the previous demos.
+It's incapable of injecting any logging into CloudWatch logs without the agent being installed.
+So to fix that we need to install the CloudWatch agent within the EC2 instance and the agent will need some configuration.
+So it will need to know exactly what information to inject into CloudWatch and CloudWatch logs.
+So we need to configure the agent, we need to supply the configuration information so that the agent knows what to do.
+The agent also needs some way of interacting with AWS, some permissions.
+We know now that it's bad practice to add long-term credentials to an instance so we don't want to do that.
+But that aside it's also difficult to manage that at scale.
+So best practice for using this type of architecture is to create an IAM role with permissions to interact with CloudWatch logs.
+And then we can attach this IAM role to the EC2 instance providing the instance or more specifically anything running on the instance
+with access to the CloudWatch and CloudWatch log service.
+Now the agent configuration that we'll also need to set up, that configures the metrics and the logs that we want to capture.
+And these are all injected into CloudWatch using log groups.
+We'll configure one log group for every log file that we want to inject into the product
+and then within each log group there'll be a log stream for each instance performing this logging.
+So that's the architecture. One log group for each individual log that we want to capture
+and then one log stream inside that log group for every EC2 instance that's injecting that logging data.
+Now to get this up and running for a single instance you can do it manually.
+You can log into the instance, install the agent, configure it, attach a role and start injecting the data.
+At scale you'll need to automate the process and potentially you can use CloudFormation to include that agent configuration
+for every single instance that you provision.
+Now CloudWatch agent comes with a number of ways to obtain and store the configuration that it will use to send this data into CloudWatch logs.
+And one of those ways is we can actually use the parameter store and store the agent configuration as a parameter.
+And because we've just learnt about parameter store I thought it would be beneficial as well as demonstrating how to install and configure the CloudWatch agent
+We should also utilize the parameter store to store that configuration and so that's what we're going to do together in the next demo lesson.
+We're going to install and configure the CloudWatch agent and set it up to collect logging information for three different log files.
+We're going to set it up to collect and inject logging for forward slash var forward slash log forward slash secure
+which shows any events relating to secure logins to the EC2 instance
+And we're also going to collect logging information for the access log and the error log
+which are both log files generated by the Apache web server that's installed on the EC2 instance.
+And by using these three different log files it should give you some great practical experience
+to how to configure the CloudWatch agent and how to use the parameter store to store configuration at scale.
+So that's it for the theory for now, you can go ahead and finish off this video
+and then when you're ready you can join me in the next demo lesson where we'll be installing and configuring the CloudWatch agent.

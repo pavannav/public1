@@ -1,0 +1,43 @@
+Welcome back and I've mentioned a few times now within the course that IAM roles are the best
+practice way that AWS services can be granted permissions to other AWS services on your behalf.
+Allowing a service to assume a role grants the service the permissions that that role has.
+EC2 instance roles are roles that an instance can assume and anything running in that instance
+has the permissions that that role grants and there is some detail involved which matters so
+let's take a look at how this feature of EC2 works architecturally. Instance role architecture
+isn't really all that complicated it starts off with an IAM role and that role has a permissions
+policy attached to it so whoever assumes the role gets temporary credentials generated and those
+temporary credentials give the permissions that that permissions policy would grant.
+Now an EC2 instance role allows the EC2 service to assume that role which means that an EC2 instance
+itself can assume it and gain access to those credentials but we need some way of delivering
+those credentials into the EC2 instance so the applications running inside that instance can use
+the permissions that the role provides so there's an intermediate piece of architecture the instance
+profile and this is a wrapper around an IAM role and the instance profile is the thing that allows
+the permissions to get inside the instance. When you create an instance role in the console
+an instance profile is created with the same name but if you use the command line or cloud formation
+you need to create these two things separately. When using the UI and you think you're attaching
+an instance role direct to an instance you're not you're attaching an instance profile of the
+same name it's the instance profile that's attached to an EC2 instance. We know by now
+that when IAM roles are assumed you're provided with temporary security credentials which expire
+but these credentials grant permissions based on the roles permissions policy well inside an EC2
+instance these credentials are delivered via the instance metadata. An application running inside
+the instance can access these credentials and use them to access AWS resources such as S3.
+One of the great things about this architecture is that the credentials available inside the
+metadata they're always valid. EC2 and the secure token service liaise with each other to ensure
+that the credentials are always renewed before they expire as long as your application inside
+the EC2 instance keeps checking the metadata it will never be in a position where it has
+expired credentials. So to summarize when you use EC2 instance roles the credentials are delivered
+via the instance metadata specifically inside the metadata there's an IAM tree in there there's a
+security credentials part and then in there is the role name and if you access this you'll get
+access to these temporary security credentials and they're always rotated they're always valid
+as long as that instance role remains attached to the instance anything running in the instance
+will always have access to these valid credentials applications running in the instance of course
+need to be careful about caching these credentials and just check the metadata before the credentials
+expire or do it periodically. You should always use roles where possible I'm going to keep
+stressing that throughout the course it's important for the exam roles are always preferable than
+storing long-term credentials so access keys into an EC2 instance it's never a good idea to store
+long-term credentials such as access keys anywhere which aren't securely stored so for example on
+your local machine in fact the AWS tooling such as the CLI tools will use instance role credentials
+automatically so as long as the instance role is attached to the EC2 instance any command line
+tools running inside that instance can automatically make use of those credentials
+so at this point that's everything I wanted to cover thanks for watching
+go ahead and complete this video and when you're ready join me in the next lesson

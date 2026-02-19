@@ -1,0 +1,109 @@
+Welcome to this demo lesson where you're going to get the experience of working with EC2 and EC2 instance roles.
+Now as you learned in the previous theory lesson, an instance role is essentially a specific type of IAM role
+designed so that it can be assumed by an EC2 instance.
+When an instance assumes a role which happens automatically when the two of them are linked,
+that instance and any applications running on that instance can gain access to the temporary security credentials that that role provides.
+And in this demo lesson you're going to get the experience of working through that process.
+Now to get started you're going to need some infrastructure.
+Make sure that you're logged in to the general AWS account, so that's the management account of the organization,
+and as always you'll need to be within the Northern Virginia region.
+Assuming you are, there's a one-click deployment link which is attached to this lesson, so go ahead and click that link.
+That will take you to a quick create stack page.
+The stack name will be pre-populated with IAM role demo, and all you need to do is to scroll down to the bottom,
+check this capabilities box and then click on create stack.
+This one-click deployment will create the Animals for Life VPC, an EC2 instance and an S3 bucket.
+Now in order to continue with this demo we're going to need this stack to be in a create complete state,
+so go ahead and pause the video and then when the stack moves into a create complete status then we're good to continue.
+OK, so this stack's now in a create complete state and we're good to continue.
+So to do so, go ahead and click on the services drop-down and then type EC2, locate it, right-click and then open that in a new tab.
+Once you're at the EC2 console, click on instances running and you should be able to see that we only have the one single EC2 instance.
+Now we're going to connect to this to perform all of the tasks as part of this demo, so right-click on this instance, select connect,
+we're going to use EC2 instance connect, just verify that the username does say EC2-user and then click on connect.
+Now the AMI that we use to launch this instance is just the standard Amazon Linux 2 AMI and so if we type AWS and press enter,
+it comes with the standard install of the AWS CLI version 2.
+Now it's important to understand that right now this instance has no attached instance role and it's not been configured in any way,
+it's the native Amazon Linux 2 AMI that's been used to launch this instance.
+And so if we attempt to interact with AWS using the command line utilities, for example by running an AWS S3 LS,
+the CLI tools will tell us that there are no credentials configured on this instance and will be prompted to provide long-term credentials using AWS configure.
+Now this is the method that you've used to provide credentials to your own installed copy of the CLI tools running on your local machine.
+So you've used AWS configure and set up two named configuration profiles and the way that you provide these with authentication information is using access keys.
+Now this instance has no access keys configured on it and so it has no method of interacting with AWS.
+We could use AWS configure and provide these credentials but that's not best practice for an EC2 instance.
+What we're going to do instead is use an instance role.
+So to do that you're going to need to move back to the AWS console and once you're there click on services and in the search box type IAM.
+We're going to move to the IAM console so right click and open that in a new tab.
+As I mentioned earlier an instance role is just a specific type of IAM role.
+So we're going to go ahead and create an IAM role which our instance can assume.
+So click on roles and then we're going to go ahead and click on create role.
+Now the create role process presents us with a few common scenarios.
+We can create a role that's used by an AWS service, another AWS account, a web identity or a role designed for SAML 2.0 Federation.
+In our case we want a role which can be assumed by an AWS service specifically EC2.
+So we'll select the type of trusted entity to be an AWS service then we'll click on EC2 and then we'll click on next.
+Now for the permissions in this search box just go ahead and type S3 and we're looking for the Amazon S3 read only access.
+So there's a managed policy that we're going to associate with this role.
+So check the box next to Amazon S3 read only access and then we'll click on next.
+And then under role name we're going to call this role A4L instance role so it's easy to distinguish from any other roles we have in the account.
+So go ahead and enter that and click on create role.
+Now as I mentioned in the theory lesson about instance roles when we do this from the user interface
+it's actually created a role and an instance profile of the same name and it's the instance profile that we're going to be attaching to the EC2 instance.
+Now from a UI perspective both of these are the same thing.
+You're not exposed to the role and the instance profile as separate entities but they do exist.
+So now we're going to move back to the EC2 console and remember currently this instance has no attached instance role
+and we're unable to interact with AWS using this EC2 instance.
+To attach an instance role using the console UI right click, go down to security and then modify IAM role.
+Select that and we'll need to choose a new IAM role.
+You have the option of creating one directly from this screen but we've already created the one that we want to apply.
+So click in the drop down and select the role that you've just created.
+In this case A4L instance role.
+So select that and then click on save.
+Now if we select the instance and then click on security you'll be able to confirm that it does have an IAM role attached to this instance.
+So this is the instance role that this EC2 instance can now utilize.
+So now we're going to interact with this instance again from the operating system.
+Now if it's been a few minutes since you've last used instance connect you might find when you go back it appears to have frozen up.
+If that's the case, that's no problem.
+Just close down these tabs that you've got connected to that instance, right click on the instance again, select connect,
+make sure the username is EC2-user and then click on connect and this will reconnect you to that instance.
+Now if you recall last time we were connected we attempted to run AWS S3 LS and the command line tools informed us that we had no credentials configured.
+Let's attempt that process again.
+AWS space S3 space LS and press enter.
+And now because we have the instance role associated with this EC2 instance the command line tools can use the temporary credentials that that role generates.
+Now the way that this works and I'm going to demonstrate this using the curl utility,
+these credentials are actually provided to the command line tools via the metadata.
+So this is actually the metadata path that the command line tools use in order to get the security credentials,
+so the temporary credentials that a role provides when it's assumed.
+So if I use this command and press enter you'll see that it's actually using this role name.
+So you'll see a list of any roles which are associated with this instance.
+If we use the curl command again but this time on the end of security credentials we specify the name of the role that's attached to this instance and press enter,
+Now we can see the credentials that command line tools are using.
+So we have the access key ID, the secret access key and the token.
+And all of these have been generated by this EC2 instance assuming this role.
+Because these are temporary credentials they also have an expiry date.
+So in my case here we can see that these credentials expire on the 7th of May 2022 at 552.47 UTC.
+And that really is all I wanted to show you in this demo lesson about instance roles.
+Essentially you just need to create an instance role and then attach it to an instance and once you do that instance is capable of assuming that role,
+gaining access to temporary credentials and then any applications installed on that instance including the command line utilities are capable of interacting with AWS using those credentials.
+Now the process of renewing these credentials is automatic.
+So as long as the application that's running on the instance periodically checks the metadata service it will always have access to up to date and valid credentials.
+The EC2 service once this expiry date closes in and once the expiry date is in the past these credentials will be renewed and a new valid set of credentials will automatically be presented via the metadata service to any applications running on this EC2 instance.
+Now just one more thing that I do want to show you before we finish up with this demo lesson and I have made sure that I've attached this link to the lesson.
+This link shows the configuration settings and precedents that the command line utilities use in order to interact with AWS.
+So whenever you use the command line interface each of these is checked in order.
+First it looks at command line options, then it looks at environment variables to check whether any credentials are stored within environment variables,
+then it checks the command line interface credentials file so this is stored within the .aws folder within your home folder and then a file called credentials.
+Next it checks the CLI configuration file, next it checks container credentials and then finally it checks instance profile credentials and these are what we've just demonstrated.
+Now this does mean that if you manually configure any long term credentials for the CLI tools as part of using AWS Configure then they will be used as a priority over an instance profile.
+But you can use an instance profile and attach this to many different instances as a best practice way of providing them with access into AWS products and services so that's really critical to understand.
+But at this point that is everything that I wanted to cover in this demo lesson and all that remains is for us to tidy up the infrastructure that we've used as part of this demo.
+So to tidy up this infrastructure I want you to go back to the IAM console, I want you to click on roles and I want you to delete the A4L instance role that you've just created so select it and then click on delete role.
+Once you've deleted that role go back to the EC2 console, click on instances, right click on public EC2, go to security, modify IAM role, now even though you've deleted the IAM role note how it's still listed.
+That's because this is an instance profile, this is showing the instance profile that gets created with the role not the role itself.
+So what we're going to do, and I just wanted to do this to demonstrate how this works, we're just going to select no IAM role and then click on save.
+We'll need to confirm that so to do that we need to type detach into this box and then confirm it by clicking detach.
+That removes the instance role entirely from the instance and then we can finish up the tidy process by moving back to the cloud formation console, selecting the IAM role demo stack and then clicking on delete and confirming that deletion.
+And that will put the account back in the same state as it was at the start of this demo lesson.
+So this has been a very brief demo, I just wanted to give you a little bit of experience of working with instance roles.
+So that's EC2 instances combined with IAM roles in order to give an instance and any applications running on that instance the ability to interact with AWS products and services.
+And this is something that you're going to be using fairly often throughout the course, specifically when you're configuring any AWS services to interact with any other services on your behalf.
+That's a common use case for using IAM roles and we'll be using instance roles extensively to allow our EC2 instances to interact with other AWS products and services.
+But at this point that is everything that I wanted to cover in this demo lesson.
+So go ahead, complete the video and when you're ready, I'll look forward to you joining me in the next.

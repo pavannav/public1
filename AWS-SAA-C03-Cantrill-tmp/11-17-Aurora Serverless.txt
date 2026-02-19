@@ -1,0 +1,96 @@
+Welcome back, and in this lesson I want to cover Aurora Serverless.
+Aurora Serverless is a service which is to Aurora what Fargate is to ECS.
+It provides a version of the Aurora database product where you don't need to statically provision database instances of a certain size,
+or worry about managing those database instances.
+It's another step closer to a database as a service product.
+It removes one more piece of admin overhead, the admin overhead of managing individual database instances.
+From now on, when you're referring to the Aurora product that we've covered so far in the course,
+you should refer to it as Aurora Provisioned versus Aurora Serverless, which is what we'll cover in this lesson.
+With Aurora Serverless, you don't need to provision resources in the same way as you did with Aurora Provisioned.
+You still create a cluster, but Aurora Serverless uses the concept of ACUs, or Aurora Capacity Units.
+Capacity Units represent a certain amount of compute and a corresponding amount of memory.
+For a cluster, you can set minimum and maximum values, and Aurora Serverless will scale between those values,
+adding or removing capacity based on the load placed on the cluster.
+It can even go down to zero and be paused, meaning that you're only billed for the storage that the cluster consumes.
+Now billing is based on the resources that you use on a per second basis,
+and Aurora Serverless provides the same levels of resilience as you're used to with Aurora Provisioned.
+So you get cluster storage that's replicated across six storage nodes, across multiple availability zones.
+Now some of the high level benefits of Aurora Serverless, it's much simpler,
+it removes much of the complexity of managing database instances and capacity,
+it's easier to scale, it seamlessly scales the compute and memory capacity in the form of ACUs as needed,
+with no disruption to client connections, and you'll see how that works architecturally on the next screen.
+It's also cost effective when you use Aurora Serverless,
+you only pay for the database resources that you consume on a per second basis,
+unlike with Aurora Provisioned, where you have to provision database instances in advance,
+and you charge for the resources that they consume, whether you're utilizing them or not.
+The architecture of Aurora Serverless has many similarities with Aurora Provisioned,
+but it also has crucial differences, so let's review both of those, the similarities and the differences.
+The Aurora Cluster architecture still exists, but it's in the form of an Aurora Serverless cluster.
+Now this has the same cluster volume architecture which Aurora Provisioned uses.
+In an Aurora Serverless cluster though, instead of using Provisioned servers, we have ACUs, which are Aurora Capacity Units.
+These Capacity Units are actually allocated from a warm pool of Aurora Capacity Units, which are managed by AWS.
+The ACUs are stateless, they're shared across many AWS customers, and they have no local storage,
+so they can be allocated to your Aurora Serverless cluster rapidly when required.
+Now once these ACUs are allocated to an Aurora Serverless cluster, they have access to the cluster storage
+in the same way that a Provisioned Aurora instance would have access to the storage in a Provisioned Aurora cluster.
+It's the same thing, it's just that these ACUs are allocated from a shared pool managed by AWS.
+Now if the load on an Aurora Serverless cluster increases beyond the Capacity Units which are being used,
+and assuming the maximum capacity setting of the cluster allows it, then more ACUs will be allocated to the cluster.
+And once the compute resource which represents this new potentially bigger ACU is active,
+then any old compute resources representing unused capacity can be deallocated from your Aurora Serverless cluster.
+Now because of the ACU architecture, because the number of ACUs are dynamically increased and decreased based on load,
+the way that connections are managed within an Aurora Serverless cluster has to be slightly more complex versus a Provisioned cluster.
+In an Aurora Serverless cluster, we have a shared proxy fleet which is managed by AWS.
+Now this happens transparently to you as a user of an Aurora Serverless cluster,
+but if a user interacts with the cluster via an application, it actually goes via this proxy fleet.
+Any of the proxy fleet instances can be used and they will broker a connection between the application and the Aurora Capacity Units.
+Now this means that because the client application is never directly connecting to the compute resource that provides an ACU,
+it means that the scaling can be fluid and it can scale in or out without causing any disruptions to applications while it's occurring
+because you're not directly connecting with an ACU, you're connecting via an instance in this proxy fleet.
+So the proxy fleet is managed by AWS on your behalf.
+The only thing you need to worry about for an Aurora Serverless cluster is picking the minimum and maximum values for the ACU.
+And you're only ever billed for the amount of ACU that you're using at a particular point in time as well as the cluster storage.
+So that makes Aurora Serverless really flexible for certain types of use cases.
+Now a couple of examples of types of applications which really do suit Aurora Serverless.
+The first is infrequently used applications, maybe a low volume blog site such as the Best Cats,
+where connections are only attempted for a few minutes several times per day or maybe on really popular days of the week.
+With Aurora Serverless, if you were using the product to run the best cat pics blog,
+which you'll experience in the demo lesson, then you'd only pay for resources for the Aurora Serverless cluster as you consume them on a per second basis.
+Another really good use case is new applications.
+If you're deploying an application where you're unsure about the levels of load that will be placed on the application,
+so you're going to be unsure about the size of database instance that you'll need,
+with Aurora provisioned you would still need to provision that in advance and potentially change it which could cause disruption.
+If you use Aurora Serverless, you can create the Aurora Serverless cluster and have the database autoscale based on the incoming load.
+It's also really good for variable workloads if you're running a normally likely used application which has peaks,
+maybe 30 minutes out of an hour or on certain days of the week during sale periods.
+Then you can use Aurora Serverless and have it scale in and out based on that demand.
+You don't need to provision static capacity based on the peak or average as you would do with Aurora provisioned.
+It's also really good for applications with unpredictable workloads.
+So if you're really not sure about the level of workload at a given time of day, you can't predict it, you don't have enough data,
+then you can provision an Aurora Serverless cluster and initially set a fairly large range of ACUs.
+So the minimum is fairly low and the maximum is fairly high and then over the initial period of using the application,
+you can monitor the workload and if it really does stay unpredictable,
+then potentially Aurora Serverless is the perfect database product to use.
+Because if you're using anything else, say an Aurora provisioned cluster,
+then you always have to have a certain amount of capacity statically provisioned.
+With Aurora Serverless, you can in theory leave an unpredictable application inside Aurora Serverless constantly
+and just allow the database to scale in and out based on that unpredictable workload.
+It's also great for development and test databases because Aurora Serverless can be configured
+to pause itself during periods of no load and during the database pause, you're only billed for the storage.
+So if you do have systems which are only used as part of your development and test processes,
+then they can scale back to zero and only incur storage charges during periods when it's not in use
+and that's really cost effective for this type of workload.
+And it's also great for multi-tenant applications.
+If you've got an application where you're billing a user a set dollar amount per month per license to the application,
+if your incoming load is directly aligned to your incoming revenue,
+then it makes perfect sense to use Aurora Serverless.
+You don't mind if a database supporting your product scales up and costs you more if you also get more customer revenue.
+So it makes perfect sense to use Aurora Serverless for multi-tenant applications
+where the scaling is fairly aligned between infrastructure size and incoming revenue.
+So these are some classic examples of when Aurora Serverless makes perfect sense.
+Now this is a product I don't yet expect to feature extensively on the exam.
+It will feature more and more as time goes on, and so by learning the architecture at this point,
+you get a head start and you can answer any questions which might feature on the exam about Aurora Serverless
+and comparing it to the other RDS products, which is often just as important.
+But at this point, that's all of the theory that I wanted to cover, all of the architecture.
+So go ahead, finish up this video, and when you're ready, I'll look forward to joining you in the next lesson.

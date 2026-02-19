@@ -1,0 +1,86 @@
+Welcome back and in this video I want to talk about how RDS can be backed up and restored
+as well as covering the different methods of backup that we have available.
+Now we do have a lot to cover so let's jump in and get started.
+Within RDS there are two types of backup-like functionality.
+We have automated backups and we have snapshots.
+Now both of these are stored in S3 but they use AWS managed buckets so they won't be visible to
+you within your AWS console. You can see backups in the RDS console but you can't move to S3 and
+see any form of RDS bucket which exists for backups. Keep this in mind because I've seen questions
+on it in the exam. Now the benefits of using S3 is that any data contained in backups is now
+regionally resilient because it's stored in S3 which replicates data across multiple AWS
+availability zones within that region. Now RDS backups when they do occur are taken in most
+cases from the standby instance if you have multi-AZ enabled. So while they do cause an IO pause
+this occurs from the standby instance and so there won't be any application performance issues.
+If you don't use multi-AZ for example with test and development instances then the backups are
+taken from the only available instance so you may have pauses in performance. Now I want to step
+through how backups work in a little bit more detail and I'm going to start with snapshots.
+Snapshots aren't automatic. They're things that you run explicitly or via a script or custom
+application. You have to run them against an RDS database instance. They're stored in S3 which
+is managed by AWS and they function like the EBS snapshots that you've covered elsewhere in the
+course. Snapshots and automated backups are taken of the instance which means all the databases
+within it rather than just a single database. The first snapshot is a full copy of the data stored
+within the instance and from then on snapshots only store data which has changed since the last
+snapshot. When any snapshot occurs there is a brief interruption to the flow of data between
+the compute resource and the storage. If you're using single AZ this can impact your application.
+If you're using multi-AZ this occurs on the standby and so won't have any noticeable effect.
+Time-wise the initial snapshot might take a while after all it's a full copy of the data.
+From then on snapshots will be much quicker because only changed data is being stored. Now
+the exception to this are instances where there's a lot of data change. In this type of scenario
+snapshots after the initial one can also take significant amounts of time. Snapshots don't
+expire. You have to clear them up yourself. It means that snapshots live on past when you delete
+the RDS instance. Again they're only deleted when you delete them manually or via some
+external process. Remember that one because it matters for the exam. Now you can run one
+snapshot per month, one per week, one per day, one per hour. The choice is yours because they're
+manual and one way that lower recovery point objectives can be met is by taking more frequent
+snapshots. The lower the time frame between snapshots the lower the maximum data loss that
+can occur when you have a failure. Now this is assuming we only have snapshots available but
+there is another part to RDS backups and that's automated backups. These occur once per day but
+the architecture is the same. The first one is a full and any ones which follow only store changed
+data. So far you can think of them as though they're automated snapshots because that's what they are.
+They occur during a backup window which is defined on the instance. You can allow AWS to pick one at
+random or use a window which fits your business. If you're using single AZ you should make sure
+that this happens during periods of little to no use as again there will be an IO pause. If you're
+using multi AZ this isn't a concern as the backup occurs from the standby. In addition to this
+automated snapshot every five minutes database transaction logs are also written to S3.
+Transaction logs store the actual operations which change the data. So operations which are
+executed on the database and together with the snapshots created from the automated backups
+this means a database can be restored to a point in time with a five minute granularity. In theory
+this means a five minute recovery point objective can be reached. Now automated backups aren't
+retained indefinitely. They're automatically cleared up by AWS and for a given RDS instance
+you can set a retention period from zero to 35 days. Zero means automated backups are disabled
+and the maximum is 35 days. If you use a value of 35 days it means that you can restore to any point
+in time over that 35 day period using the snapshots and transaction logs but it means that any data
+older than 35 days is automatically removed. When you delete the database you can choose to retain
+any automated backups but and this is critical they still expire based on the retention period.
+The way to maintain the contents of an RDS instance past this 35 day max retention period
+is that if you delete an RDS instance you need to create a final snapshot and this snapshot is
+fully under your control and has to be manually deleted as required. Now RDS also allows you to
+replicate backups to another AWS region and by backups I mean both snapshots and transaction
+logs. Now charges apply for both the cross region data copy and any storage used in the destination
+region and I want to stress this really strongly this is not the default this has to be configured
+within automated backups you have to explicitly enable it. Now let's talk a little bit about
+restores. The way RDS handles restores is really important and it's not immediately intuitive it
+creates a new RDS instance when you restore an automated backup or a manual snapshot. Why this
+matters is that you will need to update applications to use the new database endpoint address because
+it will be different than the existing one. When you restore a manual snapshot you're restoring
+the database to a single point in time it's fixed to the time that the snapshot was created which
+means it influences the RPO. Unless you created a snapshot right before a failure then chances are
+the RPO is going to be sub-optimal. Automated backups are different with these you can choose
+a specific point to restore the database to and this offers substantial improvements to RPO.
+You can choose to restore to a time which was minutes before a failure. The way that it works
+is that backups are restored from the closest snapshot and then transaction logs are replayed
+from that point onwards all the way through to your chosen time. What's important to understand
+though is that restoring snapshots isn't a fast process. If appropriate for the exam that you're
+studying I'm going to include a demo where you'll get the chance to experience this yourself
+practically. It can take a significant amount of time to restore a large database so keep this in
+mind when you think about disaster recovery and business continuity. The RDS restore time has to
+be taken into consideration. Now in another video elsewhere in this course I'm going to be covering
+read replicas and these offer a way to significantly improve RTO if you want to recover from failure.
+So RDS automated backups are great as a recovery to failure or as a restoration method for any data
+corruption but they take time to perform a restore so account for this within your RTO planning. Now
+once again if appropriate for the exam that you're studying you're going to get the chance to
+experience a restore in a demo lesson elsewhere in the course which should reinforce the knowledge
+that you've gained within this theory video. If you don't see this then don't worry it's not required
+for the exam that you're studying. At this point though that is everything I wanted to cover in
+this video so go ahead and complete the video and when you're ready I'll look forward to you joining
+me in the next.

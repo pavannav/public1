@@ -1,0 +1,136 @@
+Welcome back, and in the first real lesson of the advanced EC2 section of the course,
+I want to introduce EC2 Bootstrapping.
+Now this is one of the most powerful features of EC2 available for us to use as solutions
+architects because it's what allows us to begin adding automation to the solutions that
+we design.
+Bootstrapping is a process where scripts or other bits of configuration can be run when
+an instance is first launched, meaning that an instance can be brought into service in
+a certain pre-configured state.
+So unlike just launching an instance with an AMI and having it be in its default state,
+we can bootstrap in a certain set of configurations or software installs.
+Now let's look at how this works from a theory perspective, and then you'll get a chance
+to implement this yourself in the following demo lesson.
+Now bootstrapping is a process which exists outside EC2, it's a general term.
+In systems automation, bootstrapping is a process which allows a system to self-configure
+or perform some self-configuration steps.
+In EC2, it allows for build automation, some steps which can occur when you launch an instance
+to bring that instance into a configured state.
+Rather than relying on a default AMI or an AMI with a pre-baked configuration, it allows
+you to direct an EC2 instance to do something when launched, so perform some software installations
+and then some post-installation configuration.
+With EC2, bootstrapping is enabled using EC2 user data, and this is injected into the instance
+in the same way that metadata is.
+In fact, it's accessed using the metadata IP address, so 169.254, 169.254, also known
+as 169.254 repeating, but instead of latest forward slash meta hyphen data, it's latest
+forward slash user hyphen data.
+The user data is a piece of data, a piece of information that you can pass into an EC2
+instance.
+Anything that you pass in is executed by the instance's operating system, and here's the
+important thing to remember, it's executed only once at launch time.
+If you update the user data and restart an instance, it's not executed again, so it's
+only the once.
+User data applies only to the first initial launch of the instance.
+It's for launch time configuration only.
+Now another important aspect is that EC2 as a service doesn't validate this user data,
+it doesn't interpret it in any way.
+You can tell EC2 to pass in some random data, and it will.
+You can tell EC2 to pass in commands which will delete all of the data on the boot volume,
+and the instance will do so.
+EC2 doesn't interpret the data, it just passes the data into the instance via user data,
+and there's a process on the operating system which runs this as the root user.
+So in summary, the instance needs to understand what you pass in, because it's just going
+to run it.
+Now the bootstrapping architecture is pretty simple to understand.
+An AMI is used to launch an EC2 instance in the usual way, and this creates an EBS volume
+which is attached to the EC2 instance, and that's of course based on the block device
+mapping inside the AMI.
+This part we understand already.
+Where it starts to differ is that now the EC2 service provides some user data through
+to the EC2 instance.
+And there's software within the operating system running on EC2 instances which is designed
+to look at the metadata IP for any user data.
+And if it sees any user data, then it executes this on launch of that instance.
+Now this user data is treated just like any other script that the operating system runs.
+It needs to be valid, and at the end of running the script, the EC2 instance will either be
+in a running state and ready for service, meaning that the instance has finished its
+startup process, the user data ran, and it was successful, and the instance is in a functional
+and running state.
+Or the worst case is that the user data errors in some way.
+So the instance would still be in a running state, because the user data is separate from
+EC2, EC2 just delivers it into the instance.
+The instance would still pass its status checks, and assuming you didn't run anything which
+deleted mass amounts of OS data, you could probably still connect to it.
+But the instance would likely not be configured as you want, it would be a bad configuration.
+So that's critical to understand, the user data is just passed in in an opaque way to
+the operating system.
+It's up to the operating system to execute it, and if executed correctly, the instance
+will be ready for service.
+If there's a problem with the user data, you will have a bad config.
+This is one of the key elements of user data to understand, it's one of the powerful features,
+but also one of the risky ones.
+You pass the instance user data as a block of data, it runs successfully or it doesn't.
+From EC2's perspective, it's simply opaque data, it doesn't know or care what happens
+to it.
+Now, user data is also not secure, anyone who can access the instance operating system
+can access the user data, so don't use it for passing in any long-term credentials,
+at least not ideally.
+Now in the demo, we'll be doing just that, we'll be doing bad practice by passing into
+the instance using the user data some long-term credentials, but this is intentional, it's
+part of your learning process.
+As we move through the course, we'll evolve the design and implementations to use more
+AWS services, and some of these include better ways to handle secrets inside EC2, so I need
+to show you the bad practice before I can compare it to the good.
+Now user data is limited to 16 kilobytes in size, for anything more complex than that
+you would need to pass in a script which would download that larger data.
+User data can be modified if you shut down the instance, change the user data and start
+it up again, then new data is available inside the instance's user data, but the contents
+are only executed once when you initially launch that instance.
+So after the launch stage, user data is only really useful for passing data in, and there
+are better ways of doing that, so keep in mind for the exam, user data is generally
+used the once for the post-launch configuration of an instance, it's only executed the one
+initial time.
+Now one of the question types that you will often face in the exam relates to how quickly
+you can bring an instance into service, there's actually a metric, boot time to service time.
+How quickly after you launch an instance is it ready for service, ready to accept connections
+from your customers, and this includes the time that AWS require to provision the EC2
+and the time taken for any software updates, installations or configurations to take place
+within the operating system.
+For an AWS provided AMI, that time can be measured in minutes, from launch time to service
+time it's generally only minutes.
+But what if you need to do some extra configuration, maybe install an application?
+Remember when you manually installed WordPress after launching an instance, this is known
+as post-launch time, the time required after launch for you to perform manual configuration
+or automatic configuration before the instance is ready for service.
+If you do it manually, this can be a few minutes or even as long as a few hours for things
+which are significantly more complex.
+Now you can shorten this post-launch time in a few ways, the topic of this very lesson
+is bootstrapping, and bootstrapping as a process automates installations after the launch of
+an instance and this reduces the amount of time taken to perform these steps, and you'll
+see that demoed in the next lesson.
+Now alternatively you can also do the work in advance by AMI baking, with this method
+you're front loading the work, doing it in advance and creating an AMI with all of that
+work baked in.
+Now this removes the post-launch time but it means you can't be as flexible with the
+configuration because it has to be baked into the AMI.
+Now the optimal way is to combine both of these processes, so AMI baking and bootstrapping.
+You'd use AMI baking for any part of the process which is time intensive, so if you
+have an application installation process which is 90% installation and 10% configuration,
+you can AMI bake in the 90% part and then bootstrap the final configuration.
+That way you reduce the post-launch time and thus the boot time to service time, but you
+also get to use bootstrapping which gives you much more configurability, and I'll be
+demonstrating this architecture later in the course when I cover scaling and high availability
+but I wanted to introduce these concepts now so you can keep mulling them over and understand
+them when I mention them.
+But now it's time to finish up this lesson and this has been the theory component of
+EC2 bootstrapping.
+In the next lesson which is a demo, you're going to have the chance to use the EC2 user
+data feature.
+Remember earlier in the course where we built an AMI together, we installed WordPress to
+the point when it was ready to install, and we massively improved the login banner of
+the EC2 instance to be something more animal related with Cowsay.
+In the next demo lesson you're going to implement the same thing but you're going to be using
+user data.
+You'll see how much quicker this process is to do though when you had to manually launch
+the instance and run each command one by one.
+It's going to be a good, valuable demo, I can't wait to get started so go ahead, finish
+this video and when you're ready, you can join me for some practical time.

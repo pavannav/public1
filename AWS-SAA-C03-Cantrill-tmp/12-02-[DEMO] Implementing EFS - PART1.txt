@@ -1,0 +1,87 @@
+Welcome back, and in this demo lesson I want to give you some abstract practical experience of using the Elastic File System, or EFS.
+Now we're going to need some infrastructure. Before we apply that, as always, make sure that you're logged into the general AWS account,
+so the management account of the organization, and you'll need the Northern Virginia region selected.
+Now attached to this lesson is a one-click deployment link, so go ahead and click that.
+This is going to provision some infrastructure. It's going to take you to the quick create stack screen, and everything should be pre-populated.
+You'll just need to scroll to the bottom, check the box beneath capabilities, and then click on create stack.
+You're also going to be typing some commands within this demo lesson, so also attached to this lesson is a lesson commands document.
+Go ahead and open that in a new tab. So this is just a list of the commands that we're going to be using during the demo lesson,
+and there are some placeholders, such as file system ID, that you'll need to replace as we go, but make sure you've got this open for reference.
+Now we're going to need this stack to be in a create complete state before we continue with the demo lesson,
+so go ahead, pause the video, and resume it once your stack moves into a create complete state.
+Okay, so the stack's now moved into a create complete status, and what this has actually done is create the Animals for Life base VPC,
+as well as a number of EC2 instances. So if we go to the EC2 console and click on instances running,
+you'll note that we've created A4L-EFS instance A and A4L-EFS instance B,
+and we're going to be creating an EFS file system and mount points, and then mounting that on both of these instances and interacting with the data stored on that file system.
+We're going to get you the experience of working with a network shared file system. So let's go ahead and do that.
+So to get started, we need to move to the EFS console. So in the search box at the top, just type EFS, and then open that in a brand new tab.
+We're going to leave this tab open to the instances part of the EC2 console, because we're going to come back to this very shortly.
+So let's move across to the EFS console that we have open in a separate tab, and the first step is to create a file system.
+So a file system is the base entity of the Elastic File System product, and that's what we're going to create.
+Now you've got two options for setting up an EFS file system. You can use this simple dialog, or you can click on customize to customize it further.
+So if we're using the simple dialog, we'd start by naming the file system. So let's say we use A4L-EFS,
+and then you'd need to pick a VPC for this file system to be provisioned into, and of course we'd want to select the Animals for Life VPC.
+Now we want to customize this further. We don't want to just accept these high level defaults, so we need to click on customize.
+This is going to move us to this user interface which has many more options, so we've still got the A4L-EFS name for this file system.
+Now for the storage class we're going to pick standard, which means the data is replicated across multiple availability zones.
+If you're doing this in a test or development environment, or you're storing data which is not important,
+then you can choose to use one zone which stores data redundantly, but only within a single AZ.
+Now again in this demonstration we are going to be using multiple availability zones, so make sure that you pick standard for storage class.
+You're able to configure automatic backups of this file system using AWS Backup, and if you're taking an appropriate certification course,
+this is something which I'll be covering in much more detail. You can either enable this or disable it.
+Obviously for production usage you'd want to enable it, but for this demonstration we're going to disable it.
+Now EFS as I mentioned in the theory lesson comes with different classes of storage,
+and you can configure lifecycle management to move files between those different storage classes.
+So if you want to configure lifecycle management to move any files not accessed for 30 days,
+you can move those into the Infrequent Access Storage class.
+And you can also transition out of Infrequent Access when anything is accessed.
+So go ahead and select On First Access for transition out of IA.
+So in many ways this is like S3 with the different classes of storage for different use cases.
+When you're creating a file system you're able to set different performance and throughput modes.
+For throughput mode you can choose between bursting and enhanced.
+If you pick enhanced you're able to select between elastic and provisioned.
+I've talked more about these in the theory lesson. We're going to pick bursting.
+Now for performance you can choose between general purpose and max.io.
+General purpose is the default and rightfully so, and you should use this for almost all situations.
+Only use max.io if you want to scale to really high levels of aggregate throughput and input-output operations per second.
+So only select it if you absolutely know that you need this option.
+You've also got the ability to encrypt the data on the file system,
+and if you do encrypt it, it uses KMS and you need to pick a KMS key to use.
+Of course this means that in order to interact with objects on this file system,
+permissions are needed both on the EFS service itself as well as the KMS key that's used for the encryption operation.
+Now this is something that you will absolutely need to use for production usage,
+but for this demonstration we're going to switch it off.
+We won't be setting any tags for this file system, so let's go ahead and click on next.
+You need to configure the network settings for this file system,
+so specifically the mount targets that will be created to access this file system.
+Now best practice is that any availability zones within a VPC where you're consuming the services provided by EFS,
+you should be creating a mount target.
+So in our case that's us-east-1a, 1b and 1c.
+So we're going to go through and configure this.
+So first, let's delete all of these default security group assignments.
+Every mount target that you create will have an associated security group,
+so we'll be setting these specifically.
+For now though, we need to choose the application subnet in each of these availability zones.
+So in the top drop-down, which is us-east-1a, I'm looking for app-a, so go ahead and do the same.
+In us-east-1b, I want to select the app-b subnet,
+and then in us-east-1c, logically, I'll be selecting the app-c subnet.
+So that's app-a, app-b and app-c.
+Now for security groups, the CloudFormation one-click deployment has provisioned this instance security group,
+and by default, this security group allows all connections from any entities which have this attached.
+So this is a really easy way that we can allow our instances to connect to these mount targets.
+So for each of these lines, go ahead and select the instance security group.
+You'll need to do that for each of the mount targets, so we'll do the second one, and then we'll do the third one.
+And that's all of the network configuration options that we need to worry about, so click on next.
+It's here where you can define any policies on the file system, so you can prevent root access by default,
+you can enforce read-only access by default, you can prevent anonymous access,
+or you can enforce encryption in transit for all clients connected to this EFS file system.
+So any clients that connect to the mount targets to access the file system, you can ensure that that uses encryption in transit.
+And if you're using this in production, you might want to select at least this last option to improve security.
+For this demo lesson, we're not going to use any of these policy options, nor are we going to define a custom policy in the policy editor.
+Instead, we'll just click on next. At this point, we just need to review everything to our satisfaction.
+Everything looks good, so we're going to scroll down to the bottom and just click on create.
+Now in order to continue with this demo lesson, we're going to need both the file system and all of its mount targets.
+So go into the file system, click on network, and you'll see three mount targets being created.
+All three of these need to be ready before we can continue the demo lesson.
+So this seems like a great time to end part one of this demo lesson.
+Go ahead and finish this video, and then when all of these mount targets are ready to go, you can start part two.

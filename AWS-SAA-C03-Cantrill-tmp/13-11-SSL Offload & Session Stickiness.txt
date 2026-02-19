@@ -1,0 +1,129 @@
+Welcome back and in this brief lesson I want to cover two features of the Elastic Load Balancer series of products
+and those features are SSL Offload and Session Stickiness.
+Now you'll need to be aware of the architecture of both of these for the exam.
+The implementation details aren't required, the theory of the architecture is what matters.
+So let's jump in and get started.
+Now there are three ways that a load balancer can handle secure connections
+and these three ways are bridging, pass through and offload.
+Each of these comes with their pros and their cons
+and for the exam and to be a good solutions architect you need to understand the architecture
+and the positives and negatives of them all.
+So let's step through each of these in turn.
+So first we've got bridging mode and this is actually the default mode of an application load balancer.
+With bridging mode one or more clients makes one or more connections to a load balancer
+and that load balancer is configured so that its listener uses HTTPS
+and this means that SSL connections occur between the client and the load balancer.
+So they're decrypted known as terminated on the load balancer itself
+and this means that the load balancer needs an SSL certificate
+which matches the domain name that the application uses
+and it also means in theory that AWS do have some level of access to that certificate
+and that's important if you have strong security frameworks that you need to stay inside of.
+So if you're in a situation where you need to be really careful about where your certificates are stored
+then potentially you might have a problem with bridged mode.
+Once the secure connection from the client has been terminated on the load balancer
+the load balancer makes second connections to the backend compute resources
+EC2 instances in this example.
+Remember HTTPS is just HTTP with a secure wrapper
+So when the SSL connection comes from the client to the front facing the listener side of the load balancer
+it gets terminated which essentially means that the SSL wrapper is removed from the unencrypted HTTP which is inside
+so the load balancer has access to the HTTP which it can understand and use to make decisions.
+So the important thing to understand is that an application load balancer in bridging mode
+can actually see the HTTP traffic, it can take actions based on the contents of HTTP
+and this is the reason why this is the default mode for the application load balancer
+and it's also the reason why the application load balancer requires an SSL certificate
+because it needs to decrypt any data that's being encrypted by the client.
+It needs to decrypt it first, then interpret it, then create new encrypted sessions between it and the backend EC2 instances.
+Now this also means that the EC2 instances will need matching SSL certificates
+so certificates which match the domain name that the application is using.
+So the elastic load balancer will re-encrypt the HTTP within a secure wrapper
+and deliver this to the EC2 instances which will use the SSL certificate to decrypt that encrypted connection.
+So they both need the SSL certificates to be located on the EC2 instances
+as well as needing the compute to be able to perform those cryptographic operations.
+So in bridging mode which is the default, every EC2 instance at the backend needs to perform cryptographic operations.
+And for high volume applications the overhead of performing these operations can be significant.
+So the positives of this method is that the elastic load balancer gets to see the unencrypted HTTP
+and can take actions based on what's contained in this plain text protocol.
+The method does have negatives though because the certificate does need to be stored on the load balancer itself
+and that's a risk. And then the EC2 instances also need a copy of that certificate which is an admin overhead
+and they need the compute to be able to perform the cryptographic operations.
+So those are two pretty important negatives that can play a part on which connection method you select
+for any architectures that you design.
+Now next we have SSL passthrough and this architecture is very different.
+With this method the client connects but the load balancer just passes that connection along
+to one of the backend instances. It doesn't decrypt it at all.
+The connection encryption is maintained between the client and the backend instances.
+The instances still need to have the SSL certificates installed but the load balancer doesn't.
+Specifically it's a network load balancer which is able to perform this style of connection architecture.
+The load balancer is configured to listen using TCP. So this is important.
+It means that it can see the source and destination IP addresses and ports
+so it can make basic decisions about which instance to send traffic to, i.e. the process of performing the load balancing
+But it never touches the encryption. The encrypted connection exists as one encrypted tunnel
+between the client all the way through to one of the backend instances.
+Now using this method means that AWS never need to see the certificate that you use.
+It's managed and controlled entirely by you.
+You can even use a cloud HSM appliance which I'll talk about later in the course to make this even more secure.
+The negative though is that you don't get to perform any load balancing based on the HTTP part
+because that's never decrypted. It's never exposed to the network load balancer.
+And the instances still need to have the certificates and still need to perform the cryptographic operations
+which users compute. Now the last method that we have is SSL offload
+and with this architecture clients connect to the load balancer in the same way using HTTPS.
+The connections use HTTPS and are terminated on the load balancer
+and so it needs an SSL certificate which matches the name that's used by the application.
+But the load balancer is configured to connect to the backend instances using HTTP
+so the connections are never encrypted again.
+What this means is that from a customer perspective data is encrypted between them and the load balancer
+so at all times while using the public internet data is encrypted.
+But it transits from the load balancer to the EC2 instances in plain text form.
+It means that while a certificate is required on the load balancer it's not needed on the EC2 instances.
+The EC2 instances only need to handle HTTP traffic and because of that
+they don't need to perform any cryptographic operations which reduces the per instance overhead
+and also potentially means you can use smaller instances.
+The downside is that data is in plain text form across AWS's network
+but if this isn't a problem then it's a very effective solution.
+So now that we've talked about the different connection architectures
+now let's quickly talk about stickiness.
+Connection stickiness is a pretty important concept to understand
+for anybody designing a scalable solution using load balancers.
+Now let's look at an example architecture.
+We have our customer Bob, a load balancer and a set of backend EC2 instances.
+If we have no session stickiness then for any sessions which Bob or anyone else makes
+they're distributed across all of the backend instances based on fair balancing and any health checks.
+So generally this means a fairly equal distribution of connections across all backend instances.
+The problem with this approach though is that if the application doesn't handle sessions externally
+every time Bob lands on a new instance it would be like he's starting again.
+He would need to log in again and fill his shopping cart again.
+Applications need to be designed to handle state appropriately.
+An application which uses stateless EC2 instances where the state is handled in say DynamoDB
+can use this non-sticky architecture and operate without any problems.
+But if the state is stored on a particular server then you can't have sessions
+being fully load balanced across all of the different servers
+because every time a connection moves to a different server it will impact the user experience.
+Now there is an option available within elastic load balancers called session stickiness.
+And within an application load balancer this is enabled on a target group.
+Now what this means is that if enabled the first time that a user makes a request
+the load balancer generates a cookie called AWS ALB.
+And this cookie has a duration which you define when enabling the feature.
+And a valid duration is anywhere between one second and seven days.
+If you enable this option it means that every time a single user accesses this application
+the cookie is provided along with the request.
+And it means that for this one particular cookie sessions will be sent always to the same backend instance.
+So in this case all connections will go to EC2-2 for this one particular user.
+Now this situation of sending sessions to the same server this will happen until one of two things occur.
+The first thing is that if we have a server failure, so in this example if EC2-2 fails
+then this one particular user will be moved over to a different EC2 instance.
+And the second thing which can occur to change this session stickiness is that the cookie can expire.
+As soon as the cookie expires and disappears the whole process will repeat over again
+and the user will receive a new cookie and be allocated a new backend instance.
+Session stickiness is designed to allow an application to function using a load balancer
+if the state of the user session is stored on an individual server.
+The problem with this method is that it can cause uneven load on backend servers
+because a single user even if he or she is causing significant amounts of load
+will only ever use one single server.
+Where possible applications should be designed to use stateless servers.
+So holding the session or user state somewhere else, so not on the EC2 instance but somewhere else like DynamoDB.
+And if you do that, if you host the session externally it means that the EC2 instances are completely stateless
+and load balancing can be performed automatically by the load balancer
+without using cookies in a completely fair and balanced way.
+So that's everything I wanted to cover about connection stickiness and that's now the end of this lesson.
+I just wanted to quickly cover two pretty important techniques that you might need to be aware of for the exam.
+So at this point go ahead and complete the video and when you're ready, as always, I'll look forward to you joining me in the next lesson.

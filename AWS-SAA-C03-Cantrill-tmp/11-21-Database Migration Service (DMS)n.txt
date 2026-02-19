@@ -1,0 +1,86 @@
+Welcome back and in this lesson I want to cover a service which starts to feature more and more on the exam,
+the Database Migration Service known as DMS.
+Now this lesson is an extension of my lesson from the Associate Architect course,
+so even if you've taken that course and watched that lesson, you should still watch this lesson fully.
+Now this product is something which as well as being on the exam,
+if you're working as a Solutions Architect in the AWS space and if your projects involve databases,
+you will extensively use this product. It's something that you need to be aware of regardless.
+So let's jump in and get started.
+Database migrations are complex things to perform.
+Normally if we exclude the vendor tooling which is available, it's a manual process end to end.
+It usually involves setting up replication which is pretty complex,
+or it means taking a point in time backup and restoring this to the destination database.
+But how do you handle changes which occur between taking that backup and when the new database is live?
+How do you handle migrations between different databases?
+These are all things where DMS comes in handy.
+It's essentially a managed database migration service.
+The concept is simple enough. It starts with a replication instance which runs on EC2.
+This instance runs one or more replication tasks.
+You need to define a source and destination endpoints which point at the source and target databases.
+And the only real restriction with the service is that one of the endpoints must be running within AWS.
+You can't use the product for migrations between two on-premises databases.
+Now you don't actually need to have any experience using the product,
+but there will be a demo lesson elsewhere in this section which gives you some practical exposure.
+For this theory lesson though we need to focus on the architecture, so let's continue by reviewing that visually.
+Using DMS is simple enough.
+Architecturally you start with a source and target database, and one of those needs to be within AWS.
+The databases themselves can use a range of compatible engines such as MySQL, Aurora, Microsoft SQL, MariaDB, MongoDB, PostgreSQL, Oracle, Azure SQL and many more.
+Now in between these, conceptually, is the database migration service known as DMS which uses a replication instance.
+Essentially an EC2 instance with migration software and the ability to communicate with the DMS service.
+Now on this instance you can define replication tasks, and each of these replication instances can run multiple replication tasks.
+Tasks define all of the options relating to the migration, but architecturally two of the most important things are the source and destination endpoints,
+which store the replication information so that the replication instance and task can access the source and target databases.
+So a task essentially moves data from the source database using the details in the source endpoint to the target database using the details stored in the destination endpoint configuration.
+And the value from DMS comes in how it handles those migrations.
+Now jobs can be one of three types.
+We have full load migrations and these are used to migrate existing data.
+So if you can afford an outage long enough to copy your existing data, then this is a good one to choose.
+This option simply migrates the data from your source database to your target database and it creates the tables as required.
+Next we have full load plus CDC and this stands for Change Data Capture and this migrates existing data and replicates any ongoing changes.
+This option performs a full load migration and at the same time it captures any changes occurring on the source.
+After the full load migration is complete, then captured changes are also applied to the target.
+Eventually the application of changes reaches a steady state and at this point you can shut down your applications,
+let the remaining changes flow through to the target and then restart your applications and point them at the new target database.
+Finally we've got CDC only and this is designed to replicate only data changes.
+In some situations it might be more efficient to copy existing data using a method other than AWS DMS.
+So certain databases such as Oracle have their own export and import tools and in these cases it might be more efficient to use those tools to migrate the initial data
+and then use DMS simply to replicate the changes starting at the point when you do that initial bulk load.
+So CDC only migrations are actually really effective if you need to bulk transfer the data in some way outside of DMS.
+Now lastly DMS doesn't natively support any form of schema conversion but there is a dedicated tool in AWS known as the Schema Conversion Tool or SCT
+and the sole purpose of this tool is to perform schema modifications or schema conversions between different database versions or different database engines.
+So this is a really powerful tool that often goes hand in hand with migrations which are being performed by DMS.
+Now DMS is a great tool for migrating databases from on-premises to AWS.
+It's a tool that you will get to use for most larger database migrations so as a solutions architect it's another tool which you need to understand end to end.
+In the exam if you see any form of database migration scenario as long as one of the databases is within AWS and as long as there are no weird databases involved
+which aren't supported by the product then you can default to using DMS. It's always a safe default option for any database migration questions.
+If the question talks about a no downtime migration then you absolutely should default to DMS.
+Now at this point let's talk in a little bit more detail about a few aspects of DMS which are important.
+First I want to talk about the Schema Conversion Tool or SCT in a little bit more detail.
+So this is actually a standalone application which is only used when converting from one database engine to another.
+It can be used as part of migrations where the engines being migrated from and to aren't compatible.
+And another use case is that it can be used for larger migrations when you need to have an alternative way of moving data between on-premises and AWS rather than using a data link.
+SCT is not used, and this is really important, it's not used for movements of data between compatible database engines.
+For example if you're performing a migration from an on-premises MySQL server to an AWS based RDS MySQL server then the engines are the same.
+Even though the products are different the engines are the same and so SCT would not be used.
+SCT works with OLTP databases such as MySQL, Microsoft SQL and Oracle and also OLAP databases such as Teradata, Oracle, Vertica and even Greenplum.
+Now examples of the types of situations where the Schema Conversion Tool would be used include things like on-premises Microsoft SQL through to AWS RDS MySQL migrations
+because the engine changes from Microsoft SQL to MySQL and then we could also use SCT for an on-premises Oracle to AWS based Aurora database migration again because the engines are changing.
+Now there is another type of situation where DMS can be used in combination with SCT and that's for larger migrations.
+So DMS can often be involved with large scale database migrations, so things which are multi terabytes in size.
+And for those types of projects it's often not optimal to transfer the data over the network.
+It takes time and it consumes network capacity that might be used heavily for normal business operations.
+So DMS is able to utilize the Snowball range of products which are available for bulk transfer of data into and out of AWS.
+So you can use DMS in combination with Snowball and this actually uses the Schema Conversion Tool.
+So this is how it works. So step one, you use the Schema Conversion Tool to extract the data from the database and store it locally and then move this data to a Snowball device which you've ordered from AWS.
+Step two is that you ship that device back to AWS, they load that data into an S3 bucket and then DMS migrates from S3 into the target store, so the target database.
+If you decide to use change data capture then you can also migrate changes since the initial bulk transfer.
+These also use S3 as an intermediary before being written to the target database by DMS.
+So DMS normally will transfer the data over the network, it can transfer over Direct Connect or a VPN or even a VPCPA.
+But if the data volumes that you're migrating are bigger then you can practically transfer over your network link then you can order a Snowball and use DMS together with SCT to make that transfer much quicker and more effective.
+Now the rule to remember for the exam is that SCT is only used for migrations when the engine is changing.
+And the reason why SCT is used here is because you're actually migrating a database into a generic file format which can be moved using Snowballs.
+And so this doesn't break the rule of only doing it when the database engine changes because you are essentially changing the database.
+You're changing it from whatever engine the source uses and you're storing it in a generic file format for transfer through to AWS on a Snowball device.
+Now that's everything that I wanted to cover in this lesson and this has been an extension of the coverage which I did at the Associate Architect level.
+You are going to get the chance to experience this product practically in a demo but in this lesson I just wanted to cover the theory.
+So thanks for watching, go ahead and complete this lesson and when you're ready I'll look forward to you joining me in the next.

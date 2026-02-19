@@ -1,0 +1,78 @@
+Welcome back, and in this lesson I want to talk about an advanced feature of Amazon Aurora,
+Multi-Master Writes. This feature allows an Aurora cluster to have multiple instances which
+are capable of performing both reads and writes. This is in contrast with the default mode for
+Aurora, which only allows one writer and many readers. So let's get started and look at the
+architecture. So just to refresh where we are, the default Aurora mode is known as Single Master,
+and this equates to one read-write instance, so one database instance that can perform
+read and write operations, and then in addition it can also have zero or more read-only replicas.
+Now an Aurora cluster that's running in the default mode of Single Master has a number of
+endpoints which are used to interact with the database. We've got the cluster endpoint,
+which can be used for read or write operations, and then we've got another endpoint, a read
+endpoint, that's used for load balancing reads across any of the read-only replicas inside the
+cluster. An important consideration with an Aurora cluster running in Single Master mode is that
+failover takes time. For a failover to occur, a replica needs to be promoted from read-only mode
+to read-write mode. In multi-master mode, all of the instances by default are capable of both read
+and write operations, so there isn't this concept of a lengthy failover if one of the instances fails
+in a multi-master cluster. At a high level, a multi-master Aurora cluster might seem similar
+to a Single Master one. The same cluster structure exists, the same shared storage.
+Multiple Aurora provisioned instances also exist in the cluster. The differences start,
+though, with the fact that there is no cluster endpoint to use. An application is responsible
+for connecting to instances within the cluster. There's no load balancing across instances with
+a multi-master cluster. The application connects to one or all of the instances in the cluster
+and initiates operations directly. So that's important to understand. There is no concept of
+a load balanced endpoint for the cluster. An application can initiate connections to one
+or both of the instances inside a multi-master cluster. Now the way that this architecture works
+is that when one of the read-write nodes inside a multi-master cluster receives a write request from
+the application, it immediately proposes that data be committed to all of the storage nodes in that
+cluster. So it's proposing that the data that it receives to write is committed to storage.
+Now at this point, each node that makes up a cluster either confirms or rejects the proposed
+change. It rejects it if it conflicts with something that's already in flight. For example,
+another change from another application writing to another read-write instance inside the cluster.
+What the writing instance is looking for is a quorum of nodes to agree, a quorum of nodes that
+allow it to write that data, at which point it can commit the change to the shared storage.
+If the quorum rejects it, then it cancels the change with the application. It generates an error.
+Now assuming that it can get a quorum to agree to the write, then that write is committed to storage
+and it's replicated across every storage node in the cluster, just as it is with a single master
+cluster. But, and this is the major difference, with a multi-master cluster that change is then
+replicated to other nodes in the cluster. This means that those other writers can add the updated
+data into their in-memory caches, and this means that any reads from any other instances in the
+cluster will be consistent with the data that's stored on shared storage. Because instances cache
+data, we need to make sure in addition to committing it to disk, it's also updated inside any
+in-memory caches of any other instances within the multi-master cluster. So that's what this
+replication does. Once the instance on the right has got agreement to be able to commit that change
+to the cluster shared storage, it replicates that change to the instance on the left. The instance
+on the left updates it's in-memory cache, and then if that instance is used for any read operations,
+it's always got access to the up-to-date data. Now to understand some of the benefits of multi-master
+mode, let's look at a single master failover situation. In this scenario, we have an Aurora
+single master cluster with one primary instance performing reads and writes, and one replica
+which is only performing read operations. Now Bob is using an application, and this application
+connects to this Aurora cluster using the cluster endpoint, and the cluster endpoint at this stage
+points to the primary instance. The cluster endpoint, the one that's used for read and write
+operations, always points at the primary instance. If the primary instance fails, then access to the
+cluster is interrupted, so immediately we know that this application cannot be fault tolerant
+because access to the database is now disrupted. At this point though, the cluster will realize
+that there is a failure event, and it will change the cluster endpoint to point at the replica
+which the cluster decides will be the new primary instance. But this failover process takes time.
+It's quicker than normal RDS because each replica shares the cluster storage, and they can be more
+replicas, but it can take time. The configuration change to make one of the other replicas the new
+primary instance inside the cluster is not an immediate change. It causes disruption. Now let's
+contrast this with multi-master. With multi-master, both instances are able to write to the shared
+storage. They're both writers. The application can connect with one or both of them, and let's
+assume at this stage that it connects to both. Both instances are capable of read and write
+operations. The application could maintain connections to both and be ready to act if one
+of them fails. But when that writer fails, it could immediately just send 100% of any future
+data operations to the writer, which is working perfectly. There would be little if any disruption.
+If the application is designed in this way, it's designed to operate through this failure. The
+application could almost be described as fault tolerant. So an Aurora multi-master cluster is
+one component that is required in order to build a fault tolerant application. It's not a guarantee,
+and it's not always 1000% fault tolerant. But it is the foundation of being able to build a
+fault tolerant application because the application can maintain connections to multiple writers at
+the same time. Now in terms of the high level benefits, it offers better and much faster
+availability. The failover events can be performed inside the application, and it doesn't even need
+to disrupt traffic between the application and the database because it can immediately start sending
+any write operations at another writer. It can be used to implement fault tolerance, but the
+application logic needs to manually load balance across the instances. It's not something that's
+handled by the cluster. With that being said though, that's everything I wanted to cover in
+this lesson. It's not something I expect to immediately feature in detail on the exam,
+so we can keep it relatively brief. Go ahead, complete the video, and when you're ready,
+I look forward to you joining me in the next.

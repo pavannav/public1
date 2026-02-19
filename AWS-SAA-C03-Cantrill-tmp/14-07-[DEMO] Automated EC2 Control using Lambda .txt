@@ -1,0 +1,189 @@
+Welcome back, and in this demo lesson you're going to get some experience of working with
+both Lambda and EventBridge within your AWS account.
+Now specifically what you'll be doing is creating two EC2 instances, and then a number
+of Lambda functions which interact with those instances in different types of ways.
+One Lambda function is going to stop instances, one Lambda function is going to start instances,
+and then a final Lambda function is going to be used to protect an EC2 instance.
+Now what I mean by protect is it's going to protect against instance stops.
+So it's going to look at one EC2 instance, and if that EC2 instance is ever moved into
+a stop state, it's going to start it back up again.
+So let's have a look at exactly how this will work.
+Now to get started, just make sure that you're logged in to the general AWS account, which
+is the management account of the organisation, and you need to have Northern Virginia selected.
+Once you do, there's a one-click deployment link which is attached to this lesson, so
+go ahead and click that link.
+Everything should be pre-populated, all you need to do is scroll down to the bottom and
+click on create stack.
+Now in this demo lesson we're going to be creating a number of Lambda functions, and
+as I talked about in the Lambda theory and architecture lesson, the way that we provide
+security credentials to Lambda is by creating an execution role.
+And so that's the first thing that we need to do.
+Now there's a file attached to this lesson and it's called lambdarole.json, and this
+is just the JSON representation of the permissions policy that's going to be on this Lambda
+execution role.
+Now this permissions policy just gives the Lambda function the ability to write logging
+information into CloudWatch logs, and it gives the Lambda function the ability to start and
+stop EC2 instances.
+So that's all that it does, but that's what we need to do first, is to create this Lambda
+execution role.
+And as this is the first time that you will have created a Lambda execution role in this
+course, I also recommend that you do it manually.
+So to do that, I want you to move across to the IAM console, then click on roles, and
+hit create role.
+Now it's going to be an execution role which is an AWS service role, so click on AWS service
+and then select Lambda.
+This controls the trust policy on the role and we want the Lambda service to be able
+to assume this role, so that's fine.
+Click on next, and then we're going to create a managed policy to provide these permissions
+to this role, so go ahead and click on create policy.
+We'll be entering the policy directly using JSON, so click on the JSON tab, and then you'll
+need to open that file, lambdarole.json, and just copy all of the contents from that file,
+so copy all of that into your clipboard.
+Select all of the existing skeleton JSON here and just paste this in.
+Move on to the next screen, click to move on again, and we're going to call this policy
+Lambda start and stop, so enter that and click on create policy.
+So that's created that policy, and if you go back to the previous tab where we're creating
+the IAM role, and just click on the refresh button, and then type Lambda.
+If you scroll down in that list, you should see the Lambda start and stop managed policy
+that we've just created.
+This defines the permissions policy that this role will have, so this role will have the
+ability to log into CloudWatch logs, as well as start and stop EC2 instances.
+So once you've checked the box next to Lambda start and stop, click on next, we're going
+to call the role EC2 start stop Lambda role, so go ahead and enter that, and then click
+on create role.
+So that's created our execution role that can now be used by a Lambda function.
+So Lambda can assume that role and use it to give permissions to the Lambda function
+running inside the Lambda runtime environment.
+So that's good, that's a good first step.
+Now next, we'll be needing the EC2 console, so click on the services dropdown, and then
+you can either right click on EC2 in the history and open in a new tab, or type EC2 into the
+find services box, right click here and open in a new tab, because we're going to need
+the EC2 console.
+Now at this point, the two instances created using the one click deployment that you applied
+at the start of this lesson should now be up and running.
+So there we go, we've got A4L instance one and A4L instance two.
+Now what I want you to do is for each of these instances, you'll need to make a note of the
+instance ID.
+So go ahead and copy each of them into your clipboard.
+So start with instance one, and then go ahead and do the same process for instance two.
+So just note those two down because we'll need them momentarily.
+And you'll need to make sure you use your own instance IDs, not the ones that are on
+my screen.
+Okay, so the next thing that we're going to do is create a Lambda function.
+So click in the search box at the top of the screen, type Lambda, right click and open
+that in a new tab, and then move to that tab.
+And we're going to create a Lambda function whose job is to stop EC2 instances.
+So once you're at the Lambda console, click on create function.
+Now when you create a Lambda function, you can either browse a serverless application
+repository, use a blueprint, or author the function from scratch, and that's what we'll
+do.
+Most of the time when you are creating Lambda functions, you'll be using your own code.
+So scroll down slightly, and we'll be calling the function EC2 stop.
+The function that we'll be using is written in Python.
+So click on the runtime dropdown, and from this dropdown, select the version of Python
+that I've listed in the description attached to this lesson.
+This can change depending on when you're doing this lesson.
+So make sure you use the version that's included in the lesson description.
+Then expand change default execution role.
+Select to use an existing role, and then click in the dropdown, and select the role that
+you created towards the beginning of this lesson.
+So EC2 start stop Lambda role.
+That's the role that will give our Lambda function the ability to interact with AWS
+products and services.
+So select that, and then click on create function.
+So this is the Lambda function, it just takes a few moments to load in, and then just scroll
+down, right click on Lambda underscore function dot py on the left, and select open.
+And when you create a Lambda function, you're given skeleton code for a default Hello World
+Lambda function.
+Now we're going to be replacing that.
+So if you look attached to this lesson, are links to three different Python files.
+Lambda instance start, Lambda instance stop, and Lambda instance protect.
+And you're going to need all of these as we move through this demo lesson.
+So go ahead and download all of them, and then open them in your favorite code editor.
+You'll see one file called 01 underscore Lambda underscore instance underscore stop dot py.
+And this is the code for the Lambda function, which will stop some EC2 instances.
+So what I want you to do is open that file and copy it all into your clipboard.
+Now all this function does is accept a list of EC2 instances, a comma separated list,
+and it takes that in via an environment variable, which I'll demonstrate in a second, and we're
+going to give it a list of EC2 instances in our account, which is the list of instance
+IDs that you noted down moments ago.
+So the two EC2 instances that are in your account that you've created, we're going
+to provide them to this Lambda function, and it's going to use that list and call an EC2
+stop underscore instances call.
+It's going to pass in that list, and that will stop those EC2 instances.
+And the way that this function gets the permissions to do that is via its execution role.
+So copy that into your clipboard and go back to the AWS console, and then just select all
+of this existing code, delete it, and paste in the code that you've just copied into
+your clipboard, and then go ahead and click on deploy and make sure it's deployed.
+Now this function expects a list of EC2 instances to be provided as an environment variable.
+So when you make Lambda functions, you can pass in any environment variables you want,
+and we're going to create one.
+So click on configuration, then environment variables, then edit, and then add an environment
+variable.
+And the variable that I want you to use is EC2 in caps underscore instances also in caps.
+So that's the key for the environment variable, the environment variable name.
+And for its value, I want you to paste in the first instance ID that you noted down
+earlier, make sure there's no leading or trailing space, and then type a comma, and then straight
+after that again, without any leading or trailing spaces, paste in the second instance ID.
+So that's the instance ID of your instance one and your instance two, and then go ahead
+and save that, and that's the list of instances we'll be providing to our Lambda function.
+Now to test this, let's go ahead and just click on test.
+Now when you're testing a Lambda function, it can provide a test event into that Lambda
+function.
+So if you want to test a certain type of event, you can provide example event data to it.
+Remember I said that an event was just JSON, but because this function that we've got isn't
+going to accept an event at this stage, we don't need to worry about this.
+So for event name, just type test.
+If you were testing a more complex function, then you would want to test it with some sample
+event data so that you could test it in isolation before running it on any production events
+or production systems.
+But for our case, we can just use the sample hello world data, because we're not actually
+using any event data, we're just getting this function to stop some EC2 instances that we're
+passing in via an environment variable.
+So enter anything for event name, and then click on test.
+Now what you should see at the top of the screen is execution result, and it should
+show as succeeded.
+And if you expand the details, you'll be able to see an output of this function.
+And what it did was stopped instances, and then it gives you the IDs of the instances
+that it stopped.
+And if you go back to your EC2 console, and just refresh on your running instances, and
+then clear this instance state running filter at the top, you should see that your instances
+are now in a stopped or a stopping state.
+So we've manually run this lambda function, and it's stopped these EC2 instances.
+Now that was a manual invocation of lambda, and we can do the same in reverse.
+Let's go back to the lambda console, just expand this menu and click on functions.
+We're going to create the inverse now.
+So create a function, we're going to author this from scratch again, and we're going to
+call this function EC2 start.
+And from this drop down, select the version of Python that I've listed in the description
+attached to this lesson, and it's going to use the same execution role.
+So click on change default execution role, select use existing role, click on the drop
+down, select EC2 start stop lambda role, and then click on create function.
+And then if you look inside this lessons folder, there's also a file called 02 underscore
+lambda underscore instance underscore start.
+And this is the same function, but in reverse.
+This function essentially just accepts a list of instance IDs and starts those instances.
+So let's copy that into our clipboard, move back to the AWS console, scroll down, right
+click on lambda underscore function dot py, select open.
+As before, we need to replace the skeleton code with what we've just copied into our
+clipboard and then click on deploy and make sure it's deployed.
+Click on configuration, then environment variables, then edit, and then add an environment
+variable.
+Again, EC2 underscore instances, all in caps.
+Paste in the first instance ID with no leading or trailing spaces, and then add a comma.
+Paste in the second instance ID again, no leading or trailing spaces, and then go ahead
+and click on save.
+This is the same list of instances we provided to the stop function.
+So again, click on test, and then go ahead and click on test again to run this function.
+Again, it should show as execution result succeeded.
+And if you expand those details, it should say that it started instances and then give
+you a list of instance IDs.
+And that's another manual invocation.
+And if we click on the instances tab and click on refresh, we'll see that our instances are
+now moving back into a running state.
+So again, that's another simple example of a manual invocation.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side, and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video, and when you're ready, join me in part two.

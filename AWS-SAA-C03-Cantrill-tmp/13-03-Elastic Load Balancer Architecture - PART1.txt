@@ -1,0 +1,98 @@
+Welcome back, and in this lesson I want to talk about the architecture of elastic load balancers.
+Now I'm going to be covering load balancers extensively in this part of the course,
+so I want to use this lesson as a sort of foundation.
+I'm going to cover the high-level logical and physical architecture of the product,
+and either refresh your memory on some things or introduce some of the finer points of load balancing for the first time.
+And both of these are fine.
+Now before we start, it's the job of a load balancer to accept connections from customers,
+and then to distribute those connections across any registered back-end compute.
+It means that the user is abstracted away from the physical infrastructure.
+It means that the amount of infrastructure can change, so increase or decrease in number, without affecting customers.
+And because the physical infrastructure is abstracted, it means that infrastructure can fail and be repaired,
+all of which is hidden from customers.
+So with that quick refresher done, let's jump in and get started covering the architecture of elastic load balancers.
+Now I'm going to be stepping through some of the key architectural points visually,
+So let's start off with a VPC which uses two availability zones, AZA and AZB.
+And then in those availability zones, we've got a few subnets, two public and some private.
+Now let's add a user, Bob, together with a pair of load balancers, a user base,
+and then distribute those connections to back-end services.
+For this example, we're going to assume that those services are long-running compute, or EC2,
+but as you'll see later in this section, that doesn't have to be the case.
+Elastic load balancers, specifically application load balancers, support many different types of compute services.
+It's not only EC2.
+Now when you provision a load balancer, you have to decide on a few important configuration items.
+The first, you need to pick whether you want to use IP version 4 only or dual stack.
+And dual stack just means using IP version 4 and the newer IP version 6.
+You also need to pick the availability zones which the load balancer will use.
+Specifically, you're picking one subnet in two or more availability zones.
+Now this is really important because this leads in to the architecture of elastic load balancers, so how they actually work.
+Based on the subnets that you pick inside availability zones, when you provision a load balancer,
+the product places into these subnets one or more load balancer nodes.
+So what you see as a single load balancer object is actually made up of multiple nodes,
+and these nodes live within the subnets that you pick.
+So when you're provisioning a load balancer, you need to select which availability zones it goes into,
+and the way you do this is by picking one and one only subnet in each of those availability zones.
+So in the example that's on screen now, I've picked to use the public subnet in availability zone A and availability zone B,
+and so the product has deployed one or more load balancer nodes into each of those subnets.
+Now when a load balancer is created, it actually gets created with a single DNS record.
+It's an A record, and this A record actually points at all of the elastic load balancer nodes that get created with the product.
+So any connections that are made using the DNS name of the load balancer are actually made to the nodes of that load balancer.
+The DNS name resolves to all of the individual nodes.
+It means that any incoming requests are distributed equally across all of the nodes of the load balancer,
+and these nodes are located in multiple availability zones, and they scale within that availability zone,
+and so they're highly available. If one node fails, it's replaced.
+If the incoming load to the load balancer increases,
+then additional nodes are provisioned inside each of the subnets that the load balancer is configured to use.
+Now another choice that you need to make when creating a load balancer, and this is really important for the exam,
+is to decide whether that load balancer should be internet facing or whether it should be internal.
+This choice, so whether to use internet facing or internal, controls the IP addressing for the load balancer nodes.
+If you pick internet facing, then the nodes of that load balancer are given public addresses and private addresses.
+If you pick internal, then the nodes only have private IP addresses.
+So that's the only difference, otherwise they're the same architecturally, they have the same nodes and the same load balancer features.
+The only difference between internet facing and internal is whether the nodes are allocated public IP addresses.
+Now the connections from our customers which arrive at the load balancer nodes,
+the configuration of how that's handled is done using a listener configuration.
+As the name suggests, this configuration controls what the load balancer is listening to.
+So what protocols and ports will be accepted at the listener or front side of the load balancer.
+Now there's a dedicated lesson coming up later in this section which focuses specifically on the listener configuration.
+At this point, I just wanted to introduce it.
+So at this point Bob has initiated connections to the DNS name associated with the load balancer
+and that means that he's made connections to load balancer nodes within our architecture.
+Now at this point the load balancer nodes can then make connections to instances that are registered with this load balancer.
+And the load balancer doesn't care about whether those instances are public EC2 instances,
+so allocated with a public IP address, or they're private EC2 instances,
+so instances which reside in a private subnet and only have private addressing.
+I want to keep reiterating this because it's often a point of confusion for students who are new to load balancers.
+An internet facing load balancer, and remember this means that it has nodes that have public addresses
+so it can be connected to from the public internet.
+It can connect both to public and private EC2 instances.
+Instances that are used do not have to be public.
+Now this matters because in the exam when you face certain questions
+which talk about how many subnets or how many tiers are required for an application,
+it does test your knowledge that an internet facing load balancer does not need private or public instances.
+It can work with both of those.
+The only requirement is that load balancer nodes can communicate with the backend instances.
+And this can happen whether the instances have allocated public addressing or whether they're private only instances.
+The important thing is that if you want a load balancer to be reachable from the public internet,
+it has to be an internet facing load balancer because logically it needs to be allocated with public addressing.
+Now load balancers in order to function need 8 or more free IP addresses in the subnets that they're deployed into.
+Now strictly speaking this means a slash 28 subnet which provides a total of 16 IP addresses
+but minus the 5 reserved by AWS, this leaves 11 free per subnet.
+But AWS suggests that you use a slash 27 or larger subnet to deploy an elastic load balancer in order that it can scale.
+Keep in mind that strictly speaking both a slash 28 and a slash 27 are for a load balancer.
+AWS do suggest in their documentation that you need a slash 27 but they also say you need a minimum of 8 free IP addresses.
+Now logically a slash 28 which leaves 11 free won't give you the room to deploy a load balancer and backend instances.
+So in most cases I try to remember slash 27 as the correct value for the minimum for a load balancer.
+But if you do see any questions which show a slash 28 and don't show a slash 27, then slash 28 is probably the right answer.
+Now internal load balancers are architecturally just like internet facing load balancers
+except they only have private IPs allocated to their nodes.
+And so internal load balancers are generally used to separate different tiers of applications.
+So in this example our user Bob connects via the internet facing load balancer to the web server
+and then this web server can connect to an application server via an internal load balancer.
+And this allows us to separate application tiers and allow for independent scaling.
+So let's look at this visually.
+Okay so this is the end of part one of this lesson.
+It was getting a little bit on the long side and I wanted to give you the opportunity to take a small break,
+maybe stretch your legs or make a coffee.
+Now part two will continue immediately from this point so go ahead, complete this video
+and when you're ready I'll look forward to you joining me in part two.

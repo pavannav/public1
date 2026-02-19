@@ -1,0 +1,151 @@
+Welcome back and in this lesson I'm going to be covering the architecture of the Amazon Aurora managed database product from AWS.
+I mentioned earlier that Aurora is officially part of RDS but from my perspective I've always viewed it as its own distinct product.
+The features that it provides and the architecture it uses to deliver those features are so radically different than normal RDS,
+it needs to be treated as its own product.
+So we've got a lot to cover, so let's jump in and get started.
+As I just mentioned, the Aurora architecture is very different from normal RDS.
+At its very foundation it uses the base entity of a cluster, which is something that other engines within RDS don't have
+and a cluster is made up of a number of important things.
+Firstly, from a compute perspective, it's made up of a single primary instance and then zero or more replicas.
+Now this might seem similar to how RDS works with the primary and the standby replica, but it's actually very different.
+The replicas within Aurora can be used for reads during normal operations, so it's not like the standby replica inside RDS.
+The replicas inside Aurora can actually provide the benefits of both RDS Multi-AZ and RDS read replicas.
+So they can be inside a cluster and they can be used to improve availability, but also they can be used for read operations during the normal operation of a cluster.
+Now that alone would be worth the move to Aurora since you don't have to choose between read scaling and availability.
+Replicas inside Aurora can provide both of those benefits.
+Now the second major difference in the Aurora architecture is its storage.
+Aurora doesn't use local storage for the compute instances. Instead, an Aurora cluster has a shared cluster volume.
+This is storage which is shared and available to all compute instances within a cluster.
+This provides a few benefits such as faster provisioning, improved availability and better performance.
+A typical Aurora cluster looks something like this.
+It functions across a number of availability zones, in this example A, B and C.
+Inside the cluster is a primary instance and optionally a number of replicas.
+And again, these function as failover options if the primary instance fails,
+but they can also be used during normal functioning of the cluster for read operations from applications.
+Now the cluster has shared storage which is SSD based and it has a maximum size of 128 TIB.
+And it also has six replicas across multiple availability zones.
+When data is written to the primary DB instance,
+Aurora synchronously replicates that data across all of these six storage nodes
+spread across the availability zones which are associated with your cluster.
+All instances inside your cluster, so the primary and all of the replicas, have access to all of these storage nodes.
+The important thing to understand though from a storage perspective is that this replication happens at the storage level.
+So no extra resources are consumed on the instances or the replicas during this replication process.
+By default the primary instance is the only instance able to write to the storage
+and the replicas and the primary can perform read operations.
+Because Aurora maintains multiple copies of your data in three availability zones,
+the chances of losing data as a result of any disk related failure is greatly minimized.
+Aurora automatically detects failures in the disk volumes that make up the cluster shared storage.
+When a segment or a part of a disk volume fails, Aurora immediately repairs that area of disk.
+When Aurora repairs that area of disk, it uses the data inside the other storage nodes that make up the cluster volume
+and it automatically recreates that data.
+It ensures that the data is brought back into an operational state with no corruption.
+As a result, Aurora avoids data loss and it reduces any need to perform pointing time restores or snapshot restores to recover from disk failures.
+So the storage subsystem inside Aurora is much more resilient than that which is used by the normal RDS database engines.
+Another powerful difference between Aurora and the normal RDS database engines is that with Aurora you can have up to 15 replicas
+and any of them can be the failover target for a failover operation.
+So rather than just having the one primary instance and the one standby replica of the non-Aurora engines,
+with Aurora you've got 15 different replicas that you can choose to failover to
+and that failover operation will be much quicker because it doesn't have to make any storage modifications.
+Now as well as the resiliency that the cluster volume provides, there are a few other key elements that you should be aware of.
+The cluster shared volume is based on SSD storage by default.
+So it provides high IOPS and low latency. It's high performance storage by default.
+You don't get the option of using magnetic storage.
+Now the billing for that storage is very different than with the normal RDS engines.
+With Aurora you don't have to allocate the storage that the cluster uses.
+When you create an Aurora cluster, you don't specify the amount of storage that's needed.
+Storage is simply based on what you consume.
+As you store data up to the 128 TIB limit, you'll build on consumption.
+Now the way that this consumption works is that it's based on a high watermark.
+So if you consume 50 GIB of storage, you'll build for 50 GIB of storage.
+If you free up 10 GIB of data, so move down to 40 GIB of consumed data, you'll still build for that high watermark of 50 GIB.
+But you can reuse any storage that you free up.
+What you'll build for is a high watermark, the maximum storage that you've consumed in a cluster.
+And if you go through a process of significantly reducing storage and you need to reduce storage costs,
+then you need to create a brand new cluster and migrate data from the old cluster to the new cluster.
+Now it is worth mentioning that this high watermark architecture is being changed by AWS
+and this no longer is applicable for the more recent versions of Aurora.
+Now I'm going to update this lesson once this feature becomes more widespread,
+but for now you do still need to assume that this high watermark architecture is being used.
+Now because the storage is for the cluster and not for the instances,
+it means replicas can be added and removed without requiring storage provisioning or removal,
+which massively improves the speed and efficiency of any replica changes within the cluster.
+Having this cluster architecture also changes the access method versus RDS.
+In RDS, Aurora clusters, like RDS clusters, use endpoints.
+So these are DNS addresses which are used to connect to the cluster.
+Unlike RDS, Aurora clusters have multiple endpoints that are available for an application.
+As a minimum, you have the cluster endpoint and the reader endpoint.
+The cluster endpoint always points at the primary instance,
+and that's the endpoint that can be used for read and write operations.
+The reader endpoint will also point at the primary instance if that's all that there is,
+but if there are replicas then the reader endpoint will load balance across all of the available replicas,
+and this can be used for read operations.
+Now this makes it much easier to manage read scaling using Aurora versus RDS,
+because as you add additional replicas which can be used for reads,
+this reader endpoint is automatically updated to load balance across these new replicas.
+You can also create custom endpoints, and in addition to that, each instance,
+so the primary and any of the replicas, have their own unique endpoint.
+So Aurora allows for a much more custom and complex architecture versus RDS.
+So let's move on and talk about costs.
+With Aurora, one of the biggest downsides is that there isn't actually a free tier option.
+You can't use Aurora within the free tier,
+and that's because Aurora doesn't support the micro instances that are available inside the free tier.
+But for any instances beyond an RDS single AZ micro sized instance,
+Aurora offers much better value.
+For any compute that you use, there's an hourly charge,
+and you'll build per second with a 10 minute minimum.
+For storage, you'll build based on a gigabyte month consumed metric.
+Of course, taking into account the high watermark,
+so this is based on the maximum amount of storage that you've consumed during the lifetime of that cluster.
+And as well, there is an IO cost per request made to the cluster shared storage.
+Now in terms of backups, you're given 100% of the storage consumption for the cluster in free backup allocation.
+So if your database cluster is 100 GIB,
+then you're given 100 GIB of storage for backups as part of what you pay for that cluster.
+So for most situations for anything low usage or medium usage,
+unless you've got high turnover in data, unless you keep the data for long retention periods,
+in most cases, you'll find that the backup costs are often included in the charge that you pay for the database cluster itself.
+Now Aurora provides some other really exciting features.
+In general though, backups in Aurora work in much the same way as they do in RDS.
+So for normal backup features, for automatic backups, for manual snapshot backups,
+this all works in the same way as any other RDS engine.
+And Restores will create a brand new cluster.
+So you've experienced this in the previous demo lesson where you created a brand new RDS instance from a snapshot.
+And this architecture by default doesn't change when you use Aurora.
+But you've also got some advanced features which can change the way that you do things.
+One of those is backtrack.
+And this is something that needs to be enabled on a per cluster basis.
+And it will allow you to roll back your database to a previous point in time.
+So consider the scenario where you've got major corruption inside an Aurora cluster
+and you can identify the point at which that corruption occurred.
+Well, rather than having to do a restore to a brand new database at a point in time before that corruption,
+if you enable backtrack, you can simply roll back in place your existing Aurora cluster to a point before that corruption occurred.
+And that means you don't have to reconfigure your applications.
+You simply allow them to carry on using the same cluster.
+It's just that the data is rolled back to a previous state before the corruption occurred.
+You need to enable this on a per cluster basis and you can adjust the window that backtrack will work for.
+But this is a really powerful feature that's exclusive at the time of creating this lesson to Aurora.
+You also have the ability to create what's known as a fast clone.
+And a fast clone allows you to create a brand new database from an existing database.
+But crucially, it doesn't make a one for one copy of the storage for that database.
+What it does is it references the original storage and it only stores any differences between those two.
+Now, differences can be either you update the storage in your cloned database
+or it can also be that data is updated in the original database,
+which means that your clone needs a copy of that data before it was changed on the source.
+So essentially, your cloned database only uses a tiny amount of storage.
+It only stores data that's changed in the clone or changed in the original after you make the clone.
+And that means that you can create clones much faster than if you had to copy all of the data bit by bit.
+And it also means that these clones don't consume anywhere near the full amount of data.
+They only store the changes between the source data and the clone.
+So I know that's a lot of architecture to remember.
+I've tried to quickly step through all of the differences between Aurora and the other RDS engines.
+You'll have lessons upcoming later in this section,
+which deep dive into a little bit more depth of specific Aurora features that I think you will need for the exam.
+But in this lesson,
+I just wanted to provide a broad level overview of the differences between Aurora and the other RDS engines.
+So in the next demo lesson,
+you're going to get the opportunity to migrate the data for our WordPress application stack
+from the RDS MariaDB engine into the Aurora engine.
+So you'll get some experience of creating an Aurora cluster
+and interacting with it with some data that you've migrated.
+But at this point, that's all of the theory that I wanted to cover.
+So go ahead, complete this video.
+And when you're ready, I look forward to you joining me in the next.

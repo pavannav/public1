@@ -1,0 +1,233 @@
+Welcome back, and in this demo lesson you're going to learn how to install the Docker engine inside an EC2 instance and then use that to create a Docker image.
+Now this Docker image is going to be running a simple application and we'll be using this Docker image later in this section of the course to demonstrate the Elastic Container Service.
+So this is going to be a really useful demo where you're going to gain the experience of how to create a Docker image.
+Now there are a few things that you need to do before we get started.
+First, as always, make sure that you're logged in to the IAM admin user of the general AWS account, and you'll also need the Northern Virginia region selected.
+Now attached to this lesson is a one-click deployment link, so go ahead and click that now.
+This is going to deploy an EC2 instance with some files pre-downloaded that you'll use during the demo lesson.
+Now everything's pre-configured, you just need to check this box at the bottom and click on create stack.
+Now that's going to take a few minutes to create, and we need this to be in a create complete state,
+so go ahead and pause the video, wait for your stack to move into create complete, and then we're good to continue.
+So now this stack is in a create complete state and we're good to continue.
+Now if you're following along with this demo within your own environment, there's another link attached to this lesson called the lesson commands document,
+and that will include all of the commands that you'll need to type as you move through the demo.
+Now I'm a fan of typing all commands in manually because I personally think that it helps you learn,
+but if you are the type of person who has a habit of making mistakes when typing long commands out,
+then you can copy and paste from this document to avoid any typos.
+Now one final thing before we finish, at the end of this demo lesson you'll have the opportunity to upload the Docker image that you create to Docker Hub.
+If you're going to do that then you should pre-sign up for a Docker Hub account if you don't already have one,
+and the link for this is included attached to this lesson.
+If you already have a Docker Hub account then you're good to continue.
+Now at this point what we need to do is to click on the resources tab of this stack and locate the public EC2 resource.
+Now this is a normal EC2 instance that's been provisioned on your behalf,
+and it has some files which have been pre-downloaded to it.
+So just go ahead and click on the physical ID next to public EC2 and that will move you to the EC2 console.
+Now this machine is set up and ready to connect to,
+and I've configured it so that we can connect to it using Session Manager,
+and this avoids the need to use SSH keys.
+So to do that just right click and then select connect.
+You need to pick Session Manager from the tabs across the top here and then just click on connect.
+Now that will take a few minutes, but once connected you should see this prompt.
+So it should say SH hyphen and then a version number and then dollar.
+Now the first thing that we need to do as part of this demo lesson is to install the Docker engine.
+The Docker engine is the thing that allows Docker containers to run on this EC2 instance.
+So we need to install the Docker engine package and we'll do that using this command.
+So we're using SHUDU to get admin permissions, then the package manager DNF, then install, then Docker.
+So go ahead and run that and that will begin the installation of Docker.
+It might take a few moments to complete, it might have to download some prerequisites,
+and you might have to answer that you're okay with the install.
+So press Y for yes and then press enter.
+Now we need to wait a few moments for this install process to complete.
+And once it has completed then we need to start the Docker service.
+And we do that using this command.
+So SHUDU again to get admin permissions and then service and then the Docker service and then start.
+So type that and press enter and that starts the Docker service.
+Now I'm going to type clear and then press enter to make this easier to see.
+And now we need to test that we can interact with the Docker engine.
+So the most simple way to do that is to type Docker space and then PS and press enter.
+Now you're going to get an error.
+This error is because not every user of this EC2 instance has the permissions to interact with the Docker engine.
+We need to grant permissions for this user or any other users of this EC2 instance to be able to interact with the Docker engine.
+And we're going to do that by adding these users to a group.
+And we do that using this command.
+So SHUDU for admin permissions and then user mod hyphen A hyphen G for group and then the Docker group and then EC2 hyphen user.
+Now that will allow a local user of this system specifically EC2 hyphen user to be able to interact with the Docker engine.
+Okay so I've cleared the screen to make it slightly easier to see.
+Now that we've added EC2 hyphen user the ability to interact with the Docker.
+So the next thing is we need to log out and log back in of this instance.
+So I'm going to go ahead and type exit just to disconnect from session manager and then click on close.
+And then I'm going to reconnect to this instance and you need to do the same.
+So connect back in to this EC2 instance.
+Now once you're connected back into this EC2 instance we need to run another command which moves us into EC2 user.
+So it basically logs us in as EC2 hyphen user.
+So that's this command and the result of this would be the same as if you directly logged in to EC2 hyphen user.
+Now the reason we're doing it this way is because we're using session manager so that we don't need a local SSH client or to worry about SSH keys.
+We can directly log in via the console UI.
+We just then need to switch to EC2 hyphen user.
+So run this command and press enter and we're now logged in to the instance using EC2 hyphen user.
+And to test everything's okay we need to use a command with the Docker engine.
+And that command is Docker space PS.
+And if everything's okay you shouldn't see any output beyond this list of headers.
+What we've essentially done is told the Docker engine to give us a list of any running containers.
+And even though we don't have any it's not errored.
+It's simply displayed this empty list.
+And that means everything's okay. So good job.
+Now what I've done to speed things up if you just run an LS and press enter.
+The instance has been configured to download the sample application that we're going to be using.
+And that's what the file container.zip is within this folder.
+I've configured the instance to automatically extract that zip file which has created the folder container.
+So at this point I want you to go ahead and type CD space container and press enter.
+And that's going to move you inside this container folder.
+Then I want you to clear the screen by typing clear and press enter.
+And then type LS space hyphen L and press enter.
+This is the web application which I've configured to be automatically downloaded to the CC2 instance.
+It's a simple web page. We've got index.html which is the index.
+We have a number of images which this index.html contains.
+And then we have a Docker file.
+Now this Docker file is the thing that the Docker engine will use to create our Docker image.
+I want to spend a couple of moments just stepping you through exactly what's within this Docker file.
+So I'm going to move across to my text editor.
+And this is the Docker file that's been automatically downloaded to your EC2 instance.
+Each of these lines is a directive to the Docker engine to perform a specific task.
+And remember we're using this to create a Docker image.
+This first line tells the Docker engine that we want to use version 8 of the Red Hat Universal base image
+as the base component for our Docker image.
+This next line sets the maintainer label.
+It's essentially a brief description of what the image is and who's maintaining it.
+In this case it's just a placeholder of animals for life.
+This next line runs a command, specifically the yum command to install some software.
+Specifically the Apache web server.
+This next command, copy, copies files from the local directory when you use the Docker command to create an image.
+So it's copying that index.html file from this local folder that I've just been talking about.
+And it's going to put it inside the Docker image in this path.
+So it's going to copy index.html to slash var slash www slash HTML.
+And this is where an Apache web server expects this index.html to be located.
+This next command is going to do the same process for all of the JPEGs in this folder.
+So we've got a total of six JPEGs and they're going to be copied into this folder inside the Docker image.
+This line sets the entry point.
+And this essentially determines what is first run when this Docker image is used to create a Docker container.
+In this example it's going to run the Apache web server.
+And finally this expose command can be used for a Docker image to tell the Docker engine which services should be exposed.
+Now this doesn't actually perform any configuration, it simply tells the Docker engine what port is exposed.
+In this case port 80, which is HTTP.
+Now this Docker file is going to be used when we run the next command, which is to create a Docker image.
+So essentially this file is the same Docker file that's been downloaded to your EC2 instance.
+And that's what we're going to run next.
+So this is the next command within the lesson commands document.
+And this command builds a container image.
+What we're essentially doing is giving it the location of the Docker file.
+This dot at the end contains the working directory.
+So it's here where we're going to find the Docker file and any associated files that that Docker file uses.
+So we're going to run this command and this is going to create our Docker image.
+So let's go ahead and run this command.
+It's going to download version 8 of UBI, which it will use as a starting point.
+And then it's going to run through every line in the Docker file performing each of the directives.
+And each of those directives is going to create another layer within the Docker image.
+Remember from the theory lesson, each line within the Docker file generally creates a new file system layer.
+So a new layer of a Docker image.
+And that's how Docker images are efficient because you can reuse those layers.
+Now, in this case, this has been successful.
+We've successfully built a Docker image with this ID.
+So it's given it a unique ID and it's tagged this Docker image with this tag colon latest.
+So this means that we have a Docker image that's now stored on this EC2 instance.
+Now I'll go ahead and clear the screen to make it easier to see.
+And let's go ahead and run the next command, which is within the lesson commands document.
+And this is going to show us a list of images that are on this EC2 instance.
+But we're going to filter based on the name container of cats.
+And this will show us the Docker image, which we've just created.
+So the next thing that we need to do is to use the Docker run command,
+which is going to take the image that we've just created and use it to create a running container.
+And it's that container that we're going to be able to interact with.
+So this is the command that we're going to use.
+It's the next one within the lesson commands document.
+It's Docker run.
+And then it's telling it to map port 80 on the container with port 80 on the EC2 instance.
+And it's telling it to use the container of cats image.
+And if we run that command, Docker is going to take the Docker image that we've got on this EC2 instance,
+run it to create a running container.
+And we should be able to interact with that container.
+So if we go back to the AWS console, if we click on instances,
+so look for A4L-publicEC2 that's in the running state.
+I'm just going to go ahead and select this instance so that we can see the information.
+And we need the public IP address of this instance.
+Go ahead and click on this icon to copy the public IP address into your clipboard,
+and then open that in a new tab.
+Now be sure not to use this link to the right,
+because that's got a tendency to open the HTTPS version.
+We just need to use the IP address directly.
+So copy that into your clipboard, open a new tab, and then open that IP address.
+And now we can see the amazing application, if it fits, I sits, in a container, in a container.
+And this amazing looking enterprise application is what's contained in the Docker image that you just created,
+and it's now running inside a container based off that image.
+So that's great. Everything's working as expected.
+And that's running locally on the EC2 instance.
+Now in the demo lesson for the elastic container service that's coming up later in this section of the course,
+you have two options.
+You can either use my Docker image, which is this image that I've just created,
+or you can use your own Docker image.
+If you're going to use my Docker image, then you can skip this next step.
+You don't need a Docker Hub account, and you don't need to upload your image.
+If you want to use your own image, then you do need to follow these next few steps.
+And I need to follow them anyway because I need to upload this image to Docker Hub
+so that you can potentially use it rather than your own image.
+So I'm going to move back to the Session Manager tab,
+and I'm going to CTRL-C to exit out of this running container.
+And I'm going to type clear to clear the screen and make it easier to see.
+Now to upload this to Docker Hub, first you need to log in to Docker Hub using your credentials.
+And you can do that using this command.
+It's docker login double hyphen username equals and then your username.
+So if you're doing this in your own environment, you need to delete this placeholder and type your username.
+I'm going to type my username because I'll be uploading this image to my Docker Hub.
+So this is my Docker Hub username.
+And then press Enter, and it's going to ask for the corresponding password to this username.
+So I'm going to paste in my password.
+If you're logging in to your Docker Hub, you should use your password.
+Once you've pasted in the password, go ahead and press Enter, and that will log you in to Docker Hub.
+Now you don't have to worry about the security message
+because whilst your Docker Hub password is going to be stored on the EC2 instance,
+shortly we're going to terminate this instance,
+which will remove all traces of this password from this machine.
+Okay, so again, we're going to upload our Docker image to Docker Hub.
+So let's run this command again.
+And you'll see because we're just using the Docker images command,
+we can see the base image as well as our image.
+So we can see Red Hat UBI 8.
+We want the container of cats latest though.
+So what you need to do is copy down the image ID of the container of cats image.
+So this is the top line in my case, container of cats latest, and then the image ID.
+So then we need to run this command.
+So Docker space tag, and then the image ID that you've just copied into your clipboard,
+and then a space, and then your Docker Hub username.
+In my case, it's acantral with one L.
+If you're following along, you need to use your own username,
+and then forward slash, and then the name of the image that you want this to be stored as on Docker Hub.
+So I'm going to use container of cats.
+So that's the command you need to use.
+Docker tag, and then your image ID for container of cats,
+and then your username forward slash container of cats, and press enter.
+And that's everything we need to do to prepare to upload this image to Docker Hub.
+So the last command that we need to run is the command to actually upload the image to Docker Hub.
+And that command is Docker space push.
+So we're going to push the image to Docker Hub.
+Then we need to specify the Docker Hub username.
+So again, this is my username, but if you're doing this in your environment,
+it needs to be your username, and then forward slash, and then the image name.
+In my case, container of cats, and then colon latest.
+And once you've got all of that, go ahead and press enter,
+and that's going to push the Docker image that you've just created up to your Docker Hub account.
+And once it's up there, it means that we can deploy from that Docker image to other EC2 instances, and even ECS.
+And we're going to do that in a later demo in this section of the course.
+Now that's everything that you need to do in this demo lesson.
+You've essentially installed and configured the Docker engine.
+You've used a Docker file to create a Docker image from some local assets.
+You've tested that Docker image by running a container using that image,
+and then you've uploaded that image to Docker Hub.
+And as I mentioned before, we're going to use that in a future demo lesson in this section of the course.
+Now the only thing that remains to do is to clear up the infrastructure that we've used in this demo lesson.
+So go ahead and close down all of these extra tabs and go back to the CloudFormation console.
+This is the stack that's been created by the one-click deployment link.
+So all you need to do is select this stack.
+It should be called EC2 Docker, and then click on delete and confirm that deletion.
+And that's all you need to do in this demo lesson.
+I hope it's been useful, and I hope you've enjoyed it.
+So go ahead and complete the video, and when you're ready, I'll look forward to you joining me in the next.

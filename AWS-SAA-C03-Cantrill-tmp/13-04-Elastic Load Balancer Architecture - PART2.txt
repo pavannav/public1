@@ -1,0 +1,110 @@
+Welcome back, this is part two of this lesson. We're going to continue immediately from the end of part one, so let's get started.
+This time we have a typical multi-tiered application. We start with a VPC, and inside that, two availability zones.
+On the left, we also have an internet-facing load balancer.
+Then we have a web instance auto-scaling group, providing the front-end capability of the application.
+Then we have another load balancer, this time an internal load balancer, with only private IP addresses allocated to the nodes.
+Next we have an auto-scaling group for the application instances, and these are used by the web servers for the application.
+And then on the right, we have a pair of database instances. In this case, let's assume that they're both Aurora database instances.
+So we have three tiers, web, application and database.
+Now without load balancers, everything would be tied to everything else.
+Our user Bob would have to communicate with a specific instance in the web tier. If this failed or scaled, then Bob's experience would be disrupted.
+The instance that Bob is connected to would itself connect to a specific instance in the application tier.
+And if that instance failed or scaled, then again, Bob's experience would be disrupted.
+What we can do to improve this architecture is to put load balancers between the application tiers, to abstract one tier from another.
+And how this changes things is that Bob actually communicates with an ELB node, and this ELB node sends this connection through to a particular web server.
+But Bob has no knowledge of which web server he's actually connected to because he's communicating via a load balancer.
+If instances are added or removed, then he would be unaware of this fact because he's abstracted away from the physical infrastructure by the load balancer.
+Now the web instance that Bob is using, it would need to communicate with an instance of the application tier, and it would do this via an internal load balancer.
+And again, this represents an abstraction of communication.
+So in this case, the web instance that Bob is connected to isn't aware of the physical deployment of the application tier.
+It's not aware of how many instances exist, nor which one it's actually communicating with.
+And then at this point, to complete this architecture, the application server that's being used would use the database tier for any persistent data storage needs.
+Now without using load balancers with this architecture, all the tiers are tightly coupled together.
+They need an awareness of each other. Bob would be connecting to a specific instance in the web tier, this would be connecting to a specific instance in the application tier,
+and all of these tiers would need to have an awareness of each other.
+Load balancers remove some of this coupling, they loosen the coupling, and this allows the tiers to operate independently of each other because of this abstraction.
+Crucially, it allows the tiers to scale independently of each other.
+In this case, for example, it means that if the load on the application tier increased beyond the ability of two instances to service that load,
+then the application tier could grow independently of anything else, in this case scaling from two to four instances.
+The web tier could continue using it with no disruption or reconfiguration because it's abstracted away from the physical layout of this tier,
+because it's communicating via a load balancer, it has no awareness of what's happening within the application tier.
+Now we're going to talk about these architectural implications in depth later on in this section of the course,
+but for now I want you to be aware of the architectural fundamentals.
+And one other fundamental that I want you to be completely comfortable with is cross-zone load balancing, and this is a really essential feature to understand.
+So let's look at an example visually. Bob accessing a WordPress blog, in this case the Best Cats,
+and we can assume because this is a really popular and well architected application that it's going to be using a load balancer.
+So Bob uses his device and browses to the DNS name for the application, which is actually the DNS name of the load balancer.
+We know now that a load balancer by default has at least one node per availability zone that it's configured for.
+So in this example we have a cut down version of the Animals for Life VPC which is using two availability zones.
+So in this case an application load balancer will have a minimum of two nodes, one in each availability zone,
+and the DNS name for the load balancer will direct any incoming requests equally across all of the nodes of the load balancer.
+So in this example we have two nodes, one in each availability zone.
+Each of these nodes will receive a portion of incoming requests based on how many nodes there are.
+For two nodes it means that each node gets 100% divided by two,
+which represents 50% of the load that's directed at each of the load balancer nodes.
+Now this is a simple example. In production situations you might have more availability zones being used,
+and at higher volume, so higher throughput, you might have more nodes in each availability zone, but this example keeps things simple.
+So however much incoming load is directed at the load balancer DNS name,
+each of the load balancer nodes will receive 50% of that load.
+Now originally load balancers were restricted in terms of how they could distribute the connections that they received.
+Initially the way that it worked is that each load balancer node could only distribute connections to instances within the same availability zone.
+Now this might sound logical, but consider this architecture where we have four instances in availability zone A,
+and one instance in availability zone B.
+This would mean that the load balancer node in availability zone A would split its incoming connections across all instances in that availability zone,
+which is four ways, and the node in availability zone B would also split its connections up between all the instances in the same availability zone.
+But because there's only one, that would mean 100% of its connections to the single EC2 instance.
+Now with this historic limitation, it means that node A would get 50% of the overall connections,
+and would further split this down four ways, which means each instance would be allocated 12.5% of the overall load.
+Node B would also receive 50% of the overall load, and normally it would split that down across all instances also in that same availability zone,
+but because there's only one, that one instance would get 100% of that 50%.
+So all of the instances in availability zone A would receive 12.5% of the overall load,
+and the instance in availability zone B would receive 50% of the overall load.
+So this represents a substantially uneven distribution of incoming load,
+because of this historic limitation of how load balancer nodes could distribute traffic.
+And the fix for that was a feature known as cross-zone load balancing.
+Now the name gives away what this does, it simply allows every load balancer node to distribute any connections that it receives
+equally across all registered instances in all availability zones.
+So in this case it would mean that the node in availability zone A could distribute connections to the instance in AZB,
+and the node in AZB could distribute connections to instances in AZA,
+and this represents a much more even distribution of incoming load, and this is known as cross-zone load balancing,
+the ability to distribute or load balance across availability zones.
+Now this is a feature which originally was not enabled by default,
+but if you're deploying an application load balancer, this comes enabled as standard,
+but you still need to be aware of it for the exam, because it's often posed as a question where you have a problem,
+an uneven distribution of load, and you need to fix it by knowing that this feature exists.
+So it's really important that you understand it for the exam.
+So before we finish up with this lesson, I just want to reconfirm the most important architectural points
+about elastic load balancers. If there are only a few things that you take away from this lesson,
+these are the really important points.
+Firstly, when you provision an elastic load balancer, you see it as one device which runs in two or more availability zones,
+specifically one subnet in each of those availability zones,
+but what you're actually creating is one elastic load balancer node in one subnet in each availability zone
+that that load balancer is configured in.
+You're also creating a DNS record for that load balancer which spreads the incoming requests
+over all of the active nodes for that load balancer.
+Now you start with a certain number of nodes, let's say one node per availability zone,
+but it will scale automatically if additional load is placed on that load balancer.
+Remember by default, cross-zone load balancing means that nodes can distribute requests across to other availability zones,
+but historically this was disabled, meaning connections potentially would be relatively imbalanced,
+but for application load balancers, cross-zone load balancing is enabled by default.
+Now load balancers come in two types, internet-facing,
+which just means that the nodes are allocated with public IPv4 addresses.
+That's it, it doesn't change where the load balancer is placed,
+it just influences the IP addressing for the nodes of that load balancer.
+Internal load balancers are the same, only their nodes are only allocated private IP addresses.
+Now one of the most important things to remember about load balancers
+is that an internet-facing load balancer can communicate with public instances or private instances.
+EC2 instances don't need public IP addressing to work with an internet-facing load balancer.
+An internet-facing load balancer has public IP addresses on its nodes,
+it can accept connections from the public internet and balance these across both public and private EC2 instances.
+That's really important to understand for the exam,
+so you don't actually need public instances to utilise an internet-facing load balancer.
+Now load balancers are configured via listener configuration,
+which as the name suggests, controls what those load balancers listen to,
+and again I'll be covering this in much more detail later on in this section of the course.
+And then lastly, remember the confusing part about load balancers.
+They require 8 or more free IP addresses per subnet that they get deployed into.
+Strictly speaking, this means that a slash 28 subnet would be enough,
+but the AWS documentation suggests a slash 27 in order to allow scaling.
+For now that's everything that I wanted to cover, so go ahead and complete this lesson,
+and then when you're ready, I'll look forward to you joining me in the next.

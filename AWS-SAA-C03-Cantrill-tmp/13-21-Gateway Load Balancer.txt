@@ -1,0 +1,162 @@
+Welcome back and in this lesson I want to talk in a little bit of detail about gateway load balancers.
+Now these are a relatively new addition to the load balancer family
+and are designed for very specific sets of use cases which I'll cover in this lesson.
+Now we have a lot of architectural theory to cover so let's jump in and get started straight away.
+Now before we talk about gateway load balancers I want to step through the type of situation where you might choose to use one.
+Consider this architecture, the catagram application server in a public subnet communicating with the public internet.
+Now what's missing here is some kind of inspection based security appliance,
+something which can check data for any exploits to protect our application server.
+Now if this is an important application, which it is because it involves cats, we can improve the architecture.
+We can add a security appliance and this would be a transparent security device.
+It would sit in the flow of traffic inbound and outbound,
+transparently reviewing traffic as it enters the application from the public internet,
+so protecting the application against any known exploits and then filtering any traffic on the way back out.
+For example detecting and preventing any information leakage.
+Now this works well assuming that we don't really have to think about scaling.
+The issue comes when we grow or shrink our application.
+Remember AWS pushes the concept of elasticity where applications can grow and shrink based on increasing and decreasing load on a system.
+When you need to deal with a growing and shrinking number of application instances
+and where this growth is extreme you need an appropriate number of security appliances
+and this can be complex and prone to failures.
+Now this solution is tightly coupled where the application and security instances are tied together.
+The failure of one can impact the other.
+It doesn't scale well even in a single application environment
+and it's even more complex if you're trying to build multi-tenant applications.
+It's this type of situation where you need to use some kind of security appliance at scale
+and have flexibility around network architecture when you might choose to use a Gateway Load Balancer
+and over the remainder of this lesson I want to step through what they do, how they function and how to use them.
+A Gateway Load Balancer is a product which AWS have developed to help you run and scale third-party security appliances.
+Things such as firewalls, intrusion detection systems or intrusion prevention systems, even data analysis tools.
+You might use these for example to perform inbound and outbound, transparent traffic inspection or protection.
+Now AWS have a lot of awesome networking products but there are many large businesses
+who use third-party security and networking products.
+You might do this because you have existing skills on those products and want to use them inside AWS
+or you might have a formal requirement to use those products or a specific feature
+or set of features which only one specific vendor can deliver.
+So in those cases you'll need to use a third-party appliance and to do that at scale in a manageable way
+you'll need to use a Gateway Load Balancer.
+At a high level a Gateway Load Balancer has two major components.
+First, Gateway Load Balancer endpoints which run from a VPC
+where the traffic you want to monitor, filter or control originates from or is destined to.
+So in the example I'll be using the VPC where the Categram Application Instance is hosted.
+Now Gateway Load Balancer endpoints are much like interface endpoints within VPCs
+which you've experienced so far but with some key improvements which I'll talk about in a second.
+The other component is the Gateway Load Balancer or GWLB itself
+and this load balances packets across multiple backend instances
+and these are just normal EC2 instances running security software.
+In order for this type of architecture to work the Gateway Load Balancer needs to forward packets without any alteration.
+The security appliance needs to review packets as they're sent or as they're received.
+After all that's the whole point.
+These packets have source and destination IP addresses which might be okay on the original network
+but which might not work on the network where the security appliances are hosted from.
+And so Gateway Load Balancers use a protocol called Geneva and this is a tunneling protocol.
+A tunnel is created between the Gateway Load Balancer and the backend instances.
+So the security appliances packets are encapsulated and sent through this tunnel to the appliances.
+Now let's review this visually which should help you understand how all of the components fit together.
+Let's say that we have a laptop and this is accessing the Catagram application.
+Now I'm keeping this simple for now and not including any VPC boundaries.
+I'll show you this in a moment.
+So traffic leaves this source laptop and moves into a VPC through an internet gateway
+and arrives at a Gateway Load Balancer endpoint.
+So Gateway Load Balancer endpoints.
+This is like a normal VPC interface endpoint with one major difference.
+It can be added to a route table as the next hop
+and this allows it to be part of traffic flows controlled by that route table.
+So traffic via a route table is directed at this endpoint
+and then the traffic flows through to a Gateway Load Balancer.
+So Gateway Load Balancers are three and four devices similar in many ways to a network load balancer
+but it integrates with Gateway Load Balancer endpoints
+and it encapsulates all traffic that it handles between it and the targets using the Geneva Protocol.
+And this means that packets are unaltered.
+They have the same source IP, destination IP, source port, destination port and contents
+as when they were created and sent.
+This allows the security appliances to scan the packets, review them for any security issues,
+block them as required, perform analysis or adjust them as needed.
+And when finished, the packets are returned over the same tunnel,
+encapsulated back to the load balancer where the Geneva encapsulation is removed
+and then the packets move back to the Gateway Load Balancer endpoint
+and through to the intended destination.
+Now the benefits of this architecture are that Gateway Load Balancers
+will load balance across security appliances so you can horizontally scale.
+The Gateway Load Balancer manages flow stickiness.
+So one flow of data will always use one appliance.
+And this is useful because it allows that appliance to monitor the state of flows through a system.
+It provides abstraction.
+It means that you can use multiple security appliances to provide resilience.
+If one of them fails, then packets are just moved over to another available security appliance.
+So in this way, it's much like other load balancers within AWS.
+Now just before we finish up with this lesson,
+I wanted to provide a little bit more of a detailed, typical architecture
+where you might use a Gateway Load Balancer.
+So this is the Catagram application.
+It's running in a pair of private subnets at the bottom
+behind an application load balancer, which is running in a pair of public subnets.
+Off to the right, we have a separate VPC running a set of security appliances
+inside an auto-scaling group so this can grow and shrink based on load to the application.
+Now what I want to do now is to step through traffic flow through this architecture
+and show you how the Gateway Load Balancer architecture works
+to ensure we can scale this security platform.
+So we start at the top with a client, which is accessing the web application.
+Now this flow is going to be arriving at the application load balancer,
+which uses public addressing.
+And so logically, it first hits the internet gateway.
+The internet gateway is configured with an ingress route table,
+also known as a gateway route table,
+which influences what happens as traffic arrives at the VPC.
+In this case, our packets are destined for the public IP
+that the application load balancer on the right is using.
+The internet gateway first translates the destination public IP address
+onto the corresponding private IP of that application load balancer,
+and this will be running inside the 10.16.96.0 slash 20 subnet.
+So this is the subnet where the application load balancer is running from.
+So the third route is used because it's the most specific route for the 10.16.96.0 slash 20 range,
+and traffic is sent towards the gateway load balancer endpoint in the right availability zone.
+Remember, gateway load balancer endpoints are like interface endpoints,
+but they can be the targets within routes.
+So the gateway load balancer endpoint receives these packets
+and then moves these packets through to the gateway load balancer itself,
+which is running in the security VPC.
+At this point, the packets still have the original IP addressing,
+and normally this would be a problem,
+since the security VPC might be using a different or maybe even conflicting IP range.
+So while the source and destination addressing remains the same,
+the packets are encapsulated using the Geneva protocol
+and sent through unaltered to the security appliance chosen by the gateway load balancer.
+The exact nature of the analysis which takes place depends on the security appliance,
+and that's one of the benefits of using a gateway load balancer.
+It just allows third-party appliances to be used in a scalable way.
+It doesn't inflict a particular feature set on us as network engineers or architects.
+So once the analysis has happened, the packets are returned,
+encapsulated to the gateway load balancer,
+the encapsulation is stripped and returned via the endpoint to the Categram VPC.
+Since the original IP addressing is maintained,
+the route table on the top public subnet is used,
+which has a local route for the VPC side arrange.
+This, as the most specific route available, is used,
+and packets flow through to the application load balancer,
+and from there through to the chosen application instance.
+And of course this logic is decided upon by the application load balancer.
+Now the return path uses the same logic.
+Data leaves the application instance in response to the initial communication from the laptop,
+and so it will return via the application load balancer.
+The load balancer is in a subnet which has a local route,
+but the default route goes towards the gateway load balancer endpoint in the same availability zone.
+Now since traffic is going back to the client device who originally accessed the Categram application,
+it will have a public IP version 4 destination IP address,
+and so the default route will be used.
+This means the packets will flow back to the gateway load balancer endpoint,
+and then from there through to the gateway load balancer where they'll be encapsulated,
+passed through to the appliances, then back to the load balancer,
+de-encapsulated and passed back to the gateway load balancer endpoint.
+Once they're back at the gateway load balancer endpoint,
+the subnet which the gateway load balancer endpoints are in has the internet gateway as the default route,
+and so this will be used and traffic moves through the internet gateway,
+where its source IP will be changed to the corresponding public one of the application load balancer,
+and then the data will be sent on through to the original client device.
+And that's it, transparent in-line network security done in a scalable, resilient and abstracted way.
+Now I'm going to be talking more about some of the more nuanced features in other lessons,
+but for now that's the basics covered of gateway load balancers.
+In terms of other architecture, they share many elements with network and application load balancers
+including the target group architecture, but they have a very specific purpose, network security at scale.
+Now with that being said, that's everything which I wanted to cover in this video,
+so go ahead and complete the lesson, and then when you're ready I'll look forward to you joining me in the next.
