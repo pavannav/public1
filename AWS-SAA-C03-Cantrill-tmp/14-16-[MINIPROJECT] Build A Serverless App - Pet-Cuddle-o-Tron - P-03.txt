@@ -1,0 +1,93 @@
+Welcome back to part 4 of this demo series, and in this video you're going to create the Lambda function that supports the API Gateway and the API Gateway itself, which will function as the entry point to our application.
+So what you're going to be adding during this part of the demo series is this, the API Gateway and the supporting Lambda function.
+So by creating the API Gateway you'll have an endpoint that your client application can use to talk to our application.
+We'll be creating that Gateway, we'll be creating an API itself, a method on that API, which is how the client application can interact with the API, and we'll be creating a Lambda function which provides the compute required to service that API.
+So when the client app connects into the API Gateway using the method, the Lambda function will be invoked and it will perform actions, but the only billing will be for the compute time that's used as part of the event-driven architecture.
+So I'm really excited, we're getting very close to our application working. So let's move across to the console and get it implemented.
+So we're going to be doing two things, creating the Lambda function and setting up the API Gateway. So first let's focus on the supporting Lambda function.
+So we're going to move across to the Lambda console and we're going to click on Create Function. Again we'll be authoring from scratch.
+The function name will be API underscore Lambda, and again we'll be selecting the Python runtime. Go ahead and refer to this lesson's description and the text-based instructions for the exact version to use.
+We'll be expanding change default execution role, so click on the Expand button, and then click Use Existing Role, and once you've clicked that, click on the drop-down and select Lambda Role.
+Once that's selected, go ahead and click on Create Function. So this is the Lambda function that's going to support the API Gateway.
+Now scroll down, right-click on Lambda underscore function, click Open, delete the existing skeleton code.
+Now attached to this lesson and in this lesson's instructions is a link to the API Lambda source code, so go ahead and open that in your favorite code editor.
+So this code is what provides the supporting services to the API Gateway. There's a placeholder at the top where you need to replace this with the ARN for the state machine that you created in the previous part of this demo series.
+You should have noted that down. Don't worry if you didn't, I'll show you how to get it again. But essentially what this code does is it functions as the supporting compute resource for our API.
+Our API Gateway is going to accept connections from our serverless client application that's running in the web browser of our customer laptops.
+When that connection is made to the API Gateway, the client application is going to send some data in and expect a response back.
+And the API Gateway, its job is to invoke the Lambda function, provide the Lambda function with the data that the client has sent, and then provide the client with a response back that the client is expecting.
+Generally, this is going to be success or failure. Essentially, we just accept the data in and we perform some checks. If it fails, it provides a 400 response back to the client, which indicates a failure.
+If it's got all of the data that it needs, then it begins an execution of the state machine. It uses the start underscore execution operation, and it passes into that the ARN of the state machine that we want to execute, as well as all of the data that's generated from our client application.
+So the waiting seconds, the message, and the email to use. All of that is passed into the state machine, and that's where the state machine gets the data that it requires to run and perform those notifications.
+So just go ahead and select all of that code and copy it into your clipboard and return to the Lambda console. Go into the Lambda function part and just paste in that code.
+Now you should have noted down the ARN for the state machine in the previous part of this demo series. If you didn't note this down, you should still have the tab open to the state machine.
+So just go back to that tab, locate the ARN, copy that into your clipboard, and then you're good to continue.
+Once you've got that, go back to the Lambda console and select your underscore state machine underscore ARN. That should all be in caps, so keep inside of the single quotes and just paste in that ARN.
+And just as a caution, it will need to be your ARN. You should use the ARN that you noted down with your AWS account number. It won't work if you use mine.
+Once you've pasted that in, click on deploy and wait for it to complete the deployment.
+Just to be on the safe side, scroll to the top and just copy down the ARN for this Lambda function, just in case we need it in the next step.
+Normally, you'll be able to click in a box and start typing the name of the Lambda function when you're integrating API Gateway and Lambda, but sometimes I've seen you require the ARN.
+So just make sure that you've noted down this ARN and you've just flagged it that it's for the API Lambda. So make sure you've got a copy of that handy.
+And once you've done that, next we're going to move on and create the API Gateway, the API and the method that our serverless application is going to use.
+So click on services and in the find services box, just type API and then open API Gateway in a new tab.
+Once you're at this console, just expand the menu on the left and click on APIs.
+Now this console could look slightly different when you're using it because this is one of the services that's being updated by AWS.
+But what you want to do is you want to create a REST API. Be careful, it's not a REST API private or a HTTP API or a WebSocket API.
+It is a normal REST API. So however the screen looks, just click on the option to create a REST API.
+In my case, I need to click on build under REST API. We're going to be creating a brand new API.
+So slightly option for creating a new API. The first thing that we need to do is to name our API.
+So we're going to use pet cuddle-a-tron or lowercase. And you've got a number of different types of API that you can create.
+A private API, an edge optimized API and a regional API.
+And if we want to create the type of API that's scalable and highly available in a region, then we need to pick regional.
+So make sure you pick regional and then go ahead and click on create API.
+So that's the overall API endpoint that's been created. Now that we've created our API, we need to create a resource.
+We're getting more and more granular, moving toward the thing that our actual client application will interact with.
+So the next stage of that granular progression towards that point is to create a resource.
+So go ahead and click on create resource. Now under resource name, I want you to call it pet cuddle-a-tron.
+So all lowercase, pet cuddle-a-tron, one word. Now the box at the top, you can configure this as a proxy resource.
+So if you remember when I was talking about the theory of API gateway, I mentioned how it can directly interact with various AWS resources.
+So if you're wanting to do that, then you would configure it as a proxy resource, but we're not going to do that.
+We don't want this acting as a proxy resource because we're going to interact with Lambda to provide the capability that we need.
+What I do want you to enable though is the cause option, so cross origin resource sharing.
+So this is something that we'll need to avoid any errors when we're using our client side application.
+So tick this box. Now I just want to pause here and just make sure that you have the correct boxes selected.
+This is one of the points in the demo that causes the most student frustration.
+Make sure that you do have the cause option selected, so yes to cause, and make sure that proxy resource is not enabled.
+So that needs to be disabled at the top. And click on create resource.
+Now that we've got the resource, the next thing we need to do is to create the method.
+And this is the actual point that our client application will directly communicate with.
+So make sure that you've got the pet Kudlatron resource selected, and then click on create method in the methods area.
+And then in the drop down that appears, click it and make sure you select post as a method type.
+So select post. So this is configuring this method to be a post type.
+So when our client application interacts, it's going to use the post method of interacting with this particular part of the API gateway.
+Now we need to configure the integration between the method of the API gateway and the supporting Lambda function.
+So when the client application communicates with the API gateway, it's going to communicate with this method.
+And this method needs to invoke the Lambda function to provide the compute that's required to service that request.
+This is what we're doing now. So you need to pick Lambda function for the integration type.
+The region needs to be US East 1. And then click inside the Lambda function box and just start typing API.
+And you should see an auto complete option with the name of the Lambda function that you've previously created.
+It should be called API underscore Lambda. Just go ahead and click on that.
+And that will configure the integration between this method of the API gateway and the Lambda function.
+Make sure that the use default timeout option is selected as well as the use Lambda proxy integration.
+So both of those check boxes need to be checked. Now once again, we're just going to pause here briefly.
+This is another point in the demo which can cause student frustration.
+So I want to make sure that you do have use Lambda proxy integration selected.
+This box needs to be selected before you continue as well as the use default timeout.
+And once they are, go ahead and create the method.
+Okay, so now that we've got the API and the method created, the final step is to deploy the API.
+So go ahead and click on deploy API.
+An API gateway allows you to have different stages. So you might have different versions for prod and dev and test.
+We'll only have the single stage. So we're going to go ahead and create a new stage.
+And we're going to call that stage prod for production and we'll use the same inside the stage description.
+So new stage, prod in stage name, prod in description, and then just go ahead and click on deploy.
+And this will deploy this API out to API gateway and we'll receive an invoke URL.
+Now just make sure that you copy down this URL at the top of the screen.
+This will be the URL that the client application uses to connect into our serverless application.
+It will be unique to you. So make sure you copy it into your clipboard and store it somewhere safe
+because we'll need it in the next part of this demo series. So copy that down and store it somewhere safe.
+Once you've noted that down, that's all of the tasks that you'll be needing to complete inside this part of the demo series.
+You've created the supporting Lambda function. You've given it the permissions it needs.
+You've created the API gateway. You've created the resource. You've created the method.
+And you've integrated that with the supporting Lambda function.
+So that's now the endpoint that our client application will use to connect to this serverless application.
+So at this point, go ahead and complete this video and then when you're ready, I'll look forward to you joining me in the next.

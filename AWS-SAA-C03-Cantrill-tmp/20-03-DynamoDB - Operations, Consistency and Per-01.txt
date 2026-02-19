@@ -1,0 +1,87 @@
+Welcome back, this is part two of this lesson. We're going to continue immediately from the end of part one, so let's get started.
+Now DynamoDB can operate using two different consistency modes for read operations.
+It can be eventually consistent, or it can be strongly, or also known as immediately consistent.
+Consistency refers to the process of how when data is updated, so when new data is written to the database,
+and then immediately read, is that read data immediately the same as the recent update, or is it only eventually the same?
+Eventual consistency is easier to implement from an underlying infrastructure perspective, and it scales better.
+Strong consistency is essential in some types of applications or some types of operations,
+but it's more costly to achieve, and it scales less well than eventual consistency.
+So let's look visually at exactly how this works.
+With DynamoDB, every piece of data is replicated multiple times in separate availability zones,
+and each one of these points is called a storage node.
+And out of these three storage nodes in three different availability zones, one of them is elected as the leader, so the leader storage node.
+And this is a dynamic process, so if the leader ever fails, the election will happen again and a new one will be chosen.
+So in this case, we've got a single item inside a DynamoDB table that's been replicated across three different storage nodes.
+One in availability zone A, one in availability zone B, and one in availability zone C.
+And all three have the same data, the same item with the same five attributes.
+Now let's say in this example that Bob decides to update some data, it's this particular DynamoDB item,
+and he decides to remove the fourth attribute, the dark orange attribute.
+So this is the change to the item, the fourth attribute is removed, and when writing this to DynamoDB,
+the product has a fleet of entities which route connections to the appropriate storage nodes.
+Rights are always directed at the leader node, so it's this leader node which will receive the update to this item first.
+So on the leader node, the item will be manipulated and the fourth attribute, the one in dark orange, will be removed.
+At this point, the leader node is known as consistent, it has the data on it which you just wrote.
+That's why rights are more expensive in terms of capacity units.
+Why a write capacity unit is less data than a read capacity unit?
+Because writes always occur on the leader storage node, and so these can't scale as well as reads.
+When the leader node has the new data on it, it immediately starts the process of replication.
+This process usually only takes milliseconds, but it does depend on the individual load which has been placed on these storage nodes,
+and it assumes the lack of any faults. But let's assume though, for this example, that we have no faults on our storage nodes,
+and we've replicated this updated item to one additional storage node apart from the leader, so the one in availability zone C,
+and right now we freeze time, so the situation we have is that the leader storage node contains that updated item,
+as well as the storage node in availability zone C, but the storage node in availability zone A does not have the updated item,
+it is not consistent. So right now with time frozen, let's look at reads, and there are two types of reads which are possible with DynamoDB,
+eventually consistent reads, and strongly consistent reads.
+Now I mentioned earlier in this lesson how you can actually perform reads cheaper than having one RCU representing four kilobytes of data.
+Now the reason for this is that one RCU is actually four kilobytes of data read from DynamoDB every second, but that's using strongly consistent reads.
+Eventually consistent reads are actually half the price, so you can read double the amount of data for the same number of RCUs.
+So let's say that Julie on the top right performs an eventually consistent read of the data.
+When Julie performs that operation and uses eventual consistency, then DynamoDB directs her at one of the three storage nodes at random.
+In most cases, all three storage nodes will have the same data, and so there's little difference between eventual and strongly consistent reads.
+But in this particular edge case, if DynamoDB sent her request at the top storage node, then she would get stale data.
+Replication occurs in milliseconds, but with eventual consistency, it isn't always guaranteed that you will get the latest data.
+And in exchange, because eventually consistent reads scale better because any of the individual nodes can be used, you actually get a price reduction.
+It's 50% of the price for strongly consistent reads, so you get twice as much reads for each individual read capacity unit.
+In most cases, you will notice no difference, but you need to be aware that there is a small potential that with eventually consistent reads, you might be reading older versions of data.
+If you access DynamoDB at exactly the wrong time, it is possible that you might get outdated data.
+Now in contrast, a strongly consistent read always uses the leader node.
+It's always consistent, but because it mandates the use of one particular storage node, the leader node, it's less scalable, and so it costs the normal amount of RCU to perform.
+So that's why eventually consistent reads are less cost than strongly consistent.
+But one very important thing to keep in mind is that not every application or access type can tolerate eventual consistency.
+You need to pick the correct model.
+If you have a stock database where the stock level is important, or if you're performing medical examinations and the data that's being logged into DynamoDB is critical and you always need the most recent version, then you need to use strongly consistent reads.
+If your application can tolerate a potential lag and the small chance of outdated data, then you can achieve significant cost savings by using eventually consistent reads.
+Now let's just talk through some calculations of how you can actually determine appropriate values for capacity on a table.
+Let's look at a scenario and let's assume that you need to store 10 items in DynamoDB every second.
+So you have 10 devices that are logging data into DynamoDB, and on average they store data once every second.
+So you've got 10 writes per second.
+Now with any type of scenario, you need to determine a number of really important things.
+You need to understand the average size of an item that's been written to DynamoDB, and you need to understand how many items per second will be written.
+Now in some cases, exam questions might try to trick you and say that 60 items will be written per minute,
+and if you see that type of question, you need to try and calculate how many per second, because that's what read and write capacity units use.
+Now once you've got both of those pieces of information, you can calculate the WCU required per item.
+So to calculate that, you take your item size, in this example 2.5K, and you divide it by the size of 1 WCU, which is 1K.
+That gives us 2.5, and then we need to round that up to the next highest whole number, which in this case is 3.
+So we know that for a 2.5K average item size, we're going to consume 3 WCU.
+And then we need to understand how many of those occur every second, and so we need to multiply that value by the average number of writes per second.
+So we know that we're going to store 10 items per second.
+We now know that the WCU required per item is 3, and based on that, we can multiply those together to get the required WCU, which in this example is 30.
+So it's the same calculation every time. Work out the size of an individual item write in WCU, multiply that by the number of writes per second,
+and that will give you the WCU setting that you require on the table. Remember, a WCU is 1K in size.
+Now flipping that round, let's look at reads. If we have a similar example, and we need to retrieve 10 items per second from our database,
+and we know that the size of an average item is 2.5K, the first thing we need to do is to calculate the RCU that's required per item.
+And we do that by taking the average item size and dividing that by 4Kb, and then rounding that up to the next highest whole number.
+So in this case, because an RCU allows for 4 kilobytes of reads, we know that 2.5K is going to fit inside 4K.
+So every single read is going to be one RCU. So we know that it's one RCU per read. So now we know the number of RCU required per item.
+We need to know the number per second, the number of operations per second, which is 10, and we multiply those together.
+So to do strongly consistent reads with this example, we would need 10 RCU.
+But now you know the concept of eventual consistency, that is half the cost. So we can take this RCU value and divide it by 2,
+and that means that to perform eventually consistent reads of 10 items per second with a 2.5K size, we need 5 RCU set on the table.
+So I've provided two really simple examples, and what I'm going to do is include some links in the lesson description,
+which will give you additional examples with different sizes of items, different writes per second,
+and it will give you some practice on how to perform these calculations.
+And I suggest that you do this as extra work once you've finished all of the content of the course.
+The only thing that I need you to understand for now is the size of an RCU, the size of a WCU,
+and exactly how the consistency model works for DynamoDB.
+That's all of the theory that I wanted to cover in this lesson, though.
+Go ahead, complete the video, and when you're ready, I look forward to you joining me in the next.

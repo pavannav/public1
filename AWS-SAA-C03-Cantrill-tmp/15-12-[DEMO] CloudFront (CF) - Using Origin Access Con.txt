@@ -1,0 +1,125 @@
+Welcome back and in this demo lesson you're going to get the chance to experience working with Origin Access Control
+and this is a feature of CloudFront where you can restrict an S3 Origin so it can be only accessed via CloudFront.
+Now historically this functionality was provided via Origin Access Identities
+but Origin Access Control is the new method of accomplishing the same task and it's recommended for usage by AWS.
+Now we're going to be using the infrastructure that's left over from the previous two demo lessons
+so that's the S3 Origin running the static website and the CloudFront distribution.
+So this demo lesson is going to work whether you did both of the previous demo lessons
+and it will also work if you couldn't do the one previous demo lesson because you don't have your own custom domain.
+As long as you have the S3 static website and the CloudFront distribution left over from that first demo lesson in this series
+then you're good to continue straight away.
+The only thing that you need to do is to make sure that you're logged into the IAM admin user inside the general account
+which is the management account of the organization and you need to have the Northern Virginia region selected.
+So we're going to implement this architecture within this demo lesson.
+We're going to adjust our infrastructure so that we can only access our S3 bucket from our CloudFront distribution.
+Now just as a reminder of where we're up to if we move to the S3 console
+so type S3 in the search box and open that in a new tab
+and then in addition type CloudFront also in the search box and open that in a new tab.
+Go to the S3 console and look for the top 10 cats bucket and go inside that bucket
+and then click on permissions.
+Now this is a public access bucket so the block public access settings have been disabled
+and then for the bucket policy we're allowing all principles
+so this is any principle to use get object on any objects in this bucket
+so that's why we can directly access this bucket.
+So even though we've configured CloudFront if we click on properties
+move all the way down to the bottom and then click on this icon to open the bucket website endpoint
+we can still access our top 10 cats website directly and this is of course bypassing CloudFront.
+Now we want to prevent that and the way that we can prevent it is to go back to the CloudFront console.
+Now we can configure origin access control in one of two different ways.
+We can do it directly on the menu on the left under security by clicking on origin access
+or we can configure it within a distribution.
+So we're going to do it from within the distribution so click on the distribution ID
+and then we need to configure this within the origins tab so click on origins
+then select our S3 origin and click on edit.
+Now if we scroll down we can see a section called origin access.
+Now currently this is set to public and it means that the bucket must allow public access to work with CloudFront.
+What we can do is change this to origin access control settings.
+Now there's another option here which is legacy access identities
+and this is where we can configure the old legacy style origin access identities.
+This is how it used to be done before origin access control
+and this is no longer recommended for production usage.
+AWS recommends using origin access control settings so that's what we're going to do.
+So we're going to check this box and then we need to create a control setting if we don't already have one.
+If we click in this drop down you'll see that we have no origin access controls so we need to create one.
+So click on create control setting.
+Now it's here where we can provide a name and a description as well as configure the signing behavior.
+Now the default configuration is that CloudFront will sign any requests which it sends to the S3 origin
+and this is the default setting.
+We can also configure it to not sign requests and also to sign requests but not override any existing authorization header.
+Now the detail here is well beyond what you need to be aware of for the exam
+so we're going to accept the defaults which is always to sign any requests going to the S3 origin.
+So go ahead and make sure that box is checked and then click on create.
+And this will configure CloudFront to use this origin access control setting to access our S3 origin.
+But this isn't enough. To prevent CloudFront being bypassed we need to adjust the bucket policy on the S3 origin
+and we need to do this ourselves.
+So go ahead and click on copy policy and once you've done that you can click the link saying go to S3 bucket permissions
+and this will take you to the permissions tab of the S3 origin
+and this is where we can configure the bucket policy to allow the usage of origin access control.
+So scroll down and click on edit under bucket policy.
+What we're going to do now is delete all of the existing bucket policy and then paste in what we've just copied into our clipboard.
+And if we step through this for a moment this is allowing a principal CloudFront.AmazonAWS.com
+to get object on this resource so the top 10 cats bucket and at the bottom here it has a condition.
+The condition is string equals and the condition means that only this specific CloudFront distribution is matched
+and thus only this specific CloudFront distribution is allowed to access this S3 bucket.
+So this is different than how origin access identities worked.
+In this case we're allowing a specific CloudFront distribution to access our S3 origin
+and all the requests which come into this S3 origin are going to be signed by CloudFront
+and S3 can verify which distribution is attempting to access this specific origin.
+So now that we've pasted that go ahead scroll down and click on save changes.
+And now we've completed the restrictions on this S3 origin.
+If we go back to the tab that we have open directly to the S3 bucket and attempt to refresh
+now we're going to see a 403 forbidden error because we're now trying to access the bucket
+not using CloudFront and this is no longer allowed.
+If we go back to the CloudFront tab we'll need to save this configuration so go ahead and click on save changes.
+Just as with all CloudFront changes this needs to be deployed out to all edge locations.
+It will start off in the deploying state and we need this to complete before we can continue.
+So go ahead and pause the video, wait for this deployment to complete and then we're good to resume.
+Okay so now this is finished deploying go ahead and click on the distribution ID,
+copy the distribution name into your clipboard, open a new tab, paste that in
+and you'll be able to see you can open the S3 origin using CloudFront.
+And this means we've successfully configured origin access control.
+It means that nobody can access the S3 origin directly, we can only access it using CloudFront
+and that means that it's restricted with any restrictions that we configure on the distribution or the behaviour.
+And this is a really effective way to control access to an S3 origin.
+Now at this point that's everything that I wanted to do in this lesson.
+Now all that remains at this point is that we need to clean up the infrastructure
+that we've been using over the past few demo lessons.
+Now the process is slightly different depending whether you did the previous demo lesson
+where you configured an alternate domain name on the CloudFront distribution and created an SSL certificate.
+So this first step is common whether you did the previous demo lesson or not.
+First we need to go to the CloudFront console and we need to delete the distribution.
+So go ahead and select the distribution and first you'll need to disable it.
+You can't delete a distribution which is currently enabled.
+Now that will take some time and we need that to be complete before we move on.
+So pause this video and wait for this distribution to move into a disabled state and then we can continue.
+Okay so now the distribution is in a disabled state.
+So once this is the case, select it again and then click on delete.
+Now that deletion process is usually fairly quick and as you can see it's disappeared immediately from my console.
+If it takes a little bit more time in your case that's absolutely fine.
+But in either case you just need to wait for that to be deleted before continuing.
+Now once the distribution's been deleted we need to look on the menu on the left.
+Click the hamburger menu icon if required and then under security click origin access.
+Select the origin access control that you created and then click on delete and confirm that deletion.
+So that's the CloudFront side of things removed.
+Now if you did the previous demo lesson where you added an alternate domain name and configured an SSL certificate,
+that's the next thing that we need to clean up.
+If you didn't do the previous demo then these steps aren't applicable.
+Now to delete the SSL certificate we need to click in this search box, type ACM and then open certificate manager in a new tab.
+Once it's open, select the certificate that you created in the previous demo lesson.
+You might have multiple ones listed here depending on what stage you're at in which course,
+but make sure you pick the one that you created in the previous demo lesson.
+And then select delete and confirm that deletion.
+And then we need to clear up the DNS and again this is only applicable if you did the previous demo lesson
+where you configured an alternate domain name.
+So click in the search box, type route 53, open that in a new tab, wait for it to load,
+then go to hosted zones, go into your hosted zone and we're going to delete two records.
+One of them is the CNAME record which was used by ACM to verify our ownership or control of this domain.
+So select that and then you also need to select the other record which is pointing at your cloud front distribution.
+And once you've selected both of those you need to delete them and confirm that deletion.
+And then the last step that you need to do and this applies whether you did the previous demo or not
+is to go back to the cloud formation console and we need to delete the stack that was created
+by the one click deployment in the very first demo lesson.
+So select this stack, click on delete and then delete stack.
+And that will return the infrastructure into the same state as it was at the start of this series of demos.
+And at that point that's everything that you need to do.
+So go ahead, complete this video and when you're ready I'll look forward to you joining me in the next.

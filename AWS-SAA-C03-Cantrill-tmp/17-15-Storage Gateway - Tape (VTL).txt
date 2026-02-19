@@ -1,0 +1,133 @@
+Welcome back, and in this lesson of the Storage Gateway series, I wanted to cover Storage Gateway running in Tape mode,
+also known as VTL mode, which stands for Virtual Tape Library.
+Now try your best as you go through this lesson to ignore the fact that the logo looks like a toilet roll.
+It's one of those things where once you've seen it, it can't easily be unseen.
+I also often forget that there might be some of my students who don't actually know what Tape backup is,
+so I want to quickly cover that before I show you how Storage Gateway can integrate Tape backups and AWS.
+So let's jump in and take a look.
+Large enterprise backups in recent times tend to run in one of three ways.
+Backup to Tape, Backup to Disk, or Offsite backup to a remote facility over a network link.
+For this lesson, we're focusing on Tape backup.
+Now there are various different types of tapes, and one popular type is called LTO, which stands for Linear Tape Open.
+This is an example of some LTO tapes.
+They come in various different generations, and one of the more recent is LTO-9,
+which is capable of storing 24 terabytes of data per tape, and this is uncompressed data.
+If you add compression, it allows for storage up to 60 terabytes per tape.
+All Tape backup solutions have at least one tape drive.
+A tape drive can logically be empty, or it can have a tape inserted.
+Assuming it does have a tape inserted, then the tape drive can read from the tape or write to the tape,
+and it's sequential, meaning not random access like disk or SSD-based storage.
+Now to find data, you need to seek through the entire tape, locate the data, and then read it.
+And data that's stored on tape can't easily be updated.
+You need to overwrite the data that's already on that tape.
+It's not really possible to modify data stored on tape.
+Essentially, it's designed as a medium which allows write as a whole or read as a whole.
+Now as well as a tape drive, you have what's known as a tape loader, sometimes called a tape robot.
+Think of this as a literal robot arm which can insert tapes, remove tapes, or swap tapes between a drive and somewhere else.
+Now a tape library is a piece of equipment which often fits in a rack, or it's the size of one or more racks.
+It contains one or more tape drives, one or more tape loaders, so the robots which move tapes, and a collection of slots.
+And these slots can store tapes when they're not in the drive.
+So a tape library could have room for 8 tapes, 32 tapes, hundreds of tapes, or even thousands of tapes.
+So when we're discussing tape backup, we've got a number of different components.
+We've got the drive itself, where tapes go to be read from or written to.
+Next we've got the library, and the library consists of a tape drive or tape drives, the robots,
+and then a number of slots that can store tapes when they're not in the drives themselves.
+And then thirdly, we've got a tape shelf.
+Now this is a throwback to the physical world where tapes were stored on shelves.
+If you see a tape shelf mentioned, it's anywhere which isn't the library,
+so another location which could be in the same building or a different physical site entirely.
+In a traditional tape backup situation, this is what the architecture might look like.
+So on the left we've got a business premises, and inside it we've got a number of application and data storage servers
+which aren't shown, together with a backup server and a tape library.
+Now the backup server connects to the tape library using a protocol known as iSCSI.
+And this iSCSI connection exposes a few devices, the most important ones being one or more tape drives
+and a media changer, and a media changer is just another name for a tape loader or a tape robot.
+Now the important thing to realize is that everything has a cost.
+So the equipment costs money to buy, that's the tapes, the software and the library, and they're capex costs.
+And then to operate it, there's ongoing costs, so licensing, maintenance and the staffing costs.
+It's not cheap to run an enterprise grade backup architecture, such as the one that's on screen now.
+In addition to this though, we have the other side of the architecture.
+Offsite tape storage which is often managed by a third party.
+This location is often a decent distance away from your primary business premises
+and this is done to provide resilience in the event of a disaster.
+Now only tapes which are in the library itself can be used for backups,
+and to keep data safe any tapes which aren't being actively used are moved from your primary premises to offsite tape storage.
+And this transport costs money and takes time.
+So we have a few main problems with this architecture.
+We have the cost to purchase, the cost to maintain, the cost to operate,
+and the time and cost to move things around between our primary premises and our offsite tape storage.
+And Storage Gateway running in VTL or tape mode fixes many of these problems.
+So let's take a look at how.
+Using Storage Gateway and VTL mode much of the architecture changes.
+About the only thing which is shared is that we still have a business premises and a backup server.
+Instead of the on-premises tape library we use Storage Gateway in tape or VTL mode.
+And this presents itself in the same way to the backup server using iSCSI.
+Now this is actually part of the design.
+The backup server sees this as a normal tape loader.
+It doesn't know the difference between this and the previous physical tape library.
+There are very little, if any, software changes required beyond connecting the backup software to the Storage Gateway.
+The Storage Gateway presents a media changer and the tape drives.
+But it looks like a normal physical tape library.
+But it has an upload buffer and a local cache, much like Volume Gateway running in cached mode.
+It uses these to store data which is being actively used, essentially virtual tapes.
+And I'll talk about these in a second.
+Instead of using physical tapes which are present in a local tape library.
+The Storage Gateway communicates with the Storage Gateway endpoint within AWS.
+So this is much like the Volume Gateway.
+The Storage Gateway endpoint then presents two main capabilities.
+The Virtual Tape Library or VTL which is backed by S3.
+And the Virtual Tape Shelf or VTS which is backed by either Glacier or Glacier Deep Archive.
+Now conceptually the Virtual Tape Library is an AWS hosted version of a tape library which the Storage Gateway uses.
+And the Virtual Tape Shelf is for virtual tapes which have been logically moved out of that Virtual Tape Library.
+So the on-premises Storage Gateway communicates with the Virtual Tape Library.
+It caches stuff locally and it uploads in the background to the Virtual Tape Library.
+So backups occur at LAN speeds to the local storage that the Storage Gateway uses.
+And then in the background any backup data gets uploaded to the Storage Gateway endpoint running inside AWS.
+Specifically the Virtual Tape Library.
+Now a virtual tape can be anywhere from 100GB to 5TB.
+If you have a good memory you might notice that the 5TB maximum size for a virtual tape is also the maximum size of an S3 object.
+And that's because these virtual tapes are stored using S3 in an AWS managed Storage Gateway bucket.
+Now the Storage Gateway can handle a total of 1PB of data across 1500 virtual tapes within the Virtual Tape Library.
+Remember this is the part which uses S3.
+When virtual tapes aren't being used for anything they can be exported within the backup software.
+And this marks them as not being within the library.
+Now in the physical architecture which I showed you on the previous screen,
+this would then mean ejecting them from the physical tape library and moving them to offsite storage.
+An exported tape simply means that it's not in the library.
+Now when you export a virtual tape using Storage Gateway in VTL mode,
+it archives it from the Virtual Tape Library or VTL into the Virtual Tape Shelf or VTS.
+And this moves the data from S3 into Glacier or Glacier Deep Archive and that offers unlimited storage.
+The limit of this Storage Gateway appliance is only for tapes that are stored in the Virtual Tape Library.
+Anything which you archive into the Virtual Tape Shelf benefits from unlimited amounts of capacity.
+Now Glacier is generally used for archival when there's an expectation that at some point you will need access to data.
+So anything that's infrequently accessed can be archived into the Virtual Tape Shelf using Glacier.
+Glacier Deep Archive is used for longer term data retention where you might never need to access the data again,
+but you do need to keep it, maybe for legal reasons.
+In either case if you need to access the data again then it can be retrieved from the Virtual Tape Shelf
+into the Virtual Tape Library and then it can be accessed again by the Storage Gateway.
+Now I'm hoping by this point that you understand what this mode of the Storage Gateway provides.
+It essentially pretends to be an iSCSI Tape Library, an iSCSI Changer and an iSCSI Drive
+and it uses a combination of S3 and Glacier and Glacier Deep Archive
+to support the backup and restore functionality of a physical Tape Library.
+Now this gives you a few interesting capabilities.
+You can use it to maintain your existing backup system which you might need to keep,
+but replace much of the expensive parts with economical AWS storage.
+It also allows you to extend an additional backup system by using capacity within AWS
+so you can use this together with existing backup software
+and extend any limited on-premises capacity into AWS by using S3 and Glacier.
+Or it also lets you do a migration.
+So let's say that you're migrating everything into AWS,
+but you need to maintain a historical set of tape backups.
+Well you can migrate those tape backups onto Storage Gateway using VTL mode,
+decommission the physical tape hardware,
+and then even run the Storage Gateway appliance and the backup server
+from within AWS for any data retrieval needs.
+So this type of Storage Gateway presents some really interesting architectural possibilities.
+For the exam, anything which involves traditional tape backup architecture
+than Storage Gateway running in VTL mode is likely to be the correct answer.
+VTL mode is a really powerful product which I've used a few times in real-world projects,
+generally as part of data center extensions or migrations of backup platforms.
+But at this point that's everything that I wanted to cover about Storage Gateway running in VTL mode.
+So thanks for watching, go ahead and complete the video,
+and I'll look forward to you joining me in the next part of this Storage Gateway series
+where I'll be covering the File Gateway which is probably my favorite Storage Gateway mode.

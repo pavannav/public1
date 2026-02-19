@@ -1,0 +1,156 @@
+Welcome back and in this lesson I want to cover the Elasticash product.
+Now this is one which features relatively often in all of the associate AWS exams
+and fairly often at a professional level.
+It's a product that you'll need to understand if you're delivering high-performance applications.
+It's one of a small number of products which allows your applications to scale to truly high-end levels of performance.
+So let's jump in and take a look.
+So what is Elasticash?
+Well, at a high level, it's an in-memory database for applications which have high-end performance requirements.
+If you think about RDS, that's a managed product which delivers database servers as a service.
+Databases generally store data persistently on disk.
+Because of this, they have a certain level of performance.
+No matter how fast the disk is, it's always going to be subject to performance limits.
+An in-memory cache holds data in-memory, which is orders of magnitude faster, both in terms of throughput and latency.
+But it's not persistent and so it's used for temporary data.
+Elasticash provides two different engines, Redis and Memcached, and both of them are delivered as a service.
+Now in terms of what you'd use the product for, well if you need to cache data for workloads which are read-heavy,
+so read-heavy being the key term that you need to remember at this point,
+or if you have low latency requirements, then using Elasticash is a viable option.
+For read-heavy workloads, Elasticash can reduce the workloads on a database.
+And this is important because databases aren't the best at scaling, especially relational databases.
+Now databases are also expensive relative to the data that they store and the performance that they deliver.
+So for heavy reads, offloading these to a cache can really help reduce costs.
+So it's cost effective. Remember that for the exam.
+Elasticash can also be used as a place to store session data for users of your application,
+which can help to make your application servers stateless.
+Now this is used in most highly available and elastic environments, so those that use load balancers and auto-scaling groups.
+But for any systems which need to be fault tolerant, where users can't notice if components fail,
+then generally everything needs to be stateless, and so Elasticash can help with this type of architecture.
+Now one really important thing to understand for the exam is that using Elasticash means that you need to make application changes.
+It's not something that you can just use. Your application needs to understand a caching architecture.
+Your application needs to know to use a cache to check for data.
+If data isn't in the cache, then it needs to check the underlying database.
+And applications need to be able to write data and understand cache invalidation.
+This functionality doesn't come for free.
+And so if you're answering any exam questions which state no application changes, then Elasticash probably won't be a suitable solution.
+So let's have a look visually at how some of these architectures work.
+Architecturally, let's say that you have an application.
+Obviously, the Categram application.
+And this application is being accessed by a customer, in this case, Bob.
+The application uses Aurora as its backend database engine, and it's been adjusted to use Elasticash.
+Now the first time that Bob queries the application, the Categram application will check the cache for any data.
+It won't be there though, because it's the first time it's been accessed, and so this will be a cache miss,
+which means the application will need to go to the database for the data, which is slower and more expensive.
+Now when it's accessed this data for the first time, the application will write the data it's just queried the database for into the cache.
+If Bob queries the same data again, then it will be retrieved directly from Elasticash and no database reads are required.
+And this is known as a cache hit.
+It will be faster and cheaper because the database won't be used for the query.
+Now with this small scale interaction, it's hard to see the immediate architectural benefit of using Elasticash.
+But what if there are more users?
+What if instead of one Bob, we have many Bobs?
+Assuming the patterns of data access are the same or similar,
+then we'll have a lot more cache hits and a much smaller increase in the number of database reads.
+This will allow us to scale our application and accept more customers.
+If the application data access patterns of our user base is similar at scale,
+then it will mean that most of the increased load placed on the application will go directly onto Elasticash,
+and we won't have a proportional increase in the number of direct accesses against our database.
+And this will allow us to scale the architecture in a much more cost effective way than if everything used direct database access.
+So we can scale the application in a much more cost effective way.
+We can deliver much higher levels of read workload and we can offer performance improvements at scale.
+So this is a caching architecture and this is a very typical architecture that Elasticash will be used for.
+Let's take a look at another and this is using the product to help us with session state data for our users.
+So let's say again that we're looking at our Categram application,
+but now it's running within an auto scaling group with three EC2 instances and a load balancer,
+and it's using Aurora for the persistent data layer.
+Now again, we have a user of our application, so Bob,
+and this application I'm demoing in this part of the lesson is actually the fault tolerant extreme edition of Categram.
+So even when components of the system fail,
+the application can continue operating without disrupting our user Bob.
+Now the way that it does this is to use Elasticash to store session data.
+This means that when Bob first connects to any of the application instances,
+his session data is written by that instance into Elasticash,
+and it's kept updated if Bob purchases any limited edition cat prints.
+So the first time Bob connects to any of the instances,
+that instance writes the session data and keeps the session data updated for Bob using Elasticash.
+Now if our application at any point needs to deal with the failure of an instance,
+where previously the session data would be lost and the application functionality disrupted,
+the Categram extreme edition can tolerate this.
+If this occurs with Categram extreme edition,
+then Bob's connection is moved to another instance by the load balancer,
+and Bob's experience continues uninterrupted
+because the session data is loaded by the new instance from Elasticash.
+Now this is another common use case for Elasticash,
+storing user session data externally to application instances,
+allowing the application to be built in a stateless way,
+which in turn allows it to go beyond simple high availability
+and move towards being a fault tolerant application.
+Elasticash commonly helps with either read heavy performance improvements or cost reductions,
+or session state storage for users.
+But what's also important for the exam is that Elasticash actually provides access to two different engines,
+Redis and Memcached,
+and it's important that you understand the differences between these two engines at a high level.
+So let's look at that next.
+Let's look at these differences, so the differences between Memcached and Redis.
+Both engines offer sub-millisecond access to data.
+They both support a range of programming languages,
+so no matter what your application uses, you can use both of these engines.
+But where we start to diverge is on the data structures that each of the products support.
+So Memcached supports simple data structures only,
+so strings,
+whereas Redis supports much more advanced types of data.
+So Redis can support lists, sets, sorted sets, hashes, bit arrays, and many more.
+So an example could be that an application could use Redis to store data related to a game leaderboard,
+and this keeps a list sorted by their rank on that game.
+So as well as storing the actual data, Redis can help you by storing the order of this data,
+and this can significantly improve the performance of your applications.
+Now another difference is that Redis supports replication of data across multiple availability zones,
+so it's highly available by design,
+and that can be used to scale reads by using those replicas.
+Memcached doesn't support replication in that way.
+You can create multiple nodes which can be used to manually shard your data,
+so storing maybe certain usernames in one node and others in another,
+but Redis is the one that supports true replication across instances for scalability reasons.
+So in the exam, if you face any questions which ask about multi-availability zone
+or other forms of high availability or resilience,
+then you should look at selecting Redis as a possible answer.
+Now additionally, from a recoverability perspective,
+Redis also supports backup and restores,
+which means that a cache can be restored to a previous state after a failure.
+Memcached doesn't support that.
+It doesn't support persistence,
+and so if an exam question is asking about recovery of a cache
+without any impact to the data that's stored in that cache,
+then you definitely should look at using Redis rather than Memcached.
+Now Memcached does have an advantage in that it's multi-threaded by design,
+and so it can take better advantage of multi-core CPUs.
+It can offer significantly more in terms of performance when using multi-core CPUs.
+A notable Redis-only feature is transactions,
+and this is where you treat multiple operations as one.
+So either all of the operations work or none work at all,
+and this can be useful if your application has more strict consistency requirements.
+This is one situation where you would select to use Redis versus Memcached.
+Now both of these engine types can use a range of instance types and instance sizes,
+and I've included a link in the lesson description,
+which gives you an overview of all of the different resources
+that can be provided to both of these different caching engines.
+Now you don't need to know in detail for the exam,
+but just be aware architecturally that instance types and sizes
+which offer larger amounts of memory or faster memory types
+are obviously going to give you an advantage when it comes to running Elasticash.
+Now for the exam, you don't need to be aware of all of the different detail.
+Just be aware of the types of architectures which would benefit from an in-memory cache,
+so anything that has read-heavy workloads,
+where you need to reduce the cost of accessing databases,
+where you need sub-millisecond access to data,
+or where you need to store user session state data in an external way,
+not using EC2 instances.
+So all of those are architectural scenarios
+where you might want to look at using an in-memory cache.
+Now be aware, it doesn't come for free.
+You do need to make application changes,
+and so this isn't the type of solution that you can implement
+if one of your requirements is that you can't make any code changes to your application.
+With that being said though, that's everything that I wanted to cover
+from a theory perspective in this lesson.
+Go ahead, complete the lesson, and when you're ready,
+I look forward to you joining me in the next.

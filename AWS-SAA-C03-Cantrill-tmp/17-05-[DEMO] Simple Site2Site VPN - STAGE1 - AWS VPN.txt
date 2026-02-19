@@ -1,0 +1,106 @@
+Welcome back to stage one of this mini project where you're going to be creating a simple site-to-site VPN.
+So at this point your stack should have moved into a create complete state and that means all of the infrastructure is created and ready to go for this mini project.
+Now at this point we're going to be performing the first step of configuration which is this.
+So we're going to be implementing the AWS side of the VPN configuration.
+So this means creating a customer gateway object which represents this on-premises router.
+It means creating a virtual private gateway on the AWS side and attaching this to the AWS VPC.
+The virtual private gateway remember is the termination point for the VPN and the routing object which is attached to a VPC.
+So we need to create this virtual private gateway and attach it to the AWS VPC.
+And once we've done that we'll create a site-to-site VPN connection between this virtual private gateway and the on-premises router.
+And this is going to create two VPN endpoints each in different availability zones which we can connect to in stage two of this mini project.
+So let's go ahead and get started and to do that we're going to move back to the AWS console.
+Now the first thing you're going to need is the external IP address of the customer router.
+So this is the PF Sense firewall appliance that we're running within the on-premises environment.
+Now because this is simulated this forms part of this one click deployment which you've just applied.
+So to get that IP address click on the outputs tab on the S2S VPN stack.
+And next to on-premises router IP it will list your public IP version 4 address for the on-premises router.
+So go ahead and copy that into your clipboard and keep it somewhere safe in case you need it further through the mini project.
+Now once you've got that go ahead and right click on the VPC favorite at the top and open that in a new tab.
+Because we're going to perform the rest of this part of the configuration within the VPC console.
+Now first we'll be creating a customer gateway which represents our on-premises firewall.
+So scroll down on the menu on the left and under virtual private network VPN go ahead and click on customer gateways.
+Then click on create customer gateway and then paste in the IP address of the customer router
+which should still be in your clipboard under IP address.
+And just bear in mind yours will be different than mine so make sure you're using your IP address in the outputs of your cloud formation stack.
+Now under the name tag we're going to use A4L-on-prem router so just go ahead and enter that.
+Because this is a simple site to site VPN we're not going to be using BGP or certificate authentications.
+So we're going to leave the rest of these as default scroll down and click on create customer gateway.
+Next scroll down again and under virtual private network click on virtual private gateways.
+Remember this is the network router object the VPN endpoint that gets created and attached to a VPC.
+So we're going to go ahead and create one of these so click on create virtual private gateway.
+For name we're going to use AWS VGW for virtual private gateway.
+We won't be using BGP this is a static simple site to site VPN so you can ignore the autonomous system number or ASN configuration.
+And then just go ahead and click on create virtual private gateway.
+Once this is created you can select it, click on actions and then attach to VPC.
+Now in the available VPCs drop down just click and select A4L-AWS because this is going to attach this to the AWS VPC.
+Once you've done that go ahead and click attach to VPC.
+So now we've created and attached the virtual private gateway and we've created the customer gateway object
+which represents our on-premises firewall or on-premises VPN endpoint.
+So the next step is to create the site to site VPN connection between AWS and the on-premises environment.
+Now just note at this point this won't successfully connect because there's still configuration we need to do on the on-premises side.
+And that will occur in the next stage of this mini project.
+For now we're just creating the AWS side which will create the VPN endpoints.
+So to do that again scroll down on the menu on the left and click site to site VPN connections.
+And then click create VPN connection.
+Now we're going to call this AWS-site to site VPN.
+Under target gateway type I want you to make sure virtual private gateway is selected
+because this is the AWS side network endpoint type that we're going to be using.
+Then scroll down, click in the virtual private gateway drop down and select AWS VGW.
+This is the virtual private gateway that you just created and attached to the VPC.
+Under customer gateway we've already created a customer gateway object so make sure existing is selected.
+Click in the customer gateway ID box and select A4L-on-prem router.
+So this is going to make sure that this site to site VPN connection is between this virtual private gateway
+and our on-premises router.
+Now under routing options we've got two choices.
+We can create a dynamic VPN which requires BGP
+and we're not going to be using that in this simple site to site VPN mini project.
+Instead we're going to use static routing.
+So make sure the static routing options check box is selected.
+Now in this static IP prefixes box we need to provide the network range that's used
+for our on-premises environment.
+And we're going to be using 192.168.8.0.21.
+So this is the range that's used within our simulated on-premises environment.
+Now if we're using a dynamic or BGP site to site VPN
+then AWS and our on-premises router would automatically exchange this routing information.
+Because this is a static VPN we need to provide this information statically
+within the configuration for this site to site VPN connection.
+And that's what we've done by entering this IP range.
+And again this is used within our simulated on-premises environment.
+Once we've done that we can leave everything else as default,
+scroll down to the bottom and create the VPN connection.
+Now we've successfully created the site to site VPN connection
+but it's still in a pending state.
+And to continue with the next stage of this mini project we need it to finish creating.
+At this point though what we can do is download the configuration
+for this site to site VPN connection because we'll be using this
+to configure the PF Sense router in the next stage of this mini project.
+So select the site to site VPN connection and click on download configuration.
+Now if you click in the vendor drop down there are various different vendors
+where AWS allow you to download pre-configured configuration files.
+There's even a generic one if you don't have one of the vendors listed.
+Luckily though we do, if we scroll down we can select PF Sense
+because that's the type of VPN endpoint that we have running
+within our simulated on-premises environment.
+So click on PF Sense, make sure the platform is also set to PF Sense,
+make sure the software is set to this or above.
+If I click in this box at the time of creating this mini project I only have the one.
+You may have multiple options, you may even have later versions
+but just make sure that it's 2.2.5 or above.
+And then under the Ike version if I click I only have the one option
+you may have multiple but just make sure that you set it to IKE V1.
+So this is version 1 of Ike.
+Once you've done that go ahead and click on download
+and this will download the configuration for the site to site VPN connection
+in a format that contains step-by-step instructions to configure a PF Sense appliance.
+Now in our case we're actually going to configure the PF Sense router manually
+but this file does contain all of the information that you'll need to perform that configuration.
+Now again at this point we need this state to move away from pending before we continue
+so this seems like a good step to finish this stage of the mini project.
+As a reminder this is the architecture that you've implemented in this stage of the mini project.
+So you've configured the AWS side virtual private gateway, the customer gateway object
+and you've created a site to site VPN connection between these two
+which has created the two VPN endpoints in different availability zones.
+In the next stage of this mini project you're going to be configuring the PF Sense router
+which is running within the simulated on-premises environment.
+But at this point that's everything you need to do in this stage of the mini project
+so go ahead and complete this video and when you're ready I'll look forward to you joining me in the next stage.

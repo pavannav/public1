@@ -1,0 +1,196 @@
+Welcome back and in this lesson I want to cover the architecture of another really important product within AWS.
+It's something I've already mentioned in other lessons and it's the Simple Queue Service or SQS.
+So let's jump in and explore what the product provides and exactly how it works.
+Simple Queue Service or SQS provides managed message queues.
+And it's a public service so it's accessible anywhere with access to the AWS public space endpoints.
+And this includes private VPCs if they have connectivity to these services.
+It's fully managed so it's delivered as a service.
+You create a queue and the service delivers that queue as a service.
+Now queues are highly available and highly performant by design.
+So you don't need to worry about replication and resiliency.
+It happens within a region by default.
+Now queues come in one of two types.
+Standard queues and FIFO queues.
+FIFO queues guarantee an order.
+So if messages 1, 2 and 3 are added in that order to a FIFO queue,
+then when you receive messages you'll also see them in order.
+So 1, 2 and then 3.
+With a standard queue this is best efforts.
+But there's always the possibility with a standard queue that messages could be received out of order.
+Now FIFO queues do come with some other considerations but more on that later.
+Now the messages which are added to a queue can be up to 256 kilobytes in size.
+If you need to deal with any data which is larger,
+then you can store it on something like S3 and link to that object inside the message.
+Architecturally though, ideally you want to keep messages small
+because they're easier to process and manage at scale.
+Now the way that a queue works is that clients can send messages to that queue
+and other clients can poll the queue.
+And polling is the process of checking for any messages on a queue.
+And when a client polls and receives messages, those messages aren't actually deleted from the queue.
+They're actually hidden for a period of time, the visibility timeout.
+Now the visibility timeout is the amount of time that a client can take to process a message in some way.
+So if the client receives messages from the queue,
+if it finishes processing whatever workload that that message represents,
+then it can explicitly delete that message from the queue.
+And that means that it's gone forever.
+But if a client doesn't explicitly delete that message,
+then after the visibility timeout, the message will reappear in the queue.
+Architecturally this is a great way of ensuring fault tolerance
+because it means that if a client fails when it's processing a job,
+or maybe even fails completely,
+then the queue handles the default action to put the message back in the queue,
+which makes that message available for processing by a different client.
+So the visibility timeout is really important.
+It's something that features regularly on the exam.
+Just be aware that the visibility timeout is the amount of time that a message is hidden when it's received.
+If it's not explicitly deleted, then it appears back in the queue to be processed again.
+Now SQS also has the concept of a dead letter queue,
+and this is a queue where problem messages can be moved to.
+For example, if a message is received five or more times and never successfully deleted,
+then one possible outcome of that can be to move the message to the dead letter queue.
+And dead letter queues allow you to do different sets of processing on messages that can be problematic.
+So if messages are being added to the queue in a corrupt way,
+or if there's something specific about these messages that means different styles of processing is required,
+then you can have different workloads looking at the dead letter queue.
+Now I've already talked about how queues can be used to decouple application components.
+One component adds things to the queue, another reads from the queue,
+and neither component needs to be aware or worry about the other.
+But queues are also great for scaling.
+Autoscaling groups can scale based on the length of the queue,
+and lambdas can be invoked when messages appear on a queue.
+And this allows you to build complex worker pool style architectures.
+Now this is a pretty common style of architecture that you might see which involves a queue.
+So you might have two autoscaling groups.
+The one on the right is the web application pool and the one on the left is a worker pool.
+So a customer might upload a master video to the web application pool via a web app.
+And the master video is taken by this web application pool,
+and it's stored in a master video bucket, and a message is also added to an SQS queue.
+Now the message itself has a link to the master video,
+so the S3 location that the master video is located at,
+and this avoids having to deal with unwieldy message sizes.
+And at this point, that's all that the web pool needs to do.
+That's where the responsibility ends for this particular part of the application.
+Now the web pool is controlled by an autoscaling group,
+and its scaling is based on CPU load of the instances inside that autoscaling group,
+meaning that it grows out as the load on the system increases.
+The scaling of the worker pool is based on the length of the SQS queue,
+so the number of messages in the queue.
+As the number of messages on the queue increases,
+the autoscaling group scales out based on this number of messages,
+so it adds additional EC2 instances to cope with the additional processing.
+So instances inside this autoscaling group, they all poll the queue and receive messages,
+and these messages are linked to the master video,
+which is stored in the master bucket, which they also retrieve.
+Now they perform some processing on that video,
+in this example generating different sizes of videos,
+and they store them in a different bucket.
+And then the original message that was on the queue is deleted.
+Now if the processing fails, or even if an instance fails,
+then it will be reprovisioned automatically by the autoscaling group,
+and the message that it was working on will automatically reappear on the queue
+after the visibility timeout has expired.
+As the queue empties, the number of worker instances scales back in,
+all the way to zero if no processing workloads exist.
+So the autoscaling group that's running the worker pool is constantly looking for the length of the queue.
+When messages appear on the queue, the autoscaling group for the worker pool scales out,
+adds additional instances, those instances poll the queue, retrieve the messages,
+download the master video from the master bucket, perform the transcode operation,
+store that in the transcode bucket, delete the message from the queue,
+and then the size of the worker pool autoscaling group will scale back in as that workload decreases.
+Now this is an example of a worker pool elastic architecture that's using an SQS queue.
+At this point, the responsibilities of the worker pool have finished.
+It doesn't have any visibility of or care about the health of the web pool.
+It purely responds to messages that appear inside the SQS queue.
+So the effect of the SQS queue is to decouple these different components of this application
+and allow each of them to scale independently.
+Once the worker pool's finished its processing,
+then the web pool can retrieve the videos of different sizes from the transcode bucket
+and then present these to the user of our application.
+Now this video processing architecture is one that's generally used to illustrate exactly how queues function.
+So a multi-part application where one part produces a workload
+and the other part scales automatically to perform some processing of that workload.
+It's actually a simplified version of the architecture that would generally be used in a production implementation of this.
+For workloads like this where one job is logged and multiple different outputs are needed,
+generally we would use a more complicated version which looks something like this.
+It has a similar architecture but it uses SNS and SQS fan out.
+And the way that that works is once the master video is uploaded from our application user
+and placed into the master video bucket,
+a message is sent but instead of the message going directly onto an SQS queue,
+the message is added onto an SNS topic.
+Now this SNS topic has a number of subscribers.
+For each different video size required,
+there is one independent SQS queue configured as a subscriber to that topic.
+So in this example, one for 480p, one for 720p and one for 1080p.
+So each size has its own queue and its own auto-scaling group which scales based on the length of that individual queue.
+And this means that if the different workload types need different sizes or capabilities of instances,
+then they can independently scale.
+S3 buckets are capable of generating an event when an object is uploaded to that bucket,
+but it can only generate one event.
+So in order to take that one event and create multiple different events that can be used independently,
+you'll use this fan out design.
+So you'll take one single SNS topic with multiple subscribers, generally multiple SQS queues,
+and then that message will be added into each of those queues,
+allowing for multiple jobs to be started per object upload.
+Now I want you to really remember this one for the exam.
+You can't see me right now, but I'm winking as much as I can.
+Really, really remember this one for the exam,
+this fan out architecture because it will come in handy for the exam, I promise you.
+But at this point, let's move on to the last few points that I want to cover before we finish this theory lesson.
+I mentioned at the start of the lesson that there are two types of queues, standard and FIFO.
+It's important that you understand the differences and benefits and limitations of both of these.
+So think of standard queues like a multi-lane highway,
+and think of FIFO queues like a single-lane road with no opportunity to overtake.
+Standard queues guarantee at least once delivery,
+and they make no guarantees on the order of that delivery.
+FIFO queues both guarantee the order and guarantee exactly once delivery,
+and that's a critical difference.
+With standard queues, you could get the same message delivered twice on two different poles,
+and the order can be different.
+FIFO queues guarantee exactly once delivery,
+and also they guarantee to maintain the order of messages in the same order as they were added.
+So first in, first out.
+Now because FIFO queues are single-lane roads, their performance is limited.
+3,000 messages per second with batching and 300 per second without.
+So FIFO queues don't offer exceptional levels of scaling.
+Because standard queues are more like multi-lane highways,
+then they can scale to a near infinite level,
+because you can just continue adding additional lanes to that multi-lane highway.
+So standard queues scale in a much more linear and fluid way.
+With SQS, you'll build on requests, and a request is not the same as a message.
+A request is a single request that you make to SQS.
+So one single request can receive between one and ten messages, or zero,
+and anywhere up to 64 kilobytes of data in total.
+So SQS is actually less efficient and less cost-effective the more frequently that you make requests,
+because you'll build based on requests, and requests can actually return zero messages.
+The more frequently that you poll an SQS queue, the less cost-effective the service is.
+Now why this matters is there are actually two ways to poll an SQS queue.
+You have short polling and long polling.
+Short polling uses one request, and it can receive zero or more messages.
+If the queue has zero messages on that queue, then it still consumes a request,
+and it immediately returns zero messages.
+This means that if you only use short polling, keeping a queue close to zero length
+would require an almost constant stream of short polls,
+each of these consuming a request, and each of these being a billable item based on the product.
+Now long polling, on the other hand, is where you can specify a wait time seconds,
+and this can be up to 20 seconds.
+If messages are available on the queue when you lodge the request, then they will be received.
+Otherwise, it will wait for messages to arrive.
+Up to 10 messages and 64 kilobytes will be counted as a single request,
+but it will wait for up to 20 seconds until messages do arrive on the queue.
+Long polling is how you should poll SQS, because it uses fewer requests.
+It will sit, waiting for messages to arrive on the queue if none currently exist.
+One final point, because messages can live in an SQS queue for some time,
+anywhere up to 14 days, the product supports encryption at rest using KMS.
+So this is server-side encryption.
+It's encryption of the data as it's stored persistently on disk.
+Now data by default is encrypted in transit between SQS and any clients,
+but you need to understand the difference between encryption at rest and encryption in transit.
+They're not the same thing.
+Now access to a queue is based on identity policies, or you can also use a queue policy.
+So identity policies or queue policies can be used to control access to a queue from the same account,
+but queue policies only can allow access from external accounts.
+And a queue policy is just a resource policy,
+just like the ones that you've used earlier in the course on S3 buckets or SNS topics.
+Now that's all of the theory that I wanted to cover about SQS queues.
+Thanks for watching, go ahead and complete this video,
+and then once you're ready, I look forward to you joining me in the next.

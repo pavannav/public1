@@ -1,0 +1,153 @@
+Welcome back, over the next few lessons I'm going to be covering Storage Gateway in more depth,
+focusing on the type of architectures which it can be used to support.
+Now the key to exam success when it comes to Storage Gateway
+is to understand when you would use each of the modes because each of them
+has their own specific situation when it should and shouldn't be used.
+In this lesson I'll be starting off with the Storage Gateway running in volume stored mode
+and volume cached mode, so let's jump in and get started.
+Storage Gateway normally runs as a virtual machine on-premises,
+although it can be ordered as a hardware appliance,
+but it's much more common to use the virtual machine version of this product.
+Now Storage Gateway acts as a bridge between storage that exists on-premises or in a data centre
+and AWS, so locally it presents storage using iSCSI,
+which is a SAN and NAS protocol,
+NFS, which is often used by Linux environments to share storage over the network and between servers,
+and finally SMB, which is used within Windows environments.
+At the AWS side, it integrates with EBS, S3 and the various different types of Glacier.
+Now as a product, Storage Gateway is used for things like migrations from on-premises to AWS,
+extensions of a data centre into AWS,
+maybe if you're running low on storage and can't expand it any more,
+then you can use AWS Storage instead.
+You can use Storage Gateway to implement storage tiering,
+it can help with DR and it can help replace legacy tape media backup solutions.
+For the exam, you need to be able to pick the correct type of Storage Gateway for a given scenario,
+and that's what I want to help you with within this set of lessons.
+Now as a quick visual refresher,
+a Storage Gateway is generally something which is run as a virtual appliance on-premises.
+Architecturally, you might also have some network attached storage known as a NAS
+or a storage area network known as a SAN also running on-premises.
+And the storage hardware will be used by a collection of servers also, you guessed it, running on-premises.
+Now these servers probably also have their own local disks,
+but for primary storage they're likely to connect to either the SAN or NAS equipment.
+These storage systems, so SANs or NASs, generally use the iSCSI protocol,
+which presents raw block storage over the network as block devices to these servers.
+So the servers will see them as just another type of storage device
+which they can use to create a file system on and then use it in the normal way.
+Now this is a traditional architecture that you'll see in many businesses,
+and what's also pretty common is that businesses, specifically smaller ones,
+have little, if any, funds for backups or effective disaster recovery
+and are often looking at AWS as a solution to rising operational costs
+or as an alternative to running their own data center facilities.
+So how does storage gateway work?
+Well, volume gateway works in two different modes.
+We've got cached mode and stored mode, and they're both very different and offer very different advantages.
+First, let's look at stored mode.
+In this mode, the virtual appliance presents volumes over iSCSI to servers running on-premises,
+and this is just like the NAS or SAN hardware.
+These volumes look exactly the same as the ones presented by the NAS or the SAN,
+and servers can create file systems on top of these volumes
+just as they can with the volumes presented by the NAS or SAN devices.
+Now in gateway stored mode, these volumes consume capacity on-premises,
+so the storage gateway has local storage,
+and this local storage is the primary storage location for all of the volumes
+that storage gateway presents out over iSCSI.
+And this is a critical point to remember for the exam.
+When you're using storage gateway in volume stored mode, everything is stored locally,
+so all of the volumes presented to servers are stored on local storage on-premises.
+Now storage gateway in this mode also has a separate area of storage called the upload buffer.
+Any data which is written to any of the volumes in the local storage
+is also written to this buffer temporarily, and then it's copied asynchronously into AWS,
+and this is via the storage gateway endpoint, which is a public endpoint,
+and so this can occur over your normal internet connection or a public VIF running on a direct connect.
+Now this data is being copied into S3 in the form of EBS snapshots,
+so conceptually these snapshots are snapshots of the volumes running on-premises,
+and this occurs constantly in the background and requires no human intervention.
+So that's the architecture of storage gateway running in volume stored mode.
+So think about the architecture and what it enables, because this is what's important for the exam.
+First, it's great for doing full disk backups of servers,
+because you're using raw volumes on the on-premises side,
+and because you're backing those up asynchronously in the form of EBS snapshots,
+then you have a great full disk backup regime happening,
+and this offers excellent RPO and RTO values,
+because these snapshots can be quickly restored without much in the way of lost data.
+Volume gateway in stored mode is also great for disaster recovery,
+because the EBS snapshots which are created can themselves be used to create new EBS volumes.
+In theory, you can provision a full copy of an on-premises server within AWS by just using these EBS snapshots.
+But, and this is probably the most important thing to remember for the exam,
+what this mode doesn't allow is extending your data center capacity,
+because the primary location for data using this mode of storage gateway is on-premises.
+For every volume that storage gateway presents, you have a full copy of that data on your local on-premises storage.
+If you have capacity issues, this mode won't do anything to help.
+So for the exam, if you're dealing with volumes and you need something to improve capacity at an on-premises or data center location,
+then this is not the mode to help you with that.
+If you need to keep low latency access to data, then this mode works because the primary location of that data is on-premises.
+If you need help with full disk backups or disaster recovery, then this mode potentially is ideal.
+Now, I stress full disk because in the next few lessons in this series,
+I'll be covering other modes of storage gateway, which also help with backups.
+Volume gateway deals in volumes, raw disks presented over iSCSI.
+Now, there are some key facts which are worth knowing.
+You won't need to remember these figures exactly for the exam,
+but for volume stored mode, you can have 32 volumes per gateway, 16 TB per volume,
+and that represents 512 TB per gateway in volume stored mode.
+So that's volume gateway in stored mode.
+And next, I want to look at volume gateway in cached mode.
+Cached mode is useful for a different set of scenarios.
+Gateway cached mode shares the same basic architecture.
+You still have the storage gateway running as a virtual appliance or in some cases physical.
+You still have the local servers and they're still being presented with volumes from the gateway over iSCSI.
+Storage gateway is still also communicating to the storage gateway endpoint,
+which is running in AWS and it's still a public endpoint.
+So this communication channel still runs over either the public internet or a public vif using a direct connect.
+Where the difference starts is that the main location for the data is no longer on premises.
+Instead, the primary location for the data is in AWS, specifically S3.
+So instead of the storage gateway having a local storage volume, instead it has local cache.
+And the primary data for all of these volumes that are presented by the storage gateway is now in S3.
+This is critical to understand because it's the main difference between storage gateway running in volume stored mode and volume cached mode.
+In volume stored mode, all of the primary data is stored locally on the gateway.
+In volume cached mode, all of the data is stored in S3 and it's cached locally.
+Now importantly, when I'm talking about the primary data being stored in S3, it's actually an AWS managed area of S3.
+This is only visible from the storage gateway console.
+So you can't just open a bucket and look at the data because it's in this AWS managed part of S3.
+And if you think about it, that wouldn't make sense because the data being stored is raw block storage.
+It's not files or objects, it's raw data from a volume.
+Now you can still use it to create EBS snapshots and these snapshots will be copies of all of the data that's on the volumes as your on-premises servers see them.
+So in that sense, it's the same as volume stored mode.
+The key difference between volume stored and volume cached is the location of the data.
+In volume stored mode, the entire data is managed by the storage gateway and runs with it on-premises.
+In volume cached mode, the primary data runs from S3 and the only thing that's stored locally is the frequently accessed data.
+Now this presents some really awesome architectural benefits because the only data being stored locally is cached data.
+It means that we could potentially have hundreds of terabytes of data managed by the storage gateway and presented to servers and only consume a fraction of that locally in the form of cached storage.
+And this allows for an architecture known as data center extension.
+Imagine if the Animals for Life premises in this example was at capacity.
+It only has a small server room, maybe with one or two racks.
+Now imagine that the business knows long term it needs to migrate all of its data through to AWS, but right now it has urgent capacity issues.
+Well, what it can do is extend into AWS.
+AWS becomes an extension of the Animals for Life business premises.
+Storage in AWS appears to be on-premises, but it's actually inside AWS.
+Now up until now you might have thought that volume stored and volume cached are similar, and they are.
+They're very similar. Both work with volumes, so raw block storage.
+Both of them provide backups in AWS.
+Both allow you to create EBS snapshots and volumes from these snapshots.
+Volume stored only really provides backup, disaster recovery and migration capabilities.
+It doesn't allow for this capacity or data center extension.
+Volume stored means data is accessible locally at local area network speeds.
+With volume cached, data is stored in AWS as the primary location.
+Any data written on-premises is copied to AWS.
+Any data frequently accessed on-premises is cached locally in the cached storage, and so it too is accessible with local area network speeds.
+Anything which is not frequently accessed locally doesn't get cached locally, and this means that it can be slower to access,
+but it means capacity can be extended into AWS.
+If you only have 100 GB of storage for the storage gateway,
+you can use it to provide access to hundreds of TBs of AWS stored data.
+In gateway cached mode, a single gateway can handle 32 TB per volume,
+32 volumes max, for a total of 1 PB of storage.
+So the common aspect of these two modes is that both work with volumes, which are raw block storage.
+Where the difference is, is that volume stored mode stores everything on-premises and essentially uses AWS just for backups.
+Running in volume cached mode, the storage gateway only caches a local copy of any frequently accessed data.
+Everything else is stored in AWS, and this allows for a data center extension architecture,
+which is what's on screen now.
+For the exam, if you see the keyword volume in a storage gateway question, then it's going to be volume mode.
+The difference between the two volume gateway types is whether you're going to be using it for either backups, DR, and migration, or extension.
+And with the information in this lesson, it should now be clear which type of volume gateway you would pick based on those two different scenarios.
+With that being said, that's all of the theory that I wanted to cover in this lesson.
+In the next lesson, I'll be covering another mode of storage gateway, which is tape mode, also known as VTL mode.
+So go ahead, complete this lesson, and then when you're ready, I'll look forward to you joining me in the next.

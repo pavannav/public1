@@ -1,0 +1,100 @@
+Welcome back to stage 3 of this mini-project, and as a reminder, this is the architecture that you've implemented to this stage of the mini-project.
+You have two environments, AWS on the left and the simulated on-premises environment on the right,
+and you've successfully configured two VPN tunnels from the on-premises environment to each of endpoint 1 and 2 at the AWS side.
+Now this infrastructure, from a VPN perspective, is operational.
+What we need to do though is configure routing and security groups.
+So we need to allow the routing to occur from the on-premises environment to AWS and from AWS to the on-premises environment.
+And in addition to that, we need to configure the security groups within both environments to allow traffic to flow.
+Now this is a simulated on-premises environment that we're running, so if this were a real production deployment,
+then you would more likely be configuring firewall rules on the on-premises firewall.
+But in this mini-project, it's being simulated with AWS, and so we're going to be configuring security groups.
+Now to do that, we need to move back to the AWS console, go to the tab you should still have open to the VPC console,
+that's where we're going to be performing this configuration.
+If you don't have one open, then you can right-click on VPC and open that in a new tab.
+First we're going to be configuring the AWS side routing.
+So click on Route Tables under Virtual Private Cloud.
+Now there are three route tables created by the one-click deployment, RT-AWS, RT-On-Prem-Private, and RT-On-Prem-Public.
+We're going to start with the AWS side routing, so select RT-AWS.
+So this is the route table that's attached to both of the subnets within the AWS side infrastructure.
+And if I click on Routes, you'll be able to see the only normal route that we have is the local route for the AWS VPC.
+So that's 10.16.0.0.16.
+Now because we're using a virtual private gateway, we actually have two options on how to configure this routing.
+We can either edit the routes here and statically add a route for the on-premises IP range, pointing at the virtual private gateway.
+That's one way we could do this. Another way is to use route propagation.
+So this is a feature of virtual private gateways which allow them to automatically add routes to a route table for any networks that it's aware of.
+And a network that it's aware of is, of course, the on-premises network range.
+And that's what we're going to do. So click on Route Propagation.
+You'll see that route propagation is not enabled. So edit route propagation.
+Check the Enable box and note that this is the virtual private gateway that's attached to this VPC.
+And it's used as a termination point for the VPN connection that we created.
+So make sure it's enabled and click on Save.
+Now once done, if we go back to Routes, you can see that it now has 192.168.8.0.21,
+which is the IP range used within the simulated on-premises environment.
+And it's pointing at the virtual private gateway. And we can see that this has been added as a propagated route.
+So this has been done automatically.
+So now any of our AWS side infrastructure knows how to route towards our simulated on-premises environment.
+So next we need to configure the on-premises side.
+So click on Route Tables and then select RT-on-prem-private.
+So it's the private subnet which we want to be able to reach the AWS network over this VPN.
+And so it's the private route table which is associated to the private subnet that we want to edit.
+So for this one click on Routes and then click on Edit Routes.
+Now just to reiterate what we're doing, we're editing the route table for the private on-premises network.
+So what we want to do is any traffic that's destined for AWS, we want to point it at the PFSense firewall.
+So to do that, click on Add Route and we need to enter the AWS IP range.
+And this is 10.16.0.0.16. So go ahead and enter that.
+And then under Target, because this PFSense device has multiple network interfaces, we can't select Instance.
+We need to select Network Interface. So go ahead and click on Network Interface.
+And it will show a list of network interfaces and we need to pick the on-prem router private ENI.
+So this is the private network interface of the PFSense firewall.
+This is the network interface that's within the private subnet.
+So select on-prem router, space private ENI, and then click on Save Changes.
+So that's the routing configured, so now both sides know how to reach the other.
+But it still won't function because we have security groups in the way blocking traffic.
+So the next step is to edit the security groups at both sides of this architecture, AWS and on-premises.
+And again, if this were a production deployment, these on-premises security groups would be firewall rules on your on-premises firewall.
+But because this is being simulated, we'll also be using security groups.
+So scroll down under Security and select Security Groups.
+Now there are going to be three named security groups here.
+Default A4L on-prem SG, so this is the default on-premises security group.
+Default A4L AWS SG, so this is the default AWS side security group.
+And then on-prem router SG, so this is a security group that's only associated with the on-premises PF sense router.
+So first we're going to configure the AWS side security group.
+So select Default A4L AWS SG, click on Inbound Rules, and notice how there are no rules for the on-premises network.
+This is just a self-referential rule.
+This allows any traffic from instances where this is attached to, to reach any instances where this is also attached to.
+So what we need to do is add another rule for the on-premises networks.
+So let's go ahead and do that. Click on Edit Inbound Rules and then Add Rule.
+Change this custom TCP to be All Traffic.
+We're going to enter the network range used by the simulated on-premises environment, which is 192.168.8.0.21, so select that.
+And then we're going to add a description and just put Allow On-Premises In.
+And this means we know what this rule represents.
+Then we can click on Save Rules, and this will allow anything within the on-premises network range to connect to our AWS infrastructure.
+In this case, it's AWS Server 1 that we're going to be connecting to, but that's going to occur in the next stage of this mini project.
+Now we need to configure the on-premises side.
+First, I want you to go ahead and select Default A4L On-Prem SG.
+And we need to allow a rule which allows anything from the AWS side to connect into this security group,
+because this is securing any of the infrastructure at the on-premises side.
+So click on Inbound Rules and then Edit Inbound Rules.
+We need to add a new rule, change Custom TCP to All Traffic, and we need to enter the IP range used for the AWS VPC.
+So this is 10.16.0.0.16.
+So select that.
+And then for the comment, put Allow AWS In and click on Save Rules.
+Now the last thing that we need to do is to edit the security group for the on-premises router.
+So currently this only has a self-referential rule which allows anything with this security group attached to connect to anything else,
+which also has this security group attached.
+And it also has a rule allowing TCP port 443 to connect from anywhere, and this is for the web administration.
+But what it doesn't allow is any other traffic to get in to this security group.
+Now because this is acting as a VPN endpoint, we need to allow anything else running on-premises to access this router.
+So we need to add a rule either for the on-premises network range,
+or alternatively we can allow connections from the default on-premises security group.
+Both of those will work.
+If this were a production deployment, you would need to allow the IP range.
+So select On-Prem Router SG and click Edit Inbound Rules, Add Rule, change the dropdown to All Traffic,
+and then inside this search box, type S2S, and then select S2S VPN-On-Prem SG.
+So this is the default security group used by anything else within the on-premises environment.
+So select this one, under description, allow private subnets to use VPN, and click on Save Rules.
+And at this point you've configured the routing and the security for both sides of the architecture on-screen now.
+Now the only thing which remains is for us to test whether this VPN functions as expected.
+And that's something we're going to do in the next stage of this mini-project.
+At this point that's everything you need to do in this stage of the mini-project,
+so go ahead and complete this video, and when you're ready, I look forward to you joining me in the next stage of this mini-project.

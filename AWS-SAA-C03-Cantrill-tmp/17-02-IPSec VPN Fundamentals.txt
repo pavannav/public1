@@ -1,0 +1,211 @@
+Welcome back, and in this lesson I want to cover IPsec fundamentals.
+So I want to talk about, and we have a lot of theory to cover, so let's jump in and get started.
+At a foundational level, IPsec is a group of protocols which work together.
+Their aim is to set up secure networking tunnels across insecure networks.
+For example, connecting two secure networks, or more specifically, their routers, called peers, across the public internet.
+Now, you might use this if you're a business with multiple sites spread around geographically and want to connect them together,
+or if you have infrastructure in AWS or another cloud platform and want to connect to that infrastructure.
+IPsec provides authentication so that only peers which are known to each other and can authenticate with each other can connect,
+and any traffic which is carried by the IPsec protocols is encrypted,
+which means to onlookers, the secure data which is being carried is ciphertext.
+It can't be viewed, and it can't be altered without being detected.
+Now, architecturally, it looks like this.
+We have the public internet, which is an insecure network, full of goblins looking to steal your data.
+Over this insecure network, we create IPsec tunnels between peers.
+Now, these tunnels exist as they're required.
+Within IPsec VPNs, there's the concept of interesting traffic.
+Now, interesting traffic is simply traffic which matches certain rules,
+and these could be based on network prefixes or match more complex traffic types.
+Regardless of the rules, if data matches any of those rules,
+it's classified as interesting traffic and a VPN tunnel is created to carry traffic through to its destination.
+Now, if there's no interesting traffic, then tunnels are eventually torn down,
+only to be reestablished when the system next detects interesting traffic.
+The key thing to understand is that even though those tunnels use the public internet for transit,
+any data within the tunnels is encrypted while transiting over that insecure network.
+It's protected.
+Now, to understand the nuance of what IPsec does, we need to refresh a few key pieces of knowledge.
+In my fundamental section, I talked about the different types of encryption.
+I mentioned symmetric and asymmetric encryption.
+Now, symmetric encryption is fast.
+It's generally really easy to perform on any modern CPU, and it has pretty low overhead.
+But exchanging keys is a challenge.
+The same keys are used to encrypt and decrypt.
+So how can you get the key from one entity to another securely?
+Do you transmit it in advance over a different medium, or do you encrypt it?
+If so, you run into a catch-22 situation.
+How do you securely transmit the encrypted key?
+That's why asymmetric encryption is really valuable.
+Now, it's slower, so we don't want to be using it all the time,
+but it makes exchanging keys really simple,
+because different keys are used for encryption and decryption.
+Now, a public key is used to encrypt data,
+and only the corresponding private key can decrypt that data.
+And this means that you can safely exchange the public key while keeping the private key private.
+So the aim of most protocols which handle the encryption of data over the internet
+is to start with asymmetric encryption,
+use this to securely exchange symmetric keys,
+and then use those for ongoing encryption.
+Now, I mention that because it will help you understand exactly how IPsec VPN works.
+So let's go through it.
+IPsec has two main phases.
+If you work with VPNs, you're going to hear a lot of talk about phase one or phase two.
+It's going to make sense why these are needed by the end of this lesson,
+but understand there are two phases in setting up a given VPN connection.
+The first is known as IK phase one.
+IK, or Internet Key Exchange, as the name suggests,
+is a protocol for how keys are exchanged in this context within a VPN.
+There are two versions, IK version one and IK version two.
+Version one logically is older, version two is newer and comes with more features.
+Now, you don't need to know all of the detail right now,
+just understand that the protocol is about exchanging keys.
+IK phase one is the slow and heavy part of the process.
+It's where you initially authenticate using a pre-shared key,
+so a password of sorts or a certificate.
+It's where asymmetric encryption is used to agree on,
+create and share symmetric keys which are used in phase two.
+The end of this phase is what's known as an IK phase one tunnel
+or a security association known as an SA.
+There's lots of jargon being thrown around
+and I'll be showing you how this all works visually in just a moment,
+but at the end of phase one, you have a phase one tunnel
+and the heavy work of moving towards symmetric keys
+which can be used for encryption has been completed.
+The next step is IK phase two, which is faster and much more agile
+because much of the heavy lifting has been done in phase one.
+Technically, the phase one keys are used as a starting point for phase two.
+Phase two is built on top of phase one
+and is concerned with agreeing encryption methods
+and the keys used for the bulk transfer of data.
+The end result is an IPSec security association,
+a phase two tunnel which runs over phase one.
+Now the reason why these different phases are split up
+is that it's possible for phase one to be established,
+then a phase two tunnel created, used and then torn down
+when no more interesting traffic occurs,
+but the phase one tunnel stays.
+It means that establishing a new phase two tunnel is much faster and less work.
+It's an elegant and well-designed architecture.
+So let's look at how this all works together visually.
+So this is IK phase one.
+The architecture is a simple one.
+Two business sites, site one on the left with a user Bob
+and site two on the right with the user Julie
+and in the middle the public internet.
+The very first step of this process is that the routers,
+the two peers at either side of this architecture,
+need to authenticate, essentially prove their identity,
+which is done either using certificates or pre-shared keys.
+Now it's important to understand that this isn't yet about encryption.
+It's about proving identity,
+proving that both sides agree that the other side should be part of this VPN.
+No keys are exchanged.
+It's just about identity.
+Once the identity has been confirmed,
+then we move on to the next stage of IK phase one.
+In this stage, we use a process called Diffie-Hellman key exchange.
+Now again, I'm sorry about the jargon,
+but try your best to remember Diffie-Hellman, known as DH.
+What happens is that each side creates a Diffie-Hellman private key.
+This key is used to decrypt data and to sign things.
+You should remember this from the encryption fundamentals lesson.
+In addition, each side uses that private key
+and derives a corresponding public key.
+Now the public key can be used to encrypt data
+that only that private key can decrypt.
+So at this point, each side has a private key
+as well as a corresponding public key.
+At this point, these public keys are exchanged.
+So Bob has Julie's public key and Julie has Bob's public key.
+Remember, these public keys are not sensitive
+and can only be used normally to encrypt data
+for decryption by the corresponding private key.
+The next stage of the process is actually really complicated mathematics,
+but at a fundamental level, each side takes its own private key
+and the public key of the other side
+and uses this to derive what's known as the Diffie-Hellman key.
+This key is the same at both sides, but it's been independently generated.
+Now again, the maths is something that's well beyond this lesson,
+but it's at the core of how this phase of VPN works.
+And at this point, it's used to exchange other key material and agreements.
+This part you can think of as a negotiation.
+The result is that each side, again, independently uses this DH key
+plus the exchanged key material to generate a final phase one symmetrical key.
+This key is what's used to encrypt anything passing through the phase one tunnel
+known as the Ike Security Association.
+Now if that process seems slow and heavy, that's because it is.
+It's both complex and in some ways simplistically elegant at the same time,
+but it means that both sides have the same symmetric key
+without that ever having been passed between them.
+And the phase ends with this Security Association in place
+and this can be used at phase two.
+So let's talk about that next.
+So in phase two, we have a few things.
+First, a DH key on both sides
+and the same phase one symmetric key also on both sides
+and then finally the established phase one tunnel.
+During this phase, both of the peers are wanting to agree how the VPN itself will be constructed.
+The previous phase was about allowing this, exchanging keys and allowing the peers to communicate.
+This phase, so Ike phase two, is about getting the VPN up and running,
+being in a position to encrypt data.
+So agreeing how, when and what.
+So the first part of this is that the symmetric key is used to encrypt and decrypt agreements
+and pass more key material between the peers.
+The idea is that one peer is informing the other about the range of cipher suites that it supports,
+basically encryption methods which it can perform.
+The other peer, in this example the right one, will then pick the best shared one.
+So the best method which it also supports and it will let the left peer know
+and this becomes the agreed method of communication.
+Next, the DH key and the key material exchanged above is used to create a new key,
+a symmetrical IPsec key.
+This is a key which is designed for large-scale data transfer.
+It's an efficient and secure algorithm
+and the specific one is based on the negotiation which happened above in steps one and two of this phase.
+So it's this key which is used for the encryption and decryption of interesting traffic across the VPN tunnel.
+Across each phase one tunnel you actually have a pair of security associations,
+one from right to left and one from left to right.
+And these are the security associations which are used to transfer the data between networks at either side of a VPN.
+Now there are actually two different types of VPN which you need to understand,
+policy-based VPNs and route-based VPNs.
+The difference is how they match interesting traffic.
+Remember, this is the traffic which gets sent over a VPN.
+So with policy-based VPNs there are rules created which match traffic
+and based on this rule traffic is sent over a pair of security associations,
+one which is used for each direction of traffic.
+It means that you can have different rules for different types of traffic,
+something which is great for more rigorous security environments.
+Now the other type of VPN are route-based VPNs
+and these do target matching based on prefix.
+For example, send traffic for 192.168.0.0.24 over this VPN.
+With this type of VPN you have a single pair of security associations for each network prefix.
+This means all traffic types between those networks use the same pair of security associations.
+Now this provides less functionality but it is much simpler to set up.
+To illustrate the differences between route-based and policy-based VPNs
+it's probably worth looking visually at the Phase 1 and Phase 2 architectures.
+Let's start with a simple route-based VPN.
+The Phase 1 tunnel is established using a Phase 1 tunnel key.
+Now assuming that we're using a route-based VPN
+then a single pair of security associations is created,
+one in each direction, using a single IPsec key.
+So this means that we have a pair of security associations,
+essentially a single Phase 2 tunnel, running over the Phase 1 tunnel.
+That Phase 2 or IPsec tunnel, which is how we talk about the pair of security associations,
+can be dropped when there is no more interesting traffic and recreated again
+on top of the same Phase 1 tunnel when new traffic is detected.
+But the key thing to understand is that there's one Phase 1 tunnel
+running one Phase 2 tunnel based on routes.
+Running a policy-based VPN is different.
+We still have the same Phase 1 tunnel but over the top of this
+Each policy match uses an SA pair with a unique IPsec key
+and this allows us to have, for the same network,
+different security settings for different types of traffic.
+In this example, infrastructure at the top, CCTV in the middle,
+and financial systems at the bottom.
+So policy-based VPNs are more difficult to configure
+but do provide much more flexibility when it comes to using different security settings
+for different types of traffic.
+Now that, at a very high level, is how VPNs functions.
+So the security architecture of how everything interacts with everything else.
+Elsewhere in my course, you'll be learning how AWS use VPNs within their product set.
+But for now, that's everything that I wanted to cover.
+So go ahead and complete this video and then when you're ready,
+I look forward to you joining me in the next.

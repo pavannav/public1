@@ -1,0 +1,107 @@
+Welcome back and in this lesson I'm going to be talking about the border gateway protocol known as BGP.
+Now BGP is a routing protocol and that means that it's a protocol which is used to control how data flows from point A through points B and C and arrives at the destination point D.
+Now BGP is a complex topic that goes far beyond the scope of this exam but as a solutions architect you need to be aware of how it works at a high level
+because AWS products such as Direct Connect and Dynamic VPNs both utilize BGP. So let's jump in and get started.
+BGP as a system is made up of lots of self-managing networks known as autonomous systems or AS.
+Now an AS could be a large network, it could be a collection of routers but in either case they're controlled by one single entity.
+From a BGP perspective it's viewed as a black box, an abstraction away from the detail which BGP doesn't need.
+Now you might have an enterprise network with lots of routers and complex internal routing but all BGP needs to be aware of is your network as a whole.
+So autonomous systems are black boxes which abstract away from the detail and only concern themselves with network routing in and out of your autonomous system.
+Now each autonomous system is allocated a number by IANA, the Internet Assigned Numbers Authority.
+Generally ASNs are 16 bits in length and range from 0 through to 65,535.
+Now most of that range are public ASNs which are directly allocated by IANA.
+However the range from 64,512 to 65,534 are private and can be utilized within private peering arrangements without being officially allocated.
+Now ASNs or Autonomous System Numbers are the way that BGP identifies different entities within the network, so different peers.
+It's the way that BGP can distinguish between your network or your ASN and my network.
+BGP is designed to be reliable and distributed and it operates over TCP using port 179 and so it includes error correction and flow control to ensure that all parties can communicate reliably.
+It isn't however automatic. You have to manually create a peering relationship, a BGP relationship between two different autonomous systems.
+And once done, those two autonomous systems can communicate what they know about network topology.
+Now a given autonomous system will learn about networks from any of the peering relationships that it has and anything that it learns it will communicate out to any of its other peers.
+And so because of the peering relationship structure you rapidly build up a larger BGP network where each individual autonomous system is exchanging network topology information.
+And that's how the internet functions from a routing perspective. All of the major core networks are busy exchanging routing and topology information between each other.
+Now BGP is what's known as a Path Vector Protocol and this means that it exchanges the best path to a destination between peers.
+It doesn't exchange every path, only the best path that a given autonomous system is aware of. And that path is known as an AS Path, an Autonomous System Path.
+Now BGP doesn't take into account link speed or condition. It focuses on paths. For example, can we get from A to D using A, B, C and D or is there a direct link between A and D?
+It's BGP's responsibility to build up this network topology map and allow the exchange between different autonomous systems.
+Now while working with AWS or integrating AWS networks with more complex hybrid architectures you might see the terms IBGP or EBGP.
+Now IBGP focuses on routing within an autonomous system and EBGP focuses on routing between autonomous systems.
+And this lesson will focus on BGP as it relates to routing between autonomous systems because that's the type that tends to be used most often with AWS.
+Now I need to stress at this point that this lesson is not a deep dive into BGP.
+All I need you to understand at this point is the high level architecture so that you can make sense of how it's used within AWS.
+So let's look at this visually and hopefully it will make more sense.
+So I want to step through an example of a fairly common BGP style topology.
+So this is Australia, the land of crocodiles and kangaroos and in this example we have three major metro areas.
+We have Brisbane on the east and this has an IP address range of 10.16.0.0.16 and the router is using the IP of 10.16.0.1 and this has an autonomous system number of 200.
+We have Adelaide on the south coast using a network range of 10.17.0.0.16 and the router is using 10.17.0.1 and this has an autonomous system number of 201.
+And then finally between the two in the middle of Australia we have Alice Springs using the network 10.18.0.0.16.
+The router uses 10.18.0.1 and the autonomous system number is 202.
+Now between Brisbane and Adelaide and between Adelaide and Alice Springs is a 1 gigabit fiber link.
+And then connecting Brisbane and Alice Springs is a 5 megabit satellite connection with an unlimited data cap.
+BGP at its foundation is designed to exchange network topology and it does this by exchanging paths between autonomous systems.
+So let's step through an example of how this might look using this network structure.
+And we start at the top right with Brisbane and this is how the route table for Brisbane might look at this point.
+The route table contains the destination. In this case we only have the one route and it's the local network for Brisbane.
+The next column in the route table is the next hop so what IP address is needed as the first or next hop to get to that network.
+And 0.0.0.0 in this case means that it's locally connected and this is because it's the local network that exists in the Brisbane site.
+And then finally we have the AS path which is the autonomous system path and this shows the path or the way to get from one autonomous system to another.
+And the I in this case means that it's the origin so it's this network.
+Now the two other locations will have a similar route table at this stage.
+So Adelaide will have one for 10.17.0.0 and Alice Springs will have one for 10.18.0.0.16.
+And both of those will have 0.0.0.0 as the next hop and I for the AS path because they're all local networks.
+So each of these autonomous systems so 200, 201 and 202 can have peering relationships configured.
+So let's assume that we've linked all three so Brisbane and Alice Springs, Alice Springs and Adelaide and then finally Adelaide and Brisbane.
+Each of those peers will exchange the best paths that they have to a destination with each other.
+So Adelaide will send Brisbane the networks that it knows about and at this point it's only itself.
+And what it does when it exchanges this or when it advertises this is it prepends its AS number onto the path.
+So Brisbane now knows that to get to the 10.17.0.0 network it needs to send the data to 10.17.0.1.
+And because of the AS path it knows that it goes through autonomous system 201 which is Adelaide and then it reaches the origin or I.
+And so it knows the data only has to go through one autonomous system to reach its final destination.
+Now in addition to this Brisbane will also receive an additional path advertised from Alice Springs in this case over the satellite connection.
+And Alice Springs propends its AS number 202 onto that path.
+So Brisbane knows to get to the 10.18.0.0.16 network.
+The next top is 10.18.0.1 which is the Alice Springs router and it needs to go via the 202 autonomous system number which belongs to Alice Springs.
+So at this point Brisbane knows about both of the other autonomous systems and it's able to reach both of them from a routing perspective.
+Now in addition to that Adelaide will also learn about the Brisbane autonomous system because it has a peering relationship with the Brisbane autonomous system.
+And in addition Adelaide will also in the same way learn about the network in Alice Springs because it also has a peering relationship with the Alice Springs ASN 202.
+And then finally because Alice Springs also has BGP peering relationships between it and both of the other autonomous systems it will also learn about the Brisbane autonomous system and the Adelaide autonomous system.
+And so at this point all three networks are able to route traffic to the other two.
+So if we look at the route table for Alice Springs it knows how to get to the 10.16 and 10.17 networks via the ASN of 200 and 201 respectively.
+All three autonomous systems can talk to both of the others and this has all been configured automatically once those BGP peering relationships were set up between each of the autonomous systems.
+But it doesn't stop there. This is a ring network and so there are two ways to get to every other network, clockwise and anti-clockwise.
+Adelaide is aware of how to get to Alice Springs, so ASN 202, because it's directly connected to that.
+And so it will advertise this to Brisbane pre-pending its own ASN onto the AS path.
+And so Brisbane can now reach Alice Springs via Adelaide, so using the 201 and then 202 AS path.
+Notice how the next hop for the route given to Brisbane is the Adelaide router, so 10.17.0.1.
+And so if we used this route table entry the traffic would go first to Adelaide and then be forwarded on to Alice Springs.
+Likewise Adelaide is aware of Brisbane and so it will advertise that to Alice Springs pre-pending its own AS number onto the AS path.
+So notice how this new route on the Alice Springs route table, the one for 10.16.0.0.16 is going via Adelaide, so 10.17.0.1.
+The AS path is 201 which is Adelaide, 200 which is Brisbane and then the origin.
+Now lastly Adelaide will also learn an additional route to Alice Springs, but this time via Brisbane.
+And Brisbane would pre-pend its own ASN onto the AS path, so in this case we've got the additional route at the bottom for 10.18.0.0.16.
+But the next hop is Brisbane, 10.16.0.1 and the AS path is 200 which is Brisbane and then 202 which is Alice Springs and then we've got the origin.
+Autonomous systems advertise the shortest route that they're aware of to any other autonomous systems that they have peering relationships with.
+Now at this point we're in a situation where we actually have a fully highly available network with paths to every single network.
+If any of these three sites failed then BGP would be aware of the route to the working sites.
+Notice that the indirect routes that I've highlighted in blue at the bottom of each route table have a longer AS path.
+These are non-preferred because it's not the shortest path to the destination.
+So Brisbane for example, if it was sending traffic to Alice Springs it would use the shorter path, the direct satellite connection.
+By default BGP always uses the shorter path as the preferred one.
+Now there are situations where you want to influence which path is used to reach a given network.
+Imagine that you're the network administrator for the Alice Springs network.
+Now that autonomous system has two networking connections, the fibre connection coming from Adelaide and the satellite connection between it and Brisbane.
+Now ideally you want to ensure that the satellite connection is only ever used as a backup when absolutely required and that's for two reasons.
+Firstly, it's a slower connection, it only operates at 5 megabits.
+And also because it's a satellite connection it will suffer from significantly higher latencies than the fibre connection between Alice Springs and Adelaide and then Adelaide and Brisbane.
+Now because BGP doesn't take into account performance or condition the satellite connection because it's the shortest path will always be used for any communications between Alice Springs and Brisbane.
+But you are able to use a technique called AS path prepending which means that you can configure BGP at Alice Springs to make the satellite link look worse than it actually is.
+And you do this by adding additional autonomous system numbers to the path. You make it appear to be longer than it physically is.
+Remember BGP decides everything based on path length and so by artificially lengthening the path between Alice Springs and Brisbane it means that Brisbane will learn a new route, the old one will be removed
+and so the new shortest path between Brisbane and Alice Springs will be the one highlighted in blue at the bottom of the Brisbane route table.
+This one will be seen as shorter than the artificially extended one using AS path prepending.
+And so now all of the data between Brisbane and Alice Springs will go via the fibre link from Brisbane through Adelaide and finally to Alice Springs.
+BGP thinks that the path from Brisbane to Alice Springs directly over the satellite connection has three hops versus the two hops for the fibre connection via Adelaide and so this one will always be preferred.
+So in summary a BGP autonomous system advertises the shortest path to a destination that it's aware of to all of the other BGP routers that it's paired with.
+It might be aware of more paths but it only advertises the shortest one and it means that all BGP networks work together to create a dynamic and ever changing topology of all interconnected networks.
+It's how many large enterprise networks function, it's how the internet works and it's how routes are learned and communicated when using direct connect and dynamic VPNs within AWS.
+Now that's everything that I wanted to cover. This has just been a high level introduction to how BGP works and it's going to be a protocol that you'll need to understand in order to architect more complex or hybrid networks between AWS and on premises networks.
+Now that's all of the theory that I wanted to cover in this lesson so go ahead, finish off this video and when you're ready I'll look forward to you joining me in the next.

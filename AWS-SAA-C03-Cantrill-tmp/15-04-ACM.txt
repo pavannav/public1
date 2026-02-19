@@ -1,0 +1,104 @@
+Welcome back, and in this lesson I want to talk about AWS Certificate Manager, or ACM.
+This is something which is essential to understand for almost all of the AWS certifications and most real-world projects.
+You need to know a little bit at the associate level, more at the pro level, and different things matter in each of the different streams.
+So architect, developer, and operations. Now let's just jump in and get started.
+Let's start with the basics, just to put ACM into context.
+HTTP, or the Hypertext Transfer Protocol, was initially created without the need for much in the way of security,
+so no server identity authentication or transport encryption.
+As HTTP evolved from just text to move towards complex web applications, the security vulnerabilities became an issue.
+For example, if somebody could spoof a website's DNS name, then they could direct users to another, potentially compromised web server.
+Users would be unaware of this because the address displayed by the browser would appear normal, just like they expect,
+and this could be used to gain access to credentials and potentially sniff data in transit.
+The evolution of HTTP, HTTPS, or Hypertext Transfer Protocol Secure, to use its full name, was designed to address the problems with HTTP.
+It uses either SSL or TLS protocols to create a secure tunnel which normal HTTP can be transferred through.
+In effect, the data is encrypted in transit from the perspective of an outside observer.
+Now, HTTPS also allows for servers to prove their identity.
+Using SSL and TLS, servers can be authenticated by using digital certificates.
+These certificates can be digitally signed by one of the certificate authorities trusted by the web client.
+Since your web client trusts the CA, you trust the certificate which it signs, and that's why you trust the site itself.
+It means that it's harder to spoof. If the site claiming to be Netflix.com actually has the Netflix.com certificate,
+which is signed by a trusted certificate authority, then it's almost certain to actually be Netflix.com.
+To be viewed as secure, a website picks a DNS name like animalsforlife.org, it generates a certificate or has one generated for it,
+it's signed and it uses that certificate to prove its identity, so the DNS name and the certificate are tied together.
+Now, ACM can function both as a public certificate authority generating certificates which are trusted by public web browsers and devices,
+or as a private certificate authority, so this has the same architecture but something which is private to your organization,
+and this is something often used by large corporates. With private certificate authorities,
+you need to configure clients so that they trust the private certificate authority.
+Something generally done manually by adding this trust into your client laptop and desktop builds,
+or automatically by adding a policy to configure this trust.
+In public mode, browsers trust a list of certificate authorities provided by the vendor of that operating system,
+and these trusted providers can then themselves trust other providers which establishes this chain of trust.
+With ACM, you can either generate or import certificates, so the product can make certificates for you,
+which just needs to use DNS or email verification to prove that you own the domain,
+and if ACM generates the certificates, it can automatically renew them on your behalf,
+so you won't have any ongoing issues with expired certificates.
+If you import certificates generated from another external source, then you're going to be responsible for renewing them,
+which generally means renewing them with this external source and then importing them again into ACM.
+Now, these are really important points to remember for the exam.
+If ACM generates the certificate for you, it can automatically renew it. If it imports it, you're going to be responsible.
+Now, another important point for the exam is that ACM can only deploy certificates to supported services.
+The certificates are always stored encrypted within the product and deployed in a managed and secure way to those supported services,
+so services within AWS which are integrated with ACM.
+Now, not all services are supported. In fact, this is generally only CloudFront and LoadBalances.
+EC2, for example, which is a self-managed compute service, is not supported because AWS has no way of securing the transfer and deployment.
+If you manage an EC2 instance, if you have root access, there will always be a way to access the certificates,
+and the whole point of ACM is to secure the storage and deployment of those certificates.
+Now, that's going to be tested in AWS exams all of the time,
+so the idea that you are aware that not all AWS services are supported, specifically EC2, is not, so only supported services can be used with ACM.
+Remember that for the exam, just to restress, you cannot use ACM with EC2.
+A few more important things to know before we look at the architecture visually.
+ACM is a regional service. There is an isolated ACM in US East 1, and another in AP Southeast 2, and another in every AWS region.
+If you import a certificate into a region or generate a certificate in that region, those certificates cannot leave that region.
+Once inside, they're locked to that particular region.
+Now, and this is really critical for the AWS exams, I cannot stress this enough.
+If you want to use a certificate within a service, for example a load balancer in AP Southeast 2,
+then the certificate needs to be inside ACM in that same region.
+I'm going to repeat this because it's that important.
+To use a certificate from ACM inside a load balancer within a particular region, so AP Southeast 2,
+that certificate needs to be within ACM, also in AP Southeast 2.
+Now, there's one exception to this, and it's not really an exception once you understand why.
+For CloudFront, that service, while being global, you should view it as running in US East 1 from an ACM perspective.
+For CloudFront, conceptually, I want you to think about it, that a distribution, which is the unit of configuration for CloudFront,
+is actually within US East 1, and so you always use US East 1 for CloudFront certificates.
+So last time of repeating this, for most services, the certificate needs to be in the same region where the service is located.
+So a load balancer needs to be in the same region as the certificate that it's using within ACM.
+For CloudFront, always use US East 1 with ACM.
+If you generate a certificate in any other region, you won't be able to deploy it using CloudFront.
+Now, let's look at this visually, because everything should start to click.
+Visually, this is how ACM looks. On the right, we've got three regions.
+US West 1 at the top, US East 1 in the middle, and AP Southeast 2 at the bottom.
+Inside each of these regions, we have regionally isolated instances of ACM, one running in each region.
+Then also in each region, we have application load balancers, together with associated EC2 instances.
+We also have a CloudFront distribution, associated edge locations, and an S3 origin.
+And for this lesson, the region of the S3 bucket doesn't matter, because we're focusing on ACM, and S3 does not use ACM for certificates.
+On the left, we have some globally distributed users, and on the right, our security specialist.
+Okay, so step number one is that our security specialist will interact with ACM in each of these regions,
+and generate a certificate, and then deploy it out to ACM in each region where service is required.
+This means, for supported services in those regions, such as application load balancers,
+those certificates can be used from ACM to services in those regions.
+What we can't do is deploy cross-region.
+In this example, from ACM located in US West 1, to a load balancer located in US East 1,
+cross-region deployment is not supported.
+Nor can we deploy to unsupported services, such as EC2.
+For CloudFront, as I mentioned earlier in the lesson, conceptually think about it as the distribution,
+the main unit of configuration being located in US East 1.
+This means when deploying certificates to CloudFront using ACM, the certificate needs to be located in US East 1.
+And at that point, once the certificate is linked to the distribution,
+the distribution can then take the certificate and deploy it out to the edge locations,
+no matter what regions they're located in.
+Once the certificates are deployed onto supported services they can be used,
+they allow trust to be established from customers to the application load balancer,
+as with the top example, and the same architecture is true for edge locations at the bottom.
+Once the ACM certificate is deployed to the distribution and then passed out to the edge locations,
+customers can make secure connections to those edge locations.
+Now once again, ACM isn't used for S3, which handles its own interaction with CloudFront within this architecture,
+so S3 does not use ACM for any certificates.
+Now that's all of the architecture which I wanted to cover about ACM.
+It's everything that you need for the associate or professional level AWS certifications
+and enough to get started with the product for any real-world projects.
+Now I found ACM comes up a lot in the exams, focused on diagnosing errors around which certificates can be used in which region,
+so now you know that certificates can only be used in the same regions that they're deployed into.
+Cross-region deployments are not supported, EC2 is not supported, and CloudFront, to repeat it one last time,
+from the point of view of ACM, is in US East 1.
+Now you have all you need with everything that I've covered in this lesson, so thanks for watching.
+Go ahead and complete this lesson, and when you're ready, I look forward to you joining me in the next.

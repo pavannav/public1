@@ -1,0 +1,80 @@
+Welcome back to this lesson where I want to talk briefly about VPC Flow Logs, which are a useful networking feature of AWS VPCs which provide details of traffic flow within the private network.
+The most important thing to know about VPC Flow Logs is that they only capture packet metadata. It doesn't capture packet contents.
+If you need to capture the contents of packets then you need a packet sniffer, something which you might install on an EC2 instance.
+So just to be really clear on this point, VPC Flow Logs only capture metadata.
+So this means things like the source IP, the destination IP, the source and destination ports, packet size and so on.
+Anything which conceptually you could observe from outside, anything to do with the flow of data through the VPC.
+Now Flow Logs work by attaching virtual monitors within a VPC and these can be applied at three different levels.
+We can apply them at the VPC level which monitors every network interface in every subnet within that VPC.
+We can apply them at the subnet level which monitors every interface within that specific subnet and they can be applied to interfaces directly and only monitor that one specific network interface.
+Now Flow Logs aren't real time. There's a delay between traffic entering or leaving monitored interfaces and showing up within VPC Flow Logs.
+Now this often comes up as an exam question so this is something that you need to be aware of.
+You can't rely on Flow Logs to provide real time telemetry on network packet flow.
+There's a delay between that traffic flow occurring and that data showing up within the Flow Logs product.
+Now Flow Logs can be configured to go to multiple destinations. Currently this is S3 and CloudWatch Logs.
+Now it's a preference thing. Each of these comes with their own trade-offs.
+If you use S3 you're able to access the log files directly and can integrate that with either a third party monitoring solution or something that you design yourself.
+If you use CloudWatch Logs then obviously you can integrate that with other products.
+You can stream that data into different locations and you can access it either pragmatically or using the CloudWatch Logs console.
+So that's important. That distinction you need to understand for the exam.
+You can also use Athena if you want to query Flow Logs stored in S3 using a SQL-like querying method.
+Now this is important if you have an existing data team and a more formal, rigorous review process of your Flow Logs.
+You can use Athena to query those logs in S3 and only pay for the amount of data read.
+So Athena remember is an ad hoc querying engine which uses a schema on read architecture.
+So you're only billed for the data as it's read through the product and for the data that's stored on S3.
+So that's critical to understand.
+Now visually this is how the Flow Logs product is architected.
+We start with a VPC with two subnets, a public one on the right in green and a private one on the left in blue.
+This architecture is running the Categram application and this specific implementation has an application server in the public subnet which is accessed by our user Bob.
+The application uses a database which is within the private subnet and this has a primary instance as well as a replicated standby instance.
+Flow Logs can be captured as I just mentioned at a few different points.
+We've got the VPC, we can also capture them at a subnet level and then finally directly on specific elastic network interfaces.
+And it's important to understand that Flow Logs capture from that point downwards.
+So any Flow Logs enabled at the VPC level will capture traffic metadata from every network interface in every subnet in that VPC.
+Anything enabled at the subnet level is going to capture metadata for any network interfaces in that specific subnet and so on.
+Flow Logs can be configured to capture metadata on only accepted connections, only on rejected connections or they can capture metadata on all connections.
+So visually this is an example of a Flow Log configuration at the network interface level.
+It captures metadata from the single elastic network interface of the application instance within the public subnet.
+If we created something at the subnet level, for example the private subnet, then metadata from both of the database instances is captured as part of that configuration.
+And anything captured can be sent to a destination and the current options are S3 and CloudWatch Logs.
+Now I'm going to be discussing this in detail in a moment but the Flow Logs product captures what are known as Flow Log Records.
+And architecturally these look something like this and I'm going to be covering this next in detail.
+I'm going to step through all of the different fields just to give you a level of familiarity before you get the experience practically in a demo lesson.
+A VPC Flow Log is a collection of rows and each row has the following fields.
+All of the fields are important in different situations but I've highlighted the ones that I find are used most often.
+So source and destination IP address, source and destination port, the protocol and the action.
+Consider this example, Bob is running a ping against an application instance inside AWS.
+So Bob sends a ping packet to the instance and it responds.
+This is a common way to confirm connectivity and to assess the latency.
+So this is a good indication of the performance between two different internet connected services.
+Now the Flow Log for this particular interaction might look something like this.
+I've highlighted Bob's IP address in pink and the server's private IP address in blue.
+This shows outward traffic from Bob to the EC2 instance.
+Remember the order, source and destination and that's for both the IP addresses and the port numbers.
+Now normally you would have a source and destination port number directly after that but this is ping so ICMP which doesn't use port so that's empty.
+The one highlighted in pink, that's the protocol number and ICMP is 1, TCP is 6 and UDP is 17.
+Now you don't really need to know this in detail for the exam but it definitely will help you if you use VPC Flow Logs day to day
+and it might feature as a point of elimination in an exam question.
+So do your best to remember the number for ICMP, TCP and UDP.
+Now the second to last item indicates if the traffic was accepted or rejected.
+This indicates if it was blocked or not by a security group or a network access control list.
+If it's a security group then generally only one line will show in the Flow Logs.
+Remember security groups are stateful so if the request is allowed then the response is automatically allowed in return.
+What you might see is something like this where you have one Flow Log record which accepts traffic and then another which rejects the response to that conversation.
+If you have an EC2 instance inside a subnet where the instance has a security group allowing pings from an external IP address then the response will be automatically allowed.
+But if you have a network ACL on that instance's subnet which allows the ping inbound but doesn't allow it outbound then it can cause a second line, a reject.
+It's important that you look out for both of these types of things in the exam.
+So if you see an accept and then a reject and these look to be for the same flow of traffic
+then you're going to be able to tell that both a security group and a network ACL are used and they're potentially restricting the flow of traffic between the source and the destination.
+Flow Logs show the results of traffic flows as they're evaluated.
+Security groups are stateful and so they only evaluate the conversation itself which includes the request and the response.
+Network ACLs are stateless so they consider traffic flows as two separate parts.
+Request and response and both of these are evaluated separately so you might see two log entries within VPC Flow Logs.
+Now one thing before I finish up with this lesson, VPC Flow Logs don't log all types of traffic.
+There are some things which are excluded.
+This is things such as the metadata service so any accesses to the metadata service running inside the EC2 instance.
+This includes time server requests, any DHCP requests which are running inside the VPC and then any communications with the Amazon Windows license server.
+Obviously this applies only for Windows EC2 instances so you need to be aware that certain types of traffic are not actually recorded using Flow Logs.
+Now we are going to have some demos elsewhere in the course where you are going to get some practical experience of working with Flow Logs
+but this is all of the theory which I wanted to introduce within this lesson.
+At this point go ahead and complete this video and when you're ready I'll look forward to you joining me in the next.

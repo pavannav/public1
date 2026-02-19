@@ -1,0 +1,190 @@
+Welcome back and in this video I want to talk about the web application firewall
+known as WAF. Now this is a key part of the AWS network and network security
+product set so let's jump in and get started. Now WAF is AWS's implementation
+of a layer 7 or application layer firewall which we talked about in a
+previous video. That means a firewall which is capable of understanding layer
+7 protocols such as HTTP and HTTPS. Now before I talk in detail about the
+features of the product I want to visually step through how a WAF
+architecture might look. Now the example I'll be using is relatively complex. They
+can range from fairly simple through to this type of example which is relatively
+complex involving event-driven security response. So we start with an AWS
+environment and we decide to use a web application firewall which protects web
+resources which supports WAF and these include CloudFront, application load
+balances, AppSync and API Gateway. Now WAF is the product but the actual unit
+of configuration within the product is known as the web access control list
+known as Web ACL and it's this which is used by WAF and also associated with the
+various supported services. So you would associate a Web ACL with a CloudFront
+distribution and this would result in the CloudFront distribution being
+protected by WAF. So WAF can protect global services such as CloudFront but
+also regional resources such as application load balances, API Gateways
+and AppSync and you need to configure this when you create the Web ACL
+essentially creating it in a region rather than globally as is the case for
+CloudFront. Now within a Web ACL you have rule groups and rules and I'll be
+talking more about how this is architected later in this video. At a high
+level this might be things like AWS managed rules or simple allow or deny
+lists, it might cover things like SQL injections or cross-site scripting
+attacks, HTTP floods or might relate to things like IP reputation and even
+protect against known botnets. It's these rule groups and rules which control how
+the WAF product reacts to incoming traffic allowing connections from valid
+users while hopefully blocking those from bots and other attackers against
+your web resources. Now this alone would be a super useful product which offers
+significant security benefits but when we combine this with other AWS products
+and architectures it can be even more useful. You can obviously update the Web
+ACLs manually based on human identified security events or risks but you could
+also do simple automated things such as using event bridge and scheduled rules
+to parse various publicly maintained IP lists to block known bad actors. Now WAF
+does output logs and logging can be directed at S3 directly, at CloudWatch
+logs or Kinesis Firehose. Now importantly if you want to react to logs quickly you
+shouldn't directly use S3 as these are delivered directly approximately every
+five minutes. Firehose can be configured to put the logging data into any of its
+supported destinations including S3 and then all of these destinations can be
+integrated with an event driven security response architecture so using a
+combination of products such as S3 events, Lambda, Athena and event bridge you
+can extract and identify intelligence to act on and then use this intelligence to
+update Web ACLs to improve the security of the platform in a way which doesn't
+require humans. So this type of architecture is based on taking basic WAF
+and creating a feedback loop to take data, identify actionable intelligence
+and then automate changes based on that intelligence. And now that you have a
+visual idea about how a WAF implementation might look let's look at
+the raw features and how everything fits together. I mentioned earlier in this
+video that the Web Access Control List or Web ACL is the main unit of
+configuration within WAF. A Web ACL is what controls if traffic is allowed or
+blocked. The starting point of a Web ACL is a default action which will either
+allow or block any traffic which isn't matched by the ACL. Which one of these
+you pick depends on if you're using WAF to explicitly protect against certain
+exploits or if you want to only allow known good traffic through to your web
+resources. Additionally a Web ACL is created for either CloudFront which is a
+global service or a regional service such as an application load balancer, API
+gateway or AppSync. If you create a Web ACL designed for a regional service then
+you have to define a region for the Web ACL which matches the region that your
+services are located in. Now Web ACLs on their own don't do anything. You have to
+add rule groups or rules and these are processed in order. This order can be
+changed so you can move rules and rule groups around. Now I'm going to talk
+about rule groups and rules in a second but conceptually rules have a certain
+compute requirement based on their complexity. Web access control lists have
+a limit of how much compute requirements rules contained within them can use and
+AWS have a concept called Web ACL capacity units or WCU and this is not
+to be confused with DynamoDB WCU which is write capacity units. Web ACL capacity
+units are an indication of the complexity of rules and a Web ACL has a
+default maximum of 1500 WCU though this can be increased with a support ticket.
+Web ACLs are the things which are associated with resources so you
+associate a Web ACL for example with a CloudFront distribution and this
+association can take some time. It depends on the service. CloudFront for
+example needs to update the distribution and then push this out to
+edge locations so this can take a fair bit of time. Adjusting a Web ACL which
+is already associated to resources is quicker so keep that in mind. Now this is
+Web ACLs at a high level. These are the things which contain rules or rule
+groups and the things which are associated with resources. Importantly the
+relationship is currently that a resource can have one Web ACL but one
+Web ACL can be associated with many resources. Now also because of the
+global nature of CloudFront you can't associate a CloudFront Web ACL with a
+regional resource or vice versa and Web ACLs can currently not be used with AWS
+outposts. Okay let's move on and talk about rule groups. Rule groups as the
+name suggests are groups of rules. They contain rules. They're used by Web ACLs.
+They're a feature which allows grouped admin of rules. They don't themselves
+have any default actions. They're added to Web ACLs and the Web ACLs have the
+default action for anything not matched by rules either within groups or added
+directly to that Web ACL. Now rule groups are either managed by AWS or a
+marketplace vendor, yours so managed by you, or service owned for example SHIELD
+or firewall manager owned groups. AWS managed rule groups are mostly
+available for free for AWS WAF customers. The AWS WAF bot control and fraud
+control account takeover protection rule groups do have additional fees and I'll
+be talking about this later in the video where I talk about pricing. Now any rule
+groups obtained via the marketplace also generally have a subscription attached
+to them so you need to keep this in mind. Rule groups can be reused within many
+Web ACLs. They're a separate entity and a Web ACL can reference one or more rule
+groups. When you create a rule group you define upfront the WCU capacity and the
+default maximum is the same 1500 WCU. This indicates the amount of resources
+the rule group uses with its rules and it helps inform anyone using the rule
+group when they're building a Web ACL. So now that we've talked about rule
+groups which are essentially an admin or container concept and rule groups can be
+referenced from Web ACLs, let's talk in more detail about the rules themselves.
+Now within WAF rules have a simple enough structure. We've got type,
+statement and action. The type of rule determines at a high level how it works.
+The statement consists of one or more things which match traffic or not and the
+action is what WAF does if a match occurs. Now rules are one of two types.
+We've got regular and rate-based. Regular rules are designed to match if
+something occurs. Rate-based are designed to match if something occurs at a
+certain rate. An example of this might be that you might have a rule to allow SSH
+connections from a certain IP address and this is an example of a regular
+rule but you might want another rule which allows you to do something if
+anyone attempted to connect via SSH say 5,000 times in a five-minute period
+because this would suggest a brute-force attack. So you need to understand the
+differences between regular and rate-based rules. Then you have the
+statement of a rule and this is the main part of a rule. It defines what the
+rule checks for. For regular rules think of this as a what. What does the rule
+match against? And examples might be incoming TCP port 80 or incoming SSH or
+it might be requests which have a certain HTTP header. For rate-based rules
+it's slightly different. You're either going to be applying a rate limit on the
+number of connections for a source IP address or you're going to be applying a
+rate limit to connections which come from an IP address which also match
+certain criteria. So for example you might want a rule to apply if a client
+makes 5,000 connections over a five-minute period or you might only
+want this to apply if 5,000 connections to SSH are made within a five-minute
+period. Now in terms of criteria you can match against things like origin country,
+IP address, label and I'll talk more about this in a second, headers, cookies,
+query parameters, URI path, query string, the body of a request or the HTTP method.
+Now for the body it's important to understand that WAF is only checking the
+first 8,192 bytes. Again remember this one for the exam. Now depending on the
+criteria that you select from this list you can then choose how to match.
+Examples include exact matches, starts with, ends with, contains and much more.
+You can even match using regular expressions. Now you can also have more
+than one statement. Rules can have a single statement but also multiple and if
+you do have multiple you can choose whether to use and or not conditions so
+you can define a pretty complex set of evaluation conditions. Now next we have
+the rule action and for regular rules these can allow, block, count or run a
+capture. For rate-based rules you can block, count or run a capture. Allow and
+block obviously affect whether traffic is allowed. Count just counts the number
+of requests and records that data and capture runs a capture on the request. So
+if a valid response is received it treats it as a count records it and
+continues processing and if the capture fails it's blocked and processing stops.
+Now it makes sense that allow is not valid for rate-based rules since
+conceptually you want to do something if a rate is above a certain value and it
+doesn't make sense that something is allow. So remember with rate-based rules
+you're essentially wanting to perform an action if a rate is above a certain
+level. So remember with rate-based rules you only have block, count and capture
+you don't have allow. Now you can also add custom responses as an optional extra.
+If your action is block then this can be a custom response or a custom header. For
+allows, counts and capture this can be a custom header only. This custom header
+means your application itself can react to traffic which has been matched and
+custom headers are prefixed with X hyphen AMZN hyphen WAF hyphen and the header is
+used so that your application can react in some way to traffic which has been affected by a rule.
+Now optionally labels can also be added. Labels are internal to WAF but what it allows is
+multi-stage flows where one rule can add a label and whether another rule runs can be based on the
+label being present or not. Labels as I just mentioned are internal to WAF only and they can
+be referenced from other rules within a single web ACL. They don't persist outside of that. Now
+importantly using labels relies on WAF not stopping processing and this is an important
+thing to understand with allow and block actions if a rule matches no further action occurs.
+Processing for that bit of traffic on that web ACL is stopped. For count and capture actions
+processing continues and this is where you typically use labels in follow-up rules which
+react in different ways based on that label being present. Now let's finish up by talking
+about pricing. With WAF you're charged a monthly price for every web ACL. Now currently this is
+five dollars per month and I've put an asterisk next to this because this is subject to change
+so don't be surprised if this specific value is different when you're watching this lesson. Now
+also remember that web ACLs can be reused across different supported products and this is a monthly
+price per web ACL. There's also a charge per rule on a web ACL and this is a monthly charge
+currently one dollar per month but again this is subject to change and also you're going to
+be charged another monthly fee for every rule group or managed rule group that you add to your
+web ACL. You've also got a charge for every request processed by a web ACL. Now again currently
+this is zero point six dollars per month for every one million requests. Now this charge is per web
+ACL so although you're only charged the single fee per web ACL and this can be reused across
+different products logically the more products that you use a web ACL on the higher the number
+of requests so this particular part of the pricing architecture will increase the more usage a web
+ACL has. Now if you need to understand this in detail I do suggest using the AWS pricing calculator
+and I've linked this attached to this video. This makes it really easy to just enter some values
+and see the true breakdown of using the WAF product. Now in addition to these costs there
+are also optional security features which can be enabled on your web ACL and these are in the area
+of intelligent threat mitigation and these come with additional fees. So first we have bot control
+and this comes with a monthly fee as well as a request based fee so this is a charge for every
+one million requests and again these are both subject to change they're accurate at the moment
+but don't be surprised if these prices are different when you're watching this video.
+Next we have captures and there's a price per 1000 challenge attempts and again this is subject
+to change. Next the fraud control and account takeover has a monthly charge and then a charge
+for every 1000 login attempts analyzed and lastly of course any marketplace rule groups that you
+choose to utilize will come with extra costs and these are all things that you need to keep in mind.
+So that's the architecture and feature overview of the WAF product. Now elsewhere in the course
+if appropriate there's going to be a demo where you can get experience of working with WAF in a
+practical sense. If you don't need practical knowledge for the particular thing that you're
+studying then this is all the information that you require. At this point though that's all of the
+theory that I want to discuss so go ahead and complete the video and when you're ready
+I look forward to you joining me in the next.

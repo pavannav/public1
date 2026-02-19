@@ -1,0 +1,231 @@
+Welcome back to stage 2 of this mini-project.
+And in this stage you're going to be configuring the simulated on-premises side of this architecture.
+So you'll be configuring the PFSense router, and once you've finished, you'll have two operational tunnels,
+one to each of the VPN endpoints within the AWS environment.
+And this will ensure, at least from the AWS side, that this is a highly available solution.
+Now just moving back to the AWS console, you'll need to make sure that this site-to-site VPN connection is in the available state before you continue.
+So if it's not, go ahead and pause this video and resume it once you do move into an available state.
+At this point I'm going to assume that your site-to-site VPN connection is also in an available state.
+So at this point we need to move across to the EC2 console.
+You should have this favorited at the top, so go ahead and right-click and open that in a new tab.
+Once you're there, go ahead and click on Instances Running.
+And these are the three instances running within this mini-project.
+We have the on-premises router, the on-premises server, and the AWS server.
+So what I want you to do is to go ahead and select the on-premises router.
+So this is the PFSense router that we're going to be configuring.
+Now you'll need the authentication details in order to log in.
+And this is automatically generated.
+To get those, go ahead and right-click, go to Monitor and Troubleshoot, and then select Get System Log.
+And this will load in the log of the system.
+And at the top you'll see ec2-user password changed to, and then the password for this PFSense router.
+So I want you to go ahead and copy that into your clipboard.
+Once you've done that, go ahead and click on ec2 at the top.
+And then go back to Instances Running.
+Select on-premises router again.
+And then click on this link next to Open Address.
+And this is going to open a new tab and connect to this on-premises router.
+You might see a security warning because this is using a self-signed certificate.
+So whatever you need to do in your browser to accept this risk, in my case I need to click on Advanced and then Accept the Risk and Continue.
+Once I've done that, I'll be asked to sign in to PFSense.
+And the username is Admin.
+And the password is the password you just copied down into your clipboard.
+So paste that in and click on Sign In.
+Now you're initially going to see a wizard and we don't want that.
+So go ahead and click on the PFSense logo on the top left.
+You might see a copyright and trademark notice.
+If you do, just click on Accept.
+And you might see another informational dialogue.
+If you do, click on Close.
+Now we're going to implement this architecture.
+And notice how the PFSense router has two network interfaces.
+It has an interface on the left side, which is the WAN interface.
+And this is the interface that the VPN connection will connect into.
+But it also has another interface on the right side.
+And this is the LAN interface.
+Now we need to configure the LAN side interface.
+So to do that, go ahead and click on Interfaces at the top.
+And then click on Assignments.
+It will detect that there's another available network port, which is this.
+So go ahead and click on Add.
+And that will add this as the LAN interface.
+Once that's done, click on Save.
+And now we've added the LAN interface, we need to configure the networking.
+So to do that, click on Interfaces and then go to LAN.
+Check the box to say Enable Interface.
+And then under the IP version 4 configuration type, click in the drop-down and select DHCP.
+And this will mean that the IP address of this interface is dynamically assigned by AWS.
+And that's okay.
+In production usage, because this is a router interface,
+you generally pick a static IP address and then explicitly provide the addressing.
+But for this demo, we don't need to worry about that.
+So go ahead, scroll down to the bottom and click on Save.
+And then click on Apply Changes.
+And this may appear to hang for a second while those networking changes are being applied.
+Next, we're going to create the VPN tunnels and IPsec configuration
+between this on-premises router and AWS.
+To do that, click on VPN and then select IPsec.
+Now at this point, do make sure that you have watched my IPsec fundamentals video,
+which steps through the architecture of IPsec VPNs.
+If you haven't done, that is linked attached to this video.
+IPsec VPNs consist of one or more tunnels which are split between phase one and phase two.
+So the next thing that we'll be doing is to create a phase one and phase two configuration
+for each of the AWS side endpoints.
+So there are four pieces of configuration that we need to perform.
+Now I'd also recommend at this point that you do have the VPN configuration file open
+because we're going to be referring to it for some of the configuration values.
+And as a reminder, this is the configuration file that you downloaded
+from the previous stage when you created the site-to-site VPN connection.
+And if you look through this file, it contains all of the configuration that you'll need
+for both tunnel one and tunnel two.
+And we're going to start with the tunnel one configuration.
+So make sure that you've got this file open and you reference IPsec tunnel one.
+So first we're going to create the phase one configuration for tunnel one.
+So click on the green button saying plus add P1.
+So for description, we're going to use AWS-tunnel-az1.
+Make sure that disabled is unchecked because you want this to be enabled.
+For the key exchange version, remember we're using Ike version one.
+So go ahead and select Ike version one.
+For internet protocol, we're using IP version four.
+And this tunnel is going to be connecting to the WAN interface.
+So that's the interface on the left side, the one that's connecting to the public internet.
+Now for the remote gateway, this is the IP address of endpoint one on the AWS side.
+Now you can get this from this VPN configuration file.
+If you look under IPsec tunnel one and then under general information,
+copy down the IP address for the remote gateway.
+So this is the AWS side IP address for endpoint one.
+So go ahead and enter that under remote gateway.
+For the authentication method, we're going to use mutual PSK.
+For negotiation mode, we're going to use main.
+We're going to leave both the my and peer identifiers as my IP address and peer IP address.
+Exactly what these do is beyond the scope of this mini project.
+So just leave these as default.
+And next we need to enter the pre-shared key.
+And you can think about this as a long complex password.
+And this allows the on-premises router and the AWS side infrastructure to authenticate against each other.
+Now this pre-shared key is again stored in this configuration file because it's something that's generated by AWS.
+So under the IPsec tunnel one and then under phase one proposal authentication,
+there'll be a line item for pre-shared key.
+Go ahead and copy that into your clipboard and make sure that you do get all of the characters.
+And once you've got that, go ahead and paste it under pre-shared key.
+Now under the encryption algorithm, make sure it's set to AES 128 bits.
+Under hash, change it to SHA-1.
+So SHA-1 instead of SHA-256.
+Again to confirm, make sure it's set to SHA-1.
+And then under DH group, go ahead and change it to 21024 bit.
+Scroll down.
+Under lifetime, make sure this is set to 28800.
+Scroll down further still.
+Make sure that dead peer detection is checked.
+Make sure that NAT traversal is set to auto.
+Make sure delay is set to 10.
+And then make sure max failures is set to 3.
+And you'll probably need to change this value.
+And once you've changed it, go ahead and click on save.
+And this creates the phase 1 configuration for endpoint 1 at the AWS side.
+So next we're going to create the matching phase 2 configuration for the phase 1 configuration that we've just created.
+So I want you to look for AWS tunnel AZ1.
+And directly below that, you should see a show phase 2 entries.
+So click that and then click on plus add P2.
+For the description, go ahead and use ipsec-tunnel1-aws-az1.
+This just allows us to match it up to the phase 1 configuration that's used as well as which AWS endpoint we're using.
+For disabled, make sure this is unchecked because we want this to be enabled.
+Make sure mode is set to tunnel IPv4.
+For local network, click on the drop down and select network.
+Now on the same line, under address, go ahead and enter 192.168.10.0 and set this to slash 24.
+This is the private subnet within the simulated on-premises environment.
+And this is the subnet which we want to be able to access AWS.
+Under remote network, again, make sure that network is selected.
+And then enter 10.16.0.0 and change this to slash 16.
+So this is the AWS VPC IP range.
+And this is the IP range that we want this on-premises network to be able to access.
+Now scroll down for protocol.
+Make sure this is set to ESP.
+Make sure that AES is checked and that it's set to 128 bits.
+Under hash algorithms, make sure that SHA-1 is checked.
+And click in the PFS key group drop down and select 21024 bit.
+The lifetime needs to be 3600.
+And then scroll down and we're going to configure this keep alive setting.
+Now this allows us to have this VPN gateway ping an IP address at the AWS side.
+And this ensures that the VPN connection is active.
+So what we need to do is to get the IP address of something at the AWS side.
+So to do that, go back to the EC2 console.
+Select AWS server A and copy down the private IP version 4 address of AWS server A.
+And again, yours will be different.
+Make sure you use your private address.
+Move back to PFSense.
+Paste in that address.
+Check this box and click on save.
+So that's the configuration for the AWS endpoint 1.
+And now we need to follow that same process.
+So phase 1 and phase 2 for AWS endpoint 2.
+So again, click on add P1 at the bottom and we'll follow the same process.
+For description, AWS-tunnel-az2.
+Make sure disabled is unchecked.
+Key exchange version Ike v1.
+Internet protocol, IP version 4, interface 1.
+For the remote gateway, now we need to scroll down and look under IPsec-tunnel-2.
+General configuration, remote gateway.
+So copy down this IP address.
+This will be different than the one for IPsec-tunnel-1.
+Paste that into this box.
+So this is the IP address of endpoint 2 at the AWS side.
+Scroll down.
+Authentication method, mutual PSK.
+Negotiation mode, main.
+Leave these two drop-downs as the defaults, my IP address and peer IP address.
+And now we need the pre-shared key for endpoint 2 at the AWS side.
+So scroll down further, again under IPsec-tunnel-2.
+Phase 1 proposal authentication and then pre-shared key.
+And again, this will be different than for the IPsec-tunnel-1 configuration that you just implemented.
+So make sure you copy down all of these characters.
+Paste that into this box.
+Encryption algorithm AES.
+Key length 128.
+For hash, SHA-1.
+For DH group, 21024-bit.
+Lifetime needs to be 28800.
+Dead peer detection is enabled.
+Nat traversal is auto.
+Delay is 10.
+And again, change max failures to 3 and click on save.
+So that's the phase 1 configuration for the second AWS VPN endpoint.
+So again, we need to create the phase 2 configuration for this phase 1 configuration.
+So make sure that you look for AWS-tunnel-az2 and under that click on show phase 2 entries and then click on add P2.
+Now for the description, use IPsec-tunnel-2-aws-az2.
+So we can see that this is for tunnel 2 and for the endpoint 2 at the AWS side.
+Make sure disabled is unchecked because we want this to be enabled.
+And for mode, tunnel-ipv4.
+Under local network, change this to network.
+And again, we're going to put the IP address of the private subnet within the simulated on-premises environment.
+So this is 192.168.10.0 and set to slash 24.
+Under remote network, make sure it's set to network.
+And the IP address that goes here is the AWS VPC.
+So 10.16.0.0 and then slash 16.
+And you'll need to change this to slash 16.
+The protocol needs to be ESP.
+Make sure AES is checked and 128 bits is selected.
+Under hash algorithm, make sure that SHA-1 is selected.
+For PFS key group, change that to 21024 bit.
+Lifetime needs to be 3600.
+Scroll down, check the enable periodic keep alive check.
+And again, we're going to need the IP address of something at the AWS side.
+So go back to instances, make sure AWS server A is selected.
+Copy down its private IP.
+Go back to PSSense and paste that into this box and click on save.
+Now at this point, we've created the phase 1 and phase 2 configurations for both of these tunnels.
+So that's the connection to endpoint 1 and endpoint 2 at the AWS side.
+So that's the architecture that's shown on screen now.
+Now the only thing that remains is to apply these changes.
+So moving back to PSSense, click on apply changes.
+And then go to status, IPsec.
+And we're going to manually connect both of these tunnels.
+So click on connect P1 and P2s for both of these lines.
+So first the top one and then the bottom one.
+And after a while, you should see established under both of these lines.
+If you don't, that means some of your configuration is wrong and you should verify that.
+But if you do see established under both of these lines, then that means that you have this architecture implemented.
+So tunnels between the simulated on-premises side and both of the AWS VPN endpoints.
+Now this still won't work because there's additional routing and security configuration that we need to perform in the next stage of this mini-project.
+But for now, that's everything we need to do.
+So go ahead and complete this video.
+And when you're ready, I'll look forward to you joining me in the next stage of this mini-project.

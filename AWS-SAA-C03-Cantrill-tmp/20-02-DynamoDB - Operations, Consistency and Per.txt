@@ -1,0 +1,135 @@
+Welcome back and in this lesson I want to talk about DynamoDB operations, DynamoDB consistency and DynamoDB performance.
+It's a lot to cover in one lesson so I'll try to be as efficient as possible but let's jump in and get started.
+Now DynamoDB allows you to pick between two different capacity modes when you create a table
+and with some restriction you are able to switch between these modes even after data has been added
+and these modes are on-demand and provisioned.
+On-demand is a mode which is designed when you have an unknown or unpredictable level of load on a DynamoDB table
+or alternatively when you have a massive priority for as little admin overhead as possible.
+With on-demand you don't have to explicitly set capacity settings, it's all handled on your behalf by DynamoDB.
+You just pay a price per million read and write units but the price that you pay can be as much as five times the price
+versus using provisioned capacity so it's actually a trade-off.
+You're reducing the admin overhead, it allows you to cope with unknown or unpredictable levels of demand
+but you are paying more for that privilege.
+With provisioned capacity you actually set a capacity value for reads and writes on a per table basis
+so RCU stands for read capacity units and WCU stands for write capacity units.
+Now a critical thing to understand is that every operation on a DynamoDB table consumes at least one unit
+so one unit of read or write.
+Now I've added an asterisk here because there is a way to get cheaper reads but I'll introduce this later in this lesson.
+One RCU allows for one read operation of up to four kilobytes on a table every second.
+If you perform an operation and it only uses one kilobyte to read an item you still consume one RCU.
+It rounds up to at least one RCU.
+But one operation can consume more, an item as you learned earlier in the course can be up to 400 kilobytes in size as a maximum
+and this would consume 100 RCU to read in one operation.
+Now a capacity unit is per second so one RCU lets you read one block of data up to four kilobytes every second.
+For writes, one write capacity unit is one kilobyte so it's the same logic but one kilobyte instead of four kilobytes
+so you set a certain amount of read and write capacity and that gives you a certain amount of read and write load every second.
+As well as that, every single table within DynamoDB has a WCU and an RCU burst pool
+and this equals 300 seconds of the read and write capacity units set on the table.
+So when setting read and write capacity units you're setting for the sustained average.
+But try to dip into the burst pool as infrequently as possible because other table modification tasks can use this pool as well.
+Relying on it too much is pretty dangerous.
+If you ever deplete the pool then have insufficient capacity set on a table
+then you will receive a provisioned throughput exceeded exception error and you'll be throttled
+and the solution is to wait and retry or increase the capacity settings.
+Now there are a number of different types of operations that you can perform on a DynamoDB table
+and some of the most common ones that are mentioned in the exam are query and scan
+so I want to just talk about exactly how these work at a high level before we move on.
+The query operation in DynamoDB is one way that you can retrieve data from the product.
+When you're performing a query operation you need to start with the partition key.
+You have to pick one partition key value.
+Let's look at an example visually because it will be easier to understand.
+So this is a simple DynamoDB table.
+It stores weather data once per day from a group of weather stations.
+So the partition key is the sensor ID and the sort key is the day of the week
+and we have one new table for every week of every year.
+And to keep things simple these are the sizes of each item.
+So item 1 is 2.5k, item 2 is 1.5k, item 3 is 1k and item 4 is 1.5k.
+Now the query operation can return zero items, one item or multiple items
+but you always have to specify a single value for the partition key.
+So you can only ever with this example query for one specific weather station.
+So regardless of whether your table uses a simple primary key with just the partition key
+or whether it uses a composite primary key which uses both the partition key
+and the sort key with query you always have the option of just querying
+with a single value for the partition key.
+So in this example if we decided to query for all items for weather station ID of 1
+then we would get two items returned.
+The item for Monday for weather station ID 1 and the item for Tuesday for weather station ID 1.
+Now the first item has a size of 2.5k and the second item has a size of 1.5k
+so both of these together equal 4k and one RCU allows you to query 4k
+so this particular query would use one RCU of capacity.
+Now with DynamoDB it's always more efficient to return multiple items in a single operation.
+In this example we could actually perform a query where we provide the partition key value of 1
+as well as the specific value for the sort key.
+So if we wanted to retrieve both of these items with two separate query operations
+then we could query for a partition key value of 1 and a sort key of Monday
+and a partition key value of 1 and a sort key of Tuesday as two separate operations.
+But because every operation consumes at least one RCU
+then if we ran two separate queries then the same amount of data would consume two RCU.
+So it's always more efficient to pull back as much data as you need in totality in one single operation.
+Now if you only want to retrieve one specific item
+then you can query for one particular value of the partition key and one particular value of the sort key.
+In this example we could query for a partition key value of 1 and a sort key value of Monday
+and this would return one single item, the Monday item for Weather Station ID 1
+which has a size of 2.5k
+but because it's a single operation and it's less than 4k it will be rounded up to the next whole RCU value
+so this single item query will cost one RCU and it will retrieve the entire item.
+Generally with any operations on DynamoDB you always have to operate on the entire item
+so reading and writing an entire item.
+And so there is an architectural benefit with the platform to minimising the size of an item as much as possible
+because if you have to perform queries which operate on single items as a minimum
+you are going to consume the capacity that that whole item uses.
+Now just to restress the important thing about queries is that you have to query for one particular value of the partition key
+and when you're querying for that one value you can retrieve all of the items with that one value
+or you can filter that down based on supplying one sort key value or a range of sort key values
+and when you do that using the query operation you're only charged for the capacity of that query operation
+so if you pick a particular subset of sort key values you're only charged for the response from that query operation.
+What you can do with the query operation is specify particular attributes that you want to return
+so in this example we might only want to return the yellow attribute and the pink attribute
+but you are still charged for the entire item.
+Anything that you filter is discarded but you are still charged for it.
+Now if you want to perform a search across an entire table
+maybe looking for every single weather station entry which indicates good weather
+you can't do that with the query operation because a query operation can only ever query based on one particular partition key value.
+If you want to perform more flexible operations you need to use scan.
+Scan is the least efficient operation within DynamoDB when you want to get data
+but it's also the most flexible.
+Let's use the same example, the weather stations.
+The way that scan works is to move through the table item by item.
+You can specify any attributes that you want to match.
+You can show all items for example where a temperature is between two values
+or retrieve all of the items across all of the weather stations for a given day, for example Monday.
+But what you need to understand about scan is that it is scanning through the entire table.
+So the entire table is consumed.
+So while you can use it to get access to any data that you want
+the consumed capacity is for all of the items that are read.
+Even if you filter things, even if you return less data than the whole table
+you consume all of the data that's scanned through.
+So scan is super flexible but it's also really expensive from a capacity perspective.
+So let's quickly look at an example visually.
+Let's say that you want to scan the weather table looking for all items across all different weather stations
+looking for any entries which indicate a sunny day.
+So we're looking for a particular attribute which defines that, the yellow column.
+And we want to return all items which have this attribute.
+Now we can't use a query operation for this because query, as I mentioned on the previous screen
+only allows us to query for one particular value of the partition key.
+And we need to look across all different weather stations, so multiple values for that partition key.
+So we can't use query but we can use scan.
+So in this example we're trying to scan for the sunny day attribute, the attribute in yellow
+and we're looking through the entire table.
+So this attribute isn't a partition key and it isn't a sort key and we can't use query, but we can use scan.
+So scan will step through the entire table, so all four items.
+But because we've specified to the scan operation that we only want items which have this sunny day attribute
+it doesn't return some items, it doesn't return the ones with the non-sunny days.
+But that data is just discarded, we still consume the entire capacity.
+So the scan operation would need to step through every item in this table
+to determine which ones do have the sunny day attribute and which ones don't.
+So in this example we actually consume all of the item capacity in the table.
+So that's 5k plus 4k plus 2k plus 3k.
+So that's a total of 14k, which rounded up to the next highest RCU, represents 4 RCU of capacity that we've consumed.
+Even though we're only actually returning 5k plus 4k of data.
+The remaining items which are not valid, the ones which don't have sunny days, are simply discarded.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side, and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee.
+Part two will be continuing immediately from the end of part one.
+So go ahead, complete the video, and when you're ready, join me in part two.

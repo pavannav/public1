@@ -1,0 +1,97 @@
+Welcome back. In the next few lessons I want to talk about how to secure the
+content delivery path when using CloudFront. When content is being
+delivered globally using CloudFront there are a few zones that you need to
+think about. First on the left are the origins so these are the locations where
+content is hosted. In the middle we've got the CloudFront network which
+consists of the network itself and the edge locations and then on the right the
+public internet and our consumers of content. For the next two lessons I want
+to focus on the security of this path. So first in this lesson the security of the
+origin fetch side which is the transfer of data into the CloudFront network
+from the origins and then through to the edge locations. Then in the next lesson
+I'll be covering the security of the customer or viewer side so how to get
+content through to the consumer in a safe and secure way. For this lesson I'll
+be focusing on the origin side security and I want to focus on how we can make
+sure that only CloudFront gets access to the data on those origins.
+Essentially avoiding an ingenious customer bypassing CloudFront and
+accessing the origins directly. So let's get started and explore this part of the
+delivery path. Now before we start I want to reiterate something that I covered
+in an earlier lesson. You can use S3 as an origin for CloudFront but you can do
+it in two different ways. If you just use S3 as an origin then it's known as an S3
+origin. If you utilize the static web hosting feature of S3 and use this with
+CloudFront then the S3 bucket is treated the same as any non S3 origin and this
+is known as a custom origin. For this lesson when I'm covering OAIs or Origin
+Access Identities this is only applicable for S3 origins so not using
+the static website feature of S3. So what is an OAI? Well it's a type of
+identity. It's not the same as an IAM user or an IAM role but it does share
+some of the characteristics of both. It can be associated with CloudFront
+distributions and those CloudFront distributions when they're accessing an
+S3 origin in essence the CloudFront distribution becomes that Origin
+Access Identity. This means when a CloudFront distribution is accessing an
+S3 origin the identity can be used within bucket policies so either explicit
+allows or denies. Generally the common pattern is to lock an S3 origin down to
+only being accessible via CloudFront so this uses the implicit default deny to
+apply to everything except the Origin Access Identity. So the Origin Access
+Identity is explicitly allowed access to the bucket and everything else is
+implicitly denied. And visually this looks like this. So we start this
+architecture with a CloudFront distribution already configured for
+animals for life and this architecture uses an S3 origin, a few edge locations
+and we've also got two customers Julie and Moss and we want to allow access
+via CloudFront to this S3 origin and deny any direct access. And so to do
+that we create an Origin Access Identity and we associate that Origin Access
+Identity with the CloudFront distribution. Now the effect of doing
+this means that the edge locations gain this identity, the Origin Access Identity.
+Then we can create or adjust the bucket policy on the S3 bucket we add an
+explicit allow for the Origin Access Identity and then in its most secure
+form we remove all other access leaving the implicit deny. Now at this point any
+accesses from the edge locations are actually from the Origin Access Identity
+the virtual identity that we've created and associated with the CloudFront
+distribution and so access from the edge locations is allowed because the Origin
+Access Identity is explicitly allowed via the bucket policy. Direct access
+though for example from our Moss user would not have the Origin Access
+Identity associated with them and because of this it's implicitly denied
+from accessing the bucket. So with this configuration we've explicitly allowed
+the Origin Access Identity we've not explicitly allowed anything else and so
+what remains is the implicit deny that applies to everything but that Origin
+Access Identity and this at this point includes poor old Moss. Now Origin Access
+Identities can be created and used on many CloudFront distributions and many
+buckets at the same time. Generally though I find it easier to manage if
+you create one Origin Access Identity for use with one CloudFront distribution
+because long term this makes it easier to manage permissions. So that's how we
+handle origin security for S3 origins but what about non S3 origins, custom
+origins, is there a way to secure those? Well let's take a look at that next. For
+this architecture let's say that we have two custom origins, two CloudFront edge
+locations and a customer and what we want to do is prevent the customer
+accessing the origins directly. Now remember these are not S3 origins and so
+we can't use Origin Access Identities to control access. So for custom origins we
+have two ways that we can implement a more secure architecture. First we can
+utilize custom headers and the way that this works is that our users use HTTPS
+to communicate with the edge locations and we can insist on this by
+configuring the viewer protocol policy. Now HTTPS is actually just HTTP running
+inside a secure tunnel and so this has the advantage of protecting the contents
+of that tunnel. Now we can also use the same protocol between the edge location
+and the origin and this is known as the origin protocol policy. But in addition
+configure CloudFront to add a custom header which is sent along with the
+request to the origin. But the origin is configured to require this header to be
+present otherwise it won't service requests. These are called custom
+headers and can be configured within CloudFront. So because the entire
+stream utilizes HTTPS then nobody can oversee the headers that we're using and
+fake them. The custom headers are injected at the edge location and these
+allow our custom origin to know for sure that the request is coming from a
+CloudFront edge location and if this header isn't present the origin will
+simply refuse to service any of the requests. Now that's one way to handle it
+but we do have another way and that's via traditional security methods. AWS
+actually publicized the IP addresses of all of their services so we can easily
+determine the IP ranges at the CloudFront edge locations. Now if we have
+the IP ranges that are used by CloudFront then we can use a traditional
+firewall around the custom origin. This firewall is then configured to allow
+connections in from the edge locations and deny anything else. So this is
+another solution which means the origin is essentially private to anything but
+CloudFront and can't be bypassed. Now you can use either of these approaches or
+even both of them in combination. In doing so you make sure that the secure
+and private distribution of content cannot be bypassed by accessing the
+origins directly. All of these methods so origin access identity, custom headers
+and traditional IP blocks secure the first part of the content delivery path.
+In the next lesson we're going to look at how to use CloudFront to secure the
+point between the edge location and our customer. So thanks for watching go
+ahead complete this lesson and when you're ready I'll look forward to
+speaking to you in the next.

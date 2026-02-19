@@ -1,0 +1,121 @@
+Welcome back, and in this lesson I want to talk about another type of endpoint available within a VPC,
+and that's an interface endpoint.
+These do a similar job to gateway endpoints, but the way that they accomplish it is very different,
+and you need to be aware of the difference.
+So let's jump in and get started.
+Just like gateway endpoints, interface endpoints provide private access to AWS public services.
+So private instances, or instances which are in fully private VPCs.
+Interface endpoints historically have been used to provide access to all services apart from S3 and DynamoDB.
+Historically, both of these services were only available using gateway endpoints,
+and interface endpoints were used for everything else.
+Recently though, AWS have enabled the use of S3 using interface endpoints,
+so at the time of creating this lesson you have the option to use either gateway endpoints or interface endpoints.
+Currently, DynamoDB is still only available using gateway endpoints.
+Now, one crucial difference between gateway endpoints and interface endpoints
+is that interface endpoints are not highly available by default.
+They're interfaces inside a VPC, which are added to specific subnets inside that VPC.
+So one subnet, as you now know, means one availability zone.
+So one interface endpoint is in one availability zone, meaning if that availability zone fails,
+then the functionality provided by the interface endpoint also fails.
+To make sure that you have a highly available service,
+then you need to add one interface endpoint in one subnet in each availability zone that you use inside a VPC.
+So if you use two availability zones, you need two interface endpoints.
+If you use three, then you'll need three interface endpoints.
+Now, because interface endpoints are just interfaces inside a VPC,
+you're able to use security groups to control access to that interface endpoint from a networking perspective,
+and that's something that you can't do with gateway endpoints.
+You do still have the option of using endpoint policies with interface endpoints
+in just the same way as with gateway endpoints,
+and these can be used to restrict what can be accessed using that interface endpoint.
+Another aspect of interface endpoints that you should be aware of
+is they currently only support the TCP protocol and only IP version 4.
+Now, IP version 4 is probably the most important of those two things that you need to know.
+I've not seen it come up in the exam yet, but it will make its way there eventually,
+and it's probably something that you should be aware of regardless.
+Now, behind the scenes, interface endpoints use PrivateLink,
+which is a product that allows external services to be injected into your VPC,
+either from AWS or from third parties.
+So if you see any mention of PrivateLink,
+it's a technology that allows AWS services or third-party services to be injected into your VPC
+and be given network interfaces inside your VPC subnet.
+So PrivateLink is how interface endpoints operate,
+but it's also how you can deploy third-party applications or services directly into your VPC,
+and this is especially useful if you're in a heavily regulated industry,
+but you want to provide access to third-party services inside private VPCs.
+You can do it without creating any additional infrastructure.
+You just use PrivateLink and inject that service's network interfaces directly into subnets inside your VPC.
+Now, interface endpoints don't work in the same way that gateway endpoints do.
+It's a completely different way of providing a similar type of functionality.
+Gateway endpoints used a prefix list, which was a logical representation of a service,
+and this was added to route tables.
+That's how traffic flows to the gateway endpoint from VPC subnets.
+Now, interface endpoints primarily use DNS.
+Interface endpoints are just network interfaces inside your VPC.
+They have a private IP within the range which the subnet users that they're placed inside.
+Now, the way that this works is that when you create an interface endpoint in a particular region for a particular service,
+you get a new DNS name for that service, an endpoint-specific DNS name,
+and that name can be used to directly access the service via the interface endpoint.
+This is an example of a DNS name that you might get for the SNS service inside the US East 1 region.
+Now, this name resolves to the private IP address of the interface endpoint,
+and if you can update your applications to use this endpoint-specific DNS name,
+then you can directly use it to access the service via the interface endpoint and not require public IP addressing.
+Now, interface endpoints are actually given a number of DNS names.
+First, we've got the regional DNS name, which is one single DNS name that works whatever AZ you're using to access the interface endpoint.
+It's good for simplicity and for high availability.
+Also, each interface in each AZ gets a zonal DNS which resolves to that one specific interface in that one specific availability zone.
+Now, either of these two types of DNS endpoints can be used by applications to directly and immediately utilize interface endpoints,
+but interface endpoints also come with a feature known as private DNS,
+and what private DNS does is associate a Route 53 private hosted zone with your VPC.
+This private hosted zone carries a replacement DNS record for the default service endpoint DNS name.
+It essentially overrides the default service DNS with a new version that points at your interface endpoint.
+And this option, which is now enabled by default,
+means that your applications can use interface endpoints without being modified.
+So this makes it much easier for applications running in a VPC to utilize interface endpoints.
+Without using interface endpoints, accessing a service like SNS from within a VPC would work like this.
+The instance using SNS would resolve the default service endpoint, which is sns.us-east-1.amazonaws.com.
+It would resolve this name to a public space IP address,
+and the traffic would be routed via the VPC router, then the internet gateway, and out to the service.
+Private instances would also attempt to do the same, so they would also try to resolve this default service address,
+but without having access to a public IP address,
+they wouldn't be able to get their traffic flow past the internet gateway, so it would fail.
+But if we change this architecture and we add an interface endpoint,
+if private DNS isn't used, then services which continue to use the service default DNS
+would leave the VPC via the internet gateway and connect with the service in the normal way.
+Now for services which choose to use the endpoint-specific DNS name,
+they would resolve that name to the interface endpoint's private IP address.
+The endpoint is a private interface to the service that it's configured for, in this case SNS,
+and so the traffic could then flow via the interface endpoint to the service without requiring any public addressing.
+It's as though SNS in this example has been injected into the VPC, it's being accessed in a more secure way.
+Now if we utilize private DNS, it makes it even easier.
+Private DNS replaces the service's default DNS,
+so even clients which haven't been reconfigured to use the endpoint-specific DNS,
+so they keep using the service default DNS name, will now go via the interface endpoint.
+So in this example, using private DNS overrides the default SNS service endpoint name,
+so sns.us-east-1.amazonaws.com.
+When you use private DNS, rather than that resolving to a public IP address
+belonging to the SNS service, it's overridden,
+so it now resolves to the private IP address of the interface endpoint.
+So using private DNS means that even services or applications which can't be modified to use the endpoint-specific DNS name,
+will also utilize the interface endpoint.
+So for the exam, I want you to try and remember a few really important things.
+Gateway endpoints, they work using prefix lists and route tables,
+so they never require changes to the applications.
+Essentially, the application thinks that it's communicating directly with S3 or DynamoDB,
+and all we're doing by using a gateway endpoint is influencing the route that that traffic flow uses.
+Instead of going via the internet gateway and requiring public IP addresses,
+it goes via a gateway endpoint and can use private IP addressing.
+Interface endpoint uses DNS and a private IP address for the interface endpoint.
+You've got the option of either using the endpoint-specific DNS names,
+or you can enable private DNS which overrides the default
+and allows unmodified applications to access the services using the interface endpoint.
+Interface endpoints don't use routing, they use DNS.
+So the DNS name is resolved, it resolves to the private IP address of the interface endpoint,
+and that is used for connectivity with the service.
+Now gateway endpoints, because they're a VPC logical gateway object,
+they're highly available by design,
+but interface endpoints, because they use normal VPC network interfaces, are not.
+When you're designing an architecture, if you're utilizing multiple availability zones,
+then you need to put interface endpoints in every availability zone that you use inside that VPC.
+But at this point, thanks for watching.
+We've finished everything that I wanted to cover, so go ahead, finish up this video,
+and when you're ready, I'll look forward to you joining me in the next lesson.

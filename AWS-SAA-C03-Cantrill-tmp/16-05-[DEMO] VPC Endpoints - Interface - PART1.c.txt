@@ -1,0 +1,116 @@
+Welcome to this three part demo lesson where you're going to get the experience of working with interface endpoints, gateway endpoints and egress only internet gateways.
+So the demo is formed of three parts and in each of those parts you'll get experience with one of those products.
+Now to get started there are a few things that you need to do.
+Firstly as always make sure that you're logged in to the IAM admin user of the general AWS account, so the management account of the organisation
+and as always you need to have the Northern Virginia region selected.
+Now attached to this lesson are a number of links that you should probably open.
+One of them is the lesson commands document and has all of the commands that you'll need throughout all three parts of this demo lesson.
+There's also a file called supersecret.txt which you'll need to download and save somewhere on your local machine because you'll need that in part two of this demo series.
+There's also a one click deployment link which will deploy the infrastructure required within this demo lesson, so go ahead and open that link.
+Now that will take you to the quick create stack screen. Everything should be pre-populated.
+All you'll need to do is scroll down to the bottom, check this capabilities box and then click on create stack.
+Now we're going to need this stack to be in a create complete state before we begin the rest of this demo series.
+So go ahead, pause the video, wait for your stack to move into a create complete state and then we're good to continue.
+Welcome back and now that this stack's moved into a create complete state we can begin the rest of the demo series.
+Now the first thing that you're going to be getting experience with is implementing an interface endpoint.
+Specifically we're going to be using the interface endpoint for EC2 instance connect.
+This is the architecture that we're going to be implementing.
+So normally with EC2 instance connect an instance would need a public IP address to be able to connect to it using the console UI.
+If we use an interface endpoint for EC2 instance connect within our VPC then we can connect to the EC2 instance connect public endpoint using our web UI.
+This public endpoint can then connect through to the VPC interface endpoint within the VPC
+and this interface endpoint can then be used to connect to private EC2 instances.
+Meaning instances without any public IP version 4 addressing.
+So the one click deployment that you've now implemented has created a private only VPC.
+So this is VPC without an attached internet gateway and it's created a private EC2 instance.
+So this is an EC2 instance with no public addressing.
+So now we're going to switch over to the console UI and get some experience with implementing an interface endpoint and using this to connect to this private EC2 instance.
+So let's go ahead and move to the main AWS console and from there type EC2 in the services box at the top.
+Right click and open the EC2 console in a new tab.
+Once that's open go ahead and click on instances running and you should see a single EC2 instance.
+Now if we click on this and then just scroll down you can see that this instance does not have a public IP version 4 address allocated.
+It does though have a private address but this can't be used to connect using EC2 instance connect in its default configuration.
+So if we right click and go to connect and then choose instance connect because this instance does not have a public IP version 4 address
+we can't connect to it using instance connect or at least not with the default configuration.
+We can though use an instance connect endpoint and that's what we're going to implement.
+So if we choose connect using an EC2 instance connect endpoint then the dialog changes slightly.
+We still have the username box.
+We now have a max tunnel duration and we don't need to focus on this for this demo lesson.
+This is functionality beyond the scope of what I want to cover in this lesson.
+The important part though is the EC2 instance connect endpoint.
+This, if we refer back to this diagram, this box will control which interface endpoint will be used to connect to our EC2 instance.
+Now if we click in this box right now we don't see any interface endpoints because we haven't created any.
+To do that we can create the interface endpoint in a number of different ways.
+We can do it directly from the VPC console or we can click this convenient link to open that on our behalf.
+So go ahead and do that and you'll be taken to this create endpoint screen.
+The first thing we need to do is give the VPC endpoint a name.
+So we're going to call it private VPC and then EC2 instance connect.
+The first thing we need to do when creating an interface endpoint is either pick an AWS service manually from this list
+or we can choose one of these service categories and we're going to do that.
+We're going to select EC2 instance connect endpoint.
+So go ahead and check that box.
+And then because interface endpoints run from within a VPC logically enough we need to select a VPC.
+So click in this drop down and pick A4L-secret VPC.
+So this was a VPC created by the one click deployment.
+So go ahead and select that.
+Then expand additional details.
+And this is a really important option to understand.
+When we're connecting to an instance using EC2 instance connect,
+what's actually happening is we're connecting to the EC2 instance connect endpoint which is a public endpoint
+and then that endpoint is used to connect to our EC2 instance.
+That's how it works with the normal configuration.
+Now with the interface endpoint configuration we have two options.
+We can either preserve the client IP address.
+So the instance would see your client IP attempting to connect to it.
+So the client IP of your machine.
+Or we can leave this box unchecked which means the connection will be coming from the IP address
+of the instance connect VPC endpoint.
+And that's what we're going to do. We're not going to check this box.
+Because interface endpoints use elastic network interfaces within the VPC
+then we need to pick a security group for this network interface.
+We're going to use the A4L secret VPC hyphen default instance security group.
+So that's the security group that was created by the one click deployment.
+So go ahead and check the box next to the A4L secret VPC hyphen default instance security group.
+Next you'll need to pick a subnet which this interface endpoint will go into.
+Now if we click in this box there are various different subnets within this VPC
+and we're going to go ahead and select the SN hyphen app hyphen A
+which is a private subnet within this VPC.
+In order to use this functionality we only have to have the one interface endpoint within the VPC.
+But there's nothing to stop us creating additional EC2 instance connect interface endpoints
+within different availability zones within the VPC.
+If we want to have high availability that's something that we should probably investigate for production usage.
+But for this demo we'll only create the one within SN hyphen app hyphen A.
+At this point go ahead and click on create endpoint.
+And this will begin the process of provisioning the interface endpoint.
+It will begin in the pending state and we need to wait for this to change before continuing.
+So go ahead and pause the video and wait for this status to change away from pending and then you're good to continue.
+Okay so now the status has moved to available.
+Just as a reminder this is the architecture that we've now implemented.
+Only instead of two EC2 instances because this is a demo we only have the one.
+Now this means that we can now utilize this EC2 instance connect endpoint to connect to our private EC2 instance.
+So let's give that a go.
+So we're going to move back to the EC2 console and let's just move back to the main console by clicking on instances.
+And then we'll right click, go to connect.
+We're going to select EC2 instance connect and then pick connect using EC2 instance connect endpoint.
+We're going to leave all of these options at the top as default but then we're going to click in the EC2 instance connect endpoint box
+and select the endpoint that we've just created.
+Once selected you can go ahead and click on connect and that will connect to this private EC2 instance.
+So this is an instance with no public IP version 4 addressing and it will be using the instance connect endpoint.
+So this architecture.
+So we're connecting from our browser to the EC2 instance connect public endpoint.
+Then this is allowing us to connect via the VPC interface endpoint for EC2 instance connect and through finally to our private EC2 instance.
+Now if we just go ahead and type exit to exit out of instance connect and then connect again.
+I just want to illustrate an important point because we did not select to preserve the client IP address.
+The instance is going to receive a connection from this IP address so in my case 10.16.44.176.
+Now yours will be different but this is the private IP version 4 address of the interface endpoint.
+If we go ahead and move back to the VPC console and click on endpoints make sure this interface endpoint is selected
+and then scroll to the right at the top and click under network interfaces.
+This is going to show us the network interface for this interface endpoint.
+And if we select this and scroll down you'll be able to see under IP addresses the private IP version 4 address of this interface endpoint.
+And this should match if we note down the last two octets so 44.176.
+This should match what you see connecting to your EC2 instance and this is because when using the EC2 instance connect interface endpoint
+the connections are coming from that interface endpoint unless you choose to preserve the client IP address which we didn't do.
+So this is everything I wanted to demonstrate about using interface endpoints.
+And I've picked a simple one to demonstrate which is the EC2 instance connect endpoint.
+Now in the next part of this demo series you're going to get some experience working with gateway endpoints.
+So that's another type of VPC endpoint and we'll be using gateway endpoints to provide access to S3 from this private only EC2 instance.
+So go ahead and complete this video and when you're ready I'll look forward to you joining me in the next.

@@ -1,0 +1,155 @@
+Welcome back and in this lesson I want to cover the AWS Directory service.
+This is another service which I think is often overlooked and undervalued.
+It provides a managed directory, a store of users, objects and other configuration.
+Now it's delivered as a managed service, it has a few versions and lots of use cases.
+So we do have a lot to cover in this architecture lesson.
+So let's jump in and take a look.
+Before we start I want to talk about directories in general.
+What are they and what do they do?
+Well, directories store identity and asset related information.
+So things like users, groups, computer objects, server objects and file shares.
+And it holds all of these objects in a structure which is hierarchical.
+So like an inverted tree.
+And this is often referred to as a domain.
+But regardless of its name, it's essentially an inverted tree structure that holds identity related objects.
+Now multiple directories, each of which provide a tree structure, can be grouped together into what's called a forest.
+Now directories are commonly used within larger corporate Windows environments.
+You can join devices to a directory.
+So laptops, desktops and servers.
+And directories provide centralized management and authentication.
+So it means that you can sign in to multiple devices with the same usernames and passwords.
+And it allows corporate IT staff to centrally manage all of the identity and asset information in one single data store.
+One of the most common types of directory that's in use in large corporate environments is Active Directory by Microsoft.
+And its full name is Microsoft Active Directory Domain Services or ADDS.
+But there are alternatives. Another common one is called Samba, which is an open source implementation of Active Directory.
+And it's designed to provide an alternative but only provides partial compatibility with Active Directory.
+And that's something that you need to be aware of when it comes to picking the mode that directory service will be operating in.
+So now let's look at directory service specifically.
+So directory service is an AWS implementation of a directory.
+It's the same equivalent to Active Directory as RDS is to databases.
+Using it means you have no admin overhead of running your own directory service.
+And that admin overhead is often significant.
+Directory service runs within a VPC. It's a private service.
+So to use it for services, those services either need to be within that VPC or you need to configure private connectivity to that VPC.
+It provides high availability and it does this by deploying into multiple subnets in multiple availability zones within AWS.
+Now there are certain AWS services such as EC2, which can optionally use a directory.
+So Windows EC2 instances can be configured to join the directory.
+And then you can use identities inside that directory to log in to that EC2 instance.
+And you can also configure a directory for centralized management of various different Windows features that are running on Windows EC2 instances.
+Certain services that run inside AWS require a directory.
+And an example of this is Amazon WorkSpaces, which is a virtual desktop product where you can get a virtual operating system upon which you can run applications.
+If you've ever used Citrix or anything similar, then Amazon WorkSpaces is essentially AWS's version of this.
+But it needs a directory and it needs to be a directory that's registered with AWS.
+And so it needs the directory service, the directory service product.
+And to join EC2 instances to a domain via the AWS tools, you also need to have a registered directory inside AWS.
+So the directory service product is this implementation.
+It's an AWS supported and registered directory service within AWS that other AWS products can utilize for identity and management purposes.
+Now when you create a directory, you're going to be doing so with a number of different architectures in mind.
+So it might be an isolated directory, meaning inside AWS only and independent of any other directory that you might have, or you might not have any other directory.
+It can be integrated with an existing on-premises directory, so almost like a partner directory.
+Or you can use the directory service in what's called connector mode, where it just proxies connections back to your on-premises system.
+Essentially this allows you to use your existing on-premises directory with AWS services, which require a registered directory service.
+It's essentially just a proxy.
+Now I want to quickly step through each of these different architectures visually before we finish up.
+Because for the exam, you really only need to have an awareness of the architecture.
+And I always find that by looking at it visually, it helps keep it in your memory for when you sit the exam.
+So let's do that next.
+Let's step through each of the different modes that the directory service can run in.
+Now first we're going to look at the directory service running in simple AD mode.
+This is the cheapest and the simplest way that the product can run inside of EPC.
+So we start off with a VPC, and let's say that we want to run Amazon workspaces within this VPC.
+And these workspaces will be utilized by some Animals for Life users.
+So workspaces as a product requires a directory service.
+So when you log into a workspace, you're not logging into a local user, you're logging in using a user of that directory.
+And so it needs some type of directory that's registered within AWS.
+And one option is that we can deploy the directory service in simple AD mode.
+So simple AD is an open source directory that's based on Samba 4.
+So it's a directory that aims to provide as much compatibility with Microsoft Active Directory as possible, but do it in a lightweight way.
+So if you see any mention of open source or Samba 4 or Samba, then think simple AD.
+So you can create users and other objects within simple AD, and this can be integrated with workspaces.
+So simple AD can operate in two different sizes, and it can support up to 500 users when using the small mode,
+and up to 5,000 users for large sized simple AD.
+And it can integrate with lots of different AWS services.
+So things like Amazon Chime, Amazon Connect, Amazon QuickSight, Amazon RDS, WorkDocs, Workmail, Workspaces,
+and even the AWS Management Console allows you to sign in with users of the directory service.
+But there are other things, such as EC2, which can utilize the directory service as well,
+either from the console or by manually configuring the operating system of the EC2 instance.
+When you deploy a simple AD directory service, you're actually deploying a highly available version of Samba.
+And so anything that can join this Samba directory is capable of joining the directory service directory running in simple AD mode.
+Now the critical thing to understand about simple AD mode is that it's designed to be used in isolation.
+It's not designed to integrate with on-premises systems, and it isn't a full implementation of something like Microsoft Active Directory.
+If you need something bigger and more feature-rich, then you can choose to use managed Microsoft AD mode.
+And this mode is designed for when you want to have a direct presence inside AWS,
+but also when you have an existing on-premises environment.
+Using this mode, you can create an instance of the directory service inside AWS, and architecturally it's similar to simple AD.
+You can have users which are created within the directory service itself hosted inside AWS,
+and once created, services inside AWS can integrate directly with the directory service.
+But in addition, and this is a set of features that goes beyond simple AD mode,
+you can create a trust relationship with your existing on-premises directory.
+And this needs to occur over private networking, so either a direct connect or a VPN connection.
+Now the benefit of this mode is that the primary location is in AWS, and it trusts your on-premises directory.
+It means if the VPN fails, the AWS services which rely on the directory will still be able to function.
+So when you deploy directory service in Microsoft AD mode, it means that it's a fully-fledged directory service in its own right.
+It's not reliant on any on-premises infrastructure to function.
+But also it's an actual implementation of the Microsoft Active Directory, specifically the 2012 R2 version.
+And so it directly supports applications which require Microsoft AD features, such as schemas and schema extensions.
+And these products include things like Microsoft SharePoint as well as Microsoft SQL Server-based applications.
+So if you see questions in the exam about requiring an actual implementation of Microsoft Active Directory,
+complete with trust relationships with an on-premise Microsoft Active Directory,
+then it's the managed Microsoft Active Directory mode that you need to use, not simple AD.
+Now there's one final mode that you need to be aware of, and I have seen this come up in the exam.
+And this mode is AD Connector.
+Consider a scenario where you only want to use one specific AWS service that has a requirement of a directory service,
+let's say Amazon WorkSpaces.
+And in this example you already have an on-premises directory,
+and you don't want to create a brand new one just to use this one single product.
+Well, AD Connector offers a solution.
+To utilize AD Connector, you would need to establish private network connectivity between your AWS account and your on-premises network.
+So an example of this could be a VPN.
+And then once this VPN is established, you would create the AD Connector and point the AD Connector back at your on-premises directory.
+Now what's critical to understand about the AD Connector is that it is only a proxy.
+It just exists as an entity to integrate with AWS services.
+So any AWS services which need a directory, they will see the AD Connector,
+and they'll know they'll have access to an Active Directory instance, but they won't care where.
+And it's the AD Connector itself that's pointing back at your on-premises directory.
+It doesn't provide any authentication of its own.
+It is simply a proxy.
+It simply proxies the requests back to your on-premises environment.
+So using this architecture, the primary directory is still located on-premises,
+and all requests for authentication from services are proxied all the way back to your on-premises directory.
+Now this means that you don't need to provision an additional directory service specifically to use AWS products and services,
+but it does mean that if the private network connectivity fails,
+then the AD Connector stops working and any services which use it could experience problems.
+So you would use this option only when you already have a directory on-premises
+and just want to use AWS products and services which need a directory without deploying a brand new one.
+Now one of the important things for the exam is to know when to pick between the different modes for directory service.
+You should always start off with Simple AD.
+Simple AD is your default. It's designed for simple requirements.
+If you need an isolated directory within AWS, if you don't need any connectivity with on-premises,
+you simply need to use it to support any AWS products and services which require a directory, then use Simple AD mode.
+You can move to using Microsoft AD if you have any applications in AWS which need an actual implementation of Microsoft Active Directory.
+So if you have any products which expect an actual implementation of Microsoft Active Directory, you need to use this mode.
+Or if you need to have that trust relationship with your existing on-premises Microsoft Active Directory,
+that's another reason to use the Microsoft AD mode.
+It's critical to understand that this is actually an implementation of Microsoft Active Directory.
+It's not emulated in any way. It's not been adjusted by AWS.
+It's essentially a managed deployment of a Microsoft Active Directory set of domain servers.
+Now finally, if your only requirement is to use AWS services which need a directory,
+but you don't want to store any directory information in the cloud, you don't want to manage a directory in the cloud,
+you simply want the ability to use the products and services that require a directory, that's when you would use the AD connector.
+The important thing to remember about the AD connector, it doesn't provide functionality of its own.
+You create it, you have to point it back at your on-premises environment,
+and it requires connectivity to your on-premises environment and for that on-premises environment to be fully functional.
+If either of those two things are not the case, then the AD connector will fail.
+Now one of the major differences between the older SAA C01 exam and the newer C02 exam
+is that there are a lot more Windows environment-based questions,
+and that's the reason I've included this lesson on the directory service.
+You need to be aware of all the different products and services that can be used to support and implement
+Windows environments within AWS and enable hybrid mode operation with any Windows environments that you have on-premise.
+Now the questions at an associate level won't be very challenging, they'll focus purely on this high-level architecture,
+so you won't need to be aware of the implementation details for the exam,
+and that's why I've chosen to make this a theory-only lesson.
+So this lesson provides all the information that you'll need to answer any directory service questions
+that you might get in the exam.
+So at this point, that's everything I wanted to cover, so go ahead, complete this video,
+and when you're ready, I'll look forward to you joining me in the next.

@@ -1,0 +1,50 @@
+Welcome back, and in this lesson I want to talk about DynamoDB TTL, which stands for
+Time to Live. It's a pretty simple concept to understand fully, but really powerful,
+and it's one that you'll need to understand for the exam and in the real world. So let's
+jump in and I'll try to make this one as brief as possible.
+Let's say within DynamoDB that we have this table. I'm only showing three items, but
+let's assume that the table has three million. It has a partition key in blue on the left
+and a sort key in green next to that. And in addition to that, it has three attributes
+– yellow in the middle of the table, then red and then pink. Now for that table there
+are going to be many partitions which support the operations on that table, and here I'm
+just showing two. One partition which stores any items which use the dark blue partition
+key value, and another one which stores currently the two items with a light blue partition
+key value. Now the TTL feature lets you define a timestamp, which allows items in a table
+to be automatically deleted at a certain point in time. You're defining when an item is
+no longer required, so per item you specify a date and a time, and at that point the item
+is marked as expired and then deleted. Now let's step through how this works. First
+on a table you need to enable TTL and pick an attribute to be used for the TTL processors.
+The attribute should then contain a number. It's a value in seconds, the seconds since
+the epoch, which is the 1st of January 1970. So if you want an item to expire in one week's
+you need to find out how many seconds since that date one week from now is, and then put
+that into the attribute that you pick for TTL, and you should do that on all items which
+you want to be affected by the TTL processors. So when you configure TTL on a table, what
+it actually does is it configures automated processors which run on every partition of
+that table. The first process periodically scans all items in a partition, comparing
+the value in the TTL attribute with the current date and time in epoch format. In effect it's
+checking if the item should still be viewed as valid. Where any value in the TTL attribute
+is less than the current date and time, so when the item is no longer valid, that item
+is set to expired. They aren't deleted yet, they can still be queried and viewed in the
+table, they're just expired. Next, another automated process which runs periodically
+and which is independent of the initial one, this runs also on all of these partitions.
+This time it's looking for any items which are set as expired, and when it finds any
+items these items are deleted from the partitions, meaning they're removed from the table. They're
+also removed from any indexes, and a delete is also added to any strings configured on
+the table. Now these delete operations are system events, they run in the background
+and don't cause any performance issues, nor do they have a charge. You can also in
+addition configure a stream on the actual TTL processors, and this creates a 24 hour
+window of any deletions which are caused by those TTL processors, and this is useful if
+you want to have any housekeeping processes where you track the TTL events which occur
+on tables, so potentially things like an undelete function, or some kind of table auditing.
+So this is key to understand, delete events are placed into a normal table stream along
+with any creates or modifies, but in addition you can create a dedicated stream which is
+linked to the TTL processors, so you can get a 24 hour rolling window of just those deletes.
+So TTL in summary allows you to define a per item timestamp which determines when an
+item is no longer needed. It's useful if you store items which lose relevance after
+a specific time, for example removing user or sensor data after one year of inactivity
+in an application, or retaining sensitive data for a certain amount of time, maybe you
+have regulatory or contractual obligations which mean you need to retain data for say
+one year, three years or five years, then you can configure those within a TTL attribute
+and DynamoDB will automatically remove items once they're no longer relevant. Now that's
+everything I wanted to cover in this lesson, so go ahead and complete the lesson and when
+you're ready I'll look forward to you joining me in the next.

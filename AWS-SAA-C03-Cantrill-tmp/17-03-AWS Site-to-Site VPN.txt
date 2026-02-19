@@ -1,0 +1,202 @@
+Welcome back, and in this lesson I'm going to be stepping through the architecture of AWS Site-to-Site VPN.
+For the exam, and if you're designing solutions for real-world production usage, understanding VPNs and how they can be used within AWS is essential.
+They offer the quickest way to create a network link between an AWS environment and something that's not AWS,
+and this might be on-premises, another cloud environment, or a data center.
+Now we've got a lot to cover, so let's jump in and get started.
+A Site-to-Site VPN is a logical connection between a VPC, or Virtual Private Cloud, and an on-premises network,
+and this connection is encrypted in transit using IPsec, which is important because it runs over the public internet in most cases.
+Now there's a common exception to this when you run a VPN over the top of a direct connect, and we'll be covering this later in this section.
+But assume, unless written otherwise, that a VPN is running over the public internet.
+Now a Site-to-Site VPN can be fully, highly available, assuming that you design and implement it correctly.
+This is really important to understand for the exam and real-world usage, so I'm going to be covering it as a priority in this lesson.
+There are a few points of failure within the VPN architecture, and you need to understand them all.
+Site-to-Site VPNs are also quick to provision. Assuming you understand all the steps and have all the skills,
+you can have a Site-to-Site VPN up and running in less than an hour.
+And try and remember this, because it's in contrast to the long provisioning times for physical connections like Direct Connect,
+which we'll talk about later in this section.
+Now there are a few components involved in creating a VPN connection that you need to be aware of.
+First, and this goes without saying, the VPC.
+VPNs connect VPCs and private on-premise networks, so it's logical that the VPC is one important building block of the wider connection architecture.
+Second, we've got the Virtual Private Gateway, or VGW, and this is another type of logical gateway object,
+which can be the target on route tables. It's something that you create and associate with a single VPC,
+and it's the target on one or more route tables.
+Next, we've got the Customer Gateway, or CGW, and this can actually refer to two different things.
+It's often used to refer to both the logical piece of configuration within AWS,
+and the thing that that configuration represents, a physical on-premises router which the VPN connects to.
+So when you see CGW mentioned, it's either the logical configuration in AWS,
+or it's the physical device that this logical configuration represents.
+And then the last component is the VPN connection itself, which stores the configuration,
+and it's linked to one Virtual Private Gateway and one Customer Gateway.
+So this is how we create the network virtual connection between these two locations.
+Now later in this section I'm going to be showing you how to create a VPN connection,
+but for now I want to focus on the architecture and the theory.
+So let's look visually at how VPNs are architected.
+First, I want to cover a simple implementation of a site-to-site VPN,
+so that you're comfortable with the architecture.
+So on the left, we have the Animals for Life VPC.
+It's a simplified version with three private subnets in Availability Zone A, B and C.
+Next, we've got the AWS Public Zone, where AWS public services operate from,
+the public internet directly connected to that,
+and then finally on the right, the Animals for Life corporate office,
+using an IP range of 192.168.10.0.24.
+Now step one for creating a VPN connection is to gather all of the required information.
+We need the IP address range of the VPC that we'll be connecting to the on-premises network,
+and we'll also need the IP range of the on-premises network itself,
+and the IP address of the physical router on the customer premises.
+Once we have all of this information,
+then we can create a virtual private gateway and attach it to the Animals for Life VPC.
+The virtual private gateway is a logical gateway object within AWS,
+and so it can be the target of routes, just like any other gateway object.
+Now within our on-premises environment, we're going to have a customer premises router,
+and this will have an external IP address,
+and for this router, we create a customer gateway object within AWS.
+This is a logical configuration entity that represents this physical device on our customer premises.
+In this case, we need to define its public IP address
+so that the logical CGW entity matches the physical router.
+Behind the scenes, the virtual private gateway is actually a highly available gateway object.
+Just the same as earlier in the course when you configured internet gateways,
+all you had to do was create the gateway and associate it with a VPC,
+and a virtual private gateway is just the same.
+But behind the scenes, a virtual private gateway actually has physical endpoints.
+These are devices in different availability zones, each with public IP version 4 addresses,
+and this means that the virtual private gateway is fully, highly available by design.
+An availability zone can fail, and if it affects one of the physical endpoints, the other will still function.
+But that doesn't mean that the whole thing is highly available,
+and I'll detail that during the remainder of this lesson.
+The next step is that we need to create a VPN connection inside AWS,
+and there are different types of VPN connection.
+There are static and dynamic VPNs.
+For now, we're going to create a static one,
+and I'll be explaining the differences between the two later in this lesson.
+Now when creating a VPN connection, you need to link it to a virtual private gateway,
+and this means that it can use the endpoints which that virtual private gateway provides.
+You also need to specify a customer gateway to use,
+and when you do, two VPN tunnels are created,
+one between each endpoint and the physical on-premises router.
+A VPN tunnel is an encrypted channel through which data can flow between the VPC and on-premises network, or vice versa.
+If at least one of these VPN tunnels are active, then the two networks are connected.
+So in this particular case, we've got one VPN connection
+that's using the two endpoints of the virtual private gateway,
+and both of those are connected back to our one customer gateway.
+So we have a partially highly available design.
+If one of the AZs on the AWS side fails,
+then the other endpoint will continue functioning, so at least one of these tunnels will be active.
+Now because this is a static VPN, it means that we have to statically configure the VPN connection with IP addressing information.
+So we have to tell the AWS side about the network range that's in use within the on-premises network,
+and we have to configure the on-premises side so that it knows the IP address range that the AWS side uses.
+And this means that traffic can flow from the VPC, via the VPC router,
+through the virtual private gateway, over the tunnels, to the on-premises network, and back again.
+Now as I just mentioned, this design from an overall perspective is actually not fully highly available.
+But there is still one single point of failure, and that single point of failure is the customer on-premises router.
+If this fails, then the whole VPN connection fails.
+Even though at the AWS side it is highly available,
+all of the connections currently terminate into the single customer on-premises router.
+At the AWS side there are two tunnels to separate hardware in separate availability zones,
+but this doesn't matter if the customer side fails,
+because all of the tunnels terminate into the same single point of failure.
+And this is known as partial high availability.
+It's highly available on the AWS side, but suffers from a single point of failure on the customer side.
+So it's not a fully highly available solution.
+It is actually pretty simple to resolve this, to modify this design so that it is fully highly available.
+And let's look at that next.
+Moving to a fully highly available solution means adding another on-premises customer router,
+using a second internet connection and ideally doing all of this in a separate building.
+Once you have this second resilient connectivity method,
+then you can create an additional VPN connection at the AWS side.
+Now behind the scenes this actually creates two more physical endpoints,
+which are managed by the virtual private gateway,
+and each of those has their own public IP addressing.
+So this new VPN connection, it would be linked to the same virtual private gateway at the AWS side,
+but to the new customer gateway.
+So it would establish another pair of VPN tunnels between the two new endpoints and that additional customer gateway.
+Now this means architecturally we're in the situation where the virtual private gateway is now highly available.
+So it's highly available as a logical entity.
+It's using endpoints which are located in different availability zones and so it can withstand physical failure.
+But now in addition at the customer side we're now using multiple pieces of hardware
+with multiple internet connections, ideally in separate buildings.
+And that means this is a fully highly available solution.
+It's got two VPN tunnels connecting each customer premises router to two VPC endpoints in separate availability zones
+and then that configuration is repeated again with a second customer gateway.
+So either of the customer gateways can fail, either of the availability zones can fail,
+and still the VPC and on-premises network will have connectivity.
+Now before we finish I just want to talk about the differences between static and dynamic VPNs.
+Now a dynamic VPN uses a protocol called BGP known as the Border Gateway Protocol
+and that's important because if your customer router doesn't support BGP then you can't use dynamic VPNs.
+So conceptually this is a traditional VPN architecture.
+A VPC subnet on the left, a VPC router middle left, a virtual private gateway middle right
+and then an on-premises environment with a customer router on the right.
+This architecture is the same based on both types of VPNs, so static VPNs and dynamic VPNs.
+At a high level the difference is how routes are communicated.
+So a static VPN uses static networking configuration.
+Static routes are added to the route tables and static networks have to be identified on the VPN connection.
+The benefit of using a static VPN is that it's simple, it just uses IPsec and because of that
+it works almost anywhere with any combination of routers.
+You are really restricted on things like load balancing and multi-connection failover.
+So if you need any advanced high availability, if you need to use multiple connections,
+if the VPNs need to work with Direct Connect, which we'll talk about later in this section,
+then you really do need to be using dynamic VPNs.
+With dynamic VPNs, as I just mentioned, you're using a protocol called BGP or the Border Gateway Protocol.
+Now this is a protocol which lets routers exchange networking information.
+And so if you have a dynamic VPN, you're creating a relationship between the virtual private gateway
+and the customer router.
+Over this relationship they can both exchange information on which networks are at the AWS side
+and which are at the customer side.
+In addition, they can communicate the state of links and adjust routing on the fly.
+And that allows for multiple links to be used at once between the same locations.
+So this is why dynamic VPNs are able to use really high end, highly available VPN architectures
+because they can communicate the state of the links between the virtual private gateway and the customer gateway.
+Now with dynamic VPNs, routes can still be added to the route table statically,
+or you can make the entire solution fully dynamic by enabling a feature called route propagation
+on the route tables in the VPC.
+And when you enable route propagation, it means that while any VPNs are active,
+any networks that these VPNs become aware of, so the on-premises networks in this example,
+are automatically added as dynamically learned routes on the route tables.
+So instead of having to statically enter routes on each and every route table,
+if you enable route propagation, they will learn these routes from the virtual private gateway
+whenever any VPNs are active.
+So any virtual private gateways which learn any routes using BGP,
+they can automatically and dynamically be added onto route tables on a per route table basis
+if you enable route propagation.
+Now whichever method you decide on, there are a number of key considerations that you need to be aware of.
+First, there is a speed cap for VPNs.
+A single VPN connection with two tunnels has a maximum throughput of 1.25 gigabits per second.
+Now this is an AWS limit.
+You would also need to check the speed supported by your customer router.
+Because VPNs use encryption, there's a processing overhead on encrypting and decrypting data.
+And at high speeds, this overhead can be significant.
+Now the speed limit is something that you should remember for the exam,
+because it's often something which makes selecting between VPNs and something else significantly easier.
+So if you need more than 1.25 GB per second, then you can't use VPNs.
+Now you also need to be aware that there is a cap for the virtual private gateway as a whole.
+So for all VPN connections connecting to that virtual private gateway.
+And that's also 1.25 GB per second.
+Another consideration for VPNs is latency.
+The VPN connection transits over the public internet.
+And depending on the quality of your internet connection, there may be many hops between you and the AWS VPN endpoints.
+Each hop adds latency and variability.
+So if you care about these as a priority, maybe you're running an application which is really latency sensitive,
+you might want to look at something else like Direct Connect, which we'll be covering later in this section.
+Again, latency is often a selection criteria to pick between VPNs and something else in the exam.
+Now in terms of costs, VPNs have an hourly cost to operate.
+There's a data transfer charge to transfer data out.
+And because you're using the internet to transit data, your on-premises internet connection is also going to be used by the VPN.
+So if you have any data caps on your internet connection, this is something to keep in mind,
+especially if you're going to be using a VPN to transfer lots of data.
+Now one of the benefits of VPNs, and this is important for the exam, is that they are very quick to set up,
+sometimes taking hours or less because it's all software defined.
+And IPSec is supported on pretty much all hardware at this point, even consumer grade routers.
+It is worth keeping in mind though that to use dynamic VPNs you will need BGP support, which is much less common.
+But when comparing VPNs to anything else, VPNs are almost always quicker to set up versus other private connection technologies.
+VPNs can also be used as a backup for a physical connection such as Direct Connect.
+Rather than needing to provision two physical connections for true high availability,
+you can use one physical connection as the primary and use VPNs as the secondary.
+VPNs can also be used with physical technologies though, for example Direct Connect.
+So you can use a VPN at the start because they're quick to set up and provision,
+and then you can lodge a request to provision a Direct Connect which is added later.
+So a Direct Connect can take much longer to provision, sometimes weeks or months,
+but you can use a VPN to set up that initial connectivity and then either replace it further down the line as the Direct Connect comes online,
+or you can run both of them together for high availability.
+Now VPNs can also be used over the top of Direct Connect to add a layer of encryption,
+but I'll be covering that in the Direct Connect lesson.
+For now though, that's all of the theory that I wanted to cover,
+so go ahead, complete the video, and when you're ready, I'll look forward to you joining me in the next.

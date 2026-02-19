@@ -1,0 +1,92 @@
+Welcome back, and in this lesson I want to talk about the AWS Transit Gateway, known as TGW.
+Now this is a product that I remember being super excited about, because at the time there was a massive hole in the hybrid network capability on the AWS platform.
+Transit Gateway answered a lot of the complexity issues which plagued AWS in this space.
+Now understanding why the Transit Gateway is such a valuable product means focusing both on the features it provides as well as how it can help evolve network architectures, and that's something I'll attempt to do in this lesson.
+Now we do have a lot to cover, so let's jump in and get started.
+The Transit Gateway is a network transit hub which connects VPCs to each other and to on-premises networks using site-to-site VPNs and Direct Connect.
+It's designed to reduce the complexity of network architectures within AWS.
+It's a network gateway object, so another one that you need to remember, and like other network gateway objects, it's highly available and scalable.
+The architecture is that you create attachments, which is how Transit Gateway connects to other network objects within AWS, and it's how it connects to on-premises networks.
+Currently, valid attachments include VPC attachments, site-to-site VPN attachments, and Direct Connect gateway attachments.
+Now to understand why Transit Gateway is required, it's useful to compare a moderately complex network architecture and see how Transit Gateway affects that complexity.
+So let's do that.
+Let's use Animals for Life as an example, and let's assume that the Animals for Life network has evolved and they have four VPCs, so A, B, C, and D, as well as a corporate office.
+Now we want to connect these together so that every point has connectivity to every other point in a fully, highly available way.
+Now we can use VPC peering connections to connect the four VPCs, and these are already highly available and scalable.
+But as you know, they don't support transitive routing, and so we need to create a full mesh between all VPCs, so rather than four peering connections, we'd need to have six.
+That's already six connections that we need to plan, implement, manage, and support, but that's not everything that we need for this architecture.
+We need the corporate office to be connected to all of the VPCs, and because VPN routing isn't transitive, we need a full mesh here as well.
+And this means a customer gateway on the customer side and VPN connections between the VPCs and that customer gateway.
+So that's a total of eight tunnels, two tunnels from each of the VPCs to the customer gateway of the Animals for Life corporate office.
+So this ensures high availability at the AWS side.
+But remember, we need this architecture to be fully, highly available, and we currently have a single point of failure, the customer gateway on the customer side.
+While we have multiple availability zones at the AWS side all connecting back to the customer premises, they all do so via this single customer gateway.
+And so to make this architecture fully, highly available, we need to add another customer gateway on the customer premises,
+ideally using a separate internet connection and ideally in a separate premises entirely, and then have that customer gateway connected back to all four of these VPCs.
+So that adds another eight tunnel connections.
+Now, I'm hoping at this point that you start to see the problem.
+A full mesh network is complex.
+It has a lot of admin overhead to implement and to maintain.
+And what's more, it scales really badly.
+The more networks are involved, the more networks get added each time a new network is added.
+It's a problem which gets worse the more you scale.
+So in addition to getting more complex, that increase in level of complexity itself increases the more that you scale.
+So this is not a solution that we can use much beyond this point.
+If we add additional VPCs or additional customer premises, it gets really complex really quickly.
+And that's where the Transit Gateway becomes really useful.
+So let's have a look at how that changes this architecture.
+Now, using Transit Gateway, we start with the same basic architecture.
+So four VPCs, A, B, C and D, and then the corporate premises with the two customer gateway routers.
+This time, though, we have a Transit Gateway, which we create within the Animals for Life AWS account.
+A Transit Gateway can use a site to site VPN attachment, meaning it becomes the AWS side termination point for the VPN.
+So rather than having to have connections between the corporate office and every VPC terminated on a virtual private gateway,
+instead, each customer gateway only has to be connected back to this single Transit Gateway.
+So we have the same level of high availability.
+We still have the four tunnels connected from different availability zones at the AWS side to different customer gateways at the on-premises side.
+So we don't lose any high availability with this solution, but we do reduce the number of VPN tunnels that are required.
+With the Transit Gateway, you can also create attachments to VPCs.
+And just like VPC interface endpoints that you used earlier in the course,
+you need to specify a subnet in each availability zone inside the VPCs that you want to use the Transit Gateway with.
+And when you do that, it acts as a highly available inter-VPC router.
+So one single Transit Gateway can route traffic between lots of different VPCs.
+And this is a transitive routing capable device.
+So we only need attachments from the Transit Gateway to VPC A, B, C and D.
+And then all of the VPCs can talk to each other through the Transit Gateway.
+And in addition to allowing full connectivity between all of the VPCs, because we have the VPN attachment,
+it means that all of the VPCs can communicate with the on-premises environment,
+as well as the on-premises environment being able to communicate with all of the individual VPCs
+using this single network routing device, the Transit Gateway.
+And in addition, you can also peer Transit Gateways with other Transit Gateways in other accounts in other regions.
+So you can use this to peer with networks that themselves are connected to the peer Transit Gateway.
+And those can be in other AWS regions and even across accounts.
+And this is a really useful feature to create a global network within AWS.
+Any cross-region data uses the AWS global network and so benefits from the more predictable latency
+rather than using the public internet.
+And in addition, you can also attach a Transit Gateway to Direct Connect Gateways if your business uses Direct Connect.
+And so this allows you to use the Transit Gateway as well with physical private networking connections into your business premises.
+And I'll be covering this specific feature in a dedicated lesson elsewhere in the course.
+Transit Gateways come with a default route table, which is how traffic is routed between attachments.
+But you can create a complex routing topology by using multiple route tables.
+So before we finish this theory lesson, just some important considerations that you should be aware of for the Transit Gateway.
+It does support transitive routing, which means that you don't need to create this full mesh topology.
+You can have a single Transit Gateway with multiple attachments.
+And it will orchestrate the routing of traffic between any of those attachments as long as appropriate routing is in place.
+So you need route tables with routes on them in order for the Transit Gateway to route traffic between its different attachments.
+But assuming you do, then it's capable of transitive routing.
+Transit Gateway can be used to create global networks.
+I've just talked about that. You can peer different Transit Gateways.
+And again, you need to be aware of this for the exam.
+You can share Transit Gateways between different AWS accounts using AWS RAM or Resource Access Manager.
+I've not covered that product yet in the course.
+But it's an AWS service which allows you to share products and services or components of products and services between different AWS accounts.
+Again, you can peer Transit Gateways with different regions in the same or cross account.
+So remember that one for the exam. It doesn't have any limitations in terms of region or accounts.
+You really can use it to create really complex, highly efficient routing topologies.
+Now, overall, the thing to remember about the Transit Gateway is it offers much less complexity in terms of network architectures than without Transit Gateway.
+So instead of having to use multiple VPC peers and then a full mesh topology in terms of VPN connections,
+you can use this one single resilient, scalable, highly available device to perform transitive routing between all of your different networks.
+And that results in a massive reduction of network complexity.
+Now, there's going to be a demo lesson in this section of the course where you'll get the opportunity to implement a Transit Gateway inside your AWS account.
+You'll get to experience using a Transit Gateway instead of VPC peering connections to link different VPCs together.
+But with that being said, that's all of the theory that I wanted to cover in this lesson.
+So go ahead, complete this video. And when you're ready, I look forward to you joining me in the next.

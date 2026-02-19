@@ -1,0 +1,125 @@
+So in this part of the series, this is the architecture that we'll be implementing.
+We'll be implementing and testing the Gateway Endpoint.
+So let's move across to our console and get started.
+Now to get started with this part of the demo series, I want you to go back to the CloudFormation console,
+click on Stacks, then go inside the A4L Secret VPC stack and click on Resources.
+You'll be able to see a resource that's been created, its logical ID is Bucket.
+Just go ahead and click on the physical ID and open that in a new tab.
+That will take you to the S3 console inside that bucket.
+It should be called A4L Secret VPC and then Bucket and then some random.
+Now we need to upload a file to that bucket, so go ahead and click on Upload and then Add Files.
+Then you need to move to the folder where you downloaded SuperSecret.txt.
+Select that file, click on Open, then scroll down to the bottom and click Upload.
+You need to wait for that to finish.
+Once it's finished, you can click on Close and that completes the setup part of this demo lesson.
+Now just as a reminder, this is the architecture that we're going to implement in this part of the demo series.
+There is a private EC2 instance that we're going to connect into, but this VPC has no public internet connectivity.
+There's no internet gateway and no other method to access this VPC.
+So the way that we're going to connect into it is slightly different.
+So go to Services and then go to EC2.
+If you've still got the tab open to EC2 instance connect from the previous part of this demo series,
+then you can continue with that session.
+If you don't have that open, then you need to locate the A4L-Private EC2 instance.
+Right-click, put Connect, select EC2 instance connect,
+check the box next to Connect using EC2 instance connect endpoint,
+click in the EC2 instance connect endpoint search box
+and select the endpoint that you created in the previous part of the demo series.
+And then once you've done that, go ahead and click on Connect.
+So we're connected now to this private instance, but it doesn't have any internet connectivity.
+And we can verify that by just running a ping 1.1.1.1 and as you'll see, it times out.
+This instance has no internet connectivity.
+We can verify that by going back to the EC2 console
+and note how this instance has no public IP version 4 address and no public DNS.
+It's a private only instance.
+We can also verify connectivity to AWS services by running the aws s3 ls command.
+And note, when we run that, it just hangs.
+There is no connectivity with AWS public services
+because we don't have access to any of the public space endpoints.
+So press Control and C at the same time to cancel out of that
+and to rectify this to allow us to connect to the AWS public services s3.
+In this example, we're going to create a gateway endpoint.
+So to do that, we need to move to the VPC console.
+So type VPC in the search box and open that in a new tab.
+Then move to that tab and on the left under virtual private cloud,
+go ahead and click on Endpoints.
+Now ignore the endpoint that's already there.
+That's the one that we created in the previous part of this demo series.
+What we want to do though is to create a brand new gateway endpoint.
+So go ahead and click on Create Endpoint.
+Now it's here where you can create both gateway and interface endpoints.
+We'll start by giving this a name.
+In the name box, type private VPC s3.
+The category is going to be AWS services.
+Scroll down and in the filter services box, just go ahead and type s3.
+And you're looking for com.amazonaws.us-east-1.s3.
+So select that and it will list a gateway and interface endpoint.
+So go ahead and check the box next to gateway.
+And then we're going to scroll down further.
+Gateway endpoints are created in a specific VPC.
+So click in the drop down and make sure you select the A4L-secret VPC
+because we're making this gateway endpoint inside the private only VPC for animals for life.
+Now remember in the theory lesson how I mentioned that when you create a gateway endpoint,
+you need to specify route tables.
+And when you do that, a prefix list is added to the route table for these subnets
+which allow the VPC router to direct traffic towards the gateway endpoint.
+So what we need to do now is select the appropriate route table.
+Now if you look at the two different route tables that are shown, you might see a different number.
+But what we're looking for is the route table that's associated with the application subnets
+inside the animals for life VPC.
+So hover over each of these and you're looking for the one that says sn-app-a, app-b and app-c.
+So it should be the one that's listed as the main route table
+and it should have nine subnets associated with it.
+Don't worry if it's a slightly different number.
+Just hover over it and make sure that it's got the application subnets associated with it.
+And once you're certain about that, just check the box next to this particular route table.
+Now scroll down a little further still.
+This is where you can define the endpoint policy.
+We won't be doing this because we want this gateway endpoint to have full access to all S3 buckets.
+We don't need to set any other information.
+We can just go ahead and click on create endpoint.
+Now that that endpoint's created, just refresh it to make sure that it's set to an available state.
+And it is.
+What I want to do is to go to route tables on the left hand side and then scroll to the right
+and just expand this VPC ID column.
+And we're focusing on the animals for life secret VPC.
+So forget any of these that don't have that listed.
+And we're looking for the main route table for this VPC.
+And if I go ahead and select this and then just click on routes, I want to draw your attention to this.
+This is the prefix list for the S3 service in the US-E-1 region.
+And this is how the VPC router knows to route any traffic from instances inside this private only VPC
+to the gateway endpoint object and then out to the S3 service.
+So if you recall from the theory lesson, this is how gateway endpoints work by using these prefix lists.
+And this is not something you can edit.
+It's added by AWS when you create the gateway endpoint and associate it with the particular subnets
+or more specifically, the route tables of those particular subnets.
+But that's all we need to do to get this gateway endpoint operational.
+Now, if I return to the EC2 console.
+Now, I'm just going to go ahead and clear the screen to make it a little bit easier to see.
+And I want you to type PWD and just make sure that it says forward slash home forward slash EC2 hyphen user,
+which is the home folder of the user that we're logged into this instance with.
+If it doesn't say that, just type CD and press enter.
+And that will return you to the home folder of the user that you're logged in with.
+Now, at this point, because we've got this gateway endpoint in place,
+if we go ahead and run this command again, so AWS space S3 space LS,
+we should be greeted with a list of all of the buckets inside our AWS account.
+Now, the next command that we'll be typing in is to copy an object from that bucket to our local EC2 instance.
+Now, this command is stored inside the lesson commands document, which is linked to this lesson.
+So this is the command and it has a placeholder of bucket name that we need to replace with our actual bucket name.
+So delete bucket name entirely and just leave this forward slash highlighted.
+And then from this list of bucket names,
+you're looking for the one that starts with the name of the cloud formation stack that you created and then hyphen bucket
+and just copy that into your clipboard and then go ahead and paste this in on the command that we're about to run.
+And it should look something like this AWS space S3 space CP space S3 colon slash slash
+then the name of the S3 bucket.
+Yours will be different than a forward slash super secret dot txt then a space super secret dot txt.
+And that will copy that object from the S3 bucket to our local system.
+So go ahead replace that placeholder with your bucket name and press enter and that's copied down that file.
+And if we do an LS space hyphen la we can see super secret dot txt at the bottom and let's go ahead and cat that file to see its contents.
+And there we go cats are the best.
+So that's the contents of that object in this S3 bucket.
+So we've implemented a gateway endpoint and in doing so we've allowed this private VPC to be able to access a public space
+the S3 service and specifically this S3 bucket.
+Now at this point we've completed everything that I wanted you to complete in this part of the demo series.
+You've created a gateway endpoint and you've tested it and used it to transfer an object to the local EC2 instance.
+In the next part of the demo series you're going to get some experience working with an egress only Internet gateway.
+But at this point go ahead and complete this video and when you're ready I look forward to you joining me in the next.

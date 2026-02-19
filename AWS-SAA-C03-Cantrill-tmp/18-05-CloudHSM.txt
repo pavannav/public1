@@ -1,0 +1,266 @@
+Welcome back and in this lesson I want to talk about CloudHSM.
+Now this is a product which is similar to KMS in terms of the functionality
+which it provides in that it's an appliance which creates,
+manages and secures cryptographic material
+or keys. Now there are a few key differences and you need to know these
+differences
+because it will help you decide on when to use KMS
+and when to use CloudHSM and you might face an exam question
+where you need to select between these two. So let's jump in
+and get started. Now I promised you at the start of the course I wouldn't use
+facts and figures in lessons
+unless absolutely required. You shouldn't have to remember
+lots of different facts and figures unless they influence the architecture.
+Now this unfortunately is going to be one of the lessons where I do have to
+introduce
+some key words that you simply need to remember
+because in this lesson the detail, the difference between CloudHSM
+and KMS really matters. Now let's start by quickly talking
+about KMS. KMS is the key management service within
+AWS. So it's used essentially for encryption
+within AWS and it integrates with other AWS products.
+So it can generate keys, it can manage keys, other AWS services
+integrate with it for their encryption but it has one
+security concern at least if you operate in a really demanding security
+environment
+and that's that it's a shared service. While your part of KMS is isolated
+under the covers you're using a service which other
+accounts within AWS also use.
+What's more, while the permissions within AWS are strict
+AWS do have a certain level
+of access to the KMS product. They manage the hardware
+and the software of the systems which provide the KMS product to you
+as a customer. Now behind the scenes KMS uses what's called
+a HSM which stands for Hardware Security
+Module and these are actually industry standard pieces of hardware
+which are designed to manage keys and perform cryptographic
+operations. Now you can actually run your own
+HSM on-premise. CloudHSM
+is essentially a true single tenant
+HSM that's hosted within the AWS cloud.
+So if you hear the term HSM mentioned it could refer
+to both CloudHSM which is hosted by AWS
+or an on-premise HSM device.
+Now specifically focusing on CloudHSM
+AWS provision it and they're responsible for hardware maintenance
+but they have no access to the part of the unit
+where the keys are stored and managed. It's actually a physically
+tamper-resistant piece of hardware so it's not something that they can gain
+access to. Generally if you as the customer lose access to a HSM
+that's it, game over. You can re-provision them
+but there's no easy way to recover data. Now there's actually a well-known
+standard for these cryptographic modules. It's called the Federal
+Information Processing Standard Publication
+140-2. You can easily determine the capability of any HSM modules
+based on their compliance with this standard
+and I've included a link in the lesson description with additional information.
+But CloudHSM is FIPS
+140-2 level 3
+compliant and it's the level 3 which really matters in the context
+of this lesson. KMS in comparison is
+overall 140-2
+level 2 compliant and some of the areas
+of the KMS product are also compliant with level 3.
+Now this matters, this is really important. If you see an exam question
+or if you're in a real-world production situation
+which requires 140-2
+level 3 overall then you have to use CloudHSM
+or your own on-premises HSM device
+and that's a fact that you really need to remember for the exam.
+Another important distinction between KMS and CloudHSM
+is how you access the product. With KMS
+all operations are performed with AWS standard
+APIs and all permissions are also controlled
+with IAM permissions. Now CloudHSM
+isn't so integrated with AWS and this is by design.
+With CloudHSM you access it with industry standard
+APIs. Now examples of this are PKCS
+11, the JCE extensions or the Crypto
+NG extensions and I've highlighted the keywords
+that you should try to build up an association with
+CloudHSM. So if you see any of these keywords listed
+in the exam or in production situations then you know
+you need a HSM appliance either on-premise
+or CloudHSM hosted by AWS.
+Now it used to be that there was no real overlap between
+CloudHSM and KMS, they were completely different
+but more recently you can use a feature of KMS called
+a custom key store and this custom key store can
+actually use CloudHSM to provide this functionality
+which means that you get many of the benefits with CloudHSM
+together with the integration with AWS.
+So when you're facing any exam questions you still
+should be able to look for these keywords to distinguish
+between situations when you use KMS versus CloudHSM.
+Now just to summarize before we move on from this screen
+I want you to focus on doing your best to remember
+all of the three key points that are highlighted
+with the exam power up icon.
+If you can remember those then you should be
+in a really good position to determine whether to use
+KMS or CloudHSM within exam questions.
+Now I want to look at the architecture of CloudHSM
+as a product and I think it's best that we do that visually.
+Now architecturally CloudHSMs are not actually deployed
+inside a VPC that you control, they're deployed
+into an AWS managed CloudHSM VPC
+that you have no visibility of.
+So architecturally this is how that looks.
+So on the left we've got a customer managed VPC,
+on the right we've got the CloudHSM VPC
+that's managed by AWS, we're using two availability zones
+and inside the customer managed VPC we've gone ahead
+and created two private subnets, one in availability zone A
+and one in availability zone B.
+Now inside the CloudHSM VPC to achieve high availability
+you need to deploy multiple HSMs
+and configure them as a cluster.
+So a HSM by default is not a highly available device,
+it's a physical network device that runs
+within one availability zone.
+So in order to provide a fully highly available system
+we need to create a cluster and have at least two HSMs
+in that cluster, one of them in every availability zone
+that you use within a VPC.
+Now once HSM devices are configured to be in a cluster
+then they replicate any keys, any policies
+or any other important configuration
+between all of the HSM devices in that cluster.
+So that's managed by default by the appliances themselves,
+that's not something that you need to configure.
+So the HSMs operate from this AWS managed VPC
+but they're injected into your customer managed VPC
+via elastic network interfaces.
+So you get one elastic network interface
+for every HSM that's inside the cluster
+injected into your VPC.
+Once these interfaces have been injected
+into your customer managed VPC,
+then any services which are also inside that VPC
+can utilize the HSM cluster by using these interfaces
+and if you want to achieve true high availability
+then logically instances will need to be configured
+to low balance across all of the different interfaces.
+Now also in order to utilize the cloud HSM devices
+then a client needs to be installed on the EC2 instances
+which are going to be configured to access the cloud HSM.
+So this is a background process
+known as the cloud HSM client
+and this needs to be installed on the EC2 instance
+in order for it to access the HSM appliances.
+And then once the cloud HSM client is installed
+then you can utilize industry standard APIs
+such as PKCS11, JCE and CryptoNG
+to access the HSM cluster.
+Now a really important thing to understand about cloud HSM
+because this is a distinguishing factor between it and KMS
+is that while AWS do provision the HSM
+they're actually partitioned and they're tamper resistant.
+So AWS have no access to the area
+of the HSM appliances which store the keys.
+Only you can control these.
+You manage them, you're responsible for them.
+Now AWS can perform things like software updates
+and other maintenance tasks
+but these don't take place on the area of the HSM
+which is used to perform cryptographic operations.
+Only you as an administrator
+or anyone that you delegate that to
+has the ability to interact with the secure area
+of the HSM devices.
+Now before we finish this lesson
+there are a few more things that I want to cover.
+So these are points that I think you should be aware of.
+So some of these are use cases,
+some of these are limitations
+that will help you select between using cloud HSM
+and using something like KMS.
+So first, by default there's no native integration
+between cloud HSM and any AWS products.
+So one example of this is that you can't use cloud HSM
+in conjunction with S3 server-side encryption.
+That's not a capability that it has.
+Cloud HSM is not accessed using AWS standard APIs
+at least by default and so you can't integrate it directly
+with any AWS services.
+Now you could, for example, use cloud HSM
+to perform client-side encryption.
+So if you've got an encryption library
+on a particular local machine
+and you want to encrypt objects
+before you upload them to S3,
+then you can use it to perform that encryption on the object
+before you upload it to the S3 service.
+But this is not integrated with S3,
+you're just using it to perform encryption on the objects
+before you provide them to S3.
+Now a cloud HSM can also be used to offload SSL
+or TLS processing from web servers
+and if you do that, then the web servers can benefit
+from A, not having to perform those cryptographic operations
+but also the cloud HSM is a custom-designed piece
+of hardware that accelerates those processes.
+So it's much more economical and efficient
+to have a cloud HSM device performing
+those cryptographic operations
+versus doing it on a general purpose EC2 instance.
+So that's something that a cloud HSM can do for you
+but KMS natively cannot.
+Now other products that you might use inside AWS
+can also benefit from cloud HSM.
+Products which are able to interact
+using these industry standard APIs.
+And this includes products like Oracle databases
+so they can utilize cloud HSM
+for performing transparent data encryption or TDE.
+So this is a method that Oracle has for encrypting data
+that it manages on your behalf
+and it can utilize a cloud HSM device
+to perform the encryption operations
+and to manage the keys.
+Now this does mean that because a cloud HSM device
+is something that's entirely managed by you,
+you're the only entity that initially starts off
+with access to be able to interact
+with the encryption material, so the keys.
+It means that if you use a cloud HSM
+and integrate it with an Oracle database,
+then you're doing so in a way which means that AWS
+have no ability to decrypt that data.
+And so if you're operating
+in a highly restricted regulatory environment
+where you really need to use strong encryption
+and verify exactly who has the ability
+to perform encryption operations,
+then generally cloud HSM is an ideal product to support that.
+And then lastly, in a similar way,
+cloud HSM can also be used to protect the private keys
+for a certificate authority.
+So if you're running your own certificate authority,
+you can utilize cloud HSM to manage the private keys
+for that certificate authority.
+Now, just to summarize at this point,
+the overall theme is that for anything
+which isn't specific to AWS,
+so anything which expects to have access
+to a hardware security module using industry standard APIs,
+then the ideal product for that is cloud HSM.
+For anything that uses standards,
+for anything that has to integrate with products
+which aren't AWS, then cloud HSM is ideal.
+For anything which does require AWS integration,
+then natively, cloud HSM isn't suitable.
+If FIPS 140-2 Level 3 is mentioned,
+then it's cloud HSM.
+If integration with AWS is mentioned,
+then it's probably going to be KMS.
+If you need to utilize industry standard encryption APIs,
+then it's likely to be cloud HSM.
+Now, that's everything that we need to cover.
+I just wanted you to be able to handle
+any curve ball HSM style questions
+that you might encounter in the exam.
+So thanks for watching.
+Go ahead and complete this video.
+And then when you're ready,
+I'll look forward to you joining me in the next one.

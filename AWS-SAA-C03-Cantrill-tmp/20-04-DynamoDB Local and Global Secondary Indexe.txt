@@ -1,0 +1,144 @@
+Welcome back, and in this lesson I want to talk about DynamoDB indexes, and there are two types.
+Local secondary indexes, known as LSIs, and global secondary indexes, known as GSIs.
+Now we've got a lot to cover, so let's jump in and get started.
+Indexes are a way to improve the efficiency of data retrieval operations within DynamoDB.
+We've already talked about how query is the most efficient operation within DynamoDB,
+but it suffers from one crucial limitation, that it can only work on one partition key value at a time,
+and optionally, a single or a range of sort key values.
+Indexes are a way that you can provide an alternative view on data that's inside a base table.
+By providing an alternative view, you can allow the query operation to work in ways that it couldn't otherwise.
+And there are two types of indexes, local secondary indexes and global secondary indexes.
+Now local secondary indexes allow you to create a view using a different sort key,
+and global secondary indexes allow a view with a different partition and sort key.
+And for both of those indexes, when you're creating them, you have the ability to choose
+which attributes from the base table are projected into them.
+And choosing what to project is important because it can massively impact how efficient the indexes are for your queries.
+Now first I want to focus on local secondary indexes.
+So again, it's an alternative view on base table data.
+And local secondary indexes must be created with the base table itself.
+So this is critical to know for the exam.
+You cannot add local secondary indexes after the base table has been created.
+And so while you're creating the base table, you can optionally create a number of local secondary indexes.
+And the current maximum is five local secondary indexes per base table.
+So just to repeat this again, because I want this committed to your memory,
+local secondary indexes allow for an alternative sort key on the data in the main table.
+So it's an alternative sort key, but the same partition key.
+And local secondary indexes share the capacity with the main table.
+And so they use the same RCU and WCU values if the main table is using provisioned capacity.
+Now in terms of the attributes that are projected into a local secondary index,
+the options that you have are to use all of the attributes for the base table.
+You can choose keys only, or you can use include,
+which lets you specifically pick which attributes from the base table are projected into the index.
+Now let's take a look at an example visually so that you can understand how this all fits together from an architecture perspective.
+And the example that I want to use is a weather station.
+So this table holds data for a number of weather stations,
+and for each weather station there's one record taken each day at the same time.
+Now if we want to stick to using the query operation,
+then we're limited to querying a single weather station,
+and for a single weather station to either a single day or a range of days.
+But what if we want to interrogate data based on another attribute,
+say for example the sunny day attribute.
+So this attribute records whenever the average over a day is classified as a sunny day.
+Now because this attribute isn't a key, in order to perform any operations on it,
+we couldn't use query because query needs to use a single partition key value
+and optionally select using the sort key,
+we would need to use the scan operation.
+And we know now from an earlier lesson that the scan operation is incredibly inefficient.
+An option that we have to fix this problem is while creating this table,
+we can also create an additional local secondary index
+using the sunny day attribute as the sort key.
+So this needs to be created along with the base table,
+so at the same time as you're creating the base table.
+But if we choose to do that, then for a given weather station,
+we're able to easily limit the data that we retrieve to sunny days
+because we can use the query operation on a single station ID,
+which is still the partition key,
+but then use the query operation to limit specific values in the sort key,
+in this example picking only sunny days.
+Now what's even better is that indexes are known as sparse indexes
+and this means that only items from the base table
+which have a value for the attribute that we define as the new sort key
+are present in the index.
+Now this means that if the sunny day attribute is something which is present
+if it's a sunny day and absent if it's not,
+then the only items in the sunny day local secondary index
+will be for data which is a sunny day.
+So we can in some cases take advantage of the fact that indexes are sparse
+and we can use a scan operation against this local secondary index
+knowing that we'll only consume the capacity for data that is relevant to us.
+So we could use a scan operation on this local secondary index
+knowing that any items in this index are by default for sunny days
+and so we're only going to be consuming capacity that's relevant for sunny day data.
+Now this is a lot more complex than you'll need for the Solutions Architect Associate exam.
+For the exam all you need to know is that local secondary indexes
+allow you to create an alternative view on the data that's in a base table
+by providing an alternative sort key.
+They use the same partition key and they can only be created along with the base table.
+So now let's look at a different type of index, a global secondary index.
+Global secondary indexes are different than local indexes.
+They can be created at any time and so they're much more flexible.
+There's also a default limit of 20 global secondary indexes per base table
+so you can have more than them and they let you define a different partition and sort key
+and they also have their own RCU and WCU capacity values
+if you're using provisioned capacity for the base table.
+And just like with local secondary indexes you have the flexibility to choose
+exactly what attributes are projected into the index from the base table
+and you have the same options either choosing all attributes, keys only or including specific attributes.
+So let's look at another example visually to make it easier to understand.
+So we're using another example of the weather station.
+This time we have the pink attribute which represents any items
+where there's been an alarm at the same point as taking the data.
+So an alarm could be something like a system error, it could be a bird or other wildlife
+which has entered the weather station and interfered with the results
+or anything else that's out of the ordinary.
+Now if there's a regular access pattern where you need to query this table for any items
+which have been impacted by the alarm then you couldn't do this normally using a query.
+You'd need to use a scan operation and filter it based on the alarm attribute
+and this would mean that you're consuming all the capacity for every single item
+that is read using the scan operation.
+Now an option that we have is to create a global secondary index
+and this allows us to create an alternative view with a different partition key and sort key.
+In this example we've created a global secondary index
+which uses the alarm attribute as the partition key and the station ID as the sort key
+and this means that we can use the efficient query operation for any items showing an alarm
+and optionally specify one station ID or a range of station IDs
+to limit the data that we receive for alarms for specific weather stations.
+So global secondary indexes are super powerful because of this ability to define completely separate partition and sort keys
+so it truly gives you a way to create an alternative perspective on the data that's in a base table.
+And global secondary indexes are also sparse which means in this example
+any items which have no alarm attribute would not be included in the index.
+For the exam you need to be comfortable with the fact that GSIs allow you to create this different perspective on data
+with alternative partition and sort keys
+and for GSIs you can create them after you've created the base table
+so they don't have that limitation of needing to be created at the same time as the base table
+which is the case for local secondary indexes.
+Now one final thing to keep in mind, global secondary indexes are always eventually consistent
+because the data is replicated from the base table to the index asynchronously
+and so your application needs to be able to handle eventual consistency.
+If you're using a global secondary index you need to be able to cope with eventual consistency
+because that's the only option that you have.
+Now before we finish up the lesson I just want to talk through some local and global secondary index considerations
+things that you should be aware of for the exam.
+So you need to be very careful with what attributes you choose to project into the index.
+As you now know when you're working with DynamoDB at any time you're reading or writing data
+you're actually consuming all the capacity for the size of the entire item
+and so if you project all of the attributes into an index you're also using all the capacity of those attributes.
+So you need to be aware of the capacity that you're using when you project attributes.
+Now the inverse of this is if you don't project a specific attribute
+and then you require that attribute when you're querying an index that will still work
+but it's doing something in the back end, a fetch of that data, which is actually incredibly inefficient.
+So you need to plan your indexes in advance and make sure that you project the correct attributes
+because if you are performing queries on any attributes which are not projected then it gets really expensive.
+Now AWS recommend using GSIs as default and only using local secondary indexes when strong consistency is required.
+So if you need an index and you're in doubt you should use global secondary indexes
+because they're a lot more flexible and they can be created after the point of when you've created the base table.
+Now from an architectural perspective and something to keep in mind if you do see any exam questions which mention indexes
+is that indexes are designed when you have data in a base table
+Well remember you're designing the base table with the partition and sort keys for the primary way that you will access this data.
+Indexes allow you to create this alternative perspective for any alternative access patterns
+and so if you have a requirement, maybe a different team is looking at the weather station data only looking for alarms
+maybe it's a security team or a data science team
+then you can create indexes that allow for these alternative access patterns.
+Indexes allow you to keep the data in one place but create these perspectives for different types of queries
+different teams or different requirements they can all access the same data just using this different perspective.
+So at this point go ahead finish the video and when you're ready I'll look forward to you joining me in the next.

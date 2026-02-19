@@ -1,0 +1,352 @@
+Welcome back, and in this demo lesson you're going to implement VPC peering between three different VPCs.
+This is going to be the architecture that you'll be implementing.
+You're going to apply it together, we'll create and configure the peering connections to allow network connectivity between all three VPCs.
+So let's get started, and first we need to move to the AWS console and apply a CloudFormation template.
+So to get started, just make sure that you're logged in as the IAM admin user into the general account,
+which is the management account of the organization, and you're in the northern Virginia region.
+Attached to this lesson is a one-click deployment link. Go ahead and click that now.
+Once you've done that, everything should be pre-populated.
+You'll just need to scroll down to the bottom, check the acknowledgement box, and then click on create stack.
+Now this will need to be in a create complete state before you continue with the demo lesson,
+so go ahead and pause the video, wait for this stack to change into create complete, and then we're good to continue.
+Okay, so once that's in a create complete stage, just go ahead and move to the EC2 console,
+because the template that you applied as well as creating those three VPCs should also have created three EC2 instances.
+You should have A4L-EC2, VPCA, VPCB, and VPCCs, and one of these is in each of the three VPCs,
+and you can tell which by looking at the name, so EC2 VPCA is logically in VPCA.
+Now in the next part of this demo, you're going to be connecting to one of these EC2 instances using Session Manager.
+Now if you try and connect and you get an error, or it says that Session Manager isn't installed or not responding,
+then you just need to give it some time.
+I've seen this part of the demo have significant delay, depending on how AWS is performing on that given day.
+You might need to leave this for anywhere up to 10 minutes before you can successfully connect using Session Manager.
+That's okay, you just need to keep trying until it will allow you to connect.
+Now all three of these VPCs are private VPCs, so none of these instances has any public IP addressing.
+Instance AVO is configured to allow you to connect using Session Manager.
+So if you right-click and click Connect, and then select Session Manager and click on Connect,
+you will be connected directly to this instance using Session Manager.
+So go ahead and do that, and once you're connected, just type bash and then cd to move into this user's home folder.
+Now just to reiterate, this is the architecture that we're going to implement together,
+and the first step is we're going to create a VPC peer between VPC A and VPC B.
+So that will allow us to ping instance B from instance A.
+So that's the first thing that we're going to attempt to accomplish.
+Now we can test the lack of connectivity already.
+If we select instance B and then just scroll down and look for instance B's private IP address.
+So just copy that into your clipboard, move it to the instance terminal,
+and just type ping space and then paste in that private IP address.
+Now we won't get any response because by default, every VPC is completely isolated.
+There's currently no connectivity between instance A and instance B
+because there's no connectivity between VPC A and VPC B.
+So that's what we need to rectify.
+Now to rectify that, we need to be in the VPC console.
+So just click on Services and type VPC, and then open it in a new tab to make things easier.
+Once you've opened it in a new tab, go ahead and open that tab,
+and you're looking on the left-hand menu under Virtual Private Cloud,
+down at the bottom is Peering Connections.
+So click on Peering Connections.
+Now the way that Peering Connections are created is that it's an invite and accept architecture.
+If these VPCs were in different accounts, then potentially one person would be inviting
+and the other person would be accepting.
+Because both VPCs are in the same account, your account,
+you can perform both of these steps, but you still need to follow that same architecture.
+So click on Create a Peering Connection, and that begins the process.
+Now for the Peering Connection tag name, go ahead and enter VPC A-VPC B.
+That will just make it easier to identify it when we have to set up the route tables.
+Now the Request a VPC is the VPC that is requesting the Peering Connection.
+So in this case that needs to be VPC A. It's the VPC that we're initiating this from.
+So click on the drop-down and select VPC A.
+It confirms the SIDA range, so 10-16-0-0 slash 16, so that's all good.
+And then you need to select the Accept a VPC.
+So this is the VPC that you're peering with.
+Now this can be in the same account, it can be in another account,
+it can be in the same region or it can be in another region.
+In this demonstration, we're creating it between the same region in the same account.
+So select my account and this region.
+And then for the Accept a VPC, click in the drop-down and select VPC B.
+It should confirm that the IP addressing for that is 10.17.0.0 slash 16.
+Everything looks good. We don't have any overlapping SIDA ranges,
+so we're good to create the Peering Connection.
+So go ahead and click on Create Peering Connection.
+So that's initiated that VPC Peer.
+We've actually requested it, but that's not everything that we need to do.
+So click on Peering Connections,
+and you'll see that the status is currently listed as Pending Acceptance.
+Now this is what you'll see if you're creating the VPC Peer between two different accounts
+until the remote account accepts that connection.
+But because it's in the same account, we can simply make sure it's selected,
+click on Actions, and accept the request ourselves.
+So do that, and then accept the request.
+And that creates the VPC Peering Connection.
+So now from a networking perspective, there is a physical tunnel,
+an encrypted connection between VPC A and VPC B.
+Let's move back to the EC2 instance, but note we still don't have connectivity.
+And that's because the second step is to configure routing.
+We need to tell the VPC router in both VPCs how to connect with each other,
+how to use that VPC Peering Connection.
+Now this is a process that needs to happen on both sides.
+So there's a configuration that needs to happen on the VPC A side and the VPC B side.
+So go ahead and click on Route Tables,
+and let's just expand this to make it easier to see, and then scroll to the right.
+And we need to select the line for VPC A.
+So make sure you've got the one for VPC A selected, and then click on Routes.
+And we're going to add a route to this route table for the side arrange of VPC B
+using the Peering Connection.
+So click on Edit Routes, and then Add a Route.
+Now the side arrange for VPC A is 1016.00.16,
+and the side arrange for VPC B is the same but 17, so 10.17.0.0.16.
+So enter that, and then for the target click on the drop-down.
+Scroll down, select Peering Connection.
+It will list whatever Peering Connections it finds.
+Currently that's only one, so the peer between VPC A and VPC B.
+Select that. That will set that as the target.
+So now the VPC router in VPC A will know how to reach VPC B.
+So click on Save Changes to apply that.
+And we need to perform the same in reverse.
+If we look at the EC2 console, we still have no connectivity.
+So go back to Route Tables, scroll to the right again,
+expand this column so you can see the name of the route tables.
+Select the one for VPC B, click on Routes, Edit Routes, and then click Add Route.
+10.17.0.0.16 is the side arrange for VPC B.
+We need to add the one for VPC A.
+10.16.0.0.16.
+And again, we need to select the target.
+We need it to be a Peering Connection, so select that.
+And then pick the one for VPC A to VPC B.
+Click on Save Changes to apply that.
+And that's now routing configured between A and B.
+Again, let's look at the terminal connection.
+And we're still not getting a ping response.
+Now the reason why this normally is is because of security infrastructure
+that is filtering the ping between the two VPCs.
+So let's check that next.
+Now by default, network ACLs that are created generally don't filter any traffic
+unless you've configured them that way.
+And so normally, any filtering that applies is done by a security group.
+And what we need to do is to edit the security group for VPC B.
+Remember, security groups are stateful, which means they understand the state of traffic.
+If we look at the security group for VPC A and look at outbound rules,
+we allow all outbound traffic.
+And as a result, because they're stateful, we also allow any response to that traffic.
+So we don't need to configure or update any of the security currently for VPC A.
+But let's look at VPC B.
+VPC B, we need to look at the inbound rules.
+And what we allow is all traffic from this security group, which is itself.
+And we also allow any SSH connections from any IP version 4 and any IP version 6 IP addresses.
+So we don't allow ping traffic, and that's the problem.
+We need to update this security group allowing traffic to come from VPC A.
+Now because we're using VPC peers in the same region,
+we can actually logically reference a security group.
+Now what this means we can do is if we just expand this column,
+we can copy down the security group ID for the security group of VPC A.
+So just copy the ID for the security group of VPC A.
+Copy that into your clipboard and then select the security group for VPC B.
+Click on inbound rules and then edit those rules.
+And we're going to add a new rule.
+We're going to allow, so click on the type, scroll all the way down.
+And we're going to allow all ICMP IP version 4 traffic.
+So anything that's related to ICMP, which is what ping uses.
+So we're allowing all ICMP traffic.
+Now we could specify an IP address or a SIDA range,
+and we'd need to do that if these were in different regions.
+But because they're in the same region,
+we can logically reference the security group ID of the VPC A security group.
+And this means that any instances which have this security group attached to them
+will be able to send traffic through the security group in VPC B using ICMP.
+So we're logically referencing the ID of the other security group.
+And it means that if any additional instances are added in VPC A specifically to this security group,
+they'll also automatically be allowed.
+So let's go ahead and click on save rules and then move back over to the EC2 console.
+And almost immediately we can see that the ping is working.
+It's sending pings from VPC A to VPC B.
+And because security groups are stateful,
+we're getting a response back because we implicitly allow that.
+If we have an inbound rule, we also allow the implicit return traffic,
+the return to this ping from VPC B to VPC A.
+So that's how you set up a VPC peer.
+You create the connection, you configure the routing,
+and you can configure the security groups.
+Now what I do want to demonstrate though is how VPC peering is not transitive.
+So what we're going to do now is configure a peer between VPC B and VPC C.
+So let's do that next.
+Let's go back to the VPC console.
+Go to peering connections.
+Create a peering connection.
+Call it VPC B hyphen VPC C.
+The requester will be VPC B.
+And the acceptor will be VPC C.
+So select both of those and click on create peering connection.
+As before, you'll need to accept it.
+So click on the actions dropdown,
+click accept request,
+and then confirm by clicking accept request.
+So that's the peering connection created.
+That's the gateway objects in both VPCs created.
+Now we need to set up the routing.
+So click on route tables.
+Select the route table for VPC B.
+Click on routes, edit routes,
+and then click add route.
+We need to add the side arrange for VPC C.
+So 10.18.0.0.16.
+Click on the dropdown and select peering connection.
+This time we want the VPC B to VPC C peering connection.
+Click on save.
+Then we need to do the inverse.
+So now we need to select the route table for VPC C.
+Click on routes, edit the routes,
+and then click add route.
+Add the side arrange for VPC B.
+So 10.17.0.0.16.
+Then there's the target.
+Click on peering connection.
+Select VPC B-VPC C.
+Click on save changes.
+So now the routing is in place between B and C.
+Let's go to security groups.
+We need to copy the security group ID
+for the security group of VPC B.
+Go into VPC C, so the security group of VPC C,
+and click on inbound rules.
+Then edit inbound rules.
+And as we've just done, we need to add an inbound rule allowing pings.
+So click on add rule.
+Click on the dropdown.
+ICMP version four.
+And paste in the security group ID of the security group of VPC B.
+And click on save rules.
+And then what we'll do is copy down the ID of the security group in VPC A.
+And we'll also add that one to VPC C.
+So select VPC C.
+Inbound rules and click edit.
+And then we'll add another rule also for ICMP version four.
+This time the security group ID of the security group for VPC A.
+And click on save rules.
+Now note that we get an error.
+And the reason for this error is because we can't reference a security group
+when we don't have a VPC peer in place between these two VPCs.
+But what we could do is replace the security group ID of the VPC A security group
+and just put its IP address.
+So 10.16.0.0 slash 16.
+So now in the VPC C security group,
+we're allowing connections from the VPC A side arrange.
+So click on save.
+And that this time will work because there's no restrictions about referencing side arrangers
+even if there's no peering connection.
+Now at this point if the routing was transitive,
+we could go to the EC2 console.
+We could cancel out of this.
+We could get the IP address for the instance in VPC C.
+Copy it into our clipboard.
+And we could then ping it.
+But this doesn't work.
+Now the reason for this is because routing between peers is non-transitive.
+So now to resolve that we'd have to follow the same process again.
+We need to go to peering connections and create a peering connection.
+Call it VPC A hyphen VPC C.
+The requester will be VPC A.
+The acceptor will be VPC C.
+Create the peering connection.
+Then we need to accept this.
+So click on the actions dropdown, accept request,
+and then click accept request to confirm.
+Then we'll need to configure the routing.
+So click on route tables.
+Select the route table for VPC A.
+Click on routes and edit routes.
+We'll need to add another route for VPC C.
+So 10.18.0.0.16.
+Click on the target dropdown and select peering connection.
+And select the VPC A to VPC C peering connection.
+Click on save changes.
+And do the inverse.
+So select VPC C.
+Click on routes and edit route.
+And then add the cider for VPC A.
+So 10.16.0.0.16.
+Again, click on the target dropdown, select peering connections,
+and then select VPC A to VPC C.
+Select that.
+Click on save changes.
+And now if we go back to the EC2 instance now,
+because we've got the direct peering connection between A and C,
+and because we previously updated the security group on the VPC C side
+by allowing the cider range of VPC A,
+the ping automatically starts functioning.
+Now the reason I want to stress this is because it is really important for the exam
+to understand that VPC routing when using VPC peers is not transitive.
+You need to create a peer between every pair of VPCs
+that you want to have network connectivity.
+In addition to creating the VPC peer,
+you need to configure the routing
+and then make any necessary changes to the security groups
+and if required, the network ACLs.
+Now that's everything I wanted to cover in this demo lesson.
+You've successfully implemented this architecture.
+We've got three VPCs, A, B and C,
+and you've configured peering connections between all three
+and configured the routing and security for those connections.
+At this point, all that remains is the cleanup.
+You need to move to the VPC console.
+We need to go to peering connections
+and we need to delete each of the three peering connections that we just created.
+Select one, click on actions, delete peering connection,
+scroll down, check the box to say do not delete route table entries,
+and then type delete in the box and click delete to confirm that deletion.
+And then follow the same process for all of the other peering connections.
+So select the second one, actions, delete peering connections,
+scroll down, check the box to say do not delete route table entries,
+type delete and click delete to confirm.
+And then we'll follow the same process for the final time.
+Select the last one, click on actions,
+delete peering connection, scroll down,
+check the box to say do not delete route table entries,
+type delete and click delete to confirm the process.
+Once you've done that, if you return to the EC2 instance,
+you'll note the pings have stopped
+because we've deleted the connectivity between the instances.
+Next we need to fix up the route tables.
+So go back to the VPC console, select route tables,
+select the route table for VPC A,
+click on routes, then click on edit routes.
+We need to remove these black holes,
+so click remove next to each of these black hole lines,
+then click on save changes.
+Then you'll need to pick one of the other route tables.
+So go ahead and select one of the other route tables,
+in my case VPC C.
+Click on routes, edit routes,
+again click on remove next to both of these black holes,
+click on save changes.
+We'll do the same process for the final route table.
+So select the last one that you've not edited,
+in my case VPC B,
+click on routes, edit routes,
+click remove next to each of the black holes,
+and click on save changes.
+Click on security groups, we need to tidy these up as well.
+Select the security group for VPC C,
+click on edit inbound rules,
+click on delete next to both of the lines which say ICMP IP version 4,
+then scroll down to the bottom and click on save rules,
+select the security group for VPC B,
+click on edit inbound rules,
+click on delete next to the rule which says ICMP IP version 4,
+then click on save rules.
+So then we just need to go back to the cloud formation console
+and delete the stack that we created with the one click deployment,
+so select it, click on delete, and then delete stack.
+And that will return the account and the infrastructure into the same state as it was
+at the start of this demo lesson.
+And at this point that's everything that you need to do in this demo lesson.
+I hope it's been enjoyable and I hope it's helped cement the theory
+that we covered in the previous lesson.
+So you should realise now that a peering connection is between two VPCs and two only.
+You need to create a peering connection between any pair of VPCs
+that you want to have connectivity.
+Routing is not available through an intermediary VPC.
+You have to have these pairs between all VPCs that you want to use to connect between.
+You need to, in addition to creating the VPC pair,
+you need to configure routing, which means editing the route tables
+at both sides of the VPC pair,
+and also update any network ACLs or security groups as appropriate.
+But with that being said, that's everything that we needed to cover in this lesson,
+so go ahead, complete the lesson, and when you're ready,
+I'll look forward to you joining me in the next.

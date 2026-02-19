@@ -1,0 +1,206 @@
+Welcome back and it's time for a demo.
+Now in this demo lesson you're going to get some experience of using Amazon Athena.
+Amazon Athena is a serverless interactive querying product
+which provides some really useful functionality.
+There's no setup required as part of this demonstration
+due to the fact that Athena doesn't require it
+and the fact that you're going to be using an open data set.
+So before you get started, let's quickly explore the architecture
+that you're going to implement in this demo lesson.
+The scenario for this demonstration is that the Animals for Life organization
+have a number of mobile teams
+and these teams are looking to give vaccinations
+for various contagious diseases to local animals.
+Now they need to run ad hoc queries
+to get a list of local vaccination clinics based on geographic areas.
+They can't tolerate any significant setup time.
+They don't want any base infrastructure costs
+and they don't want to maintain their own database.
+The solution that you're going to implement
+starts off with an open database maintained by OpenStreetMap
+and this is called Planet OSM or Planet for short.
+Now this contains a number of different types of data.
+We've got nodes, we've got ways and we've got relationships.
+Now nodes are things inside the database.
+So think of these like business names with locations
+and other associated metadata.
+We've also got ways and these are boundaries
+or other locational or area-based information.
+And then finally we've got relationships and these as the name suggests
+store relationships between all of the other things.
+Now OSM make this data available inside an S3 bucket
+and think of this as three files.
+We've got planet, planet history and change sets.
+Now planet history and change sets are smaller
+and the names probably give away what they do.
+For this demonstration we're going to be focused on the planet data
+which is current data that you can use for anything locational.
+Now this file is around 100 gigabytes compressed
+and about 1.2 to 1.3 terabytes when uncompressed
+so it's pretty large.
+Now we want to access this data without creating or managing any infrastructure
+and that's where Athena comes in.
+With Athena we can use the open street mapping data as a source
+but rather than modify it in any way
+we can define a schema in advance using a technique called schema on read.
+This process doesn't modify the original data
+It defines a schema or structure for data.
+It means we can take data which isn't structured
+and that we don't own and we don't have to worry about managing
+and as that data is read into Athena from the S3 bucket
+it's presented as though it's in tables.
+So this schema on read can take unstructured data from its source
+and as it's read through the schema we can interact with it
+as though it's structured data inside a relational database.
+Now what you're going to do is create an area of interest
+using GPS style coordinates and use this to make a query
+and then you're going to use this query to read the data
+through the schema on read feature and generate some output data
+the vaccination vets in that local area.
+And for the entire process you're only billed
+for the data consumed during the query.
+And that's what you're going to be implementing within this demo lesson.
+So let's move over to the console
+and we can step through the implementation details together.
+Now to get started make sure you're logged into the management account
+of the organization as the IAM admin user
+and then just double check to make sure that you've got the Northern Virginia region selected.
+Now you're going to be using various commands and queries throughout this demo lesson
+and these are all attached to this lesson
+so you can refer to them rather than typing everything out manually.
+So to get started go ahead and click on the services drop down
+and type Athena and click to move to the Athena console.
+Then click on the hamburger menu on the left and click query editor.
+Now I mentioned this in the theory lesson
+and at the start of this demonstration
+that Athena is an interactive serverless querying product.
+And so the way that you interact with Athena is by running queries.
+And the first thing that you need to do before you can run any queries
+is to set up a query result location in Amazon S3.
+So you need to create a bucket in S3 that will be used
+to output any query results as part of interacting with the product.
+So if you haven't used Athena before go ahead and click on view settings
+toward the top right.
+Then once you've done that go ahead and click on manage.
+You'll see this dialog where you need to specify a query result location.
+And in order to do that we need to create a bucket to store those results.
+So click on cancel first.
+Then select the services drop down.
+Type S3 and open that in a new tab.
+Then move to the S3 console.
+Then click on create bucket.
+And then for the bucket name I'm going to use A4L-query-results.
+And because bucket names need to be globally unique
+I suggest you add one more hyphen and then some random text.
+Once you've entered that bucket name make sure the region is set to
+US East Northern Virginia and it should say US-East-1.
+Uncheck block all public access.
+Acknowledge that you're doing so and then click on create bucket.
+And then once that bucket's been created just copy down the full bucket name
+into your clipboard and then move back to the Athena console.
+And once you're at the Athena console click on manage.
+And now we can type S3 colon forward slash forward slash.
+Paste in the bucket name.
+Then click on the account drop down at the top right.
+Copy down your AWS account ID.
+Paste this account ID into the expected bucket owner box.
+Then check the box saying assign bucket owner full control over query results.
+And click on save.
+And then finally click on the editor tab.
+So that means that we've now configured the S3 location that will store the
+output to any queries that we run using Athena.
+And that's the only set up step that you need to do for Athena
+the first time you use the product.
+Now with traditional databases you need to create your database and table
+structure in advance and then load data into that table.
+And if you've got data that's stored in an unstructured format then you need
+to use an ETL or extract transform and load process.
+Now Athena is different because Athena uses the schema on read method
+to interact with data.
+All we need to do in advance is to define our database and table structure
+and then we can use that to read data through.
+So the first thing we need to do is to create a database.
+And we can do that using this command.
+It's simply create space database space the name of the database
+and then a semicolon.
+Now if you type that and the run query button is greyed and you're unable to
+click it then just click on refresh and then you should be able to successfully
+run that query.
+So type that command and then click on run query and that will create the
+database inside Athena.
+Now remember all you're doing at this stage is creating the definition for a
+database and the next command that you're going to run will create the
+definition for a table.
+You're not creating a physical table.
+You're not populating that table with data.
+All that we're doing at this point is creating the schema that will be used to
+read the data through.
+So now that you've created the database the next step is you're going to create
+the definition of a table which you'll use to load your data through and run
+queries on that data.
+So click on the plus and then just click inside it and you'll have a blank query
+window.
+Into that box just paste in the next component of the lesson commands document
+and this will create the table definition.
+So this is creating a table definition called planet and you're specifying the
+location of the source data which is an external S3 bucket.
+It's an S3 bucket that you don't manage.
+Now it's really critical to understand at this point with Athena that it is not
+loading any data into this table at this point.
+Athena does not store any data.
+You're simply specifying the data source location.
+So this configures Athena so that when any queries are run against this table it
+knows the location to load the data from and through this table definition.
+Remember all a table definition does is create a lens or a window which restructures
+the data on the fly and allows you to query it.
+The data in the source location is never altered.
+What this query also does is specify the structure of this table definition.
+So you're creating columns in this table.
+We're creating ID, type, tags, lat or latitude, lon or longitude, NDS, members,
+change set, timestamp, UID, user and version.
+And these match the data that's located in the data source locations.
+So all you're doing at this point is creating a definition of the various different
+column names and data types that are contained inside your schema.
+Just to reiterate, it's not loading any data or storing anything inside Athena,
+you're just creating the definition.
+So once you've pasted that in, just go ahead and click on run query to create that
+table definition.
+So now on the left, if you just expand planet, now you've created a table definition
+inside the product.
+And it's important to realize at this point we've configured no infrastructure,
+we have no base costs and we've not incurred any charges because we've not run
+any queries against this data.
+Now what you can do at this stage to verify that everything's functioning as it
+should be is to perform a test query against this table.
+So to do that, click on the plus and then click inside this window and we're going
+to perform a very simple query against the planet table.
+So the query that we're going to run to test is going to be a simple one.
+So type select, which selects data from the database.
+We want all attributes inside a table and then we need to specify the table that we're
+going to pull this data from.
+So from and then space and then we need to provide the table name, which is planet
+and then a space.
+And then in order to limit the amount of data that's returned, we're going to use the
+limit directive and then a space and then a hundred which indicates a hundred items
+or a hundred rows from this table and then a semicolon and then go ahead and click on
+run query.
+Now at this stage it's important to understand exactly what's happening.
+Athena is using the table definition and because we specified the source location,
+it's loading data from that source location through the table definition that you've
+created and because of that you can use a SQL style query on that data.
+The important thing to realize is the original data is not being modified in any way and
+you're not storing data of any kind inside Athena.
+The only thing that happens when you use Athena is the query takes a certain amount of time
+to run and it has to scan a certain amount of data as part of that query and you'll build
+based on the amount of data that you have to scan.
+Now if we expand this window at the bottom, you'll be able to see a selection of the data
+that we've retrieved from the OpenStreetMap database.
+But now that you've got the table definition created, now we can do something a little
+bit more interesting and that's what we're going to do next.
+We're going to define an interesting geographic area and then use that area to perform a query
+against the OpenStreetMap database.
+OK, so this is the end of part one of this lesson.
+It was getting a little bit on the long side and I wanted to give you the opportunity to
+take a small break, maybe stretch your legs or make a coffee.
+Now part two will continue immediately from this point, so go ahead, complete this video
+and when you're ready, I'll look forward to you joining me in part two.

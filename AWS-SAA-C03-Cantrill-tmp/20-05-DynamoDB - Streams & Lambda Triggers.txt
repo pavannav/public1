@@ -1,0 +1,81 @@
+Welcome back and in this lesson I'm going to be talking about DynamoDB streams and triggers.
+Both of these are really powerful features which let you implement some powerful and cost-effective architectures using DynamoDB within AWS.
+Now we've got a fair bit to cover, so let's jump in and get started.
+A DynamoDB stream is a time-ordered list of changes to items inside a DynamoDB table.
+So every time a change occurs to an item in a table, a change is recorded chronologically within a DynamoDB stream.
+And a stream is actually a 24-hour rolling window of these changes.
+Behind the scenes you'd actually use as kinesis streams which you've covered earlier in the course.
+Now you need to enable streams on a per-table basis.
+And when you do enable streams on a table, any inserts of items, updates on items or item deletions are recorded within the stream.
+Now you can configure the stream with different views and this is an option on a per-stream basis.
+And the view setting influences exactly what information is added to the stream every time an item change occurs.
+Now let's look at this visually because it's much easier to understand.
+Let's say that we have a table within DynamoDB and this table has one item, the top item.
+And let's say that that item is updated, changed to be the bottom item.
+So this represents one item which has changed and the way that it's changed is by having its fourth attribute removed, the one in dark orange.
+Now if we've enabled streams on this table then any inserts, updates or deletes are recorded including the one update that I've just discussed.
+There are four view types that a stream can be configured with.
+It can be configured with keys only, new image, old image and new and old images.
+So that's four different options, four different view types that a stream can be configured with.
+Now given this change to the table on the top left, so the removal of its fourth attribute, the one in dark orange, these different view types have the following differences.
+So with keys only, as the name suggests, the stream will only record the partition key and optionally any applicable sort key value for the item which has changed.
+It would be up to whatever is interrogating the stream to determine exactly what has changed and that would probably require a database read.
+So in this example where we've removed the fourth attribute, the one in dark orange, the only information that we get using keys only is that the partition key is blue and the sort key is green.
+We don't see exactly how this item has been manipulated.
+The second view type is new image and this actually stores the entire item with the state as it was after the change.
+So if you wanted to configure some sort of business process which operated on the new updated data, then you would configure this view type.
+So this view type shows the state of the item after the change, so after the removal of the fourth dark orange attribute.
+If you wanted to know exactly what had changed, then you couldn't determine that using this view type.
+Now if you wanted to know what changed, then one option would be to use the old image type.
+That way you have a copy of the data as it was before the change and you could check the state of the database, specifically the item in this table, to see exactly what updates had occurred on that data.
+So by comparing the old image item inside the stream to the item in the database table, you could calculate exactly what had changed.
+Another option to be able to determine exactly what has changed is the final view type, which is new and old images.
+So if you have a business process which needs complete visibility of the change, so before and after, and have this visibility independent of the actual table, then you can select new and old images.
+And with this view type, the actual entry in the stream stores both the pre-change and the post-change state of that item.
+And that way you can determine the difference without having to consult the database table itself.
+Now it's worth noting that all of these types of views work as well with inserted or deleted items, but in some cases the pre or post-change state might be empty.
+So if you delete an item and you're using the new and old images, then obviously your new state will be completely blank.
+And if you're inserting an item and you use that same view type, then your old state will be blank and your new state will contain the data that you've inserted.
+Now streams are powerful in isolation, but where the real power comes from is that streams are actually the foundation for an architecture called database triggers.
+So these allow for actions to take place in the event of a change in data.
+So this is an event-driven architecture that can respond to any data changes in a table.
+Now databases like Oracle have supported these for years, but with DynamoDB they can be implemented in a serverless way.
+Now the architectures of triggers, simply put, is that an item change inside a database table generates an event.
+That event contains the data that's changed and the exact data depends on the view type.
+When an item is added to a stream, so when an event is generated, then an action is taken using that data.
+And the way that this action is implemented within AWS is to combine the capabilities of streams and Lambda.
+So you can use streams and Lambda so that a Lambda function is invoked whenever changes occur to a DynamoDB table.
+And so you'll use Lambda to perform some type of compute operation in response to a data change that causes a stream event.
+And the Lambda function invocation is actually, in this architecture, the trigger.
+So it's the compute action that occurs based on data change.
+So streams and triggers are actually a really powerful architecture.
+You might see them used in reporting or analytics scenarios.
+If you want to generate a report in the event of a change of a certain item in a database,
+maybe stock level changes, or if you want to report on popular items in a stock database,
+then potentially you can use streams and triggers.
+They're also really useful for things like data aggregation.
+So if stock levels are being manipulated, or if a voting app is recording votes
+and you want to perform some kind of aggregation or tally of all those votes,
+then potentially you can use streams and triggers.
+You can also use it for messaging or notifications.
+For example, if you have a messaging application which allows you to create a group chat,
+you might use a DynamoDB table to store the chat items that are added to that group.
+And you could use streams and triggers to send push notifications to all members of that group chat.
+So rather than having to poll databases which consumes compute resources even if nothing happens,
+if you're using streams and triggers, you can respond to an event as it happens
+and only consume the minimum amount of compute required to perform that action.
+Streams and triggers are really used for lots of different things inside architectures,
+but for the Associate Level Solutions Architect Exam,
+you just need to know that you use streams and lambda together to implement a trigger architecture for DynamoDB.
+So visually this is how triggers are implemented.
+We've got a table, an item change occurs within a table which has streams enabled.
+So a stream event is placed onto a DynamoDB stream.
+We've selected to use the new and old images type, so we've got both the new and the old state of that item.
+And based on that, that gets sent as an event to a lambda function,
+and that lambda function can perform some compute based on the pre and post change states of that item.
+So it's not a hugely complicated architecture, but it is really powerful.
+So enable streams on a table, configure a lambda function to invoke whenever a change occurs,
+and you've got a really cost-effective and powerful serverless implementation of a trigger architecture.
+And that's what you'll need to understand for the exam.
+Now with that being said, that's everything that I wanted to cover in this lesson,
+so go ahead and complete the video, and then when you're ready, I'll look forward to you joining me in the next.

@@ -1,0 +1,258 @@
+Welcome back and in this lesson I'm going to be covering AWS Step Functions.
+To understand why Step Functions exist we need to look at some of the problems
+with Lambda that it addresses. Step Functions
+address some of the limitations of Lambda
+or not so much limitations but design decisions that have been made
+with the Lambda product. No product is perfect
+and it's important to understand the product limitations
+or the design decisions which have been implemented
+as a product's been created. Now you know by now that Lambda is a function
+as a service product and the best practice is to create functions which are
+small
+focused and do one thing very well.
+What you should never be doing with Lambda is trying to put a full
+application inside a Lambda function. A because it's bad practice
+and B because there's an execution duration limit
+of 15 minutes. A Lambda function cannot run
+past this 15 minute limit for its
+execution duration. Now you can in theory chain
+Lambda functions together so one Lambda function reaches its
+end and it directly invokes another and by doing this in theory you can get
+another 15 minutes but this gets messy
+at scale. What you're doing is building a chain
+of functions in an attempt to create a long
+running flow and this isn't what Lambda's designed for.
+It's made worse due to the fact that Lambda runtime environments
+are stateless. Each environment is isolated, cleaned
+each time and any data needs to be transferred between the environments
+if you want to maintain any form of state which is why you can't hold a
+state
+through different Lambda functions or different Lambda function
+invocations. Imagine an example where you might have an order processing system
+you can upload a picture of your pet, maybe a cat or a dog or a lizard
+and have it printed on different types of material
+maybe glass, metal or high quality paper.
+This process can take more than 15 minutes
+and it will involve lots of decision points, potentially
+manual human intervention. There's a state
+the order, the process, it's all data that needs to persist
+and doing it by chaining together lots of Lambda functions
+is really, really messy. Step functions as a service lets you create
+what are known as state machines. Think of a state machine
+as a workflow. It has a start point and it has
+an end point and in between there are states.
+States you can think of as things which occur
+inside the state machine. States can do things
+they can decide things and they all take in data
+modify data and output data. So states
+are the things inside these workflows. Now conceptually the state machine
+is designed to perform an activity or perform
+a flow which consists of lots of individual components
+and maintain the idea of data between those states.
+Imagine that you're ordering something from an online retailer such as
+Amazon.com. So you complete the purchase and behind the scenes
+between you completing the purchase and you receiving your goods
+lots of things happen behind the scenes.
+So your stock is located, it's physically picked
+it's packed and verified, postage
+is booked and when it's dispatched your order
+is flagged as being dispatched and that's an example
+of a long running order flow. With Amazon it might only take a few
+hours to move through this flow from beginning to end.
+With something more bespoke it could take longer
+and that's why the maximum duration for state machine
+executions within step functions is one
+year. Now there are actually two types of workflows available within
+step functions we've got standard and express. When you create a state machine
+you need to choose between the two
+and it influences some of the features so the speed
+and the maximum duration. For the exam you only need to remember
+that at a high level standard is the default
+and it has a one year execution limit.
+Express that's designed for high volume event processing workloads such as
+IOT, streaming data processing and transformation,
+mobile application backends or any of those type of workloads
+and these can run for up to five minutes so you would use standard for anything
+that's long running
+and express for things that are highly transactional
+and need much more in terms of processing guarantees.
+Now state machines can be started in lots of different ways
+a few examples are using the API gateway,
+IOT rules, you might use event bridge if you're wanting to use event driven
+architectures,
+lambda can initiate state machines and you can even do it manually.
+Now generally state machines are used for backend processing so something
+in your application will initiate a state machine
+execution. With state machines you can use template
+to create and export state machines once they're configured to your liking
+it's called Amazon States Language or ASL
+and it's based on JSON and you'll use this yourself
+during the demo lesson which is coming up later in this section.
+Now state machines like any other AWS services they're provided with
+permissions to interact
+with other AWS services by using IAM roles
+the state machine assumes the role while running
+and it gets credentials to interact with any AWS services that it needs to.
+Now before we look at the state machine architecture visually
+I want to focus on states themselves I want you to understand
+the type of states that exist so let's look at that next.
+As a reminder states are the things inside a workflow
+the things which occur so let's step through what
+states we have available. First we've got the succeed
+and fail states and basically if the process through a state machine
+ever reaches one of these states then it succeeds or it fails
+depending on which of these states it arrives at. That's nice and easy.
+Next we've got the wait state and the wait state will wait
+for a certain period of time or it will wait
+until a specific date and time. It's provided with this information
+as an input and it holds or pauses the processing
+of the state machine workflow until the durations passed or until that specific
+point in time.
+Next we've got choice and choice is a state which allows the state machine to
+take a different path
+depending on an input and it's useful if you want a different set
+of behavior based on that input. For example
+you might want a state machine to react differently depending on the stock
+levels
+of an item in an order. So the choice state allows you to have a choice
+inside a state machine and you'll be using the choice state
+as part of the demo later in the section. Next we've got the parallel state and
+the parallel state allows you to create
+parallel branches within a state machine. So you might want to take a certain set
+of actions depending on an input
+and that might use the choice state but one of those choices might be
+to perform multiple sets of things at the same time.
+So you might have one of the choices of a choice state
+leading to the parallel state and that's exactly what you're going to implement
+in the demo lesson at the end of this section. Next we've got the map state
+and a map state accepts a list of things.
+An example might be a list of orders and for each
+item in that list the map state performs
+an action or a set of actions based
+on that particular item. So if you have 10
+items being ordered inside an order you might have a map state
+that performs a certain set of things 10 times, one for each
+of those items on that order. Now these are all examples
+of states but they are states which control the flow of things
+through a state machine. The last type of state that I want to talk about
+is a task state and a task state represents
+a single unit of work performed
+by a state machine. So it's the task state themselves
+that allow you to perform actions. It allows the state machine
+to actually do things. Now task states can be integrated
+with lots of different services. So things like Lambda,
+AWS Batch, DynamoDB, the Elastic Container Service,
+SNS, SQS, Glue, SageMaker,
+EMR and lots of different AWS services.
+And when you configure this integration that's how a state machine can
+actually perform work. So it doesn't do the work itself
+the architecture of a state machine is that it coordinates the work
+occurring. So a state machine has different states that control flow
+through that state machine and then it has task states which coordinate with
+other external services to perform
+that actual work. Now let's look at how all this fits together
+visually because it will make a lot more sense. Now for this example we're going
+to use the scenario that we're going to look at
+in the demo lesson at the end of this section.
+The scenario that we have is a serious one. Bob
+has a cat called Whiskers who can never get
+enough cuddles. It's become so bad that poor Whiskers
+has had to design a step functions powered serverless
+application to remind his human minion Bob
+every time a cuddle is required. Whiskers wants to be in full control
+of the frequency of the cuddles and there are times when Whiskers might need a
+cuddle within a few minutes but sometimes
+it could be more than 15 minutes or even hours away.
+He wants to be able to notify his human minion
+when the next cuddle is needed however far away he is and so there needs to be
+multiple ways of reminding Bob. Bob isn't always around
+and so the reminder method needs to be flexible. We need
+email reminders so that if Bob is at a computer he can receive the reminder
+and we also need an SMS reminder so if Bob
+isn't at home he can immediately rush home
+to cuddle Whiskers. Now because Whiskers is a cat and because he's fussy
+the time between cuddles could be longer than 15 minutes so we can't use lambda
+so we're going to use step functions and step functions work with the base
+entity called a state machine and the pet cuddle-a-tron
+will use one state machine. Inside the state machine
+are a number of states. First we've got a wait state called timer
+and timer waits for a predefined amount of time
+the time period that you set until the next cuddle is required.
+Then we have a choice state and the state machine is pretty flexible it allows you
+to decide
+on three methods of notification. Email
+only notification, SMS only notification
+or both. The choice state has three paths
+that it can direct progress down depending on which
+option is chosen. These choices
+are three task states we've got email only
+we have SMS only and we've got email
+and SMS and there are two lambda functions
+email reminder and SMS reminder. Depending
+on the choice taken one or both
+these lambda functions are invoked as part of the state machine
+execution. If the email only choice is taken
+then logically this only invokes the email reminder lambda and this uses the
+simple
+email service to send an email to Bob demanding a cuddle.
+If the SMS only choice is taken then this performs the same action
+but for SMS only so Bob will receive a text message
+with whiskers cuddle based demands. If the
+email and SMS choice is taken then this performs
+both actions. It invokes both lambda functions
+so Bob receives both an email and
+SMS reminder. Now the back end of this application is provided by the step
+function service in the form of a state machine
+but the whole application end-to-end is actually implemented
+as a serverless application. So Bob has a laptop
+and it downloads the client side web application from
+an S3 bucket. So inside this S3 bucket we have HTML
+and JavaScript and the JavaScript lets Bob's browser connect
+to a managed API hosted by the
+API gateway. The API gateway
+is what Bob's browser communicates with and this is backed up
+by a lambda function. And the lambda function is the thing that behind the
+scenes provides the compute service necessary
+to interact with the JavaScript running
+on Bob's laptop and the combination of both of these
+allows Bob's laptop to initiate the execution
+of the state machine every time he sets a cuddle
+reminder. So the state machine is actually invoked by Bob
+clicking on a button on a web page that's provided by this serverless
+application. Now you'll see this when you open the Pet Cuddletron
+application it will just be a HTML page that's loaded from an S3 bucket
+but it will ask you for a number of pieces of input.
+You'll get asked for the number of seconds until the next cuddle
+as well as a custom message and depending on the notification method
+that you pick you'll need to enter either an email address
+or a phone number or both. And when you've entered
+all of the required information based on which
+method of notification that you'll select you'll click
+on one of three buttons. One for email only
+one for SMS only and one for both
+and clicking on that button generates an event
+this communicates with the API gateway it causes an invocation
+of the API lambda function and the API lambda function passes
+all of the information entered on this serverless web app
+all the way through to the state machine and the state machine
+begins its execution. Based on the options that you've selected it waits
+for a certain period of time
+and then it makes a choice based on your selected notification method
+and then it invokes one or both lambda functions
+that will either send you an email, an SMS
+or both. And this is the application that you're going to implement
+in the Pet Cuddletron demo lesson in this section of the course.
+Now if this looks complicated don't worry because we'll be
+implementing this piece by piece, bit by bit together. I'll be around every step of
+the way to guide you on exactly how to implement this fairly
+complex architecture inside AWS. I promise you by the
+end of the demo lesson it will make complete sense.
+In summary step functions let you create state machines and state machines
+are long running serverless workflows. They have a start
+and an end and in between they have states
+and states can be directional decision points or they can be tasks which
+actually perform things on behalf of the state machine
+and by using them you can build complex workflows which
+integrate with lots of different AWS services.
+But at this point that's it for the theory so go ahead and complete this lesson
+and when you're ready I look forward to you joining me in the next.

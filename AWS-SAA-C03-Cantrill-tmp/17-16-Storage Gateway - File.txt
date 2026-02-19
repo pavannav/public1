@@ -1,0 +1,118 @@
+Welcome back, and in this final part of the Storage Gateway series, I want to talk about Storage Gateway running in File Mode.
+So far I've covered Volume Mode, which is where Storage Gateway handles raw block volumes,
+and VTL Mode, or Tape Mode, where Storage Gateway pretends to be a physical tape backup system.
+Running in File Mode, as you can guess from the name, Storage Gateway manages files.
+Now we have a lot to cover because this is one of the most feature-rich modes of Storage Gateway.
+So let's jump in and get started.
+Now I want to stress one thing right at the start.
+For any Storage Gateway questions in the exam, if you see Volumes mentioned, then you should default to Volume Gateway.
+If you see Tapes mentioned, default to VTL Mode.
+If you see Files mentioned, then default to File Mode, and only move away if you see something that eliminates any of those options.
+Now File Gateway bridges on-premises file storage and S3.
+It links local file storage and an S3 bucket.
+With a File Gateway, you create one or more mount points, or shares, and these are available via two protocols.
+Either NFS, which is generally used for Linux servers and workstations, or SMB, which is a Windows Network file sharing protocol.
+Now these are another pair of keywords which will help you distinguish between Volume Gateway, Tape Gateway and File Gateway.
+So if you see any mention of NFS or SMB with a Storage Gateway question that concerns files, then you know it's going to be the File Gateway.
+Now these file shares or mount points that you create within the File Gateway map directly to one S3 bucket, which is in your account.
+Now you manage this S3 bucket and you have visibility of this S3 bucket.
+This means that when you store files onto a mount point over SMB or NFS, they appear in the S3 bucket as objects.
+If you store objects into an S3 bucket, they're visible on the corresponding mount point on-premises.
+Now this is essentially the key benefit of using Storage Gateway running in File Mode.
+It translates between on-premises files and AWS-based S3 objects, and this is super powerful from an architecture perspective.
+Like the other Storage Gateways, it typically runs on-premises and to ensure performance, it also does read and write caching.
+And that's to ensure the performance that you achieve is more LAN-like,
+so you get the same or similar level of performance as anything else which runs on a local area network.
+Now the File Gateway isn't an overly complex product. Essentially what you see on screen is what it does.
+But where the power comes from is how it integrates with S3,
+and how you can take advantage of the S3 features to implement some really useful architectures.
+Now over the remainder of this lesson I want to step through those architectures
+so that you can get some idea of how you can use it effectively in production
+and answer any questions relating to the File Gateway that you might experience in the exam.
+Now a typical architecture with File Gateway starts with a business premises like the one on the left and AWS on the right.
+File Gateway runs as a virtual appliance in most cases,
+and it has local storage that it uses as a read and write cache.
+And this gives whatever data is managed by the Storage Gateway near local area network performance.
+Now on the Storage Gateway end, so on-premises, we create file shares.
+And each of these file shares are linked with a single S3 bucket running in your account.
+Now this link between a file share and an S3 bucket creates what's known as a bucket share.
+This is one S3 bucket and one linked file share.
+These file shares can be accessed from any local servers using NFS,
+in the case of Linux servers, and SMB for any Windows servers.
+And if you're using a Windows share you can also use Active Directory Authentication
+for even better integration with a Windows environment.
+Now the reason why File Gateway is so awesome is because the file shares and the buckets are linked together.
+It means that S3 objects are visible in the file share and vice versa.
+So files that are on-premises map directly onto objects running in AWS.
+So there's a mapping between the file name and the object name.
+And the structure of on-premise file shares is preserved by building that structure into the object name within S3.
+And this is much like how S3 emulates a nested file system structure within what is a flat object storage system
+by building it into the object name.
+So in this case, a file on the left called Winky.jpg will be represented by an object called Winky.jpg inside the S3 bucket.
+Another file called Roffle.png inside the omg-wow folder will be represented by an object called forward slash omg-wow forward slash roffle.png
+so you can see how a structure is emulated by building that into the object name.
+Now you can have ten of these shares per storage gateway, and crucially the primary data is held on S3.
+So the only thing that's stored locally is within the local cache and this holds data written or read from the storage gateway
+and is designed to improve performance to near those achieved from any other resources running on a local area network.
+Now because the objects are stored within S3, you have the ability to integrate with other AWS services.
+You can use S3 events and Lambda as well as other AWS services such as Athena.
+Anything which can use S3 as a source location will have access to any files that you store on S3 indirectly using the file gateway.
+So at a high level, this is the architecture of a file gateway.
+It allows you to extend your local file storage into AWS using S3.
+So if you see the keyword file in the exam, maybe with the keyword extension,
+then a possible answer is going to be the storage gateway running in file mode.
+But the product goes far, far beyond this.
+The reason it's my favorite mode of storage gateway is because it enables some really cool hybrid architectures.
+Now the architecture that's on screen now is a simple two-site hybrid architecture with on-premises on the left
+and then AWS on the right.
+But storage gateway in file mode can be used to implement a true multi-site architecture.
+In this architecture, we still have the storage gateway in the top on-premises environment on the left of the screen
+and there's still the one-to-one relationship between the files presented by the storage gateway and the objects in the S3 bucket.
+But we can add another on-premises environment at the bottom
+and this environment also presents the same set of objects from the same bucket and it presents those as files.
+Now there are some concerns to keep in mind.
+First, when you update a file on a local storage gateway, that update is copied into S3.
+That's automatic.
+But to save on resource usage and avoid unnecessary S3 listings, there's no automatic version of that in reverse.
+When you list the file share on-premises, you're listing the most recent copy of the S3 bucket that the gateway is aware of.
+In this example, if you added a new cat picture to the top storage gateway, that would create a new object immediately in the S3 bucket.
+But if you then listed the file share in the bottom on-premises environment, it wouldn't show until you initiated a listing.
+Now there's a feature of storage gateway called notify when uploaded.
+And I'll make sure I put a link attached to the lesson which details this functionality.
+But at a high level, this sends an event using CloudWatch events which can inform the other storage gateways when an update has occurred.
+But this needs to be designed into your solution. It doesn't occur by default.
+And another point to be aware of is that file gateway doesn't support any form of object locking.
+This means that if two users are editing the Winky.jpg file in the top and bottom environments and they both write,
+there isn't any form of checking or control over this access.
+And this can result in data loss where one update overwrites another.
+So either make sure that one of the shares is read and write and everything else is read,
+or implement some form of control on who accesses files and when.
+Another powerful architecture which is supported when running storage gateway in file gateway mode is replication.
+Given this architecture, where we have two customer sites linked to the S3 bucket in US East 1,
+we could create another bucket in say US West 1 and then configure cross region replication of that data between those two buckets.
+This gives us a nice way to implement multi-region DR without any significant changes to infrastructure or much in the way of additional costs.
+We can also use file gateway and S3 lifecycle management together.
+Let's say that we had this architecture. So we have on-premises on the left, AWS on the right.
+Using file gateway means that the files and objects remain in sync.
+Because it's using S3, there are different storage classes available for objects.
+And three examples are S3 standard, S3 standard infrequent access and S3 Glacier.
+When you create a file share, you specify the default storage class to use and this is generally S3 standard.
+But over the top of this default, you can create lifecycle policies which run within an S3 bucket.
+Maybe you configure them to move objects from standard to standard IA after 30 days.
+And behind the scenes, objects are moved automatically between these two different classes.
+And then because this is an automatic process, maybe it repeats as additional objects reach a certain age.
+More objects are moving between these different storage classes.
+Now multiple steps are allowed.
+So in addition to the move after 30 days to standard IA, you could also have a 90-day move to Glacier,
+meaning that objects over time move towards cheaper storage.
+This process happens in the background automatically, which means it's cost effective.
+And because the primary copy of all data is in S3, any on-premises locations automatically benefit from this cost effective storage system.
+File Gateway is a really cool product, but to fully appreciate it, it helps to experience it in practice.
+But for the exam, this lesson has covered everything that you'll need.
+I've covered all of the main features and architectural patterns of File Gateway.
+For the exam, try to make sure that you're familiar with when you'd use each type of storage gateway.
+So when it makes sense to use volume stored, or when it makes sense to use volume cached.
+What situations is VTL mode useful, and then the same question for File Gateway.
+Now if you're in doubt, come and talk to me on techstudyslack.com and we can discuss this in more detail.
+But with that being said, thanks for watching.
+Go ahead, complete the video, and when you're ready, I look forward to you joining me in the next.

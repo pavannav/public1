@@ -1,0 +1,125 @@
+Welcome back and in this lesson I want to talk about CloudFront TTL as well as CloudFront Invalidations.
+Now both of these are features which can be used to influence how long objects are stored at edge locations and when they're ejected.
+Now we've got a lot to cover so let's jump in and get started.
+Now let's step through in detail exactly what happens with caching one image at one edge location.
+So a simple architecture is an S3 origin on the left, an edge location in the middle and three users top, middle and bottom right.
+Now let's say that we have a photo of Whiskers the cat and he's crying a little so it's not his best ever photo but that's the one that's uploaded into the S3 bucket by the Catagram application.
+Now our first customer makes a request for the picture of Whiskers.
+This image is not stored on the edge location and so an origin fetch happens where the image is retrieved from the origin and placed on the edge location before being returned placed in the origin.
+So we take away this picture of Whiskers the cat crying and we replace it with a much better one.
+So now we've got a much happier looking picture of Whiskers.
+But now that this image has been replaced on the origin, note how the one on the edge location is still the old version.
+So what happens when another customer makes a request to the same edge location?
+This time the older or bad image of Whiskers is returned. Why?
+Because it's the one that's cached at the edge location and from an object perspective it's still viewed as valid.
+Even though the origin has a new version it's never checked because the copy that's cached in the edge location is viewed as valid by CloudFront.
+Now there are ways to influence this which I'll explain later in the lesson but for now you need to understand this architecture can be problematic.
+Now at some point every object that's cached by CloudFront will expire and when that happens it's not immediately discarded.
+But now it's stale. It's viewed as not current.
+If at this point another customer requests a copy of this object then the edge location doesn't immediately return the object.
+Instead, as with step two, it forwards this on to the origin and the origin will respond in one of two ways.
+Now this is based on the version of the object that's cached at the edge location versus the one that's stored in the origin.
+It's either current or the origin has an updated object.
+If it's current then a 304 not modified is returned and the object is delivered directly from the edge location to the customer
+and the copy of the object in the edge location once again becomes viewed as current.
+If there is a difference between the edge location and the origin, so if the origin has a newer version of the object
+then a 200 OK message is returned along with a new version of the object which replaces the one that's cached at the edge location.
+That's how an edge location behaves within the CloudFront network.
+An object stays in the cache ideally for the entire time that it's valid.
+If the edge location has capacity issues then in theory it could be ejected early.
+Even when an object expires the next time that it's accessed assuming that it's still within the edge location cache
+then the edge location checks the version of the object that it has versus the one in the origin
+and if they're the same a 304 code is returned and the object is not updated.
+It's just marked as once again been current.
+A new version of the object is only transferred if the communication between the edge location and the origin
+determines that the version of the object that's in the origin has been updated.
+Now the problem that you need to understand is step four on this diagram.
+The middle user received an old version of the object even though a newer version was stored in the origin.
+So he updated the copy of the whiskers object and even though that updated copy existed in the origin
+that user received a copy of the old object.
+And that's something that you need to be aware of because there are ways that you can influence this
+and that's what I want to look at for the remainder of this lesson.
+So now let's talk about object validity.
+An edge location views an object as not expired when it's within its TTL or time to live period.
+So let's explore what this means.
+Before we do it's important to understand that as a general rule
+the more often the edge location delivers objects directly to your customer which is called a cache hit
+the lower the load will be on your origin and the better performance for the user.
+So where possible we want to avoid edge locations having to perform origin fetches to our origins
+because that will mean that CloudFront is performing better.
+It's giving better performance to our customers.
+Objects which are cached by CloudFront have a default validity period of 24 hours
+and this value is actually defined on a behaviour within a distribution.
+The default value for this default TTL is 24 hours.
+This means any objects cached by CloudFront using this behaviour will also have a default TTL of 24 hours.
+And this means 24 hours after the object is cached they're viewed as expired.
+Now also on a behaviour within a distribution you can set two other values.
+The minimum TTL and the maximum TTL.
+Now these values don't by themselves do anything to influence caching behaviour.
+Essentially they set lower and upper values for the TTL value that an individual object can have.
+Now it's possible to define per object values for the TTL.
+If you don't specify an object TTL then the default one attached to the behaviour is used.
+So the 24 hour default TTL.
+Now an origin which remember could be an S3 bucket or a custom origin running your application.
+Both of these can direct CloudFront to use object specific TTL values using headers.
+Now there are a number of different headers and you do need to remember these for the exam.
+The first header is called cache-control-max-age and this is a value in seconds.
+We've also got cache-control-s-max-age and this is again also configured in seconds.
+Now think about these as the same thing.
+Setting either or both of these will do the same thing.
+Direct CloudFront to apply a TTL value in seconds for a particular object.
+And after the number of seconds specified within this object specific TTL have passed then that object will be viewed as expired.
+Now we also have the expires header and instead of specifying a number of seconds this actually specifies a date and time.
+So a specific date and time that you wish to direct CloudFront that an object should be viewed as expired.
+Now for any of these headers both the ones that are specified in seconds and the expires header where you specify a date and time.
+The minimum TTL and maximum TTL specified on the behaviour are both limiters.
+So values below the minimum TTL of the behaviour will mean that the minimum TTL is used rather than the per object setting.
+And likewise for any per object TTLs specified which are above the maximum TTL for the behaviour will mean that the maximum TTL value is used instead of the per object setting.
+So it's important that you understand the architecture of this.
+You have a default TTL on a behaviour which is by default set to 24 hours.
+You can change this value though but by default it is 24 hours and this applies to any object which doesn't have a per object TTL set.
+You also set minimum TTL and maximum TTL values and these act as limiters for any per object settings that are defined using these cache control headers.
+So max-age, s-max-age and then expires.
+Now I mentioned this earlier but these headers can be set using custom origins or S3.
+If you're doing it using custom origins then these can be injected by your application or the web server.
+If you're using S3 then these are defined on every object using object metadata.
+So that's something you can set using the API, the command line or even the console UI.
+Now let's look at one last topic before we finish up with this lesson and that's cache invalidations.
+So cache invalidations are performed on a distribution.
+Whatever you set the invalidation to be is applied to all edge locations within that distribution.
+So it's something that takes time, it isn't immediate.
+But what a cache invalidation does is immediately expire any objects regardless of their TTL based on the invalidation pattern that you specify.
+So some examples include this one which is used to invalidate a specific object using a specific path, in this case, forward slash images, forward slash whiskers1.jpeg.
+We've also got this one which uses a wildcard and this will invalidate any objects in the images path which start with whiskers.
+So this could be whiskers1, whiskers2 or even whiskers1337.jpeg.
+All of these would be affected by this wildcard invalidation pattern.
+And then we've got this one which is forward slash images, forward slash star and this would affect any objects contained within this path.
+So this could be images about whiskers, it could be images of sparky, it could be images of woofy.
+Anything that's contained in this specific path would be matched by this star wildcard.
+And then lastly we've got slash star and this invalidates all objects which are cached by a distribution.
+So this means everything on every edge location is immediately invalidated.
+Now there is a cost to perform cache invalidations and that cost is the same regardless of the number of objects which are matched by the pattern.
+So invalidation should only really be thought of as a way to correct errors.
+If you are regularly having a need to update individual files or invalidate individual files, then you might want to think about using versioned file names instead.
+Now an example of a versioned file name would be whiskers1.v1.jpeg.
+If that's the crying picture from the start of the lesson and you wanted to replace it, then you could add a new object called whiskers1.v2.jpeg or v3.jpeg.
+And then update your application to point at that new version and this requires no invalidation.
+Now this one comes up in the exam all the time because versioned file names are better for a few reasons.
+First, because you're using a different name for the object, it means that even if those objects are cached in a customer's browser,
+it won't be used because you're changing the name and the application points at the new name.
+Even data cached in a user's browser won't impact the image or the object that your customers see.
+Second, it means that logging is more effective because you know which actual object was used because nothing has the same name.
+It also means that you keep all versions of all objects and these are consistent between edge locations so you can move between them.
+And of course it's less expensive because you don't need to use continued cache invalidations.
+Now don't confuse versioned file names with S3 object versioning. That's a different thing.
+S3 object versioning allows you to have different data for an object, different versions which use the same name.
+CloudFront will always use the latest object version in a bucket by default.
+What I'm describing here is different. Using versioned file names means having different file names for different actual versions,
+different data stored in different file names.
+And that means that each of these file names will be cached independently on every edge location
+and you can move between them in a consistent way by making changes to your application.
+So this is an important one to remember for the exam.
+If you do see any questions in the exam which talk about versioned file names and the question is looking at the scenario from a cost efficacy point of view,
+then it's likely going to be versioned file names which is the correct answer.
+Now that's all of the theory that I wanted to cover in this lesson.
+So thanks for watching, go ahead and complete the lesson and when you're ready I'll look forward to you joining me in the next.

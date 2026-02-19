@@ -1,0 +1,113 @@
+Welcome back. In this lesson, I want to briefly talk about Amazon Redshift.
+Redshift is a complicated product and there's no way that I can talk about it all in this lesson.
+So I'll be focusing on the things which really matter for the exam from a solutions architect perspective.
+Now we have a lot to cover, so let's jump in and get started.
+Redshift is a petabyte scale data warehouse.
+A data warehouse is a location where many different operational databases from across your business
+can pump data into for long-term analysis and trending.
+It's designed for reporting and analytics, not for operational style usage,
+and I'll explain what that means in a second.
+Now it's petabyte scale because it's been designed from the ground up to support huge volumes of data.
+Now Redshift is an OLAP database rather than OLTP, which is what RDS is.
+The difference is really important to understand for the exam.
+Online Transaction Processing, or OLTP, captures, stores and processes data from transactions in real time.
+So this is the type of database used when, say, adding orders to an online store
+or a database of the best cat pictures in the world.
+It's designed, as the name suggests, for transactions, and this means inserts, modifies and deletes.
+Online Analytical Processing, or OLAP, is designed for complex queries to analyze aggregated historical data from OLTP systems.
+So other operational or OLTP systems put their data into OLAP systems,
+so RDS might put its data into Redshift for more detailed long-term analysis and trending.
+Now Redshift stores its data in columns.
+Imagine a database of all the best cats in the world.
+Every row in the database represents one cat.
+It stores the microchip ID, the name, the age, the color, its favorite food, and so on.
+In a row-based or OLTP database, data is stored in rows because you always interact with specific records, specific cats,
+so updating their ages or editing other attributes.
+Now this means that if you wanted to query the average age of all the cats in the database,
+you'd need to read through every row looking for just one field.
+With column-based databases, data is stored in columns, so all the names, all the ages, and so on.
+It makes reporting-style queries much easier and more efficient to process.
+Now Redshift is one such database. It's a column-based database, and Redshift is delivered as a service just like RDS,
+so it's pretty quick to provision, and you can actually provision it, load data, use it for something, and then tear it down when you've finished.
+Generally data is loaded into Redshift before being worked on, but the product includes some really advanced functionality.
+Two in particular are really cool.
+First is Redshift Spectrum, which allows for querying of data on S3 without loading it into Redshift in advance,
+and this is great for larger data sets. You still do need a Redshift cluster,
+but it means that instead of going through the time-consuming exercise of loading data into the platform,
+you can use Redshift Spectrum to query data on S3.
+There's also Federated Query, which is kind of like Federated Identity,
+but instead of identities it allows you to directly query data that's stored in remote data sources.
+So essentially you can integrate Redshift with other databases, foreign or remote databases, and query their data directly.
+Now Redshift integrates with other AWS toolings such as QuickSight for visualization,
+and it has a SQL-like interface for data access. It allows you to connect using JDBC and ODBC standards,
+so if your database app supports either, then it can connect natively to Redshift.
+Now let's go through some key architectural points before we look visually at how Redshift fits together.
+First, Redshift is a provisioned product. It uses servers, so it's not a serverless product like, say, Athena.
+It's also not something that you would really use on an ad-hoc basis like Athena.
+It's much quicker to provision than an on-premise data warehouse that you have to create yourself,
+but it does come with a provisioning time. It's not something that should be used for ad-hoc queries of large-scale data sets on S3.
+That's much more aligned to the functionality which Athena provides.
+So for ad-hoc queries, look towards Athena as a default rather than Redshift.
+Now Redshift uses a cluster architecture, and a really important architectural principle to understand
+is that the cluster is actually a private network. You can't access most of the cluster directly.
+Redshift runs with multiple nodes and high-speed networking between those nodes,
+and because of this, logically it runs in one availability zone, so it's not highly available by design.
+It's tied to a specific availability zone.
+All Redshift clusters have a leader node, and it's the leader node that you interact with.
+The leader node manages communications with client programs and all communications with the compute nodes.
+It develops execution plans to carry out complex queries, so specifically about the compute nodes,
+these run the queries which are assigned by the leader node, and they store the data loaded into the system.
+A compute node is partitioned into slices.
+Each slice is allocated a portion of the node's memory and disk space,
+where it processes a portion of the workload assigned to that node.
+The leader node manages distributing data to the slices,
+and apportions the workload for any queries or other operations onto the slices.
+The slices then work in parallel to complete the operation.
+Now a node might have 2, 4, 16 or 32 slices.
+It depends on the resource capacity of that node.
+Redshift is a VPC service, and so all parts of the system can be managed as you would expect.
+So this includes VPC security controls, IAM for permissions, KMS for at-rest encryption of the data,
+and CloudWatch can also be used for monitoring of the platform.
+Now because of the way Redshift is architected, it has a feature called Enhanced VPC Routing.
+By default, Redshift uses public routes for traffic when communicating with external services
+or any AWS services such as S3 when it's loading in data.
+Now if you enable Enhanced VPC Routing, then traffic is routed based on your VPC networking configuration.
+This means it can be controlled by security groups, network access control lists,
+it can use custom DNS, and it will require the use of any VPC gateways that any other type of traffic requires.
+So Internet gateways, NAT gateways, or any other VPC endpoints to reach AWS and external services.
+So if you want advanced networking control, then you need to enable Enhanced VPC Routing.
+Now that's a good one to remember for the exam.
+If you do have any customized networking requirements, then you do need to enable Enhanced VPC Routing.
+I just wanted to stress that again because it really is a critical point to remember for the exam.
+Now let's look at the architecture of Redshift visually before we finish with this lesson.
+So we start with a VPC and in there is a subnet in one availability zone,
+and let's say inside that we create a Redshift cluster.
+Now in the cluster there's always a leader node, and it's to this leader node that anything outside of the cluster
+connects to in order to interact with the cluster.
+So things like management applications or workbenches or visualization,
+all of this interacts with the Redshift cluster via the leader node using ODBC or JDBC style connections.
+Inside the cluster are the compute nodes and the slices on those nodes,
+as well as the storage attached to each of the slices in the compute nodes.
+Because Redshift is located in one availability zone, there are a few ways that Redshift attempts to secure your data.
+First, data is replicated to one additional node when written.
+That way the system can cope with localized hardware failure.
+Additionally, automatic backups happen to S3 by default around every 8 hours
+or every 5 GB of data written to the cluster.
+This happens automatically and has a configurable retention period.
+Now these backups occur to S3 and so you now have data stored across availability zones at this point.
+So the data with the Redshift cluster at this point is at least resilient against the failure of an availability zone.
+Now additionally, you can create manual snapshots, also stored on S3,
+but you have to manage the retention yourself as an administrator.
+Now you can also configure snapshots to be automatically copied across AWS regions,
+which provides you with global resilience and an effective way to spin up a Redshift cluster in another region if you have a DR event.
+In terms of getting data into Redshift, you have a few options.
+You could load that data from S3 or you could copy data in from products such as DynamoDB.
+You can migrate data into Redshift using the database migration service from other data sources,
+and even AWS products such as Kinesis Firehose can stream data into Redshift.
+Now for the exam, the really important bits to understand are which products can be integrated,
+how Redshift fits into architectures, so what it can be used for, and how to design a Redshift implementation.
+So I've covered most of the important architectural points that you'll need for the exam within this lesson.
+Now in the next lesson, I want to talk in a little bit more detail about Redshift backups.
+It won't be a long lesson, but I think it will be worthwhile doing because it will have benefits for the exam.
+Now that's everything I wanted to cover in this lesson.
+Go ahead and complete the lesson and then when you're ready, I'll look forward to you joining me in the next.

@@ -1,0 +1,128 @@
+Welcome back, and in this lesson I want to talk about the DynamoDB Accelerator, known as DAX.
+And DAX is an in-memory cache for DynamoDB, which substantially improves performance.
+But, unlike other caches, it's directly integrated with the product itself,
+so it's really easy for an architect to implement without lots of additional planning work.
+So let's jump in and take a look.
+Now before I focus on DAX specifically, I want to spend a few minutes contrasting
+how an example flow works using DAX versus a traditional in-memory cache.
+So let's assume that we have an application which uses DynamoDB for its persistent data storage.
+So on the top we've got the traditional in-memory cache, and on the bottom we've got DAX.
+So the flow using the generic in-memory cache goes something like this.
+First, the application needs to access some data, and so it checks the cache.
+Now if the cache doesn't have the data, this is known as a cache miss.
+And if this happens, the application then loads the data directly from the database.
+Once it has the data, which takes longer than getting it from the cache directly,
+it updates the cache with the new data, and then any subsequent reads from that point forward
+will directly load the data from the cache, which is called a cache hit, and this will be faster.
+Now the problem with this architecture is the lack of integration between the cache and the database.
+Let's contrast this with DAX, and when using DAX there's extra software involved,
+and this is installed on the application instance.
+It's the DAX SDK, or Software Development Kit.
+And this takes away the admin overhead from the application,
+because now DAX and DynamoDB are one and the same from the application's perspective.
+The application makes a single call requesting the data, and this is handled by DAX.
+If DAX has the data, if it's a cache hit, then the data is returned directly.
+If not, then DAX handles the rest, so it goes to DynamoDB to retrieve the data,
+it gets the data, adds it back into its cache, and then returns that data to the client.
+And the benefit of this method is that it's one set of API calls using one Software Development Kit.
+DAX is designed for DynamoDB, and so it's tightly integrated with it.
+It's much less admin overhead than using a generic cache,
+so by using DAX and by integrating all of the different API calls into one SDK,
+it makes it really easy to implement caching into your application.
+So now that we know the difference between DAX and generic caches,
+let's focus now on exactly how the DynamoDB accelerator is architected.
+Now DAX operates from within a VPC,
+and it's designed to be deployed into multiple availability zones in that VPC.
+So like many VPC-based compute services, you need to deploy it across availability zones
+to ensure that it's highly available.
+Now DAX is a cluster service where nodes are placed into different availability zones.
+There's a primary node, which is the read and write node,
+and this replicates out to other nodes, which are the replica nodes,
+and these function as read replicas.
+So with this architecture, we have an EC2 instance running an application and the DAX SDK,
+and this will communicate with the cluster.
+And at the other side, the cluster communicates with DynamoDB.
+Now DAX actually maintains two different caches.
+First is the item cache, and this caches individual items,
+which are retrieved via the get item or batch get item operations.
+So these operate on single items, and you need to specify an item's partition key,
+and if present, its sort key.
+So the item cache just holds items which are directly retrieved in this way.
+It also has the query cache, which stores collection of items
+retrieved via query or scan operations,
+but crucially, it also stores the parameters used in that original query or scan.
+So it links the parameters that are supplied to that operation with the data that's been returned.
+So it means that whole query or scan operations can be rerun and return the same cached data.
+Now DAX is accessed architecturally much like RDS.
+Every DAX cluster has an endpoint which is used to load balance across the cluster.
+If data is retrieved from DAX directly, then it's called a cache hit,
+and the results can be returned in microseconds.
+You might get a response back typically in say 400 microseconds.
+Any cache misses, so when DAX has to consult DynamoDB,
+these are generally returned in single digit milliseconds.
+Now in writing data to DynamoDB, DAX can use write through caching.
+So the data is written into DAX at the same time as being written into the database.
+If a cache miss occurs while reading, the data is also written to the primary node of the cluster
+as the data is retrieved, and then it's replicated from the primary node to the replica nodes.
+So DAX is a really efficient way of interacting with DynamoDB,
+because architecturally it actually abstracts away from DynamoDB.
+You think you're interacting with a single product using a single set of APIs,
+but behind the scenes, DAX is handling the process improvement that comes from caching,
+and that's both for read and write operations.
+Now before we finish up, I just want to step through some important facts and considerations
+that you'll need for the exam. So DAX is a cluster, you've got the primary node
+which supports write operations and replicas which support read operations.
+Nodes are designed to implement high availability, so if you implement multiple nodes
+and one of the nodes fails, for example the primary node,
+it will have an election and failover to one of the replicas, which will become the new primary node.
+Now DAX is an in-memory cache, and so it allows for much faster read operations
+and significantly reduced costs. If you're performing the same set of read operations
+on the same set of data over and over again, then you can achieve substantial
+performance improvements by implementing DAX and caching those results.
+And in addition, because you're not having to constantly go back to DynamoDB
+time after time for the same data, then you generally do achieve significant cost reductions.
+In terms of scaling, with DAX you can either scale up or scale out,
+so this means using bigger DAX instances or adding additional instances.
+So you can scale in both directions, up and out.
+Now unlike a lot of caches, DAX does support write through,
+which means that if you do write some data to DynamoDB, you can write it using the DAX SDK.
+DAX will handle that data being committed to DynamoDB and also storing that data inside the cache.
+Architecturally you do need to know that while DynamoDB is a public AWS service,
+DAX is not, it's deployed inside a VPC, and so logically any application
+which is using DAX will also need to be deployed into that VPC.
+So DAX is an in-memory cache and it's designed to reduce the response time of read operations
+by an order of magnitude, taking you down from single digit milliseconds using DynamoDB natively
+all the way through to microseconds if you use DAX.
+So architecturally, if you're reading the same data over and over again,
+then you need to look at whether you should be using an in-memory cache.
+Now choosing between DAX and a generic in-memory cache,
+this comes down to how much admin overhead you want to manage,
+because DAX is integrated with DynamoDB because it supports this single SDK
+for accessing the cache and DynamoDB, both together as an abstract entity.
+It's a lot less workload if you are using DynamoDB on its own to implement DAX
+rather than a generic cache.
+So if you've got read-heavy or bursty workloads, then DAX provides increased throughput
+and potentially significant cost reductions.
+So if you find yourself having to apply large RCU values onto a table,
+these can get expensive really quickly, and you might be better implementing DAX,
+which will get you better performance, and remove that additional cost.
+So if you find yourself having performance issues during sale periods,
+or have specific tables or items in a table where there are heavy read workloads
+against that area of data, then you can consider using DAX.
+If you've got a workload which is very read-heavy,
+with the same set of data again and again being read, then you can consider using DAX.
+If you've got a type of data layout where a certain type is used more frequently
+than everything else, maybe time series, then again you can consider using DAX.
+If you really care about incredibly low response times,
+again that's another situation where DAX could be advantageous.
+Now situations where DAX is not ideal are any applications that require strongly consistent reads.
+If your application cannot tolerate eventual consistency, then DAX is not going to be suitable.
+If you don't have an application that is latency sensitive,
+if you don't need these really low response times, again DAX might not be the right solution.
+If your application is write-heavy and very infrequently uses read operations,
+then again DAX is probably not the right solution.
+So generally if you see any questions in the exam which talk about a caching requirement with DynamoDB,
+then you should by default assume it is DAX and only move away from that assumption
+if you see significant evidence to suggest something else.
+With that being said, that is everything I wanted to cover inside this lesson,
+so go ahead, complete this video and when you're ready I'll look forward to you joining me in the next.

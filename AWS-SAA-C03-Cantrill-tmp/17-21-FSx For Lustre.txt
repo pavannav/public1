@@ -1,0 +1,94 @@
+Welcome back and in this lesson I want to talk about another file system provided by FSx and that's FSx for Lustre.
+Now this is a file system designed for various high performance computing workloads.
+Now it's important for the exam that you understand exactly what it provides and how it's architected.
+Now we've got a lot to cover so let's jump in and take a look.
+In the exam you won't need to know about Lustre in detail.
+It's one of those relatively niche products but you'll need to distinguish between scenarios when you might use products such as FSx for Windows versus FSx for Lustre.
+Now FSx for Windows is a Windows native file system which is accessed over SMB.
+It's used for Windows native environments within AWS.
+FSx for Lustre is a managed implementation of the Lustre file system which is a file system designed specifically for high performance computing.
+It supports Linux based instances running in AWS and as a keyword to track for the exam it also supports POSIX style permissions for file systems.
+Now Lustre is designed for use cases such as machine learning, big data or financial modeling.
+Anything which needs to process large amounts of data and do so with a high level of performance.
+Now FSx for Lustre can scale to hundreds of gigabytes per second of throughput and it offers sub millisecond latency when accessing that storage.
+And this is the level of performance that you'll need for high performance computing across many different clients or many different instances.
+Now FSx for Lustre can be provisioned using two different deployment types.
+If you have a need for the absolute best performance for short term workloads then you can pick Scratch.
+Scratch is optimized for really high end performance but it doesn't provide much in the way of resilience or high availability.
+If you need a persistent file system or high availability for your workload then you can choose the persistent option.
+Now this is great for longer term storage. It offers high availability but crucially in one availability zone only.
+Lustre is a single availability zone file system because it needs to deliver this really high end performance.
+And so the high availability provided by the persistent deployment type is high availability within one availability zone only.
+And this also offers self healing so if any hardware fails as part of the file system it will be automatically replaced by AWS.
+So this is the deployment type to choose if you need resilience and high availability of the data running on the file system.
+Now you won't need to know this level of detail for the exam but I have included a link attached to this lesson which details the differences between Scratch and persistent in detail.
+I find it useful to know at least at a high level the difference between these two different deployment types.
+Now FSx for Lustre as with FSx for Windows is available over a VPN or direct connect from on premises locations.
+Obviously you will need a pretty substantial amount of bandwidth to benefit from the Lustre performance but it is there as an option.
+Now it's important for the exam that you have an understanding of how FSx for Lustre works so let's have a look at that next.
+Before I cover the architecture of FSx for Lustre I want to conceptually talk about what FSx for Lustre means.
+What do you actually do when you use this file system?
+Well the product focuses around a managed file system which you create, it's accessible from within a VPC and anything connected to that VPC via private networking.
+So connectivity wise it's much like EFS or FSx for Windows in that sense in that you can access it from the VPC or anything connected to it with private networking.
+Now the file system is where the data lives, it's where it lives while it's being analyzed or processed by your applications.
+When you create a file system though you can associate it with a repository and a repository in this case is an S3 bucket.
+If you do this when the file system is created the objects within the S3 bucket are visible in the file system
+but crucially at this stage they're not actually stored within the Lustre file system.
+When they're first accessed by any clients connected to the Lustre file system the data is lazy loaded into the file system from the S3 repository that first time it's loaded and then it's present within the file system.
+So it's important to understand that while objects initially appear to be within the file system if you're using an S3 repository they're only actually truly present in the file system when they're first accessed.
+So they're lazy loaded from the repository into the file system.
+There isn't actually any built-in synchronization so conceptually the Lustre file system is completely separate, it can just use an S3 repository as a foundation.
+Now you can actually sync any changes made in the file system back to the S3 repository, i.e. the S3 bucket, using the HSM underscore archive command.
+What I want you to understand conceptually is that the Lustre file system is completely separate.
+It can be configured to lazy load data from S3 and to write it back but it's not automatically in sync and it's the file system, the Lustre file system, the separate file system where the processing of data occurs.
+So now that I've covered the conceptual elements of this let's take a look at how the product is actually architected.
+Before I do that there are a few key points that I want to discuss. So Lustre splits data up when it's storing it to disks.
+There are a number of different types or elements to data that are stored within the file system.
+First is the metadata so this is things like file names, timestamps and permissions and this is stored on metadata targets or MSTs and a Lustre file system has one of these.
+Then we've got the data itself and the data is split over multiple object storage targets known as OSTs and each of these is 1.17 TIB in size.
+And it's by splitting the data across each of these OSTs that the performance levels of Lustre are achieved.
+Now the performance provided by the product is a baseline performance level based on the size of the file system and the size of the file system starts with a minimum of 1.2 TIB and then you can use increments of 2.4 TIB.
+For the scratch deployment type you get a baseline performance of 200 megabytes per second per TIB of storage.
+For the persistent deployment type there are actually three baseline performance levels.
+You've got 50 megabytes per second, 100 megabytes per second and 200 megabytes per second per TIB of storage.
+And for both types you can burst up to 1300 megabytes per second per TIB of storage and this is based on a credit system.
+So you earn credits when you're using a performance level below your baseline and you consume these credits when you burst above the baseline.
+So it shares many of the characteristics of EBS volumes but just at a much higher scale and with more parallel architecture.
+So let's look at this architecture visually.
+So any FSX architecture uses a client-managed VPC, so something that you design and maybe you implement.
+Inside this client-managed VPC are some clients and these are generally Linux EC2 instances with the Lustre software installed.
+So they can read and interact with the Lustre file system.
+Then at the other side of the architecture you create a Lustre file system and optionally an S3 repository for that file system.
+Now depending on the size of storage that you configure within Lustre, the product deploys a number of storage servers.
+These servers handle the storage requests placed against the file system and each of them also provides an in-memory cache which allows faster access to frequently used data.
+At a high level the more storage provisioned, the more servers and the more aggregate throughput and IOPS, the FSX for Lustre can deliver into your VPC.
+And this performance is delivered into your VPC using a single elastic network interface.
+Lustre runs from one availability zone and so you'll have one elastic network interface within your client-managed VPC which is used to access the product.
+Now from a performance perspective any rights to Lustre will go via the ENI and they'll be written directly to disk and so that will be dependent on the disk throughput and IO characteristics.
+Likewise if data is read directly from disk then it too is based on the performance characteristics of the underlying disks.
+Once data is read and then accessed again, so for any frequently accessed data, it can use in-memory caching and at that stage it's based on the performance characteristics of the networking connecting the clients through to the Lustre servers themselves.
+So at a high level this is the architecture that the FSX for Lustre product uses.
+Now let's have a look at some key points that you need to be aware of for the product.
+When you're creating an FSX for Lustre file system you get to create it using one of two deployment types.
+I mentioned these earlier in this lesson.
+The first one is Scratch and Scratch is designed when you want pure performance.
+You might be looking to deploy some short-term or temporary workloads and the only thing that you care about is pure performance.
+So for this type of workload you can use the Scratch deployment type but it's really important that you know as a solutions architect that this doesn't provide any high availability nor any form of replication.
+If you have any form of hardware failure then any data that's stored on that hardware is lost and isn't available to the file system.
+Now this doesn't mean that other data is also at risk because any other data continues to be available as part of the Lustre file system.
+It's only data affected by a failure.
+But what you need to understand from a file system planning perspective is that larger file systems generally mean more servers, that means more disks and that means a higher chance of failure.
+So the larger the file system the more chance of failure when you're using the Scratch deployment type.
+Now choosing the persistent deployment type means you do have replication but crucially only within a single availability zone.
+So all of the hardware and all of the data is replicated within a single availability zone which protects you against hardware failure but not against the failure of a full availability zone.
+So using the persistent deployment type means the product will auto-heal any hardware failure and data won't be lost but remember this is only within one availability zone.
+If an entire availability zone fails then you could have data loss because hardware is not recoverable outside of that availability zone.
+Now this doesn't mean data has to be at risk because with both of these deployment types you can use the backup functionality of the product to backup that data to S3.
+And you can either do manual backups or automatic backups and automatic backups have anywhere between 0 to 35 days of retention.
+And like other AWS products 0 means that automatic backups are disabled.
+So this at a high level is how the FSx for Lustre product works. It's similar to FSx for Windows and similar to EFS in terms of how it's architected.
+It uses elastic network interfaces which are injected into a VPC and these can be accessed from the VPC or from any other network connected to that VPC using private networking.
+Now for the exam if you see Windows mentioned or SMB mentioned then it's going to be FSx for Windows and not FSx for Lustre.
+If you see any mention of Lustre, any mention of really high end performance requirements, any mention of POSIX, high performance computing, machine learning, big data or any of those type of scenarios then it's going to be FSx for Lustre.
+If you see any mention of machine learning and SageMaker and you need to have access to a really high performance file system then again it could be FSx for Lustre.
+With that being said that is everything that I wanted to cover within this lesson so go ahead complete the lesson and then when you're ready I'll look forward to you joining me in the next.

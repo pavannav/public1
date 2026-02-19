@@ -1,0 +1,123 @@
+Welcome to this demo lesson which is the first of three demo lessons where you're going to get experience of working with CloudFront.
+Now the architecture of all three demos in this series is going to be that you're running a really popular website
+and for this demo we're going to be running that from an S3 bucket. This S3 bucket runs in us-east-1
+and we're going to assume that this website has gone viral globally and so we need to implement a content delivery network
+and we're going to use CloudFront. Now in order to do this demo series you're going to need some infrastructure.
+Before we get started as always make sure that you're logged in to the IAM admin user within the general AWS account
+so that's the management account of the organization and you need to have the Northern Virginia region selected.
+Now attached to this lesson is a one-click deployment link which will deploy this architecture
+so if you can go ahead and open that now. So this is going to deploy an S3 bucket with some objects within it
+and it's going to be configured to be a static website. Now everything's pre-configured, you don't need to enter any information
+all you have to do is check the capabilities box at the bottom and then click on create stack.
+Now this will need to be in a create complete state before we continue so go ahead and pause the video,
+wait for the stack to change into create complete and then we're good to continue.
+Okay so this stack's now moved into a create complete state and if we just go ahead and click on resources
+you'll see that it's created a number of resources. The important one is the top 10 cats buckets
+so this is an S3 bucket which is running a static website. Now we can see what this looks like if we click on outputs
+there's a link in there which will open the website. So if you just right click on that and open that in a brand new tab
+you might recognise it from a demo earlier in the course. This is the top 10 cats website and of course
+it's judged in an entirely unbiased way by Merlin the cat. So you've seen this website before, it's got the top 10 cats
+in the world and then of course the judge who is completely unbiased. So this is the website you've used
+earlier in the course, it's a static website delivered using S3. So if we go to the resources tab, scroll down
+and then right click on the S3 bucket resource at the bottom and open that in a new tab, this is the configuration
+that we have. So this bucket is located in the US-East-1 region which means that the performance will be great
+if you're in that region. But as I'll talk about in a second, this is one of the issues that we need to address
+for a global audience. Now from a permissions perspective, if we click on permissions, this bucket is set to not
+block public access which is logical because it needs to be a static website and it has an applied bucket policy
+which grants all principles the ability to do S3 colon get object on any object within this bucket. And of course
+if we click on properties and then move all the way down to the bottom, it's configured as a static website
+with this as the website end point. So that's everything that you need to know about the configuration of this
+static website. Now we have two main problems with this scenario that we need to address throughout the next few
+demo lessons. The first problem is that if you have any users of this website who are not located in the US-East-1
+region, then potentially their performance will be suboptimal. The other issue is that we can't deliver this
+static website using HTTPS. If we scroll down to the bottom here and click on this icon next to the static website
+hosting end point, you'll see that it opens it using a non-secure connection. This is using HTTP which means that
+this data is not encrypted in transit. Now if we add HTTPS onto the start of this URL, you'll notice that it doesn't
+load and that's because S3 is not capable of delivering the static website functionality using HTTPS. And that's
+another problem that we're going to resolve by using CloudFront. So we're going to resolve the potential global
+performance optimization and we're going to allow this website to be delivered using HTTPS. Now to get started with
+that we need to move back to the AWS console. I'm just going to close this tab down so that we don't get distracted by
+this loading indicator and then we're going to click in this search box and type CloudFront. It's going to locate that
+in services, right click and open that in a new tab. Now as I talked about in the theory lesson, CloudFront is based
+on the concept of distributions and a distribution is the unit of configuration. So to get started we need to create
+a CloudFront distribution. So click on create distribution. Now I just want to step through the important options that you
+can set for an origin. Now some of these won't be relevant to every different certification course so I'm only going to
+focus on the ones which are common throughout all of the certification courses. If relevant I'll be having
+dedicated lessons covering anything else that's important for your specific certification. So don't be surprised if I skip
+over any of these settings I'll be coming back to them in dedicated lessons as required. Now the function of CloudFront
+first and foremost is to cache objects from one or more origins and so when you're creating a distribution you have to
+specify an origin domain name. So what I want you to do here is to click in the origin domain name box and you should
+be able to see under Amazon S3 buckets the top 10 cats bucket. Now don't be surprised if it says CF and S3 before it
+and some random afterwards. That's perfectly okay you just need to pick the one that says top 10 cats and that now means
+that this distribution is set to use this particular origin which is the S3 bucket running our static website. Now CloudFront
+is capable of using both custom origins and S3 origins. If you pick an S3 bucket from this drop down it will use an S3 origin.
+If we just put the static website endpoint DNS name in this box it would use it as a custom origin. Now this is important because
+even though we have the static website hosting feature enabled on the S3 bucket the CloudFront distribution is using this as an
+S3 origin not a custom origin and so we get access to some additional functionality which I'll be talking about later in this demo
+and upcoming demos elsewhere in the course. So just remember if you pick an S3 bucket from this drop down then it's going to use
+the S3 bucket as an S3 origin. If you specify the static website hosting endpoint DNS name it will use it as a custom origin.
+That's a really important distinction to understand. Now if you wanted CloudFront to load content from a particular path within that bucket
+then you could set an origin path. If we don't put anything here then it's going to start at the root or the top level of the origin
+and that's what we want to do in this particular case. Now by default if we do configure CloudFront to point at this origin
+which we are doing it doesn't stop anyone accessing the origin directly and this can potentially add a security hole that we need to fill.
+So that's something that we're going to be talking about in a dedicated demo that's coming up later in this section but for now we're not
+going to restrict bucket access. So by the end of this demo any users of this application are going to be able to access the content
+either using CloudFront or direct to the S3 bucket. That's not ideal but we will be correcting it later in this section.
+You're able to set the viewer protocol policy. Now this is the protocol between the viewer and the CloudFront edge location.
+Now you have three options. You can either set that both HTTP and HTTPS are allowed. You can specify that you do accept HTTP
+but you want it to direct toward HTTPS or you can specify HTTPS only. Now best practice is to use HTTPS wherever possible
+and so redirect HTTP to HTTPS is becoming more popular as is HTTPS only but for this demonstration we're going to use HTTP and HTTPS.
+So select that option. Now this method of specifying the cache policy and the origin request policy, this is a relatively new layout for the GUI
+configuration of CloudFront. It used to look like this where you could specify the TTL values for the distribution.
+You could specify how you wanted object caching to work and then you could specify whether you wanted to cache based on selected
+request headers or not and whether you wanted to forward cookies and whether you wanted to forward and or cache query strings.
+That's how it used to be configured but the new method of configuring is to use a cache policy and an origin request policy.
+So you can think about these as groupings of settings. So for example if we click on this drop down you'll see managed caching optimized,
+managed caching disabled, managed caching optimized for uncompressed objects and then managed elemental media package.
+Each of these has different options. For example if we view the policy details for caching optimized you'll see the types of information
+that you get to set. So it's the same as with the legacy configuration style. You get to specify the minimum TTL of the distribution,
+the maximum TTL of the distribution and the default. And as you learned in the theory lesson this governs how long these objects are
+cached at the edge locations. And this is the distribution default and of course these can be controlled on a per object basis
+by setting certain configuration options on the origin. So that's important to realize but this is the new configuration style.
+So don't be surprised if you see both the legacy and this depending on the documentation of the articles that you might be reading about CloudFront.
+Now just make sure that you do have caching optimized set in this cache policy drop down. It should be the default but it does have a tendency
+to deselect if you change any of these options. So make sure that you have caching optimized set under the cache policy drop down.
+Now of course this is the same for the origin request policy. So if we click in the drop down you can select from various different origin request policies.
+Now you can also restrict viewer access using signed URLs or signed cookies. And the minute that you set this it's configured as private
+so you won't be able to access any of the objects without using signed URLs or signed cookies. So if you set this then you need to specify
+trusted key groups or trusted signers. So that's a really useful keyword to remember for the exam. So if you hear either of those two terms
+you can safely assume that it's a private distribution. Now we're not going to do that. That's well beyond the scope of what we want for this demo lesson
+but just be aware that you can restrict viewer access when setting up a distribution. You can enable real time logs so this is another relatively new feature.
+This can deliver logs in real time to a Kinesis data stream if you want to evaluate logs in real time. You've always had the ability to generate
+cloud front logs but now you can do it in real time using Kinesis. So again something important to remember for the exam.
+Now what we're essentially doing with the distribution is pointing it at an origin and then we're configuring how all of the edge locations
+handle object caching. And so it's here where we can specify a price class. This is where we can specify which edge locations are going to be used
+to cache our objects. Now the default is to use all edge locations. So this uses edge locations distributed globally and this is the best performance option.
+It's also the most expensive. We can save costs by limiting the edge locations to the US, Canada, Europe, Asia, Middle East and Africa only.
+But generally if you're deploying a global application you'll want to utilize all edge locations. And that's the option that I want you to set for this demo lesson.
+So use all edge locations best performance. Now depending on the course that you're taking I may be talking about the web application firewall product
+elsewhere in the course. This is an application layer firewall that can be integrated with cloud front. So you define a web ACL which controls
+what gets filtered and when and from where. And then that web ACL is a distinct object that you can then link with the distribution.
+And when you link it with the distribution it affects all of the edge locations and so can provide additional protection. Now by default
+cloud front is capable of being accessed using SSL. So that's accessing using HTTPS. And by default you're given a domain name to use
+with your cloud front distribution. And this comes with the default SSL certificate which is a wild card. So star.cloudfront.net.
+And this is able to provide verified encryption in transit for any of these default domain names. So anything.cloudfront.net.
+Now if you want to use a custom domain name for your application you're able to do so. You need to add an alternate CNAME here.
+You have to point that domain name at the cloud front distribution and then you need to use an SSL certificate. And the most common way of doing this
+is to request a certificate using ACM and you're going to be getting experience of that in an upcoming demo lesson elsewhere in this section.
+For now we won't be editing this. We'll leave it as the default. You can configure the supported HTTP versions. We'll leave this as default.
+I talked about the real-time logging above where you can enable standard logging which is not real-time and you can specify the configuration here.
+Again this is not valid for all of the courses so I'll be covering this if applicable in its own dedicated lesson.
+What we do need to set is the default root object and this is a common thing that's forgotten when setting up cloud front distributions.
+By default when you're accessing just the name of the distribution so not using a particular object then that's going to point directly at the origin.
+And you need to specify the root object that's used if you don't specify an object. So we want this to point at the index.html object which is stored on our S3 bucket.
+So go ahead and put that into the default root object box. That will mean that if we just browse to the default name for this distribution it will actually go to the origin forward slash index.html.
+If we specify an object explicitly so logo.jpeg in this example then it will use that object name on the origin. It won't use this default root object.
+This is only used if you don't specify any object explicitly. Now we're getting to the end of this now. We're close to being able to create this distribution.
+You're able to set whether you want this to support IP version 6 or not. We'll leave this to be on as default.
+Now that's everything that we need to set up for this distribution so at this point go ahead and create the distribution.
+Now this can take some time to create. I've seen it be as quick as a few minutes or as long as 45 minutes.
+We need this to move away from a deploying state so go ahead and pause the video and once this moves away from deploying we're good to continue.
+Okay so this is the end of part one of this lesson. It was getting a little bit on the long side and so I wanted to add a break.
+It's an opportunity just to take a rest or grab a coffee. Part two will be continuing immediately from the end of part one.
+So go ahead complete the video and when you're ready join me in part two.

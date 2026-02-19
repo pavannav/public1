@@ -1,0 +1,140 @@
+Welcome back, as an architect you need to understand the impacts of failures at various points within the DX architecture
+and the way that it integrates with your on-premises networks.
+So let's jump in and get started because we've got a lot to cover.
+Now before we start looking at how resilience works with Direct Connect, let's review an architecture which is not resilient.
+Now worryingly, this is actually the way I've seen most people provision Direct Connect.
+A typical DX deployment has a number of physical components.
+First, the AWS region. Think of this as the actual infrastructure that AWS uses to deliver services in that region.
+Secondly, a Direct Connect or DX location, which is typically a data center in the geographic area that the region is in.
+Now there are often multiple DX locations in a single region and these are generally located within a major data center in a metro area.
+And the last typical component in most architectures is the customer premises, so your office buildings or self-managed data centers.
+Now architecturally, I want you to think of the AWS region as a separate thing in terms of Direct Connect architecture.
+So an AWS region is connected to all of the DX locations in that region using multiple high-speed network connections.
+Now you can assume that this part is always highly available.
+So while the region and DX location are conceptually different, they're always connected with high-performance, highly available networking.
+Now inside the DX location, which remember is a data center, are a collection of AWS DX routers.
+And these conceptually are connected to the AWS region.
+So picture a DX router, which is the exit point of the AWS network.
+When you order a DX connection within your AWS account, what you actually receive is a port on a DX router at a DX location.
+Now ideally, you'll also have equipment at this DX location, and this is referred to as the customer DX router.
+If not, you'll need to purchase a service from a communications provider and use one of their routers, which is also going to be at the DX location.
+But in either case, there's another router inside the DX location, the customer or provider DX router.
+So when you order a DX connection, you're allocated a port on the AWS DX router,
+and you need to arrange a connection between this port and a port on your customer DX router or provider DX router.
+And this process, this cable, is called a cross-connect, and it's a single cable between both of these routers.
+In addition to this, generally you'll also want to connect the DX location back to your company network.
+If you're a large company, you might have lots of capacity at the same data center that the DX location uses.
+But if not, you'll need to extend this back into your own on-premises network.
+Generally, you'll have a customer premises router, and you'll pay a carrier or a telco provider to extend the direct connect
+from the customer or provider DX router all the way back through to your on-premises network.
+So to summarize, the AWS region is linked in a highly available way to one or more DX locations.
+The DX location houses the AWS DX routers in addition to your or a provider's DX router.
+And you cross-connect from the AWS DX router into your DX router with a physical cable.
+And then all of this is extended to your on-premises environment.
+So what can go wrong with this architecture?
+Well, there are actually seven single points of failure on this diagram.
+There are actually more, but seven that I would be directly concerned about if I was implementing direct connect.
+The first is the entire DX location could fail. You can have power failures. Buildings can and often do collapse.
+The AWS DX router could fail, either in isolation or along with the building.
+The same for the cross-connect. It's just a cable. Cables do fail.
+Your DX router could fail. And what if you don't have an on-site spare?
+The extension from the DX location to your on-premises environment, it's just a cable.
+It probably goes under the road or across above ground cables.
+And any engineering works can potentially be a risk to the stability of that cable.
+You might also have a failure of your actual customer premises environment,
+or your customer premises router within that environment could also have a hardware failure.
+When people think about direct connect, for some reason, they have a perception that it's a resilient product.
+It's actually not resilient in any way by default.
+It's a product which is based on lots of physical components, which each depend on each other.
+But it's also a product that's designed to be flexible, so it can actually be made into a super resilient service.
+Let's look at that, and now that you know about the architecture details, I can speed up and zoom out a little.
+Now we can improve the resilience of the architecture by provisioning multiple DX ports.
+So we start with the same architecture at a high level.
+The AWS region on the left, the DX location in the middle, and the customer premises on the right.
+Now there are actually multiple points of connection within each DX location.
+If you have multiple routers in the DX location, you can configure multiple cross-connects into multiple DX ports.
+And from there you can extend those into multiple customer premises routers using extensions.
+So this architecture has two AWS DX routers, two customer DX routers, and two customer premises routers.
+So when you're ordering Direct Connect, if you order two Direct Connects into the same DX location,
+then AWS will provision these onto separate DX routers, and that gives you a level of resilience.
+Now this architecture adds significant benefits.
+Because we have the two independent DX ports, two DX routers, and two customer routers,
+the architecture can tolerate a failure of a router in either of those two paths,
+or a failure of one of the extensions, and still continue operating.
+The design does have some problems though. Some single points of failure do still exist.
+If the DX location itself fails, then connectivity is lost,
+and since all connectivity goes via a single customer location,
+if that single customer location fails, then connectivity to the AWS platform is also lost.
+So we still have two fairly major single points of failure, the two locations that are involved in this private networking.
+We also have a potentially hidden single point of failure with this architecture,
+and this occurs because the extensions between the DX location and the single customer premises location
+could in theory travel via the same physical cable route.
+So if you order multiple connections between two physical locations,
+then generally the cable route for both of those connections could be the same.
+This isn't always the case, but it's something to be very aware of.
+I've seen many businesses build this type of architecture.
+They assume a high level of resilience only to find that both of their independent cables
+enter their building under the same sidewalk,
+and both of those cables were broken by roadworks occurring on that same sidewalk.
+So to prevent this, we need another step of evolution in terms of resilience.
+We can't have any single points of failure if the private networking is important to our organization.
+So let's look at a better version of this architecture, another evolution in terms of resilience.
+So at a high level, we still have the AWS region on the left,
+but now we have two independent customer premises on the right,
+so two completely different buildings, ideally two buildings that are spread out geographically.
+In addition, we have two different DX locations.
+In each DX location, we're going to provision one DX port that's cross-connected into one customer DX router,
+and each of these is going to be extended into a different customer router in a different customer premises.
+If we architect the solution this way, it offers much better resilience than the previous architecture.
+We've got two different DX locations, meaning the architecture can tolerate the failure of one of these locations
+and still continue to operate.
+Because there are two customer premises and two customer routers,
+it can also tolerate the failure of hardware and location at the customer side.
+The only risk of outage is if an entire location fails, and then the hardware in the remaining path also fails.
+So with this architecture, if we had hardware failure in DX location 1, the solution would continue to run.
+If the entire DX location 1 failed, the solution would continue to run.
+If both DX location 1 and the customer premises 1 failed, the solution would still provide connectivity,
+only if we had all of that fail, and then in addition, if we had hardware failure in DX location 2 or customer premises 2,
+would the connectivity be interrupted.
+But we can take this one step further and implement an architecture designed for extreme levels of resilience.
+This next design offers maximum resilience.
+We still have the AWS region on the left, the two DX locations in the middle,
+and the two customer premises environments on the right.
+However, this time in each of the DX locations, we have two DX ports on separate equipment.
+And then in each location, we also have two customer DX routers.
+This provides a level of resilience within each location covering hardware failure
+and resilience against the failure of an entire location.
+So at each location, we have a pair of cross-connects between the AWS DX router and the customer DX router,
+and then these are all extended to dual customer routers at each of the customer premises locations.
+So this architecture gives us extreme levels of resilience.
+We have high availability from a direct connect location perspective.
+One can fail, and the connectivity is still active because we have infrastructure in both.
+Inside each DX location, we have a pair of both AWS DX routers and customer DX routers.
+So even if one DX location fails, we could still lose one pair of those in the remaining DX location,
+and still the connectivity would be fine.
+The extensions from the DX location to the customer premises,
+because they're going between two completely different locations at both sides,
+will generally follow two completely separate routes.
+So this is because the starting and the end points of those connections are to different physical buildings,
+which means the extensions themselves and the customer premises are going to be highly available.
+And inside each of the customer premises, because we're using multiple customer routers,
+these are also highly available.
+Now this is relatively complex network architecture,
+and the thing that I want you to take away from this lesson from an exam perspective,
+and if you intend to use direct connect in real world projects,
+is that direct connect is a physical technology, and so it is not resilient in any way,
+unless you architect it that way.
+So if you just provision a single direct connect,
+it will be a single port on a single DX router at a single DX location,
+you'll cross-connect it to a single customer DX router,
+extend it to a single customer premises with a single customer router,
+each step of that process will be a single point of failure.
+If you want something that is highly available and you need to use direct connect,
+then you need to consider one of the more resilient solutions that I've demonstrated in this lesson.
+Now you can also use site-to-site VPN as a backup for direct connect,
+and I've explained exactly how this works in another lesson in this section of the course,
+but generally if you do need to use direct connects only for a design,
+then you should definitely review all of these highly available architectures,
+rather than provisioning a simple single direct connect.
+Now with that being said, that's all of the theory and the architecture that I wanted to talk about in this lesson,
+so go ahead, complete the lesson, and when you're ready, I'll look forward to you joining me in the next.

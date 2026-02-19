@@ -1,0 +1,102 @@
+Welcome back and in this lesson I want to focus on how CloudFront works with SSL.
+Each CloudFront distribution receives a default domain name when it's created.
+It's the default way that you access a distribution and it's a CNAME DNS record.
+Now it looks something like this. It starts with a random part and is always followed by CloudFront.net.
+Now you can enable HTTPS access to your distribution by default with no additional requirements as long as you use this address.
+CloudFront is supplied with a default SSL certificate which uses star.cloudfront.net as the name so it covers all of the CloudFront distributions which use that default domain name.
+Most of the time though you want to use your own custom name with a CloudFront distribution.
+For example cdn.categram.whatever.
+And this is allowed via the alternate domain name feature where you specify different names which will be used to access a CloudFront distribution.
+Once these are added and active you can point that...
+Now there is a process though for adding these alternate domain names.
+If you use HTTPS you need a certificate applied to the distribution which matches that name.
+And even if you don't use HTTPS you need a way of verifying that you own and control the domain.
+And that way is by adding an SSL certificate which matches the name that you're adding to the CloudFront distribution.
+The result, whether you want to use HTTPS or not, you need to add a cert to the distribution which matches the alternate domain name that you're trying to add.
+And to do this you either need to generate or import an SSL certificate using the AWS certificate manager known as ACM.
+Now this is a regional service. Normally you need to add a certificate in the same region as the service that you're using.
+So a load balancer located in AP Southeast 2 would also need a certificate creating within ACM also in the AP Southeast 2 region.
+Now the exceptions to this are global services and one such global service is CloudFront.
+For these services the certificate needs to be always created or added in US East 1.
+Remember this for the exam, it will come up. For CloudFront if you're wanting to add any certificates they always need to be in US East 1 which is the Northern Virginia region.
+Now there are a few options that you can set on a CloudFront behaviour in terms of how to handle HTTP versus HTTPS.
+First you can allow both HTTP or HTTPS so no restrictions. You allow the customer to make the choice about the protocol whether it's insecure or secure.
+Second you can redirect any incoming HTTP connections to HTTPS which is the option many people use to encourage the use of secure HTTP.
+And then finally you can restrict a behaviour within CloudFront to only allow HTTPS but this does mean that any HTTP connections will fail entirely.
+Now if you choose to use HTTPS with CloudFront then you have to have the appropriate certificates which match the name that you're using for that distribution.
+For the exam understanding certificates is really important which is what I want to cover in detail in the remainder of this lesson.
+Now there are actually two sets of connections when any one individual is using CloudFront.
+First you've got the connection between the viewer and the CloudFront edge location and second the connection between CloudFront and the origin that's being used and these are known as the viewer and origin protocols.
+And for the exam and really try to commit this one to memory both of those connections need valid public certificates as well as any intermediate certificates in the chain and the key part here is public.
+Self-signed certificates, if you see that term, will not work with CloudFront. They need to be publicly trusted certificates.
+Okay so now I've covered the basics of HTTPS with CloudFront let's quickly move on and touch on something else.
+One really important thing to understand about CloudFront and SSL for the exam is how it's charged and to understand that and why it is this way you need a little understanding of how SSL has worked over time.
+So historically in the distant past so before 2003 every SSL enabled website needed its own dedicated IP.
+The reason why is critical to understand if you really want to understand SSL.
+So SSL and TLS are often used interchangeably but in this context I just mean encryption that happens over a network connection.
+Now the problem is is that when encryption is being used as part of HTTPS that encryption happens at the TCP layer and this is much lower level than HTTP which is an application layer protocol.
+Now you might be aware that a single web server can actually host many websites using different names using one single IP address.
+For example I could host Catagram and Dogogram on the same server using the same IP address.
+Now how this works when only using HTTP is that when your web browser is sending a request to my web server which hosts both of these sites on a single IP it uses what's called a host header.
+Essentially your browser tells my server that you're requesting a page from Catagram or Dogogram and so my server knows to provide that particular website rather than the other.
+So if you're accessing Catagram you tell my web server you're accessing Catagram and it knows to provide you with the Catagram website rather than the Dogogram website.
+But this happens at the application layer so layer seven and this is after the connection has been established.
+Now TLS so the encrypted part of HTTPS this happens before this point so before the browser sends the web server the information about the site that it wants.
+Part of what TLS does is allow a web server to validate its identity.
+When you first create the encrypted connection between you and an IP address so before you start a HTTP connection the web server identifies itself.
+Now the issue is that if you don't have a way of telling that web server which site you're trying to access and there wasn't such a way originally then the server doesn't know and so the server can only provide one certificate.
+And this is why historically it wasn't possible to host multiple HTTPS sites on a single IP.
+If they needed separate certificates then the web server had no method of understanding which particular site you were trying to access.
+It had no method of supplying the relevant certificate and so it couldn't handle more than one certificate.
+So if you had multiple sites which needed multiple certificates then they all needed separate IP addresses.
+So in 2003 an extension was added to TLS called SNI or Server Name Indication.
+An SNI adds the ability for a client to tell a server which domain name it's attempting to access and this occurs within the TLS handshake so before HTTP even gets involved.
+So when you're establishing the encrypted connection between your device and Categram your device can tell the server that it wants to access Categram.
+The server can then respond with the Categram certificate proving its identity as the Categram server and this allows one IP to host many HTTPS websites which need their own certificates.
+Now the problem is that older browsers don't support SNI so if you want to use CloudFront and you want to allow HTTPS connections and you want to use a custom certificate with a custom domain name
+then CloudFront needs to provide dedicated IP addresses if it needs to support older browsers.
+So when using CloudFront you can either choose to use SNI mode which is free as part of the service or you can choose to use a dedicated IP at the edge location
+and this costs money at the time of creating this lesson $600 per month per distribution.
+So if you need to support HTTPS on anything but prehistoric browsers it's standard and it's free and you don't need to pay any extra you just need to install that SSL certificate.
+For older browsers SNI won't be supported and you need to pay $600 per month for a dedicated IP address.
+Okay so with that being said one last thing before we finish and that's to look at the architecture of SSL in CloudFront visually.
+So let's move on and look at that next.
+So architecturally this is how it looks. We have a CloudFront edge location in the middle and three origins on the right.
+An S3 bucket, an application load balancer and a custom origin and this could either be an EC2 instance or an on-premises web server.
+On the left we have a few customers. At the top one customer which is using a modern web browser and they're using this to browse Categram.
+At the bottom we have some customers with a slightly older pre 2003 browser.
+What you need to understand for the exam is the certificate requirements to support this and how the older browser influences things.
+Now to start because we have a mixture of clients and some of them include older browsers.
+With this architecture we would need to use a dedicated IP and this does cost extra.
+If we only had to support modern browsers which support SNI then we could use the one shared IP address.
+So in either case our customers use these IP addresses to connect to one or more edge locations and this is called the viewer protocol or viewer connection.
+The connection between the viewers or the customers and the edge location.
+The key consideration here is that the certificate used by the edge location has to be a publicly trusted certificate.
+Something trusted by the web browsers which our customers use.
+And this generally means something by the major certificate authorities such as Komodo, Digicert, Symantec or AWS Certificate Manager.
+If you use the AWS Certificate Manager then just to reiterate the certificate has to be created in US East 1.
+I'm going to keep stressing this point throughout any CloudFront related lessons in the course because it features all the time in the exam.
+For anything CloudFront related where it integrates with a regional service so logging or certificates then assume you have to interact with it in US East 1.
+Now any public certificate needs to match the name of the CloudFront distribution that it's being applied to.
+So if you add a custom domain name the DNS needs to point at CloudFront and the certificate needs to match the DNS name that you're using.
+So that's the viewer side secured and a really important point again that I want to stress is that you cannot use self-signed certificates.
+Only publicly trusted certificates are able to be applied to CloudFront distributions.
+That's another really important point for the exam.
+At the other side is the connection between the edge location and the origin or the origins and this is called the origin protocol.
+Now the rules about certificates at this side are similar to the viewer side.
+First they need to use publicly trusted certificates and of course again this means no self-signed certificates.
+If your origin is S3 then you don't need to worry about anything else because S3 handles this natively.
+So you don't need to apply certificates onto your S3 bucket and indeed you can't actually change the certificate that's on an S3 bucket.
+So if you're using S3 origins it's really simple you just point your CloudFront distribution or specifically your behavior at the origin and everything works.
+If you're using an application load balancer then this needs a publicly trusted certificate and you can either use one that's generated externally
+or you can use the AWS certificate manager to generate and manage one on your behalf.
+For any custom origins so EC2 instances or on-premise servers then again you need to use a publicly trusted certificate
+but neither of these services are supported by ACM and so you can't use ACM to manage the certificate on your behalf.
+You need to apply the certificates manually.
+Now in all cases for origins I'm going to stress this again the certificate needs to match the DNS name of the origin.
+So in order for SSL to work as an architecture from the viewer side the certificate applied to CloudFront needs to match the DNS name
+of whatever your customers are using to access CloudFront and then at the origin side the certificate installed on any of your origins
+needs to match the DNS name that CloudFront is using to contact the origin.
+So that's really important.
+Now that's everything I wanted to cover for this lesson.
+Thanks for watching, go ahead and complete it and when you're ready I look forward to you joining me in the next lesson.

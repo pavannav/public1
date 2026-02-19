@@ -1,0 +1,98 @@
+Welcome back, this is part 2 of this lesson. We're going to continue immediately from the end of part 1, so let's get started.
+OK, so that's deployed. In my case, it took about 7 and a half minutes, so now it shows as deployed and enabled, which means that we're good to continue.
+So once yours is in the same state, I want you to go ahead and click on the distribution ID,
+and this will allow us to see the particular domain name that's been allocated for our distribution.
+Now, this will be different for you. Every distribution is allocated with a unique default domain name, so this is mine,
+and if I go ahead and open this in a new tab, you should recognize the same website as we opened earlier, directly from the S3 bucket.
+Only now, this is being delivered from my closest edge location, and if I do a refresh,
+now that all of these objects and the HTML document itself are cached at my local edge location, the performance is notably better,
+so I get an immediate improvement in the speed of delivery from the edge location, and you should be able to experience the same.
+Now, just go ahead at this point and refresh this a number of times if you're following along with this in your own environment.
+I really want to make sure that all of these objects, so all of these images and the HTML document,
+I want to make sure that these are all cached at your local edge location, and I want to demonstrate one of the nuances of working with CloudFront.
+I want to give you a practical illustration of the caching architecture.
+So right now, we have this web page. It's index.html, so it's a HTML document, and it links to lots of different images.
+In total, 11 different images, so that's one for each of the top 10 cats, and then right at the bottom, the Judge Merlin.
+So this is a group of lots of different images. These were initially fetched from the origin, so the S3 bucket, and now these are cached at my local edge location.
+Now, what I want you to do at this point is to right-click on this top object and view image.
+So this image is called Merlin.jpg, and it's stored in the img folder at the top level of this distribution.
+Now, we need to go back to the S3 console, so the easiest way of doing that is to go back to CloudFormation,
+then click on Resources, and then open the S3 resource in a new tab.
+Go to Objects, and then go inside the img folder, you'll see that we have the same Merlin.jpg object.
+So this is the object which has been fetched by my edge location the first time that I access it, and now it's also cached at that edge location.
+So that's important to understand. So now, whenever I'm accessing this CloudFront distribution, instead of going back to the origin,
+I'm now loading these images directly from that edge location, and that's why they're delivered with improved performance versus going direct to S3.
+Now, I've also attached to this lesson a link to a Whiskers.jpg object. So this is Whiskers. It's just an image, and it's called Whiskers.jpg rather than Merlin.jpg.
+Now, what we're going to do at this point is we're going to save this Whiskers.jpg image as Merlin.jpg, and we're going to overwrite the Merlin.jpg image within the S3 bucket.
+Now, the way that you do this depends on your browser. You might be able to right-click and save the image, and then change the name of the file that's been saved to Merlin.jpg.
+If you can do that, awesome. If not, you'll have to download Whiskers.jpg, then rename Whiskers.jpg to Merlin.jpg, and then once you have a Merlin.jpg image,
+I want you to go back to the S3 console, make sure you're inside the IMG folder, and then click on Upload. Then click on Add Files, and then I want you to select the file,
+Merlin.jpg, so this is the Whiskers.jpg object that you renamed. I want you to select it and click on Open, and that will ready an upload operation.
+So you can see that you're ready to upload Merlin.jpg, and then go ahead and scroll down and click on Upload, and that's going to overwrite the existing object in the bucket,
+the existing Merlin.jpg image, with this new image, which is called the same, but isn't the same image. So now this object, which is called Merlin.jpg, isn't actually a picture of Merlin, it's a picture of Whiskers.
+Now if we go back to this page that we have open to our CloudFront distribution, and if we refresh, note how it doesn't show the updated image.
+If we right-click here and go to View Image, it says that it's Merlin.jpg, it's inside this image folder, but it still actually shows the Merlin.jpg image.
+Now if we go to the S3 console, scroll to the top and go back to the top level of the bucket, click on Properties, scroll all the way down to the bottom,
+and then click on this link to open the S3 website, now notice how this is actually loading the updated image, so this is Whiskers.
+Now the reason that this is loading it is because this is going direct to the origin, so this is going to the S3 bucket directly, we're pointing directly at the S3 bucket.
+Close that down, go back to the tab that you have the CloudFront distribution open to, and just hit refresh, and it's still loading the old image.
+This is because these are cached at the edge location, and they won't be renewed until that TTL value is reached, so until the objects are viewed as stale, they won't be refreshed from the origin.
+So that's how CloudFront improves performance, it caches objects at the edge locations and delivers them directly from those edge locations,
+and it doesn't need to go back to the origin every time, only when that object becomes stale in the edge location.
+So if you do have any sort of application where you need to update objects regularly, then you need to do one of two things.
+The first thing that you can do is to update objects where a version number is included in the object name, so I could have uploaded an object called Merlin underscore V2 dot jpeg
+and updated the HTML, and then I wouldn't have this caching problem.
+That's great if you need to make sure that you can track the usage of all of these different versions of these objects.
+Another option that you have is to perform an invalidation.
+So what we can do is to go back to the CloudFront distribution, and then we can click on the Invalidation tab.
+We can create an invalidation, and this is an operation which sends a directive to every edge location telling it to invalidate one or more objects.
+And the way that we do this is to create an invalidation, and then you can specify object paths to be part of this invalidation.
+So we could specify forward slash img forward slash star to invalidate every object in that img folder.
+We could specify forward slash img forward slash merlin dot jpeg to invalidate that one particular object.
+Or we could invalidate everything inside the distribution by using forward slash star, and this is a wildcard which represents everything.
+So just to keep this demo simple, we're going to use this. So we're going to do a wildcard invalidation.
+So type forward slash star and then create invalidation.
+Now an invalidation process can take some time to take effect.
+It's a directive that has to go to every single edge location.
+So the distribution passes out the invalidation instruction to all of the different edge locations,
+and that causes any objects which are cached in those edge locations which match the pattern that we've just specified to be invalidated.
+Now again, the time taken for this can vary considerably. You can see that mine's already completed.
+If yours hasn't completed, then just go ahead and pause the video, wait for it to complete, and then you're good to resume.
+Once it moves into a completed state, click on your distribution ID and then click on the general tab.
+Go ahead and copy down again this default domain name and then open that in a new tab.
+Now at this point, it's very possible that you might still see the incorrect image.
+If you do, then open this link in a private browser tab.
+Now when you open it, it's going to your closest edge location which does not have a cached copy of any of these objects any longer,
+and so an origin fetch is happening. It's fetching an updated copy of all that data,
+and of course that includes the updated copy of the Merlin.jpeg object, and so that's why it's now updated.
+So that's a really important thing that you need to remember for all of the exams.
+That's how to perform an invalidation. So you create a request and you specify one or more paths inside that request,
+and it's important to know that you'll actually build based on invalidations,
+so it's actually better to perform bigger invalidations less frequently rather than small invalidations more frequently.
+So keep that in mind. If you do have a lot of changing content, then you're better using versioned objects.
+So objects such as Merlin underscore V1, V2, V3 and so on, because that will avoid this problem.
+You're never going to overwrite an object. You're always creating a new versioned copy of that object.
+So that's caching invalidation. Now a couple more things I want to cover before we finish up with this demo lesson.
+The first is that I can take this default domain name, open that in a new tab, and then change it to HTTPS.
+So remember this is something that I couldn't do with S3, but now I can do it with CloudFront.
+So now we're getting this content encrypted in transit. If I click on this lock symbol,
+this will differ depending on your browser. I can get some additional information about the certificate
+for this CloudFront distribution. I'm going to go ahead and click on view certificate just to get the information.
+This is a wildcard certificate that's used for any CloudFront default DNS name.
+So this is why we're able to use HTTPS by default with no additional configuration.
+Now in a demo lesson that's coming up soon elsewhere in this section, you're going to see how you can apply your own SSL certificate
+and add your own custom DNS name and use it with SSL. But I wanted to demonstrate the default functionality in this demo lesson.
+The other thing that you do need to be aware of, and this is important, because I haven't configured any origin restrictions,
+it is perfectly valid for me to open the origin directly.
+Now this might be OK if there's nothing sensitive on this origin, then the worst case scenario is that your users have a suboptimal experience.
+But if you are placing any restrictions on the CloudFront distribution, such as geo restriction or signed URLs or cookies,
+then you want to make sure that CloudFront cannot be bypassed by people going direct to the origin.
+That's something that we're going to be covering as well in a different demo lesson elsewhere in this section of the course.
+Now at this point you have done everything that I need you to do in this demo lesson.
+The CloudFront infrastructure that we've deployed in this demo lesson does fall entirely within the free tier.
+And because we're going to be using CloudFront over the next few demo lessons, rather than cleaning up this infrastructure,
+we're going to leave it in place and continue from this point in the next demo lesson.
+So please don't clean up any of the infrastructure that you've created in this demo lesson.
+We're going to be using it at the start of the following demo lesson and there won't be any charges
+because the CloudFront infrastructure we're using does fall 100% within the free tier.
+So at this point you can go ahead and complete the video and when you're ready I'll look forward to you joining me in the next.

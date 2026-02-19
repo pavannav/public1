@@ -1,0 +1,108 @@
+Welcome back, and in this lesson I want to introduce a product which is becoming more important for the exam,
+and as a Solutions Architect it's an essential one to understand.
+That product is the AWS Global Accelerator.
+It's a product which is designed to optimize the flow of data from your users to your AWS infrastructure.
+Now we have a fair amount to cover, so let's jump in and take a look.
+To understand why Global Accelerator is required, let's review a pretty typical problem when using AWS.
+Let's say that you've created an application and you choose to initially host it in the US.
+Now it involves cats and so logically it becomes really popular, initially with users based in the US,
+and these users generally have a great user experience.
+But over time the notoriety of the application increases and it becomes popular with global users,
+and these global users have a much less optimal experience.
+The reason for their suboptimal experience is that generally the traffic between their locations
+and the infrastructure in North America is likely to be less direct.
+Conceptually, every flow of data using the internet can take a different route.
+Take this example, a communication between a laptop and a VPC.
+The communication isn't direct.
+Data moves between different routers, different hops.
+Each hop adds delay, variability and potential failure.
+And what's worse is that the route can vary between customers
+and even for the return flow of traffic for the same customer.
+Now each of these hops is suboptimal.
+The lower the number of hops generally, the better and more consistent the experience.
+It means that generally customers who are further away from your infrastructure
+go through more internet-based hops and this means a lower quality of connection.
+The internet is designed to be distributed, it's designed to be autonomous and highly resilient.
+And while speed is important, it's less important than these other priorities.
+Now Global Accelerator as a product isn't actually that difficult to understand architecturally.
+In many ways its architecture is similar to CloudFront and one of the key things in the exam
+is for you to be able to determine when to use CloudFront and when to use Global Accelerator
+because they both improve performance but in different ways and for different reasons.
+Global Accelerator starts with two Anycast IP addresses.
+Now Anycast IP addresses are a special type of IP address.
+Normal IP addresses which you will have experienced so far are actually referred to as Unicast IP addresses.
+And Unicast IP addresses refer to one thing, one network device.
+Generally if you have two devices on a network which use the same Unicast IP address at the same time,
+then bad things happen.
+In contrast, Anycast IPs are designed to allow this.
+They're IP addresses which multiple devices can use and they're advertised onto the public internet.
+And internet core routers will route traffic to the device closest to the source.
+So with this example we have Anycast IP addresses of 1.2.3.4 and 4.3.2.1.
+And both of these map on to three Global Accelerator edge locations.
+Now in reality there are many more but I'm trying to keep this diagram tidy.
+The key thing to understand is that all three of these Global Accelerator edge locations
+are all using this pair of Anycast IP addresses.
+So if there's any traffic that's destined for either one of these Anycast IP addresses,
+then that can be serviced by any one of the Global Accelerator edge locations.
+So in this example if we have two users, one based in London and one based in Australia,
+and they browse to either of these Anycast IP addresses,
+then they would both be routed to an edge location that's closest to them.
+Crucially using the public internet.
+This part of the connection is still subject to the variability that the public internet can cause.
+But now it's very limited to just the part between the customer and the Global Accelerator edge location.
+What we've done is essentially moved the AWS network closer to the customer.
+At this point Global Accelerator accepts the data that arrives at one of its edge locations
+and it transits that data from that edge location to the destination,
+but crucially this transit occurs over the AWS global network.
+AWS have their own dedicated network, so fiber links between all of their different regions,
+and they control these entirely.
+They handle capacity and they handle performance.
+And to use their own words, if performance is anything but optimal, you can complain to them.
+Now for the exam, I really only need you to understand this architecture,
+so that customers will arrive at one of the Global Accelerator edge locations
+because they're using one of the Anycast IP addresses that's allocated to us when we create a Global Accelerator.
+So we make a Global Accelerator, we create it, we're allocated these two Anycast IP addresses,
+and if our customers use these, then their connections will be routed to the closest Global Accelerator edge location.
+That part, which is indicated in red on the diagram, that will occur over the public internet.
+And so that can be affected by the variability that the public internet suffers from,
+but once the traffic has entered the Global Accelerator product,
+then it's transited over the AWS global network into our infrastructure platforms,
+and the benefit of that is substantially improved performance.
+There are less hops, AWS generally maintain the network to a higher standard,
+and it's designed and maintained specifically for the transit of data between AWS regions.
+So for the exam, just understand the architecture, understand how it works, what it does,
+and then finally, when and where to use it.
+And regarding those last two criteria, so when and where, I want to talk about some additional points which might help.
+So Global Accelerator is very much like CloudFront, so you're okay to be confused.
+They both, in their own way, move the AWS network closer to your customers.
+Now CloudFront specifically moves the content closer by caching it on the edge locations.
+Global Accelerator moves the actual AWS network as close to your customers as possible.
+The aim with Global Accelerator is to get your customers onto the global AWS network as quickly as possible,
+as close to their location as possible, and this is done using these Anycast IP addresses.
+Once the traffic arrives at the edge, it's transited over the AWS global network all the way through to one or more locations.
+Now, on the previous screen, I showed you the example with one location of infrastructure.
+So we created the Categram application and hosted it in North America.
+But Global Accelerator is also capable of routing traffic to the closest infrastructure location to the customer.
+It can make the decision to direct connections from London to local infrastructure based in Europe rather than the US.
+The key thing that Global Accelerator does is to get the data from your customer to an application endpoint as quickly as possible with the best performance as possible.
+Now the one key difference between Global Accelerator and CloudFront, conceptually, is that Global Accelerator is a network product.
+It works on any TCP or UDP applications, including web apps, whereas CloudFront only caches HTTP and HTTPS content.
+If you see questions which mention caching, then it's probably going to be CloudFront that is the right answer.
+But if you see questions which mention TCP or UDP and the requirement for global performance optimization,
+then possibly it's going to be Global Accelerator which is the right answer.
+Now why I keep mentioning CloudFront is that people tend to confuse them, tend to confuse the situations where you would pick one over the other.
+I want to start off with both of these products in your mind and make sure that you understand the points of differentiation.
+Global Accelerator doesn't cache anything. It doesn't cache content. It doesn't cache any network data.
+It doesn't provide any HTTPS or HTTP level capabilities.
+It doesn't understand the protocol for either HTTP or HTTPS. It's a network product.
+So if the question gives you a scenario which involves transiting network data, TCP or UDP,
+as quickly and efficiently as possible through a global network, then it's likely to be Global Accelerator.
+If it mentions content delivery, caching, pre-signed URLs, or any of the other services that CloudFront provides,
+then logically it's going to be CloudFront that's the correct answer.
+So why it might initially seem confusing, why you might find it a little bit difficult to distinguish between these two products at this point,
+it should be obvious that they're completely separate.
+If you need to do caching, if you need to deal with web or secure web,
+or anything involved with the delivery of content or the manipulation of that content, it's going to be CloudFront.
+If you want global TCP or UDP network optimization, then it's going to be Global Accelerator.
+At this point though, that's everything that you'll need to know.
+So go ahead, complete this video, and when you're ready, I'll look forward to you joining me in the next.

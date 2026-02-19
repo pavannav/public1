@@ -1,0 +1,98 @@
+Welcome back and in this lesson I want to go into a little bit more detail about origin types and origin architecture within CloudFront.
+You need to understand the types of origins, how they differ and the features that each of them provides.
+Now this is going to be another lesson where it's easier to show you the differences rather than talk about them,
+so I'm going to move over to my console UI and explain the key points that you need to know for the exam and real world usage.
+OK, so let's take a look at some origins. So I'm going to click on the Services dropdown and just type CloudFront.
+So I'll move to the CloudFront console. Now I've got two CloudFront distributions that are already set up.
+One of them is a production one, so this one is blurred out, and the other one is just one that I'm getting ready for production usage.
+So I'm going to open up this distribution, then I'm going to click on Origins.
+So architecturally, origins are where CloudFront goes to get content.
+If an edge location receives a request from a customer and that object isn't cached at the edge, then an origin fetch occurs to the relevant origin.
+Now origin groups, and I don't have any of those configured, allow you to add resiliency.
+So if you have two or more origins created within a distribution, then you can create an origin group,
+group those origins together and have an origin group used by a behavior.
+Remember, origins themselves are selected from behaviors, so if I go to behavior, we only have the one default behavior.
+If I select it and click Edit, it's here where I can pick an origin or an origin group where any requests for this path pattern,
+this is the default behavior, so it's got a star wildcard, but for this behavior it will direct any requests
+if an origin fetch is required at the origin or origin group specified in this dropdown.
+Now this is only the single origin, but if we had an origin group, then it would provide resilience across those origins.
+So this is a really cool way to be able to add resilience.
+Now moving back to origins, there are actually a few categories of origins,
+and it's important that you understand all of them and exactly which features they provide,
+as well as the situations where you'd use one versus the others.
+So for origins, you can have Amazon S3 buckets, AWS Media Package channel endpoints,
+AWS Media Store container endpoints, and then everything else, and everything else means web servers.
+Now we haven't covered Media Package or Media Store yet, I will be touching upon those elsewhere in the course,
+but this split between S3 buckets, Media Package and Media Store and then everything else is important.
+The everything else being web servers, these are known as custom origins,
+and these have different features and restrictions versus S3 buckets.
+And it's also important that you know that an S3 bucket has one set of features,
+but if you configure static website hosting on that S3 bucket and use that as an origin,
+then CloudFront views it as a web server, so a custom origin, and the feature set available is different.
+S3 origins are the simplest to integrate because they're designed to work directly with CloudFront,
+so let's look at exactly what we can configure with an S3 origin.
+So I've already got one prepared, so I'll select it and click on edit.
+Now for the origin domain name, this is pointed directly at an S3 bucket.
+An origin path allows CloudFront to use a particular path inside that origin.
+So by default, any requests made to the default behavior which are pointing at this origin will apply to the top level of the bucket.
+If we wanted to look inside a particular path in that bucket, for example images,
+then we could specify that in the origin path box.
+Now because this is an S3 origin, we have access to various advanced features which we won't have if we're using custom origins.
+And one of those advanced features is origin access.
+Now this is the ability to restrict access to an S3 origin so that it's only accessible via a CloudFront distribution.
+Now there are two ways of doing this. We have origin access identity, which is the legacy way.
+And because this is an older CloudFront distribution, this is why I've got legacy access identity selected.
+Now the new and recommended way is origin access control.
+And I'm going to have a demo coming up elsewhere in the course where you'll get the chance to experience this in practice.
+For now though, we don't need to worry too much about it.
+Just know that it means that you can restrict an S3 origin so that it's only accessible via the CloudFront distribution.
+Another important thing to realize when you're using S3 origins is whichever protocol is used between the customer and the edge location,
+so the viewer protocol policy is also used between CloudFront and the S3 origin, the origin protocol policy.
+So they're matched. If you're using an S3 origin, you've got the same viewer side and origin side protocols.
+So whether you're using HTTP or HTTPS, they're matched at both sides.
+Then lastly, you have the ability to pass through origin custom headers.
+So if you have any headers which you want to pass through to the origin, then you can do so on the origin settings.
+And that's pretty much all that can be customized when you're using an S3 origin.
+Everything's handled on your behalf. The complex configuration comes when you're using a custom origin.
+So let's look at that next. So I'm going to click on cancel, and then I'm going to click on create origin.
+Now for origin domain name, I'm just going to type a placeholder.
+So in this case, Categram.io. Now CloudFront is smart enough to realize that this isn't an S3 bucket.
+And so now I get the additional options that we're able to configure for custom origins.
+So we still have the ability to specify an origin path. So this works in the same way as it does for S3 origins.
+If we want our behavior to point at an origin, but instead of using the top level of that origin,
+look at a sub path, then we can specify that in the origin path box.
+Now because this is a custom origin, we can be much more granular with some of the configuration options.
+So we can specify a minimum origin SSL protocol.
+So this configures the minimum protocol level that CloudFront will use when it establishes a connection with your origin.
+So best practice is always to select the latest version that's supported by the custom origin because that ensures maximum security.
+You can also configure the origin protocol policy.
+So remember for S3 origins, the viewer protocol and the origin protocol are matched.
+When you're using a custom origin, you're able to select from one of three options.
+You can either say HTTP only, HTTPS only, or to match the viewer protocol policy.
+So if the viewer protocol policy is HTTP and this option was selected, then CloudFront would connect to your custom origin also using HTTP.
+You can explicitly set either insecure or secure, or you can match it.
+So you've got to pick whichever is appropriate for your particular use case.
+Now with custom origins, you also have the ability to pick the HTTP and HTTPS port to use for CloudFront connections between the edge location and the origin.
+So when you're using S3, you don't have the ability to set this because S3 doesn't have configurable ports.
+But if you're running a custom origin, it might well be that you have different services bound to different ports.
+And so you have the ability to select the port to use for HTTP and HTTPS.
+Now the default, of course, is 80 for insecure HTTP and 443 for secure HTTPS.
+So you can change these if you're using different ports on your custom origin.
+And these are really important points, remember, for the exam.
+So if you see any exam questions which talk about custom ports or the ability to configure the origin protocol policy
+or the minimum SSL protocol versions, then you need to be using a custom origin.
+Now you do still have the ability to pass through custom headers.
+And elsewhere in this section of the course, I'm going to be talking about how you can secure origins so they're only accessible using CloudFront.
+If you're not using an S3 origin, it means you don't have the ability to use origin access identities or origin access control.
+And so to secure custom origins, you can use custom headers.
+You can pass in a custom header that only you're aware of and have your custom origin check for that header.
+And that allows you to configure your custom origin only to accept connections from CloudFront.
+So this is an important one to remember if you're wanting maximum security while using custom origins.
+Now that's pretty much everything that I wanted to cover in this lesson.
+I just wanted to give you a quick walkthrough of some of the important configuration options that you have available when it comes to S3 origins and custom origins.
+It's fairly common to see CloudFront distributions use S3 origins, and this is a popular way of delivering static content.
+If you do need to integrate custom origins, then you should be aware of some of those advanced configuration options.
+And for the exam, definitely make sure that you're aware of the different options that you have for custom origins and S3 origins,
+because it does come up in the exam in multiple questions.
+With that being said though, that is everything that I wanted to cover about origins.
+So go ahead, complete this lesson, and when you're ready, I'll look forward to you joining me in the next.

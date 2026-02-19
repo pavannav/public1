@@ -1,0 +1,175 @@
+Welcome back and in this lesson I want to go into a little bit more depth about API Gateway.
+Now we've got a lot to cover in a single lesson so let's jump in and get started.
+API Gateway is a service which lets you create and manage APIs.
+Now an API is an Application Programming Interface.
+It's a way that applications communicate with each other.
+So for example if you run the Netflix application on your TV
+then it's using an API to communicate with the Netflix backend services.
+API Gateway acts as an endpoint or an entry point for applications looking to talk to your services.
+And architecturally it sits between applications which utilize APIs
+and the integrations which are the backend services which provide the functionality of that API.
+Now API Gateway is highly available and scalable so you don't have to worry about either.
+It's delivered as a managed service.
+It handles authorization so you can define who can access your APIs using the API Gateway.
+It can be configured to handle throttling so how often individuals can use APIs.
+It can perform caching to reduce the amount that your backend services are called
+as part of the usage of your API.
+It supports cause so you can control security of cross-domain calls within browsers
+and it supports transformations and all of this within the API Gateway product.
+It also supports the open API spec which makes it easy to create definition files for APIs
+so APIs can be imported into API Gateway
+and it also supports direct integration with AWS services.
+So for things like writing into DynamoDB, starting a step function
+or anything through to sending messages to SNS topics you might not even need any backing compute.
+So it's capable of directly integrating with a range of AWS services.
+Now API Gateway is a public service and so it can act as the front end
+for services running within AWS or on-premises
+and it can also be an effective migration product to provide a consistent front end
+while the backing services are being moved from on-premises into AWS
+or even re-architected moving from monolithic compute services such as virtual servers
+through to serverless architectures using Lambda.
+Now lastly it can provide APIs that use HTTP, REST or even WebSocket based APIs.
+Now visually this is how the high-level architecture of API Gateway looks.
+We have API Gateway in the middle here and this is acting as the endpoint for the consumers of our API
+and this could be mobile applications, other APIs
+or even web applications loaded from static hosting within an S3 bucket.
+In any case these all connect to the API running on the API Gateway using the endpoint DNS name.
+Now it's actually the API Gateway's job to act as an intermediary between clients
+and what are called integrations and these are the backend services
+which provide the functionality to API Gateway.
+API Gateway is capable of connecting to HTTP endpoints running in AWS or on-premises.
+It can use Lambda for compute and this is something that's typically used within serverless architectures
+and as I mentioned previously it can even directly integrate with some AWS services
+such as DynamoDB, SNS and Step Functions.
+Now there are three phases in most API Gateway interactions.
+The request phase which is where the client makes a request to the API Gateway
+and then this is moved through API Gateway to the service provided by the integrations
+and then finally the response phase where the response is provided back to the client.
+The request phase at a high level does three things.
+It authorizes, validates and transforms incoming requests from the client into a form that the integration can handle
+and then the response takes the output from the integration,
+it transforms it, prepares it and then returns it through to the client.
+API Gateway also integrates with CloudWatch to store logging and metric based data for request and response side operations
+and it also provides a cache which improves performance for clients
+and also reduces the number of requests made to the backend integrations.
+So that's the high level architecture and through the remainder of this lesson
+I want to touch on a number of the pieces of functionality in a little bit more detail
+and we'll start with authentication.
+API Gateway supports a range of authentication methods.
+Now you can allow APIs to be complete open access so no authentication is required
+but there are different types of authentication which are supported by the product
+and let's use the example of the Categram application which is now serverless.
+API Gateway can use Cognito user pools for authentication.
+This is one of the supported methods.
+If this method is used then the client authenticates with Cognito and receives a Cognito token in return
+assuming a successful authentication.
+It passes that token in with the request to API Gateway
+and because of the tight integration which API Gateway has with Cognito it can natively validate the token.
+So that's Cognito but API Gateway can also be extended to use Lambda based authorization
+which used to be called custom authorization.
+With this flow we assume that the client has some form of bearer token
+something which asserts an identification and it passes this into API Gateway with the request.
+Now at this point API Gateway not knowing how to natively validate this authentication or authorization
+it calls a Lambda authorizer and it's the job of this function to validate the request.
+So it either does some custom compute maybe checking a local user store
+or it calls an ID provider an external provider of identification to check the ID.
+If this all comes back okay and the Lambda function is happy
+it returns to API Gateway and IAM policy and a principal identifier.
+API Gateway then evaluates the policy and it either sends the request on to a Lambda function
+so invoking the Lambda function or it returns a 403 access denied error if the access is denied.
+Now IAM can also be used to authenticate and authorize with API Gateway by passing in credentials in the headers
+but this level of detail is beyond what's required for the exam.
+I just think it's useful to give you the architecture visually so you can picture how all the components fit together.
+At this point let's move on and talk about endpoint types.
+With API Gateway it's possible to configure a number of different endpoint types for your APIs.
+First we've got edge optimized and with edge optimized endpoint types
+any incoming requests are routed to the nearest cloud front pop or point of presence.
+We've also got regional endpoints and these are used when you have clients in the same region
+so this doesn't deploy out using the cloud front network instead you get a regional endpoint which clients can connect into.
+So this is relatively low overhead it doesn't use the cloud front network
+and this is generally suitable when you have users or other services which consume your APIs in the same AWS region.
+Lastly we have private endpoint types and these are endpoints which are only accessible within a VPC via an interface endpoint
+so this is how you can deploy completely private APIs if you use the private endpoint type.
+The next concept I want to talk about are API Gateway stages.
+When you deploy an API configuration in API Gateway you do so to a stage.
+For example you might have the prod and dev stage for the Categram application.
+Most things within API Gateway are defined based on a stage.
+So in this case you could have the production application connecting to the prod stage
+and developers testing new additions via the dev stage.
+Each of these stages has its own unique endpoint URL as well as its own settings.
+Each of these stages can be deployed onto individually so you might have version 1 of the API configuration deployed into production
+and this uses version 1 of a Lambda function as a backing integration
+and then we might have version 2 which is currently under development deployed into the dev stage
+and this also could use a separate backing Lambda function containing the new code.
+Now you can roll back deployments on a stage so they can be used for some pretty effective isolation and testing
+but what you can also do with API Gateway stages is to enable canary deployments on stages.
+What this means is that when enabled any new deployments which you make to that stage are actually deployed on a sub part of that stage
+the canary part of that stage and not the stage itself.
+So traffic distribution can be altered between the base stage and the canary based on a user configurable value
+and eventually the canary can be promoted to be the base stage and the process repeated.
+In this example it means that version 2 of the API configuration can be tested by the development team
+and then canary can be enabled on production, version 2 can be deployed onto production
+and this will be deployed into the canary because canary is enabled on the production stage.
+We can adjust the distribution of traffic between the main production stage and its canary until we're completely happy
+and then we can promote the canary to be the full base stage and this process of development production cycles can then continue.
+If you're not happy with how a canary is performing, if it's got bugs or if it's negative in terms of performance
+then you can always remove it and return back to the base stage.
+Now at this point I have to apologize, I hate getting you to remember facts and figures
+but for the exam I genuinely think these facts and figures might help so do your best to note them down and remember them.
+Even if you only do it at a high level, even if you only get the basics, I think it will help you answer certain exam questions quicker and with less thought.
+So to start with, error codes generated by API Gateway are generally in one of two categories.
+First we have 400 series error codes and these are client errors.
+This suggests that something is wrong on the client side.
+So something wrong either on the client or in terms of how it's making a request through to API Gateway,
+maybe permissions are wrong, maybe headers are malformed, anything that's on the client side.
+Then we have 500 series errors and these are server errors.
+So this indicates that there's a valid request but there's a back end issue.
+Now inside both of these categories there are a number of important requests that you need to remember the error code number for
+and I want to step through these on this part of the lesson.
+So 400, 400, this is one that's really hard to diagnose because it can actually have many different root causes
+but if you do see a 400 error then you should at least be aware that it's a generic client side error.
+We've got 403 and this suggests an access denied error.
+So either that the authorizer has executed and then indicates to API Gateway that the request should be denied
+or the request has been filtered by something like the web application firewall.
+Next we've got a 429 error code and this is an indication that throttling is occurring.
+I mentioned earlier that API Gateway can be configured to throttle requests
+So if you're getting a 429 error it means that you've exceeded a configured throttling amount.
+So 429 associate that with throttling.
+Now if you get a 502 error this is a bad Gateway exception
+and this indicates that a bad output has been returned by whatever is providing the backing services.
+So if you've got a Lambda function servicing request to your API
+then a 502 error suggests that that Lambda is returning something that's invalid.
+A 503 error indicates service unavailable.
+So this could indicate that the backing endpoint is offline or you're having some form of major service issues.
+So 503 is definitely one to remember. I have seen that come up in the exam.
+504 indicates an integration failure.
+Now there is a limit of 29 seconds for any requests to API Gateway
+so even though Lambda has a timeout of 15 minutes
+if Lambda is providing backing compute for an API Gateway API
+then if that request takes longer than 29 seconds then this can generate a 504 error.
+So you need to make sure that any Lambda functions that are backing your APIs
+are capable of responding within that 29 second limit.
+Otherwise you might get 504 errors.
+And I've included a link that's attached to this lesson which details all of the error codes
+as well as a little bit more detail if you do want to use it for extra reading.
+Now one final thing before we finish up with this in-depth lesson for API Gateway
+and that's to talk about caching.
+Now you should be familiar with the general concept of caching at this point in the course.
+As it relates to API Gateway we start in the middle with an API Gateway stage
+and this is important because caching is configured per stage.
+This matters both for the exam and if you're developing this infrastructure for production situations.
+Now what happens without a cache is that any users at the application make requests to the API Gateway stage
+and there are some backend integrations which service those requests.
+Without a cache those services would be used on each and every request.
+With caching though you define a cache on that stage.
+It can be anywhere from 500 MB to 237 GB in size.
+It caches things by default for 300 seconds
+and this can be configured from 0, meaning disabled, through to a maximum of 3600 seconds.
+And a point that you should know for the exam is that this cache can be encrypted.
+Now using a cache means that calls will only be made to the backend when there's a cache miss
+and this means reduced load, reduced cost and improved performance
+because of the lower latency that caching provides.
+Okay so that's everything I wanted to cover in this in-depth lesson on API Gateway.
+This is definitely a service where you need to be aware of much more in the developer and operations streams of AWS certifications.
+At this point though that is everything that I'm going to be talking about
+so go ahead, complete this lesson and when you're ready I'll look forward to you joining me in the next.

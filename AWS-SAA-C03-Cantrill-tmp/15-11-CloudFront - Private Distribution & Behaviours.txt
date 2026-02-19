@@ -1,0 +1,82 @@
+Welcome back, and in this video I want to step through how you can deliver private content from CloudFront using behaviors.
+Now additionally, I want to step through the differences between signed URLs and signed cookies,
+and these are ways to deliver private content through to your end users.
+Now we've got a lot to cover, so let's jump in and get started.
+CloudFront can run in two security modes when it comes to content.
+The first and the default is public.
+In this mode, any content which is distributed via CloudFront is public and can be accessed by any viewer.
+This is the mode that you've probably experienced so far.
+But there's also private, and in this mode, any requests made to CloudFront need to be made with a signed cookie or signed URL,
+or they'll be denied.
+CloudFront distributions are created with a single behavior,
+and in this state, the whole behavior, and so the whole distribution, is either public or private.
+Generally though, you're going to have multiple behaviors, and part will be public and part private,
+and this allows you to redirect any unintended accesses to a private behavior at a public one,
+for example, starting a login process.
+Now there are two ways to configure private behaviors in CloudFront, the old way and the new preferred way.
+Now in both cases, you require a signer, and a signer is an entity or entities which can create signed URLs or signed cookies.
+Once a signer is added to a behavior, that behavior is now private, and only signed URLs and cookies can be used to access content.
+Now with the old way, you first had to create a CloudFront key to use,
+and this is something that an account root user had to create and manage.
+This is a special key that's tied to an AWS account rather than a specific identity within that account,
+and once a CloudFront key exists in an account, that account can be added as a trusted signer to a distribution,
+specifically a behavior in that distribution.
+Now for real world usage and for the exam, while this is the legacy method, you do need to remember the term trusted signer.
+If you see it, you'll know that a private distribution or a private behavior is involved.
+Now the new and preferred method is to create trusted key groups and assign those as signers.
+The key groups determine which keys can be used to create signed URLs and signed cookies.
+Now there are a few reasons why you should use trusted key groups versus the old architecture.
+First, you don't need to use the AWS account root user to manage public keys for CloudFront signed URLs and signed cookies.
+If you use trusted key groups, then you can admin these in a much more flexible way.
+You can manage these key groups and the configuration using the CloudFront API,
+and you can associate a higher number of public keys with your distribution, more specifically with your behavior,
+giving you more flexibility in how you use and manage those keys.
+So it's absolutely preferred to use this new method of trusted key groups
+versus the old method of a CloudFront key being added to an AWS account and that account being added as a trusted signer.
+So there's the old way and the new way, and absolutely you should prefer the new way for any new deployments.
+Now at this point, I want to quickly step through the differences between signed URLs and signed cookies.
+So you know some of the situations where you might use one versus the other.
+So signed URLs provide access to one object and one object only.
+That's really critical, remember that one for the exam, because it can be a really easy way to pick between the two.
+Now this is not really valid at this point, but historically, RTMP distributions couldn't use signed cookies.
+So this was a legacy point to pick between signed URLs and cookies, but this isn't really applicable anymore.
+Now you should use signed URLs if the clients don't support using cookies.
+Not everything does, so if your client doesn't support cookies, then you can only use signed URLs.
+Now cookies can provide access to groups of objects.
+So you could use a signed cookie to provide access to groups of files or all files of a particular type.
+For example, all cat gifts. So this is a really common reason to pick signed cookies versus signed URLs.
+Another reason is if you want to maintain the application URLs.
+So when you use signed URLs with CloudFront, you get a custom URL.
+If you want to present access using a certain format of URL, then you need to use signed cookies.
+So that's another point of differentiation.
+Now visually, this is how the architecture looks.
+So we start with our customers who are using the Catagram application, this time the new iPhone application.
+Because of the popularity of the existing web application, the new mobile application has been developed to use CloudFront.
+The application has images which are public and then some more sensitive ones.
+For example, cats bearing all for a belly rub.
+So there needs to be some method of distributing private content.
+So within the CloudFront distribution, there are two behaviors.
+A public behavior, which is the default and this handles all non-sensitive application operations.
+And then a private one, which handles access to all of the sensitive cat gifts.
+All of the infrastructure runs within an AWS account and it's a serverless application.
+So the backend consists of API Gateway, Lambda for the compute functionality and S3 to store the media.
+The application flow starts when the application connects through to the distribution,
+which for the default behavior uses the API Gateway as an origin, which uses Lambda for the serverless compute.
+Let's assume that the mobile app is using ID Federation.
+So a Google, Twitter or Facebook identity for logins.
+The application communicates with the default behavior, uses API Gateway, it logs in and accesses some images which are private.
+The Lambda signer function checks the application's access to the image and if everything is good,
+because we've added trusted key groups on the distribution, specifically the behavior,
+the Lambda function is able to generate a signed cookie,
+which grants access to a selection of images belonging to this specific application user.
+That cookie together with information on access URLs is returned to the mobile application.
+The mobile application, all behind the scenes, uses the access information to access the images
+and it supplies the cookie along with this request.
+The cookie is checked by CloudFront and assuming everything checks out, an origin fetch occurs.
+The cat images are retrieved and returned back to the application.
+Private behaviors are an excellent way to secure content, but you need to make sure that the origin is also secure.
+In this case the S3 origin needs to be configured using an origin access identity
+so that it only accepts connections from the CloudFront distribution
+and that will avoid the security issue where CloudFront gets bypassed.
+Now at this point that's all of the theory I wanted to cover in this video.
+Thanks for watching, go ahead and complete the video and when you're ready I'll look forward to you joining me in the next.

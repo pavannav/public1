@@ -1,0 +1,156 @@
+Welcome back, and in the next two lessons I'll be stepping you through two types of VPC Endpoint.
+Now in this lesson I'll be talking about Gateway Endpoints, and in the next I'll be covering Interface Endpoints.
+Now they're both used in roughly the same way, they provide the same functionality,
+but they're used for different AWS services, and the way that they achieve this functionality
+from a technical point is radically different.
+So let's get started, and in this lesson I want to cover Gateway Endpoints.
+So at a high level, Gateway Endpoints, they provide private access to supported services,
+and at the time of creating this lesson, the services that work with Gateway Endpoints are S3 and DynamoDB.
+So what I mean when I say private access in the context of this lesson,
+I mean that they allow a private-only resource inside a VPC,
+or any resource inside a private-only VPC, to access S3 and DynamoDB.
+Remember that both of these are public services.
+Normally when you want to access AWS public services from within a VPC,
+you need infrastructure and configuration.
+Normally this is an internet gateway that you need to create and attach to the VPC,
+and then for the resources inside that VPC, you need to grant them either a public IPv4 address,
+an IPv6 address, or you need to implement one or more NAT gateways,
+which allow instances with private IP addresses to access these public services.
+So these services exist outside of the VPC, and so normally public IP addressing is required,
+and a Gateway Endpoint allows you to provide access to these services without implementing that public infrastructure.
+Now the way that this works is that you create a Gateway Endpoint, and these are created per service, per region.
+So let's use an example of S3 in the US East 1 or Northern Virginia region.
+So you create this gateway for S3 in US East 1,
+and you associate it with one or more subnets in a particular VPC.
+Now a Gateway Endpoint doesn't actually go into VPC subnets.
+What happens is that when you allocate the Gateway Endpoint to particular subnets,
+something called a Prefix List is added to the route tables for those subnets,
+and this Prefix List uses the Gateway Endpoint as a target.
+Now a Prefix List is just like what you would find on a normal route,
+but it's an object, it's a logical entity which represents these services.
+So it represents S3 or DynamoDB.
+Imagine this is a list of IP addresses that those services use,
+but where the list is kept updated by AWS.
+So this Prefix List is added to the route table,
+the Prefix List is used as the destination and the target is the Gateway Endpoint.
+And this means in this example that any traffic destined for S3 as it exits these subnets,
+it goes via the Gateway Endpoint rather than the Internet Gateway.
+Now it is important for the exam to remember that a Gateway Endpoint
+does not go into a particular subnet or an availability zone.
+It's highly available across all availability zones in a region by default.
+Like an Internet Gateway, it's associated with a VPC,
+but with a Gateway Endpoint you just set which subnets are going to be used with it,
+and it automatically configures this route on the route tables for those subnets with this Prefix List.
+So it's just something that's configured on your behalf by AWS.
+A Gateway Endpoint is a VPC Gateway Object.
+It is highly available.
+It operates across all availability zones in that VPC.
+It does not go into a particular subnet.
+So remember that for the exam because that is different than interface endpoints,
+which we'll be covering next.
+Now when you're implementing Gateway Endpoints, you can configure Endpoint Policies.
+And an Endpoint Policy allows you to control what things can be connected to
+by that Gateway Endpoint.
+So we can apply an Endpoint Policy to our Gateway Endpoint
+and only allow it to connect to a particular subset of S3 buckets.
+And this is great if you run a private only high security VPC
+and you want to grant resources inside that VPC access to certain S3 buckets,
+but not the entire S3 service.
+So you can use an Endpoint Policy to restrict it to particular S3 buckets.
+Now Gateway Endpoints can only be used to access services in the same region.
+So you can't, for example, access an S3 bucket which is located in the AP Southeast 2 region
+from a Gateway Endpoint in the US East 1 region.
+It's in the same region only.
+So in summary, Gateway Endpoints support two main use cases.
+First, you might have a private VPC
+and you want to allow that private VPC to access public resources,
+in this case S3 or DynamoDB.
+Maybe you have software or application updates stored in S3
+and want to allow a super secure VPC to be able to access them
+without allowing other public access or access to other S3 buckets.
+Now the second type of architecture that Gateway Endpoints can help support
+is the idea of private only S3 buckets.
+Gateway Endpoints can help prevent leaky buckets.
+S3 buckets, as you know by now, can be locked down by creating a bucket policy
+and applying it to that S3 bucket.
+So you could configure a bucket policy to only accept operations
+coming from a specific Gateway Endpoint.
+And because S3 is private by default,
+for anything else the implicit deny would apply.
+So if you allow operations only from a specific Gateway Endpoint,
+you implicitly deny everything else
+and that means that the S3 bucket is a private only bucket.
+One limitation of Gateway Endpoints that you should be aware of for the exam
+is that they're only accessible from inside that specific VPC.
+They're a logical Gateway object
+and you can only access logical Gateways created inside a VPC from that VPC.
+So before we finish up with this theory lesson,
+let's quickly look at the architecture visually
+because it will probably help you understand
+exactly how all of the components fit together.
+Without using Gateway Endpoints,
+this is the type of architecture that you've been using so far in the course.
+Two availability zones, each with two subnets,
+one public in green on the right and one private in blue on the left.
+Resources in the public subnets on the right
+can be given public IP version 4 addresses
+and so access public space resources using those addresses
+through the VPC router, via the Internet Gateway,
+into the public space and then through to the public resource, S3 in this example.
+Now private instances can't do this.
+They still go via the VPC router,
+but they need to use a NAT Gateway
+which provides them with a NAT-ed public IP version 4 address to use
+and then this public address that's owned by the NAT Gateway
+is used via the Internet Gateway
+and finally through to the public resource, again S3.
+The problem with this architecture is that the resources have public Internet access,
+either directly for public resources or via the NAT Gateway
+for private only EC2 instances.
+If you want instances inside the VPC to be able to access S3
+but not the public Internet, then it's problematic.
+If you work in a heavily regulated industry
+and you need to create VPCs which are private only with no Internet connectivity,
+then that is almost impossible to do without using Gateway Endpoints.
+Using Gateway Endpoints we can change this architecture.
+Architecturally to use Gateway Endpoints we create one inside of VPC
+and when creating it we associate it with one or more subnets
+and this means that a prefix list is added to the route table for that subnet.
+This means that any traffic which leaves the private instances inside those subnets
+now has a route to the public service.
+So it will go via the Gateway Endpoint
+and they won't need public addresses to talk to that service.
+Imagine the Gateway Endpoint as being inside your VPC
+but having a tunnel to the public service
+and that way data can flow from private services inside the VPC
+through the Gateway Endpoint to the public service
+without needing any public addressing.
+Note how this VPC has no Internet Gateway and no NAT Gateway.
+The private instance has no access to anything else outside the VPC, only S3
+and that's only because we've created the Gateway Endpoint.
+We could even go one step further using a bucket policy on the S3 bucket
+and denying any access which doesn't come via the Gateway Endpoint.
+Now a couple of important things to remember for the exam,
+Gateway Endpoints are highly available by design.
+You don't need to worry about AZ placement.
+Just like Internet Gateways, that's all handled for you by the VPC service.
+For the exam, just know that Gateway Endpoints are not accessible
+outside of the VPC that they're associated with
+and in terms of access control,
+endpoint policies can be used on Gateway Endpoints
+to control what the endpoint can be used to access.
+So if you did want to allow access to one or two S3 buckets only
+rather than the entire service, then that's something which can be controlled
+by using an endpoint policy on the Gateway Endpoint.
+Now that's everything that I wanted to cover in this lesson
+about the theory and architecture of Gateway Endpoints.
+In the next lesson, we're going to be covering Interface Endpoints
+which offer similar functionality to Gateway Endpoints,
+but, and this is critical, they're implemented in a very different way
+from an architecture perspective
+and that difference really does matter for the exam
+and if you intend to use these products in real-world production implementations.
+But at this point, thanks for watching.
+We finished everything that I wanted to cover,
+so go ahead, finish up this video
+and when you're ready, I'll look forward to you joining me in the next lesson.

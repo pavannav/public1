@@ -1,0 +1,89 @@
+Welcome back to part 3 of this demo lesson series.
+In this part of the demo series, you're going to be adding the state machine,
+which is the main component of this serverless application.
+The state machine is what will manage the flow of the application.
+It will initially pause for a number of seconds, the time until the next cuddle requirement.
+After the time has expired, the state machine then uses the email lambda function
+that you created in the previous stage of this mini project to send a cuddle notification to our customer.
+So this is an end-to-end serverless application where the state machine waits a certain amount of time
+and then uses a lambda function and the simple email service to send an email notification.
+So let's get started and move across to the console to implement this part of the demo series.
+So in this part of the demo lesson, you're going to be creating the state machine itself.
+And that will include a role that the state machine will assume to get the permissions required to interact with other AWS services.
+So you'll be creating that role and the state machine itself.
+And as well as the state machine, there'll be some configuration required to point it at the lambda email function.
+So it's three steps. We need to create the role that the state machine will use.
+We need to create the state machine and then we need to perform some final configuration to integrate it with the lambda email function.
+Now to get started, we need to create the IAM role that the state machine will use to interact with other AWS services.
+Now attached to this lesson and included in the instructions for this lesson is a one-click deployment to create this IAM role.
+So go ahead and click on that link and that will take you to the quick create stack dialogue
+where the stack name should be pre-populated with state machine role.
+All you need to do is to scroll down, check this box at the bottom to acknowledge that it might create IAM resources and then go ahead and click on create stack.
+This will take a few moments. So go ahead and pause the video and resume it once it's moved into a create complete state because then we can continue.
+Okay, so this stack's now in a create complete state and let's have a look at exactly what role's been created.
+So move to the IAM console and then go to roles.
+Go ahead and click on refresh just to make sure that this list contains the new role that you just created using the cloud formation template and then type state in the search box.
+And this time you should have a role that's been created called state machine role.
+So just click on that to open it up.
+Click on trust relationships and this is where you can see the entity that's allowed to assume this role.
+And the AWS service that can assume it is states.amazonaws.com which are any state machines that we create inside our AWS account.
+So essentially this role can be assumed by a state machine to get permissions to interact with AWS products and services.
+Click on permissions and we can just look at exactly what permissions this role has been given.
+First expand CloudWatch logs.
+So there should be nothing surprising about this.
+It's just the normal set of permissions that a Lambda execution role has.
+Only this has a few more that are required for state machines.
+In addition to the logging permissions just expand this second set of permissions and the state machine can both invoke Lambda functions.
+So this is how it can interact with the email notification function and it can directly interact with SNS in case we need it to send any notifications elsewhere.
+So the state machine that assumes this role can call Lambda functions, invoke Lambda functions as well as interacting directly with SNS.
+So these are the permissions that the state machine has.
+Everything looks good.
+Now we can move on to creating the state machine itself.
+So to do that click on services and then type step functions into the find services box and open that in a brand new browser tab.
+So it's inside the step functions console that will create our state machine.
+So to create the state machine just expand the menu bar on the left and go ahead and click on state machines.
+Next click on create state machine.
+We're going to create this step function from scratch.
+So select blank and then click select and then go ahead at the top and click on the code tab.
+Now remember in the theory part of this section where I talked about step functions I talked about how state machines can be defined using ASL or the Amazon states language.
+And so if you already have the ASL document for a state machine you can use that to directly create the state machine rather than having to code it manually.
+So we're going to do that.
+We're going to author this with code snippets.
+Now attached to this lesson and in the instructions for this stage of the demo series is a JSON document which defines the state machine.
+So go ahead and open that document in a new tab.
+This is just a standard JSON document that represents exactly what the state machine does and it's relatively difficult to understand how it works when just looking at this JSON.
+So what we're going to do is copy all of this JSON into your clipboard and then move back to the AWS console.
+Select all of this ASL document that exists already and just go ahead and delete it and then paste in what you've just copied into your clipboard.
+So this gives you an overview of exactly what the state machine does.
+So we start at the start point and we move straight away into the state that's called timer and timer is a wait state.
+So if we scroll up on the ASL on the left this is the timer state and this essentially just waits for a certain number of seconds and the number of seconds to wait is provided into the state machine as an input.
+And we'll see exactly how that works in the following demo lessons as part of this series but just assume for now that it receives the number of seconds to wait as an input.
+So that's what it does. It waits until that number of seconds has expired and it could be anything as little as 10 seconds but it could be a number of days, a number of weeks, a number of months.
+Essentially it will wait until this number of seconds has completed and then it will move on to the next state indicated by this and the next state is the email state.
+Now the email state is a task state. Essentially it performs a task and then moves on to the next state.
+Now the task is that it invokes a lambda function. We give it the lambda function to execute using the function name parameter and this accepts an ARN of a lambda function so this is a placeholder that we're going to replace in a second.
+It invokes this lambda function and it provides a payload and the payload is the input to this state machine so it's giving all of the input that the state machine receives and it's putting that through to the email lambda functions.
+So this is how the lambda function gets the information that it needs. In this particular case the email address to send the email reminder to.
+Now once this lambda function has finished invoking it then moves on to the next state which is indicated by this line and the next state is a state called next state.
+And that next state is of type pass and end of true so that finishes the execution of the state machine.
+So it's a nice simple process. It starts at the start. It waits for a certain amount of time. Once that time's expired it invokes a lambda function to send the email and then it completes the execution.
+Now there's one thing that we do need to change so next to function name here just select all of the text in between the two speech marks.
+We need to replace this with the ARN of your lambda email function. So go back to the tab that you've got open to the email reminder lambda function and copy down the ARN of this function and then go back to the step functions console and just paste in this ARN so replace this placeholder.
+Now once you've done that we need to configure some elements of this step function. So go ahead and click on the config tab. Now first we need to change the name for this state machine.
+So it should have defaulted to my state machine all one word and we're going to change that to pet cuddle otron. Again all one word with camel case.
+Then just scroll down and remember I talked about how a state machine could either use standard mode or express mode. Standard had the maximum execution time of one year whereas express was designed for event driven workflows for streaming data, microservices IOT, mobile backends or other short duration high transaction rate workloads.
+We're going to be picking standard but this is how it looks from the console UI. We'll need to set the permissions for the state machine so click in the drop down under execution role and then under choose an existing role select the state machine role that you created earlier in this step of the demo series.
+Once you've got that selected scroll down further still and under logging I want you to click on the drop down and change the log level from off to all. Now this will allow the state machine to log its execution details into cloud watch logs and if we have any problems this will allow us to do some diagnosis.
+Now this is the part where we needed those extra permissions inside the execution role to interact with cloud watch logs but if everything's been done correctly if you just scroll down once you've selected all for log level you've left everything else as default so include execution data create a new log group and it should prepopulate this with the name of the state machine hyphen logs.
+Assuming all that is the case then just go ahead and create the state machine. Now that will create a dedicated log group for the state machine and you should see green headers at the top of the screen if you do everything's good and we can continue.
+So now this state machine's been created what I want you to do is copy down the ARN for this state machine which should be listed under details at the top of the screen and again you need to make sure that you copy down your state machine.
+It should look very similar to mine but it will have your account number in the middle here so just copy that down and note down wherever you store it that it's for the state machine.
+We'll need this ARN in the next part of the demo series so just make sure that you've got it noted down somewhere safe and you know that it's for the state machine.
+And I'd also recommend leaving this tab open so that you can refer back to it in future parts of this demo series.
+Okay and at that point that's it. You've done everything required in this part of the demo series. You've created the state machine, it's got all of the logic that it requires to communicate with the user of our application assuming that it's given the correct data.
+So you've created the IAM role that's used by the state machine, you've created the state machine itself and you've updated the placeholders inside the definition for the state machine to integrate with the Lambda function that's used to send the email notifications.
+So that's a great job, that's one of the most complicated parts of this demo series so I hope that it makes sense.
+You do now have a fully functional state machine as long as it's given the correct input data.
+What we need to do in the next part of the demo series is configure the API gateway and API which will be the entry point for our client application.
+But that's something we'll worry about in the next part of this demo series.
+At this point you've done great so go ahead complete this video and when you're ready I look forward to you joining me in the next.

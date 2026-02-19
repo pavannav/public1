@@ -1,0 +1,68 @@
+Welcome back, and in this lesson I want to talk about another type of gateway object available within VPCs,
+the egress-only internet gateway.
+And the name gives away its function, it's an internet gateway which only allows connections to be initiated from inside a VPC to outside.
+Now let's step through the key concepts and architecture,
+and you'll get a chance to implement this yourself in the demo lesson later in this section.
+To understand why egress-only internet gateways are required,
+it's useful to look at the differences between IP version 4 and version 6 inside of AWS.
+With IP version 4, addresses are private or public.
+The connectivity profile of an instance using IP version 4 is easy to control,
+Private instances cannot communicate directly with the public internet or public AWS services, at least not directly.
+Public instances, they have a publicly routable IP address which works in both directions,
+and in the absence of any security filtering,
+public instances can communicate to the public internet and be communicated with from the public internet.
+For private IP version 4 addresses, the NAT gateway provides two pieces of functionality which are easy to confuse into one.
+First, the NAT gateway provides private IP version 4 IPs with a way to access the public internet or public AWS services,
+but, and this is the important thing in the context of this lesson,
+it does so in a way which doesn't allow any connections from the internet to be initiated to the private instance.
+So, NAT as a process allows private EC2 instances to connect out to the public internet and receive responses back,
+but doesn't allow the public internet to connect into that private instance.
+Now, NAT as a process exists because of the limitations of IP version 4.
+It doesn't work with IP version 6, and so we have a problem,
+because all IP version 6 addresses in AWS are publicly routable.
+It means that an internet gateway will allow all IP version 6 instances to connect out to the public space AWS services and the public internet,
+but will also allow networking connectivity back in.
+So, anything on the public internet from a networking perspective will be allowed to initiate connections to IP version 6 enabled EC2 instances.
+In the absence of any other filtering, the IP version 6 instance will be exposed to the public internet.
+So, since NAT isn't usable with IP version 6, we have a functionality hole,
+the ability to connect out but not allow networking connectivity to be initiated in an inbound direction,
+and that's what egress-only internet gateways provide for IP version 6.
+They allow connections to be initiated out and response traffic back in,
+but they don't allow any externally initiated connections to reach our IP version 6 enabled EC2 instances.
+With normal internet gateways, all IP version 6 instances from a networking perspective can connect out,
+and things are capable of connecting into them.
+With egress-only internet gateways, then IP version 6 instances can initiate connections out and receive responses back,
+but things cannot initiate connections to them in an inbound way.
+And architecturally, that looks something like this.
+So, this is a common architecture, a VPC with two subnets in two availability zones,
+and inside these subnets, we've got two IP version 6 enabled EC2 instances.
+Now, the first step, just like with a normal internet gateway, is to create it and attach it to the VPC.
+Just like a normal internet gateway, it's highly available by design across all of the AZs that the VPC uses,
+and it scales based on the traffic flowing through it.
+So, for any exam questions where you're asked about the architecture of egress-only internet gateways,
+it is exactly the same as a normal internet gateway.
+It's just the way that you use it which differs.
+The architecture is exactly the same.
+Now, once we've created and attached it to the VPC, then we need to focus on the route tables in the subnet.
+We need to add a default IP version 6 route of colon colon slash zero,
+and use the egress-only internet gateway as a target.
+This means that the flow for IP version 6 traffic will flow to the egress-only internet gateway
+via the VPC router, and from there, out to the destination service.
+Let's say, a software update server.
+Any response traffic will be allowed to flow back in,
+because all types of internet gateway understand the state of traffic, their stateful devices.
+What wouldn't be allowed in is any inbound traffic, so traffic that's initiated from the public internet.
+This will fail, it won't be allowed to pass through the egress-only internet gateway,
+and reach our IP version 6 enabled EC2 instances.
+And that's it, it's not really a complex architecture, it's just like an internet gateway,
+only it's designed for IP version 6 traffic, and it only allows outgoing connections and their response.
+It doesn't allow incoming connections.
+Now, you can use a normal internet gateway for both IP version 4 instances with a public IP version 4 IP,
+and for IP version 6 enabled instances.
+And in that case, traffic is allowed out and in in a bi-directional way.
+If you need to implement a VPC where you only want IP version 6 instances to be able to connect out and receive responses,
+so in many ways, like the architecture that you get from using a NAT instance,
+then if you need to do that with IP version 6, then you use an egress-only internet gateway.
+Now, you're going to get the chance to implement one of these yourself in an upcoming demo lesson later in this section,
+and that will help really cement the knowledge that you've learned in this theory lesson.
+For now though, just go ahead and complete the lesson, and when you're ready, I look forward to you joining me in the next.
