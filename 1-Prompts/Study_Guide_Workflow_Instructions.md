@@ -59,6 +59,15 @@ Create (or update) a **single** markdown file for the entire section.
 
 **Formatting Rules:**
 - **Diagrams**: Use **Mermaid** syntax for all flowcharts and diagrams.
+- Use emojis for visual markers: ✅ ❌ 💡 ⚠ 📝
+- Use Linear for:
+ Sequential processes (A → B → C)
+ Before/after comparisons
+ Simple workflows
+Example:
+```diff
+! Client Request → Node → Kube Proxy → [Routing Logic] → Correct Pod
+```
 - **Diff Blocks**: Use `diff` blocks for emphasis:
   ```diff
   + Positive/Key Point: This is a critical concept
