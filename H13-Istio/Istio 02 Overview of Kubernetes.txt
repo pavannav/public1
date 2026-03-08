@@ -1,0 +1,2960 @@
+ript
+
+
+13:32
+Hey guys, uh welcome back day two of this fantastic tool
+13:39
+uh for the service mass that is called STO. Right. So in the last class guys we
+13:45
+have given you very high level overview about HTTO some of the terminology about
+13:52
+HTTO uh related things we have discussed right but for the today's class there's
+13:58
+no prerequisite right we will start the things from very very zero right so if you uh understand
+14:07
+something yesterday or if you don't understand something yesterday does not matter right everything we will going to
+14:12
+start form very zero right and we slowly slowly build
+14:17
+okay we slowly slowly build uh the all
+14:23
+the components or the add-ons of the HTO right but I will start a little bit
+14:31
+basic because there some terminology I want to use again and again even though you guys might know uh Kubernetes
+14:40
+might kubernetes But okay there's some terminology I would like to use again
+14:46
+and again so you should be sync with me okay but the plan for today is uh I will
+14:53
+explain you the internal architecture of the stto there's lots many components
+14:58
+there inside the stto uh there are data plane there are control plane uh I
+15:05
+explain you how it work behind the scene envoy uh that's called sidecar proxy
+15:11
+plus One of the topic that we will pick today and we'll go a little bit deep into this
+15:16
+topic called Kali. All right. Otherwise there's a lot of component that work
+15:22
+together with this but one of the component that help us to do this
+15:28
+observability okay would be uh that would we will
+15:34
+focus more on this topic right after we build the entire setup. Today also I'm going to explain you how to install the
+15:41
+stew from the scratch on the top of your cuber environment. Okay. And as I
+15:48
+progress I keep on explaining you uh
+15:53
+multiple different component use and we keep on doing the practicals also.
+15:59
+So without uh wait further let's start the thing only prerequisite for uh
+16:06
+training because this is one of the advanced tool and uh used in almost all
+16:12
+the real production environment okay not in the dev environment mostly or the
+16:18
+test environment this is mostly used in the production environment so
+16:23
+you can think how critical this tool is in all the form Okay. Uh because it is
+16:30
+monitoring the real traffic what is going on and many more things they're doing it. Okay. Or enforcing the rule
+16:36
+policy security on the running things right I'm saying you can't run the dev and production test environment but I'm
+16:43
+talking about mostly this tool is used in the production environment in all the
+16:48
+top companies in the world. Right? So having this tool in your uh resume and
+16:57
+your CV right will give you a huge advantage in your job in your career and
+17:02
+quick enhancement in your uh XYZ things right okay so let's start only
+17:11
+prerequisite is that I obviously not going to discuss here that you should
+17:16
+have a Kubernetes system ready with you does not matter
+17:21
+you have a single node Kubernetes or multi-node Kubernetes running the Kubernetes in your own private cloud
+17:28
+public cloud Azure AWS GCP or uh maybe
+17:34
+vanilla cubernetes mini cube right does not matter
+17:40
+or maybe you can use cubernetes flavor like open sip also right so only
+17:47
+prerequisit you should have this cubernetes is installed in my case.
+17:53
+Okay. In my case, I have uh set up the Kubernetes cluster
+17:58
+uh uh with the AWS cloud that to with the user service called EKS. But it does
+18:05
+not matter wherever they are they they are running uh this cluster uh the STO
+18:12
+perspective everything is exactly same at least 100% same there's no difference
+18:17
+right. So in my case uh I can show you if you run the command called cubectl is
+18:23
+a pure cubernetes command. Okay in my case I am running with a multi- node
+18:31
+cluster where I have two worker node running over here is a new fresh
+18:36
+cluster. I have no stew here. Everything will start from the zero. Even though right now if you see I have no
+18:44
+application also running. We build everything from the scratch. Okay. So this is one thing. So let's
+18:52
+start from here. I want to give you some small information before I go ahead. Okay. Before I go ahead about the S2
+18:59
+some five minute quick recap of the Kubernetes thing. Okay. Then I will go
+19:07
+to the S2 and explain every bit about the ST. Right. So very quick information
+19:14
+about the Kubernetes things let me explain to you. But by the way those who by chance
+19:20
+does not know how to install the Kubernetes. So we will share you guys in our portal soon or maybe we might have
+19:27
+shared with you uh multiple different way to install the Kubernetes. One how
+19:33
+can install the cubernetes in your laptop with a software called mini cube or how can you install Kubernetes in EKS
+19:40
+AWS world. So multiple we will share with you guys. Uh so those who bison
+19:45
+does not know how to install cubernetes you can go through our video and set up your environment for the cubernetes and
+19:52
+you will get almost something like this. Okay.
+19:58
+So let's start very quick recap about the cube quality side. So guys whenever
+20:05
+you have a app your developer has created a code.
+20:10
+Okay. And that code will do something for you. That is mostly known as app.
+20:16
+Okay. Now it is their choice. They want to create a app that one single app will do everything for you. Right. That's
+20:23
+called monolithic app or maybe they have create something like this. There's a
+20:29
+multiple small app work together and ser again one thing for you. That can be
+20:34
+known as micros service architecture. But developer create the app for you whatever the way they want to create.
+20:41
+Now your choice is what you have to do as a admin guys you have to deploy this
+20:46
+app or run this app and for deploying the app one of the way would be you can deploy
+20:52
+the app inside the container or the with the help of container technology
+20:58
+right but who going to manage the container again we have multiple choice one of the best tool in the world who is
+21:05
+going to manage the container is your Kubernetes and how a cubernetes manage the container the cubern Uber they give
+21:11
+you one extra resource come from the cubernetes they wrap this container in
+21:18
+that box in this in this box and that is called port so port is one component in
+21:24
+the cuber that you can see here I don't have any port here it means I have no container it means my no applications
+21:31
+running here so cubed is one thing is a cluster
+21:37
+tool for the container or management tool for the container or orchestration tool for the container
+21:43
+whatever you say it's same thing okay and is going to manage these ports the
+21:49
+port is running the container if porting one container then it's called single
+21:54
+container port but in some situation we might have to run more than one
+21:59
+container okay that's called multicontainer port why we'll see today
+22:04
+okay this is some small information for you okay So let me show
+22:11
+you this quick demonstration right and one more small thing that you know already if you want to run a content
+22:16
+from the app normally we'll copy the app in one thing that is called image that
+22:22
+you know this container or the docker image from the image you can launch the container that is mostly known as port
+22:29
+in the kubernetes world. So guys what I'm doing right now I'm just doing a quick recap
+22:35
+okay in five or 10 minutes about the Kubernetes then I will go to STO step by
+22:42
+step and show you the entire demonstration right of the ST so what I'm going to do right now uh if you go
+22:47
+to hub.docker.com docker.com okay and I have created one image that
+22:53
+is you can find in my account my account 13 and there one of the image that you
+22:59
+can find here is Apache uh is a great download we have from this image 1
+23:05
+million plus but um this image is one image that I have copied one of my small
+23:10
+PHP code is application running with a PHP so I'm going to deploy one app that
+23:18
+is equals to one container that is equal to one port and there's multiple way to deploy but one of the sophisticated way
+23:24
+to deploy is the deployment okay so I'm going to do a deployment you
+23:30
+can give a deployment a name let's say my D is deployment name and I'm going to deploy from this image that is this one
+23:38
+okay enter and finally you are uh this image as the application
+23:46
+has been deploy deploy with a container that is equals to port and if you see
+23:51
+here container is creating and right now if you notice okay this is
+23:57
+actually pool this is the name of the pool but inside this port there's only one container
+24:03
+we have that container is not yet created they're creating but in some second you will see this container has
+24:09
+been created but you can see only one container we have single container port
+24:15
+Okay, but my point here is if you have this application running and if you want this application to be accessed by
+24:22
+somebody. Okay, so that easy reason because running the application does not makes
+24:27
+any sense, right? You want your application to be accessed by somebody. Okay, the somebody may be running uh
+24:33
+within your cluster or can be outside your cluster. Okay. But but if you want
+24:39
+this application that is running inside the container is to be accessed by somebody the minimum requirement is and
+24:46
+the better practices okay and there's no minimum requirement I can say is a better practice even
+24:52
+though there's a possibility we have one port number A we have one more port number B both can communicate to each
+24:58
+other directly it is possible but this is not the better practice for
+25:04
+many more regions. Okay. Okay. So if you guys go through my cuber training you I have 100 reasons maybe to be discussed
+25:12
+why it's not good practice right but if you want your port to be accessed by somebody so we always add one component
+25:19
+on the top of the port that is known as service right I don't have any u service
+25:26
+here okay there's no service here this is a internal service of the kubernetes but there's no service attached to this
+25:33
+particular uh to this particular uh food. Okay.
+25:41
+Sorry. Now uh service will control many things. Okay. One thing is with the help
+25:46
+of service we can say um this pool can only access within a within a cluster.
+25:53
+Nobody can outside connect that you guys might know is concept called cluster IP.
+25:59
+or I want anybody come to the service they can reach to this port anywhere from the world anywhere outside the
+26:05
+cluster that's called public okay so there's different different kind of services we have that is mostly known
+26:11
+as node IP or node port I can say okay node port concept
+26:18
+that give a access to your port publicly outside the cluster when I say public
+26:23
+means outside the cluster but if you think your port is very sensitive like a database you don't want anyone can can
+26:29
+outside the the the cluster then you can use cluster IP uh service
+26:37
+okay so that's what I'm going to do my my plan here is this port I want to be accessed by outside so what I'm going to
+26:44
+do there's a concept and command you guys know command is called cube cdtl I
+26:49
+would like to expose this code that has been actually created by my deployment
+26:55
+the way I created and this is my deployment name even though I can see deploy deployment also get deployment.
+27:03
+Okay. So what I'm going to do I asked the cubectl that I'm going to expose my
+27:10
+uh deployment name my okay with where my service name is. I
+27:18
+want to give a service name. You can give any service name. Mostly we give service name same as deployment name but
+27:23
+you can give any service name does not matter. Okay. uh with the service or maybe like
+27:28
+let me use the service name with the service name and the type would be
+27:34
+cluster IP or the node port. If you think you want to connect within the cluster then you can give this type or
+27:40
+outside the cluster. What you want to connect this application then you can give a node port type.
+27:48
+Okay, node port type. One more thing I would do have to tell here uh is uh I want the will connect my
+27:57
+uh because here technically this service actually also work like a load balancer you guys know right from the basic
+28:04
+knowledge of Kubernetes okay and load balancer also have a port number right so I want anybody from
+28:12
+anywhere in the world want to connect this application they come to this port of my load balancer that is equals to
+28:19
+service So whatever port number you want to give you can give. Let's say I want to give port number 80.
+28:25
+So you can give the port number 80. Okay. So that's all. Finally what
+28:33
+happened? Now your application has been exposed to the outside
+28:38
+uh outside world. Okay. But here guys I'm doing a small
+28:43
+change here. If you have installed uh Kubernetes by yourself that is your
+28:50
+your managed Kubernetes either with mini cube command or cube ADM command and
+28:56
+there is more many more way to set up your own personal Kubernetes then this command uh you can use but right now my
+29:03
+in my case Kubernetes is not managed by me it is managed by AWS with a service
+29:09
+called EKS. Okay. And if you know about cluster uh
+29:16
+we have master node, we have a worker node or compute node or slave node. All right. So master node is managed by AWS
+29:24
+and we have no idea mostly the their intel details and the IP address. So my point is okay my point is u if you use
+29:34
+notebook u then you won't able to connect because
+29:39
+they you don't know the IP of the master as such. So you don't have to connect to
+29:44
+uh this particular uh service because you need the IP address to connect to
+29:49
+this port number. Okay. So only change if you're running
+29:55
+your cluster of Kubernetes in some public cloud guys by their manage
+30:00
+services then load node port is not a right choice if you want to expose it. Instead we have one more keyword that is
+30:08
+almost like this but I'm going to use a load balancer. So what they do again
+30:13
+that is not so much important but very quick note okay if you're using AWS cloud so in AWS cloud have their own
+30:20
+service of their personal external load balancer that's called ELB if you know.
+30:25
+So this command will contact to AWS a ALB or ELB
+30:32
+and launch the load balancer there. Okay, you don't have to go and manually
+30:37
+do it. They will do automatically for you. But I don't want to confuse you right now. My point is if you're using
+30:42
+any public cloud or running the Kubernetes and your your Kubernet is managed by
+30:48
+these guys then use this keyword or if your cubernet is managed by you then you use node port. That is the only
+30:55
+difference otherwise everything is exactly same. Okay. And finally your service has been
+31:03
+launched or created. Okay. And if you see guys automatically this I got the IP address from the Amazon and what they're
+31:10
+doing they are launching some load balancer behind the scene and because they're launching some real kind of load
+31:15
+balancers. It takes some second to launch. So it is running behind the scene. they are launching in some second they up and this is what the port number
+31:22
+I have given here so this is a port number of the uh load balancer
+31:28
+so finally what we have done this is what we have done so anybody in the
+31:34
+public world my customer client come to this IPF of the service that is equals
+31:40
+to load balancer this IP address on this port number when they come they will get
+31:47
+the access of my port. Okay. So, let me see. I think it might
+31:53
+take some second to up. I maybe up now. So, if I hit enter, you can see my
+31:59
+application here that it return is PHP. Okay. And this is a very small
+32:05
+application where I write welcome to Vimmel. And here I also print the IP address of the port. P is running with a
+32:13
+container. So, I have printed the IP address of my container. Okay. It means
+32:18
+they're showing you what is the IP of the container means this port is running
+32:24
+with some container. So they're showing me the IP maybe I think you can see from here also. Okay. So you can see the IP
+32:32
+container that is equals to port IP container port are same same IP they are printing here. There's a small
+32:39
+application I created here. Okay. One more small thing I want to add. Uh one more beautiful thing the service will do
+32:46
+they will work as a load balancer means right now I have one single code running
+32:52
+but due to some load increase you can add more code okay either manually or
+32:58
+automatically both the things support by kubernetes so how to do this this concept called scaling so I'm going to
+33:04
+scale my deployment because this port is launched by deployment I save my deployment
+33:11
+okay even though I can show you very quickly about the get command. Okay, department say I'm going to launch
+33:18
+only one port. You ask me to launch one port that's called desired. So that's what I'll
+33:24
+launch one port for you. But if you ask me to launch more so tell me I will scale for you. So I'll tell my
+33:31
+deployment deployment that I have this deployment
+33:37
+and I want to create more replicas more copy maybe one for my traffic increase let's say to five so one click my
+33:45
+deployment say now you tell me your new desire five so I'm launching five
+33:52
+uh port for you let's go current status and you can see five port has been
+33:57
+launched interesting thing is okay all the port are running with behind the
+34:03
+service work a load balancer for you you don't have to worry about as the
+34:09
+customer come to this URL automatic your service will either connect here or here or here or here automatically they do
+34:15
+the balancing how I know without doing any changes if my customer connect last
+34:20
+time IP was 137 if I hit it will say IP change to 89 if I hit it against 89 hit
+34:28
+it it hit it again guys they're not changing one of the reason maybe sometime your browser will create a
+34:33
+local caches or there's a concept called um session affinity also so that's
+34:40
+different point but maybe let me do one thing let me copy this URL open my command prompt and use the curl command
+34:48
+command line normally does not maintain any cache so here say
+34:54
+89 and when I hit enter against 89 9 it's still 89. It means yeah it's been
+35:01
+changed now some some sometime your service also maybe maintain some certain
+35:08
+you know affinity right means they they they connect to same pool right but you
+35:15
+can see it's balancing is happening right okay so this is one quick revision guys
+35:21
+one more small point I want to add that you know maybe your food is actually um
+35:28
+uh uh five launch and we have given the signal to deployment but deployment guys
+35:35
+is not the one who create FI for replica for you. Deployment internally give a signal to a concept called replica set.
+35:43
+Okay, replica set is the one thing that actually
+35:49
+actually will manage this part that I want five port to be launched. So when I set to deployment they might tell to
+35:54
+replica and replica is the one who say your desire is five. So I will write a five port for you.
+36:01
+Five port for you. Okay. It means if you delete one of the port
+36:08
+accidentally or manually whatever the case would be cubectl delete port let's
+36:14
+say this one. So said no I your design five. So I make sure I always run five.
+36:19
+So if something goes down I have keep on monitoring this. If something field happen I will do a fail tolerance for
+36:26
+you. And again launch one more. So you can see automated launch and you can see one port automated launch at right now
+36:34
+automatically. Okay. Now guys it is quick revision
+36:40
+for the cubernetes. Why I want to give this revision to you just to give a quick recap about the
+36:47
+Kubernetes. Okay this is one of the reason. Second reason is if you notice
+36:53
+here, okay, if you notice here, if I run the command called cubectl get all,
+37:01
+okay, it will tell you that uh right now
+37:06
+in your current environment, okay, and guys, your current environment
+37:13
+wherever you launch your app is also known as name space. So if you guys go
+37:20
+up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up up when I run the first time the command. All right. So it is not there. I think here it is. Maybe I will show
+37:28
+you in a minute. Maybe here. So when you run the first time you might
+37:33
+notice that in my current name space there's no
+37:39
+resource and the current nameace by default is known as default. Default is a name of
+37:45
+your name space. Okay. Even though can check also cubectl
+37:50
+get name space how many name spaces we have at this point in time. Okay. And
+37:56
+those who know open and open name space is known as project. So these are the name spaces we have. Okay. These are
+38:03
+some internal cubernet name space and if you notice there's no name space called stu it going to come in in a minute.
+38:11
+Okay. But but you can also create a name space the different point but right now I'm inside this box this name space and
+38:19
+in this name space in this name space if you see how many
+38:25
+kubernetes resources there resources means okay port is one resource
+38:31
+okay service is one resource replica set is one resource. So what you can see
+38:38
+what you can see in this name space okay we have a port running we have a service
+38:45
+running okay that's called load balancer we deployment running we have a replica
+38:50
+set running and mostly it is good practice you know compared to good practice per name space we are going to
+38:57
+we normally deploy one application now it is your choice that application can be monolithic or that application be
+39:04
+micros service but it is good effect is due to a lot of reasons right that per
+39:09
+name space okay you should launch one application so in my right now my
+39:14
+default name is space one single application is uh uh running
+39:21
+okay running this is one point but point here is okay what I'm trying to tell you
+39:28
+finally and that is very important to know if I talk about
+39:34
+okay or If I talk about service and if I talk about replica set,
+39:42
+okay, especially these three component
+39:47
+together are mostly known as because this is what always we want.
+39:53
+We always manage port with replica set because replica set also man helping you
+39:59
+fall tolerance means if something deleted deployment is not the one replica set is the one who recreate for
+40:06
+you. Okay service is one who have multiple port running they will do the load
+40:12
+balancing. So typically these three component or the resource type combined together
+40:20
+are known as service. Okay. So whenever I say the word service
+40:28
+in the ST training I'm talking about in the real world also when I say the word service that we are running a service it
+40:34
+means I'm talking about my application also or one particular micros service also plus their respective load balancer
+40:40
+of their respective asset. These three component uh together are typically
+40:48
+known as word service because guys this is very commonly used term. A lot of guys confused they think they talking
+40:54
+about SVC service but it's not. Okay. So it is something like this. If you're
+41:00
+running a port maybe a multiple copy my case five that is run balance with the
+41:05
+help of load balancer that's called service svc. Okay, there are port one, port two, port
+41:12
+three, port four, port five. Okay, this entire box.
+41:18
+Okay, entire box is known as service.
+41:23
+Okay, so in this world of service mass or normally commonly also in the real world, right? If you see any cloud
+41:29
+related service, okay, also they also use this term uh uh service,
+41:37
+okay? Because this is a very common practice. We don't launch a port alone. We run connect the port to the real
+41:44
+world or one port with the help of service only. So service is always one thing that we always want and 100% in
+41:52
+all the scenario. It's not compensive we want always. Okay. So I would I would
+41:57
+like to clarify this term here. So when I say service I mean to say port plus
+42:02
+plus your service. Obviously when I say pools they will also replicas will also come
+42:08
+up because they are the one who managing or managing the full tolerance of the
+42:13
+port and here in the because right now this S2 is most optimized and useful in
+42:20
+the micros service architecture. So it means one micros service
+42:28
+one micros service in our case is equals to one service equals to this setup. So
+42:34
+what you see here you can think as one micros service okay and we have many more microser
+42:41
+connect together it means we have many service connect together and do the entire application right so this is one
+42:48
+term I want to explain you before I go ahead so multiple thing guys I quick
+42:55
+recap and quick explain to you now it's time for st
+43:00
+okay how STO work uh I explained to you. So
+43:06
+STO is a tool okay that run on the top of Kubernetes
+43:15
+and the beautiful thing about the ST is is that if you're running in the Kubernetes without do doing any change
+43:23
+in the Kubernetes environment without doing any change in the Kubernetes sources they won't touch the Kubernetes
+43:29
+I can say okay we can run the ST on the top of Kubernetes this is one of the
+43:35
+beautiful about this tube some service mesh tool that is available
+43:40
+in the market for running those service mesh tool you have to do some changes on
+43:46
+some internal configuration of the cubernetes not all in some
+43:51
+okay but here the good thing about the is wherever you have the cubernetes running or the opposite running you can
+43:58
+uh install x as extra add-on you can think in this way okay when you need it
+44:05
+launch it when you don't need to remove it. It does not impact anything in the cubernetes environment. Okay, that is
+44:11
+the one thing. So this one uh interesting thing I want to add before I go ahead and that is reason I tell you I
+44:17
+told you wherever you have the cubernetes you can uh set up the STO over there.
+44:23
+Okay. Now second thing STO is a tool work for
+44:29
+service mass and why service mass I explained you yesterday but as we go ahead you will get a lot more
+44:34
+information about the service mass. Okay but some of the powerful thing that
+44:40
+service mass gave to you because the entire traffic go via service mass of
+44:46
+all your services microser and port. Okay. It means we have entire control.
+44:54
+Okay. Whenever you feel like when you feel like to manage the
+45:00
+traffic, apply some policies, security,
+45:06
+observe the traffic, see how things going on here and there. Okay. Everything we can do because the
+45:14
+entire traffic will go via service mass. Okay. Okay and service me just a concept
+45:20
+name lot of tool available but to make this service me setup is simplify very very simple
+45:27
+okay so this what I explained you already in my last class so setup would be something like this
+45:34
+okay how to work st okay uh if you want to use me so my
+45:42
+architecture is my architecture is uh wherever your uh uh service is running.
+45:50
+So let's say this service is running. Okay. So right now I when I say service
+45:57
+I told you when I say service I told you it is uh service plus food plus replica
+46:04
+set but let's say here just to make it a little bit more simple let's say service equals to port.
+46:10
+Okay. Okay. And one port here let's say is equal to one microser. So let's say
+46:15
+there's three microservices running and all the guys three connect together and
+46:21
+make the entire entire application right okay so
+46:27
+service mass say right or I can say especially the stew through which we
+46:33
+going to set the service mass okay they say if you want your one of the
+46:39
+container okay running with applicas right so I'm just giving a Container running with
+46:46
+application CA number one. Container running with application number two.
+46:53
+Container running with application that's called micros service number three. Okay. They can connect to each
+46:59
+other. Why? Because this is entire box service means they have a SVC also. They
+47:05
+can connect to each other directly. Okay. It means if you if you have this
+47:11
+container right they have a service also. Okay, you can think there's a port there
+47:18
+SVC. There's a port there SVC and Kubernetes give a capability that two service can connect to each other very
+47:24
+very easily. We have no issues. Okay. So if you ask Kubernetes can we
+47:30
+connect two services by default nature of the Kubernetes they give this connectivity.
+47:35
+So there service number one, service two, they can connect to each other with their IP address or sometimes they can
+47:41
+connect with their name also as a host name. Okay. But the only challenge is
+47:48
+what Kubernetes does not give you. They say if they connect I give the connectivity but I don't know much how
+47:55
+and where the traffic is flowing. I don't know the network flow. I don't have
+48:02
+detail uh visibility and when I said the detail
+48:07
+visibility means observability I can't observe how and things going or how the
+48:13
+data is flowing here and there okay I have no idea if your um this is
+48:19
+also LSF service okay let's say there's a port this service of this port every
+48:25
+port normally attach with their own service okay or every port respect to application or one micros service have
+48:32
+their own service. Okay. So if this application is connect to this service
+48:39
+or this port via this service I can give the connectivity but I don't know uh how
+48:45
+to uh how this traffic is flowing mean I don't know means I can help you in
+48:51
+monitoring part that is better word I can say is observe I can't do observability
+48:58
+for this that is very much required that's why I was trying to tell you yesterday right I can see how the thing
+49:05
+is going here and there so I can control I can see if something happens they they're taking a lot of time delay so I
+49:12
+can truth this right if I know how the traffic is going here and there and many more thing you can do as we progress I
+49:17
+will talk about this okay and for this what can we do if you go on to go more
+49:24
+deep dive into observability means observe every
+49:31
+tiny thing Every small packet also going for one application the other application
+49:37
+every tiny thing even though somebody coming from outside also
+49:42
+public world and any traffic come from outside mostly known as ingress traffic
+49:50
+even any traffic go out also to the outside world or outside the cluster is mostly known as egress
+49:57
+traffic external traffic okay I would like to check every packet
+50:03
+how they going, where they're going, why which microser they going, how much time they're going to consume, response time,
+50:09
+everything I want to see as a fine griner level thing I want to see it. And
+50:16
+guys whenever you want to see any data very very in intern
+50:25
+because if you capture those data every small bit if you capture it on the top
+50:30
+of this data you can do take lot of decisions. One of the decision would be why the
+50:37
+service go to service three take a lot of time because we also know the how
+50:42
+much time they consuming. Okay. So because we know lot of we have a lot of
+50:48
+data we are capturing every point here and there. So we can see take a we can
+50:55
+do lot of analysis on the top of this or any kind of bottleneck come up why this
+51:00
+low we can find out at least we can go to some conclusion and then we can help take the help of some team they can help
+51:07
+us to to do some maybe code changes or something other things also. Okay. So
+51:13
+whenever guys you want to go more deep inside and understand your data and your flow how things going here and there
+51:19
+there's mostly we use a term in the market called observability okay a better a simple name you can also
+51:26
+use here a term called monitoring right so I want to monitor every activity uh
+51:33
+about my connections what is going between the microservices
+51:40
+and who help you service mass Service mass help us in the terms of
+51:45
+observability. Okay. But it means what we have to do?
+51:52
+We need some extra component that is known as mass of the services of
+51:59
+microservices maybe that we connect every microser to each other via this component that is called mesh or known
+52:08
+as service mesh. Okay. So it will be something like this is this also connect like this this also
+52:14
+connect here this also connect and they say now nobody connect to every service
+52:19
+the directly don't connect even though we don't allow also to you okay don't
+52:25
+allow also to you so what we are going to do sorry what we going to do if you want to
+52:32
+connect one uh if you want to connect one service to other service or one port to other port
+52:39
+you have to go via sorry you have to go via
+52:45
+uh you have to go via uh this service pass. So if service one want to enter
+52:50
+service two then you have to go here and I am the one who take you here.
+52:59
+Okay it's something like this and everything go v this. So they have entire
+53:05
+uh visibility of this entire application
+53:12
+because they have entire visibility it means they can capture all the data and because they capture all the data
+53:20
+then they can go more inside of data and to find out something what is happening that is called observability.
+53:27
+So there's a small difference between visibility and the observability. Visibility we have we now we have access
+53:32
+of the data. A lot of guy think visibility and observability is same term. It is not. If you can get the
+53:39
+access of all the data you can use it then it's called
+53:45
+visibility. Okay. And cubernetes does not give you
+53:50
+visibility. They give a connections but they can does not give you visibility. And because we have access of all the
+53:56
+data okay then we can go inside the data that's got data insight
+54:03
+and do lot of analysis and come up with a lot of issues and any when any trouble
+54:08
+going to come up and that case observability is the is the thing right
+54:14
+and that is reason we don't use the word visibility more often we use the word observability so when I I say observity
+54:19
+it means visibility is always always there Okay, this is uh uh this is one
+54:27
+thing. Okay, now point here is this is service mess. There's no issue. But what
+54:33
+what is approach of this for implementing this service me this mess that everyone go via this
+54:40
+this area. Okay. So what is approach uh that is used by uh by uh STO
+54:51
+okay for implementing this so use a concept called proxy that I explained to
+54:56
+you very quickly I like to explain to you then we'll go and start setting up the ST okay because I'm slowly going
+55:04
+deep into the architecture of the STO okay then setting up won't take much
+55:10
+time okay So approach of the S2 is they say okay any
+55:18
+services you're running let's say it is equals to port and port is running with a container this is your application
+55:24
+container okay or contain application for example number one there's one more
+55:31
+running with a container running with application number two let me take one
+55:36
+more very quickly contain number three so this box outside box is your code
+55:44
+okay and this is your final your container so is to approach is what do I say uh
+55:50
+I'll use this approach okay and approach guys is known as it is
+55:55
+approach come from cubernetes actually so in the cubernetes world there's a concept called init container is one
+56:02
+concept in in in kubernetes world init container it mean initializer
+56:08
+container Okay, means whenever you launch any
+56:14
+port. Okay, in the port if you have only one
+56:21
+if you give only one image that's how you know right. So if you give one
+56:27
+single image while launching the port one container
+56:33
+they launch single container port but by launching
+56:40
+the port while launching the port if you give two images
+56:46
+image number one image number two so this image also launch a container this
+56:51
+image also launch a container two container will launch obviously there are two different image. So two different container will launch. So
+56:57
+container one, container two and both container running in the one single port. That's called multicontainer port.
+57:04
+Okay. But typically what two container you launch it will be your choice. Okay. This can be your PHP this can be
+57:11
+database but it's not a perfect architecture for this setup. Okay. It's
+57:16
+good practice that you always launch uh different port for different application. launch different port for
+57:22
+database, different port for application. But this scenario what I'm talking about right now in this scenario
+57:29
+the the right use case is this container that you launching right now
+57:37
+launching right now into a main container that contain your application
+57:43
+and second container is a support container helper container. Okay. So if
+57:49
+you guys know the concept called agents so this can be agent okay where they keep on checking this
+57:56
+container how they doing how they behaving
+58:02
+okay what uh how much resources they using their fail or not okay they're
+58:08
+capturing their metrics the logs so it depend what you want to do with
+58:13
+this container is a support container or helper container this is what normally
+58:18
+the use cases and use case to use case. Okay, we have different term we use in
+58:26
+the multicontainer port. Again, we are not want to go to the design pattern of the multiore board container. There's a
+58:34
+sidecar design, there's ambassador design and many more designs. I don't want to go in that direction but
+58:41
+okay. Uh yeah if you guys whenever you learn open sift not open I can say
+58:47
+cubernetes developer training like a ckd kind of there we have did a topic in this in this area okay but my main point
+58:55
+here is okay if you want them something like this that I am going to launch a
+59:01
+code where this is my application container but I want my application container and
+59:09
+application is to be controlled pooled by my other container.
+59:16
+This container is control this. Okay,
+59:22
+one other thing is what they can control? What they can control this container?
+59:29
+Okay, if they want to go anywhere outside or anybody come in,
+59:36
+they ask this guy. This is the one who will help them to take to go out and come in. They can't directly go.
+59:44
+They can't directly go. Okay. So if you have this setup, so in
+59:50
+this case, in this case, what you have to do? First you have to launch a container
+59:57
+inside this box called port. This container is is normally known as init
+1:00:03
+container, initialize container. And this container is actually finally going to inless your final app. So they
+1:00:10
+can control this entire app. So this is a very quick information about init container. Why I'm giving
+1:00:17
+this information about init container here. This is how uh is to use behind
+1:00:22
+the scene. So what happened? Okay. what issue you're talking about uh
+1:00:28
+right now if you see the current status is I am running a port that is equal to a mic one microser
+1:00:34
+let's say or let's say one port running with one single uh one single container
+1:00:40
+inside this port there's only one container so there's no meaning of multi- container or there's no extra
+1:00:46
+helper container so inside this port let me first do one thing let me uh scale it
+1:00:52
+down just I want to want to see only one Let me scale it down. My deployment name
+1:01:00
+my D to the replicas
+1:01:05
+of one. Okay. So only one is there. Okay. So
+1:01:11
+only one is there, right? Even though if you see the describe also describe of this board, right? You can
+1:01:19
+see only uh if you see just the container area only one container
+1:01:25
+running there's no other container only one container is running okay so it is a it is a mostly the
+1:01:33
+whenever you see any container running with one this are always the app container but I want this container I just want
+1:01:41
+container real OS where application running this container the name is this one this container is to be controlled
+1:01:48
+by the container within this pool. Why? Now this container can't go out. Nobody
+1:01:53
+come in directly to this container. Okay. Uh they will go via this. How I
+1:02:01
+want to have one more container here. One more container here. One more
+1:02:07
+container for this port because these are the port right? Port one, port two and port three.
+1:02:13
+I want all the application has been controlled by one more container.
+1:02:19
+Okay. So that if this container who wanted to go to container 2 directly no
+1:02:25
+they can't if they do guidly somehow then I can't do a complete observability right I miss
+1:02:32
+some those some data and some information I don't I don't want this this this uh I can't take this risk
+1:02:38
+right and that is reason what is talking about I'm going to give you this
+1:02:44
+container in a way that this container is the main control container
+1:02:50
+Okay. And is the one who going to control this guy and this is the one who going to launch this container also
+1:02:55
+internally that is reason this container is also known as init container is to say I'm going to give you the init
+1:03:02
+container. So whenever this port launch that is called one microser launch
+1:03:10
+inside this port we're going to launch two container but first container that you you going that I will launch for you
+1:03:17
+first is this one second your main container by this guy so they have a
+1:03:24
+control okay now it all depend this guy is just
+1:03:30
+a very quick information of edit container so it all depend And what do you want from this init container?
+1:03:37
+It is in container is just a concept from Kubernetes. What do you want from the init container?
+1:03:43
+In my case, init container help us in a way that if let's say this is also
+1:03:49
+init container. Okay, in container will help in a way that if this application number two want
+1:03:57
+to connect application three, they can't connect directly because now it has a complete control on it. So what they do
+1:04:04
+this uh application number two will go to init and say I want to go out they will take out they will go to this init
+1:04:11
+container and then contain is the one who decide that that I am the one I who decide should I allow
+1:04:18
+you or not if I allow you then I can connect to my application and they can reply to and give the data to you
+1:04:27
+okay my point is who can go to this container who and what kind of traffic
+1:04:33
+they allow, what kind of protocol they allow, what IP they allow, everything now is been controlled by and that easy
+1:04:40
+reason because this init container is helping to connect each other or helping
+1:04:46
+this country to go out and come in. Why this only no no other way that is one of
+1:04:52
+the reason why this init content technically here known as proxy sometime known as inverse proxy but let's say the
+1:04:57
+word proxy okay and every container guys come from some image
+1:05:05
+okay or some from some some code or some project so is using a code or a project
+1:05:14
+okay through which this container come this is called envy
+1:05:19
+sometime also known as st proxy but the same thing
+1:05:25
+and project the use okay I project the use and why envoy
+1:05:31
+there's many more project also for proxy or reverse proxy in in it world but envoy is so much sophisticated so much
+1:05:39
+highly tuned all the top company world using it they make it so light
+1:05:44
+weight it look like there's no proxy right they think they're directly
+1:05:50
+connected they can go this but they're so fast so super fast they don't feel any any latency here so in the
+1:05:57
+performance perspective look every traffic of container two going to container three or microser 2 to go to
+1:06:04
+microser 3 is go via proxy only that's called envoy proxy
+1:06:09
+okay so it's a so fast mean so fast means they does not because of everything going via something so that
+1:06:15
+it will always come with some impact on the performance. Okay. But they grade in
+1:06:20
+such a way that they don't do any uh performance challenges as such. Okay.
+1:06:27
+And they do which is one of the reasons why we use and why written purely in I
+1:06:33
+think Go and C++. I think C++ you can check in the code. Okay. So very very lightweight it is.
+1:06:41
+Okay. This is uh one thing about Android project that I given the name
+1:06:47
+to you already. Okay. Is a is is just a uh proxy or the
+1:06:53
+inverse proxy. Okay. For the service mass okay it is not like envoy we use
+1:07:00
+only for service mass. If you have whenever you have any cluster environment or distributed cluster
+1:07:06
+environment you can use envoy there also. It is very famous in the world of microservices in the Kubernetes world.
+1:07:12
+But no is the one project that you can use in other area also. This is created
+1:07:17
+by lift company and used by the company that I told you yesterday already. Okay.
+1:07:23
+Is written in uh C++ that I was talking about high performance proxy design.
+1:07:31
+Okay. Okay. It's basically using microservices and with the service mesh architecture. Okay. There's one one
+1:07:38
+quick information one more time I want to add here is okay whenever whenever
+1:07:46
+uh in any one single food you are running with the application and if you
+1:07:52
+add one more extra application as support they will help something whatever the way they help they help
+1:07:58
+something. So this kind of design or architecture
+1:08:04
+okay is known as sidec car design
+1:08:10
+okay and that is a reason that is the reason this particular extra
+1:08:17
+component okay sometime known as init sometime known as sidecar sometime known as envoy
+1:08:25
+sometime envxroxy sometime known as proxy whenever I use any of this term in this training or you see listen this
+1:08:31
+term anywhere it the same thing no difference no difference
+1:08:38
+okay so there's one one point but if you notice here if you notice here in my current
+1:08:45
+environment in my pool I have only one container that is my application container
+1:08:52
+okay I don't have any side guard sidecar proxy from envoy or proxy
+1:08:59
+Why? Because STO is not yet set up. Okay, it's not yet set up. So now it's
+1:09:06
+time to uh set up the ST. Okay, time to set up the STO.
+1:09:14
+Okay, so before I set up the STO, I want to give you some more terminology so that after I launch, I can quickly show
+1:09:21
+you what is that. Okay. So if you just talk about STO uh
+1:09:27
+we are going to implement the STO in the latest version I think 1.7 something you
+1:09:33
+can check what was okay this is a good example to see the services and word proxy nword proxy and stto this what we
+1:09:41
+going to discuss in detail in a minute if you see the document maybe somewhere you can find I think some 1.7 version of
+1:09:49
+is there but this is big change happened in STO version 1.5.
+1:09:57
+So whatever version you have before 1.5 and after 1.5, there's huge change in
+1:10:02
+the STO architecture. Okay, huge change.
+1:10:09
+By the way guys, if you just talk about HTTO, these are the main facilities to provide and we go more deep into this
+1:10:15
+topic. Traffic management, security, policy enforcement, observability and the extensibility.
+1:10:21
+But all these things you can do I explain very deep discussion in it only is possible if you have the service mass
+1:10:28
+setup means everything go via one single area
+1:10:33
+it's something like this so just find somewhere I think this updated latest version can be 1
+1:10:40
+7 something about yeah it is here 1.17 not 7 1.1.7 uh version uh that is a
+1:10:49
+native version But okay uh
+1:10:55
+before version 1.5 there's huge difference in the S2 architecture and from 1.5 and onward till date the
+1:11:01
+architecture is very different why I'm saying this I'm going to explain you
+1:11:06
+both the architecture why uh we don't know guys most of you guys are working in some great environment okay so maybe
+1:11:15
+in your organization you might see you was running some older version than will find some extra component there. So you
+1:11:23
+should be aware of it. So I'm just giving you for awareness purpose. But whenever you're planning to launch or
+1:11:28
+you have a newer version of H2O, you will see this in a moment what we going to show in this training. Okay. So it is
+1:11:36
+something like this. Okay. Again I create the same diagram. Sorry one more time. Okay.
+1:11:46
+So, so let me take only two services. This got two micros service or two port.
+1:11:54
+Okay. So, this is running with uh with container one, container two. This is
+1:11:59
+the proxy. This is the proxy. So let me write proxy number one. Proxy number
+1:12:10
+your container application number one your micros service number.
+1:12:18
+Okay. So technically, okay, technically
+1:12:25
+uh or frankly saying in the STE world,
+1:12:31
+okay, in the ST world, uh by the diagram that I explained to you,
+1:12:38
+it look like everything going by this box, entire traffic goes going by this box. But it's not the truth. This
+1:12:45
+diagram I created just to explain you the concept. Okay, frankly saying okay your entire
+1:12:53
+data or network traffic is the same thing when I say data or network traffic I mean to say same here okay is is is
+1:13:02
+going within the proxy or with the proxy direct
+1:13:08
+there's no any extra box like a service mass here
+1:13:15
+nothing like this nothing service mass kind of real physical
+1:13:22
+application or the box exist actually this is just for explanation purpose
+1:13:28
+right okay just proxy is there
+1:13:34
+it means it means if I launch one more micros service they have their own
+1:13:40
+container application number three so they have their own proxy program number
+1:13:46
+their own code is name and why but they they have their personal proxy program.
+1:13:51
+Okay. Interesting thing is as soon as you launch this proxy program they
+1:13:57
+somehow know okay there's some other proxy program also running. So they have
+1:14:02
+a direct connectivity with this or they also have D connectivity with this.
+1:14:07
+It means if I launch one more application container or service number four for
+1:14:13
+example they have their own proxy and this proxy have awareness that there's three more proxy available and they have
+1:14:20
+a connectivity this guy also this guy also this guy also if you see guys here
+1:14:26
+everybody is connect to each other they know the direct connectivity they know how to connect not the application they
+1:14:32
+will every proxy is connected okay and that easy reason they are known
+1:14:37
+as mesh topology of mesh okay concept and because they are
+1:14:43
+connected every service connected every port connected every microser connected there is there service mess but there's
+1:14:50
+nothing local box right why I'm why I'm saying this point it look like you might ask what happen if box goes down a
+1:14:57
+single point of failure no there's no box kind of thing everybody is connected to each other
+1:15:04
+directly okay I'm not saying about they are sending the traffic directly to each other traffic going to control that's
+1:15:10
+called traffic management but by default as soon as port launch
+1:15:16
+service launch proxy launch in that port okay automatically they have awareness
+1:15:23
+that right now in my current application in my default name space or whichever the name space you're working in the
+1:15:29
+cubernetes or in the open project uh same thing okay we are running with 100
+1:15:35
+microservices is and every micro had their own proxy and they know everybody
+1:15:40
+about about each other okay the point is how they know how they know so here uh
+1:15:50
+here there's a one concept what is use okay it is something like service
+1:15:56
+discovery service discovery
+1:16:02
+okay so what I mean by this again let me create the diagram Now okay let me
+1:16:07
+create now we create let me create two port only this is a container and let me
+1:16:12
+give a different color this is proxy one proxy 2 let me now use p1 and p2
+1:16:20
+okay so what happened there's one component of the
+1:16:26
+stew guys I'm going to stew now so give you one component
+1:16:33
+or one program okay that is equals to one port.
+1:16:38
+So this port is a port belong to where
+1:16:44
+is running their one of your program and this program is specialized in service
+1:16:50
+discovery. High level of service discovery I explained to you. But what I mean by this service discovery here as
+1:16:56
+soon as I launch one more microservices
+1:17:02
+they have their own proxy. As soon as I launch automatically this proxy
+1:17:09
+go and register themsel to this pro.
+1:17:15
+Okay, rester means they tell that I am the new proxy going to come up.
+1:17:22
+Okay, going to come up and what this program do they update all the proxies
+1:17:30
+that new proxy going to come up one more new proxy going to come up at this port at this IP because port has IP at this
+1:17:37
+IP at this port. So automatically everybody know that port number three
+1:17:42
+come up. Similarly if some of the port goes down everybody has been notified
+1:17:47
+okay automatically that that service goes down again this is a concept mode
+1:17:53
+like service discovery okay and after they notify that
+1:17:58
+something goes down or something new come up now they have a connectivity so they can connect to each other the way I
+1:18:04
+explained to you okay they connect to each other now after this this component
+1:18:11
+we don't need this component guys come from software
+1:18:16
+now after this this component exists or does not exist is to working don't know working does not matter uh every port
+1:18:25
+proxies know about each other they will have a direct connectivity uh and they will do the same thing
+1:18:31
+whatever I explained to you okay everything go via this but that's one thing but yeah obviously there's no mean
+1:18:36
+to have the service this part down okay because there maybe port is capable people coming or removing so we need
+1:18:43
+this will be up always okay but by chance this component in the S2 world is
+1:18:50
+known as this program in the S2 world is known as the num name I'm going to tell
+1:18:55
+you right now is known as pilot p I l pilot this is a one program
+1:19:03
+run as a independent port known as pilot
+1:19:09
+okay and this pilot is helping you in
+1:19:14
+in things. One for service discovery that I
+1:19:21
+explained to you. But the main important part for this pilot, this is the most
+1:19:27
+critical uh use of this pilot is
+1:19:33
+okay. they are going to push the configuration changes
+1:19:41
+to your envoy proxy or sidecar.
+1:19:47
+What I mean by this and this is a main feature of service mess also. It means
+1:19:54
+okay I can tell my proxy one that if you're going to come
+1:20:01
+to proxy two you can't use HTTP you have to use HTTPS
+1:20:08
+that's called security or I can tell my proxy 2 that proxy 3 is
+1:20:14
+coming in not allow this traffic a port can directly correct but from the
+1:20:19
+cubernetes stand point of view but But we can tell my proxies that you apply
+1:20:25
+some firewall link this policies network policies don't allow this guy to
+1:20:31
+connect. Okay. So these are known as configuration that
+1:20:38
+we can push control from from pilot.
+1:20:44
+And there guys I was talking about yesterday right I'm talking about on the fly we can change
+1:20:51
+who can control who can't we can set the authentication security many more things we can do
+1:20:58
+okay so the way I explained you yesterday guys it is more like a control tower that might be reason why they give
+1:21:04
+the name pilot okay so this part is more like a control they're controlling
+1:21:11
+all the proxies okay by pushing the changes. Changes means the instructions what you want
+1:21:18
+them to do. Okay. Plus traffic management also that
+1:21:24
+that if any traffic goes via proxy one to proxy 4 I want some percentage go
+1:21:31
+there. You know we have canary deployment. We'll talk about canary deployment in detail. Some some percentage of it go there some percentage go there. Those things we can
+1:21:38
+do. So pilot is one of the main part of the STO.
+1:21:44
+Okay. S2. So if you just search pilot
+1:21:49
+S TO pilot. Okay. This is what they uh do. Maybe if
+1:21:59
+you read completely you come to know what I was talking about. So a pilot
+1:22:04
+will provide all those things in the service mass world.
+1:22:10
+Okay, there's one component of the S2. Okay, likewise S2 have many more
+1:22:15
+component. Okay, so component would be there's one more component
+1:22:21
+that that has there's also like a one independent pool in the S2.
+1:22:28
+Okay, and that is known as citadel. Citadel.
+1:22:36
+Okay. Is independent component. Okay. What they do? Okay. So it is more for the for the
+1:22:46
+security purpose. Pilates say I want security but who
+1:22:51
+going to implement the security? Security means if these two port I want they will do a communication with
+1:22:58
+encryption. Okay. It's most mutual TLS or HTTPS
+1:23:05
+and I want this two port has some authentication with O or some other kind of authentication right who implement
+1:23:12
+this authentication so SATA is a project or port
+1:23:18
+one service want to connect to other service okay so how we going to manage the
+1:23:24
+authentication part okay and interesting thing the way I explained you yesterday guys okay you
+1:23:30
+don't have to change in your code. You don't have to touch your application
+1:23:35
+code. You don't have to ask your developer. So they don't take any burden. That that is entire motive of service mass. Right? Service mass say we
+1:23:42
+don't want to give any burden to my developer to my code. Whatever deploy they deploy that's all
+1:23:50
+other things is been now managed by operations team IT teams they will manage. If these two popup containers
+1:23:58
+want to communicate and if we need the authentication okay that's called out of the box
+1:24:06
+citadel will provide if they need can most or mutual TLS or encryption for
+1:24:13
+examp on on the fly they might not support in
+1:24:19
+the code but we will provide them on the fly who that who will do cel will um do
+1:24:26
+for us. Again this is one of the project or extra component of the STO is called
+1:24:33
+SATA. Okay. Strong service of end to end build
+1:24:38
+identity credential and all things they will do for you. We have a separate
+1:24:43
+detail discussion guys on the security part um policy part. We will discuss
+1:24:49
+everything there. Okay. And one more thing guys. Okay.
+1:24:55
+There's one more project in the uh in the S2.
+1:25:01
+Okay, S2. Okay, so this project is it is something
+1:25:07
+like this. Let me add one more layer here. So this is what we are here. We
+1:25:13
+who are the user of the S2. So guys, we are the one going to use S2, right?
+1:25:19
+H2 know how to do things, right? But does not know what we want, right?
+1:25:25
+So we will tell the studio again with the vimal code the way use in kubernetes
+1:25:31
+right we write a v code for the is2 I'll show you how in the future and we will
+1:25:37
+provide this v code to the is2 and say this is my requirement I want my two microser will have authentication they
+1:25:44
+have a traffic control many more things we'll tell our requirement
+1:25:49
+okay so my requirement go to sto so this entire these three boxes is together are
+1:25:55
+known as S2. So S2 is a one big name umbrella. Under
+1:26:02
+this umbrella there's actually three components. Okay. But one component duty is so
+1:26:08
+whenever you want to submit your VLE code through which you can send the instruction as user.
+1:26:15
+Okay. So you send to this port or this component.
+1:26:21
+Okay. What they do? they will check your ML code.
+1:26:26
+Okay, check means there's validation of your code everything is right or not.
+1:26:32
+If your code is right, that's good. Otherwise, they fail. But if they're right, okay, then uh H2 guys internally
+1:26:40
+does not understand YL code. It is for human being for us for IT team. They have their own internal format language.
+1:26:48
+So they will convert the YL 4 into H2 format. So and then they understand the instructions.
+1:26:55
+Okay. Plus this final code they will share to to and you know I was talking about
+1:27:03
+I talking about um the injection of your or the the code distribution maybe this
+1:27:09
+code will go to set or go to pilot to tell them this is what my customer is looking.
+1:27:15
+Okay. So this also one of the component extra component in the STO uh that is
+1:27:20
+that are that is known as GI G A L A Y GI.
+1:27:27
+So if you see STO GI
+1:27:33
+okay is also one of the component right for the S2
+1:27:40
+okay S2 okay it will uh do confidence validations and distribute the component
+1:27:47
+to other component and all things they uh do for you okay
+1:27:54
+so so these are three main main component of the S2 and all these
+1:27:59
+component okay work together become the STO so I
+1:28:06
+was talking you know STO control tower so this is the control tower of the STO
+1:28:12
+they're controlling something and that is reason okay in the cluster world
+1:28:17
+multiple things working together here and there okay this also known as distributed involvement if some some
+1:28:24
+part or some area is controlling the entire cluster. So they are known as
+1:28:29
+control plane. So this is the control plane
+1:28:34
+contain three component and these component given the name called ST.
+1:28:40
+Okay, S2. So there's nothing called STO separately. Okay. So these three become independent
+1:28:48
+port become ST that is called control tower or we can use the word control plane. Okay. And they are the one who
+1:28:56
+are controlling your proxies. Okay. But what proxies doing? They're
+1:29:02
+taking the instructions from the control plane that I want you do this. I want you do this. What data coming up? Send
+1:29:08
+here. Come data coming. Go here. Don't send. Don't allow. Okay. Capture data. Send to me. So I can do the
+1:29:14
+observability after have the visibility. Okay. So the main role of the proxy is
+1:29:21
+they are they are helping us in managing the data. So this proxy program is known
+1:29:27
+as data plane.
+1:29:33
+Okay. So data plane plus control plane the entire setup is known as service
+1:29:38
+mass that has been given by HTT
+1:29:43
+H. Okay. But the architect guys what I was talking about this ar little bit older
+1:29:50
+architecture there's some change in the new architecture this guys the entire architecture of the stto this
+1:29:57
+architecture was there in the older version lesser than 1.5 maybe if you search very quickly st
+1:30:04
+architecture okay you and the images you find
+1:30:11
+okay this may be this architecture for example
+1:30:16
+Okay. So you can see here we have service service proxy proxy. Let me go open in image in new tab. Okay. This is
+1:30:25
+what architecture right. Okay. This Microsoft A Microsoft B is a
+1:30:31
+proxy and any traffic is go within the proxy also known as mass traffic
+1:30:37
+coming in out. Okay. But these proxy is controlled by pilot set and galley and
+1:30:43
+all these thing is known as control plane and this greenish data plane.
+1:30:49
+Okay. But this architecture guys is a older architecture 1.5 not 1.5 less means 1.4 something
+1:30:58
+1.4.3 for example has this architecture.
+1:31:03
+Okay. after 1.5 means from 1.4 before not after 1.5 this year is a huge change
+1:31:09
+in the architecture and that huge change is nothing okay what STO has done sorry what has
+1:31:18
+done maybe you have some diagram here I can show you uh maybe I said this one
+1:31:25
+okay now this is what the same diagram you can see in the website also so what has done
+1:31:33
+okay all these three component which component component, pilot, citadel and gi. Okay. Now they don't running three
+1:31:41
+independent component or three independent port. Now they running one single port for
+1:31:47
+entire control plane having all these capability or maybe some more extra capability they add
+1:31:54
+and that is known as I plane or also known as D. So there's one
+1:32:02
+program they launched you might find here not here is it's known as 2D even
+1:32:08
+though when I launch it I will show you this is 2D
+1:32:13
+okay so my point is when you see this time is to control plane means they are
+1:32:18
+running now in new version 1.5 and onward uh uh one single port that is called st
+1:32:28
+is name of the port and Inside this port if you go you will don't find three container you will only find one
+1:32:35
+container that has all three three capability what was provided by pilot
+1:32:40
+citadel and gi why I'm giving this name to you right now even though they're older but why I'm giving you because
+1:32:46
+maybe in some of your infrastructure you might see these three component but you see this component pilot s and gi that
+1:32:54
+is now exactly equals to d one single container one single boot
+1:33:02
+that's what I want to tell you but my point is by this architect you understand the concept right what HTTO
+1:33:08
+is doing pushing the configuration managing encrypts and and many more things we will also discuss so now the
+1:33:15
+architecture is very simple this is how it look like this how it look like okay uh this
+1:33:23
+architecture of the studio okay otherwise there may much more things to
+1:33:29
+be discussed I think there's a lot of information I given to you. Okay, let's start doing the setup for the S2.
+1:33:38
+Okay, again guys, one more thing I want to add before I go ahead. I know I want to show you the demo, but one more thing
+1:33:44
+I want to add. Okay, STO is just H2O.
+1:33:50
+Okay, STO does not give you any monitoring tool.
+1:33:58
+Okay, tracing tool, graphing tool. What I mean by this?
+1:34:05
+Okay, uh again let me take the same example. We have one service, one
+1:34:10
+application micros service application number one. Let me use a A2.
+1:34:17
+This is my proxy one. This is my proxy two. Okay. And now we have one single
+1:34:25
+program component port whatever you say it is acting port running with a one
+1:34:31
+container one service called stew d means demon or service sometimes it's
+1:34:38
+also known as stew stewward somebody say this okay
+1:34:44
+okay so what happened what happened uh when my application one trying to
+1:34:52
+connect to application two they can't go directly they will go via proxy with
+1:34:59
+name call mash traffic okay and they will connect if they allowed to connect
+1:35:06
+they allow or not has been controlled by S2D only that we explained to you previous now S2D is is the one who
+1:35:13
+control this policy management okay but one more thing is happening
+1:35:22
+Whenever any traffic go from one proxy to other proxy, okay,
+1:35:29
+uh this proxy program, this proxy program, let me change the color is keep on
+1:35:37
+observing everything. What is going here? What is going here
+1:35:43
+out in where they going? Everything they are observing.
+1:35:51
+Okay. Everything they're obic flow they're observing and keep on
+1:35:57
+sending this information to S2D or S2
+1:36:02
+control plane they keep on sending here
+1:36:07
+okay it means okay they say I'm sending
+1:36:12
+this packet and they're replying me I'm sending this message to you plus they're also sending
+1:36:20
+I send this request test and they reply me it take let's say 2 millisecond I'm sending this information right
+1:36:28
+plus they're also talking about my container running my container right now using 2 GB RAM or 10% CPU where they're
+1:36:36
+running they're sending this information okay or maybe my container running with
+1:36:43
+databases or web server they're generating some log the field error log
+1:36:48
+they're sending this information. Okay, so technically if you notice here
+1:36:56
+three different kind of information they're sending. Okay, your proxy program is sending
+1:37:01
+three different information or three different kind of data. So proxy program is the one who
+1:37:08
+capturing this from the application or because something they're going via this or
+1:37:14
+coming in. So they know entire visibility of the data or because proxy
+1:37:20
+program has entire visibility of the data. Okay. So they are sending to us and
+1:37:27
+because they're sending to us so on this data we can go more deep and try to analyze something that is called observability.
+1:37:33
+But what they sending they're sending log of the application of the container.
+1:37:40
+They're sending metrics. Okay, log means my Apache server service
+1:37:47
+goes down, fail these medical lines connected.
+1:37:52
+Okay, metric means how much RAM and CPU use. Okay, or the tracing data.
+1:38:02
+Get testing means my packet is going uh from application one to application two
+1:38:08
+application two application three. App three we are calling some some application.
+1:38:14
+So what we are calling which service we calling which function we are calling everything come on the tring how much
+1:38:21
+time they consuming to reach to to have this call because if one microser contact other microservices
+1:38:28
+they obviously they go network HTTP or HTBS protocol I mean some other protocol maybe how much time they consuming right
+1:38:35
+to to have this call completed or the call field this called tra
+1:38:41
+so three information they are capturing Okay, because they have the visibility
+1:38:47
+of this data because they are proxy sorry everything go via this and they're
+1:38:55
+sending to you now it is the choice of the SQ
+1:39:03
+okay okay what they want to do with this data log data mage data and the tracing
+1:39:09
+data okay so what institute can do. Now
+1:39:14
+studio has lot of extra add-ons, extra port, extra application. what by
+1:39:23
+default they support it's not part of STD it's not ST
+1:39:29
+it's third party tool sorry third party tool okay for example
+1:39:36
+they have a tool called Prometheus
+1:39:43
+plus with graphana okay so say I am collecting lot of
+1:39:52
+metrics okay that is the on real time I'm collecting
+1:39:59
+okay they're sending me on the real time I'm collecting putting my RAM and it
+1:40:04
+will goes I don't know how to store this I don't have my own persistent storage
+1:40:11
+neither I'm a database okay so again guys important pointto does not store your information
+1:40:20
+about the uh about the logs metrics and the tracing sorry
+1:40:28
+okay I am connecting on the real time but if we want as a user of the STTO we
+1:40:36
+want to store this information I'm talking metrics then STO has a great
+1:40:41
+connectivity integration with the Prometheus if you guys know about Prometheus Prometheus is a database for
+1:40:49
+storing the matrix information.
+1:40:54
+So, STTO has a great in Prometh is a third party tool. It's not about we use
+1:41:00
+only with studio very very good tool for metric management and metric storage is
+1:41:06
+very important interesting tool in the world of devops also prometheus okay for monitoring even though is
+1:41:14
+independent training also we have if you want to learn promeththeus we have dedicated training only in prometheus
+1:41:20
+very powerful tool it is you can integrate promethus with many more things okay but has a high integration
+1:41:29
+support for the Prometheus for it matrix storage. So thing you want is not
+1:41:35
+compulsory is not compulsory. I'm collecting the on the real time if you want to store so
+1:41:40
+that you have entire data store and the future you want to see what is happened in the past. So prometh will maintain
+1:41:47
+the entire historical data for you. You can go to permit and find out what happened
+1:41:54
+and on those top of this data if you want to get some beautiful graph and visual of metrics how the CPU is using
+1:42:00
+how up and down right then for creating the graph we can use promiser but one of
+1:42:06
+the great tool in the market graphana right for graphing and dashboarding and many more things right so graphing
+1:42:12
+graphana is also third party tool okay mostly used with prom but again we
+1:42:17
+can use separately also Okay, who can give this kind of beautiful graph and dashboard right the
+1:42:24
+point is proxy is the one who is giving the information to
+1:42:30
+if they say if you want at your choice I have an integration with Prometheus I
+1:42:36
+send to Prometheus or come to me and take from me whatever way you say right
+1:42:41
+now we'll have a discussion in the future how prometh can see it right so prometh can store in the database and
+1:42:48
+from where Graphana will take the data and create this kind of beautiful visuals on the real data or real time
+1:42:55
+data. Okay, but it's not compulsive. If you want to do you can do it that easy
+1:43:01
+reason it is known as add-ons. So promises and graph one is one of the add-ons in the studio. Right. Again if
+1:43:06
+you search about STO add-ons or the STO integrations.
+1:43:14
+Okay. So they have a integration with lots of tool.
+1:43:19
+So either you can use the word integration or you can use the word add-ons. It is same thing no difference
+1:43:27
+but they have integration with prometheus for metric storage
+1:43:32
+in the database. They have the information for graphana for this purpose.
+1:43:39
+Okay. Similarly, if you want to store the tracing information,
+1:43:47
+okay, or analyze the tracing, the S2 has a great uh tool for tracing. This called
+1:43:54
+agger or something. J is silent. Instead of J, we pronounce
+1:44:01
+Y. Jerger. Okay. It's again independent tool for dressing.
+1:44:08
+G A E dressing there's a third party tool we can use for other way also it's
+1:44:14
+not a part of STO it's for dressing purpose especially in more complex
+1:44:20
+environment we can help us in troubleshooting but S2 has integration with Jagger
+1:44:29
+okay same tracing information if you want to uh Jagger is more like
+1:44:36
+not give you lot of powerful graphics but you also want to have a dressing
+1:44:41
+with the graphics also then we have very powerful to calibr
+1:44:51
+spelling so k i a ki so ki is again
+1:44:56
+indicated they give you very beautiful graphics that I show you yesterday and many more other tools you can also
+1:45:02
+integrate with the uh with the S2. Other tools also we can
+1:45:11
+integrate for example for log management. One of very powerful tool in the world that I highly recommend
+1:45:16
+everyone is called Splunk. We can integrate with STO. So many more we can integrate what is a available in the
+1:45:22
+market. But my point is out of the box by default they give you these tools
+1:45:30
+integrated with very sophisticated way. Okay. They have the one command also
+1:45:35
+add-ons command through which we can directly install and they integrated many more things automatically. I'll
+1:45:40
+show you how it work. So we two we dedicated training for Cali and agar and
+1:45:47
+not promising graph training here but I show you how they see the things right in the S2 world.
+1:45:54
+Okay. So point is S2 is just a tool
+1:45:59
+for service mass okay where what they do I explain to you but they support other
+1:46:04
+add-ons and sometime known as integrations with these tools because they say I'm collecting a lot of
+1:46:10
+information now if you want to do a observability more
+1:46:16
+clean way graphical way uh all right then you can take this add-ons or or
+1:46:23
+this integrations and have see more clear way what is happening. Okay.
+1:46:30
+So this is the whole idea. Now that is enough guys. Let's now go and see the
+1:46:37
+STO installation. Right. So to start the installation what I'm
+1:46:44
+doing right now let me clean my environment of cubernetes. So I can run the cubectl
+1:46:49
+delete all commands. So in my current name space
+1:46:58
+okay whatever I launch service deployment replica set food everything has been u removed
+1:47:06
+I want to start from the fresh. Okay now topic is after having these
+1:47:14
+many information. Okay. And plus lot of information guys we go more deep or more
+1:47:19
+basic when I start respective topics like tracing and metrics and all the things. Okay. But based on this current
+1:47:27
+discussion guys you have some idea what is happening uh over here. Okay.
+1:47:36
+So uh so what we are going to do we going to install the st
+1:47:44
+in the newer version there's only one main service you see is called st
+1:47:50
+okay and there's many more way guys to install the stto
+1:47:56
+there's one very powerful tool available in the market dedicated for the sto is called ctlto control tool
+1:48:05
+okay with this tool we can very easily install the STO we can add the add-ons
+1:48:11
+remove the add-ons this concept of profiling also we'll see about what are
+1:48:17
+profiling in the future okay so this tool I'm not using right now
+1:48:22
+okay uh we will use this tool in the upcoming future classes for managing and
+1:48:29
+installing the ST okay I'm using some other way. Okay. So
+1:48:37
+there's a code available in a vimal way. That code is more look like a Kubernetes
+1:48:44
+code. Okay. I'm going to install the STO by
+1:48:49
+this code. Okay. Because this code is mostly available on the market. You can
+1:48:56
+also create by yourself or you can also create this code from your running existing STO infrastructure also. how to
+1:49:05
+create how to customize we will see in the future but right now I'm going to deploy this
+1:49:12
+by this code because right now deploying this with this code is very very simple
+1:49:18
+okay but as we go in the future we can also know how to write this kind of code and plus we know how to install the ctl
+1:49:27
+also okay so right now in my current
+1:49:32
+infrastructure I have no ports running
+1:49:37
+plus I have only these name space
+1:49:42
+that's called default and these are three internal Kubernetes name spaces
+1:49:48
+okay there's no name space called STO uh system something like this
+1:49:55
+okay now if you want to install the ST how can we install right so for this
+1:50:02
+guys in my GitHub I I have keep this code. I'll share this link to you. Okay.
+1:50:08
+And this is one of the fastest way right now to install the STO. But the beautiful part of this code
+1:50:15
+that I'm going to use right now, beautiful part of this code is
+1:50:23
+okay. This code I'm talking about and this two code I have to run right now.
+1:50:28
+Okay. What they do? They will install the S2D almost in the latest version
+1:50:33
+plus they will install also all the add-ons right now promar
+1:50:38
+and cali so it's a full setup a full software setup a real world production setup
+1:50:47
+with all the possible tuning and performance implement and execute everything is there is a full complete
+1:50:54
+setup just to quick start the S2 and practice the S2 in future
+1:51:01
+I will show is store instruction one more time with isto ctl command where
+1:51:06
+every component will will be installed step by step and learn step by step okay
+1:51:14
+but I'm going to uh install the studio by this code uh right now
+1:51:21
+okay so uh guys I've given the number 1 2 3 4 5 same way you have to run this
+1:51:27
+code I'll give very quick information about this code not right now in detail
+1:51:32
+okay but as we progress because in this code there's lot of component like virtual service gateway gateway okay and
+1:51:41
+many more uh service proxies terminology here that I haven't
+1:51:46
+discussed yet but as I progress I will explain you about uh virtual gateway and
+1:51:52
+virtual services and many more things that you understand this component what they have written exactly
+1:51:58
+but one Most small very small thing about Kubernetes I can tell you is guys in the Kubernetes you see port is a one
+1:52:04
+resource type service is one resource type okay or um replica set is one resource
+1:52:13
+type so these are the resource type every resource type will do something for you in the Kubernetes
+1:52:20
+but in the Kubernetes you can create your own personal resource type also depend upon the requirement what you
+1:52:26
+want to too. For example, you know, Kubernetes guys is meant for port
+1:52:32
+management, container management, but with the help of Kubernetes, you can
+1:52:38
+also manage your virtual machines also. You can manage your virtualization system also like hypervisor.
+1:52:44
+Okay, it means I can run Kubernetes create command and it will launch EC2 instance in AWS
+1:52:52
+that can also work even though Kubernet meant for containers but with the help of Kubernetes create
+1:52:57
+command I can launch instance in AWS cloud Azure cloud in VMware
+1:53:04
+okay those thing also we can do I'm just giving one example right so if you want
+1:53:09
+to add the facility in the Kubernetes that's called extensibility or facility
+1:53:14
+the Kubernetes world or maybe the open concept also the one concept in the Kubernetes known as CRD
+1:53:22
+okay CR means custom resource definition
+1:53:27
+okay so depend upon requirement okay we can we can set up the CRS we can
+1:53:34
+also create right now again this Kubernet classes normally the advanced classes of Kubernetes we'll learn about
+1:53:39
+CRDs okay uh through which we can add
+1:53:45
+lots of u lots of extra things depend
+1:53:51
+upon where requirement and depend upon your use case to use case called custom resource definition
+1:53:58
+you don't have to learn about this I'm just giving this term why I'm giving this to you because okay because in your
+1:54:06
+existing kubernetes if you want is to be implemented
+1:54:12
+So to need a lot of resource type
+1:54:17
+something like port and service is to have their own resource type
+1:54:23
+okay for doing issue thing like traffic management like policy implement like uh
+1:54:31
+connectivity here and there virtual services many more thing that we'll discuss in the future classes
+1:54:38
+okay that you don't have to create is provided to view. Okay. But you have to
+1:54:43
+launch you have to launch the CRS. Okay. And this is the code for this.
+1:54:50
+Okay. So the code that you first code here is they are going to launch CRDs
+1:54:58
+custom resource definition. Okay. And what CRDs they launch as we
+1:55:04
+progress in this training I will talk about it. Okay. I will talk about whatever how they launch or how they
+1:55:11
+write the code is not important. We know this is class. This is the code
+1:55:16
+available and same code used by studio command also. We'll see in the future.
+1:55:21
+Okay. But this code is going to launch a lot of resources type like SVC but that
+1:55:29
+has been intel that used by by by
+1:55:36
+so what you have to do is copy this code right and run cubectl
+1:55:43
+apply command you guys know if you want to write any code apply or the create command you can use and here all the
+1:55:53
+S2 related CRDs they launch
+1:56:00
+okay is extension of the Kubernetes they launch okay one of thing you might see here
+1:56:07
+they launch sidecar okay one they launch telemetry means
+1:56:15
+okay if you're collecting the metrics Okay. Information there are also known
+1:56:22
+as telemetry. Many more things we can see some of the things may be um understandable
+1:56:29
+otherwise many more things like destin rule or gateway or operator we will see
+1:56:35
+in upcoming discussion detail that you understand why we need these things right but it is a requirement we have
+1:56:42
+okay and one more thing guys is managing everything right to for example board and their
+1:56:51
+add-ons like Jagger or not Jagger Agar or uh in the different name space that's
+1:56:58
+what they created here now if you notice here last time I had
+1:57:03
+only some limited name space but there's one more name space they created
+1:57:09
+it's called this one okay so if you want to delete everything
+1:57:16
+else to remove this name space that's everything will be clean it's something like this so separate folder separate
+1:57:22
+name space they created area they created Everything related to STO
+1:57:27
+that's control plane or control tower they are managing here.
+1:57:33
+Okay. But right now in this control in this page you have nothing. For example
+1:57:39
+uh if you want to see how many pool running you guys might know by default
+1:57:45
+this command will show you the current name space. _ default but you want to see what what is going
+1:57:51
+inside different name space you can type this and keyword it will tell you the little of this name space
+1:57:58
+so in this name space there's no port there's no service because S2 is not yet launched
+1:58:05
+we have launched the extensions okay like service extension RS similarly
+1:58:14
+whatever extension need S2 will launch and every extension if
+1:58:20
+you guys know about API there are the APIs every API is doing something for you in
+1:58:26
+the okay so this code very quick information I given to you
+1:58:33
+is it launch the API for the studio
+1:58:39
+okay or it launch the CRD for the S2 or
+1:58:44
+launch the resource type for the S2 Whatever you say it is the same thing. Okay. But second code is the main code.
+1:58:52
+You run in the same order. Okay. This code is going to launch the
+1:58:57
+full setup of the S2. What setup? H2OD demon
+1:59:03
+and their add-ons whatever you need mostly with S2. Okay. So this entire
+1:59:09
+code is launching a lot of things. We'll discuss about this code but but technically this is a pure cubernetes
+1:59:15
+code. If you know Kubernetes you will understand very very easily what this code is doing but let's say we don't
+1:59:21
+want to know this right now Kubernetes code we are interested more in in in
+1:59:28
+u right but one more thing guys you don't if you might know about GitHub but you
+1:59:34
+just click on the row then you can get the actual row code then run it
+1:59:41
+okay so copy this code And now this is the
+1:59:47
+actual place where your final STO is going to launch. So it's pretty
+1:59:53
+pretty simple. nothing much about in the installation right
+2:00:00
+of the ste okay
+2:00:08
+but don't worry we'll go more deep into as we progress in this training about we also
+2:00:14
+understand some of the code whenever we need it okay but if you see they installed kali they installed uh agger
+2:00:24
+uh tracing tool tool and many more things or Prometheus. Okay. But main thing is stewed
+2:00:30
+they installed and now you can see some difference uh in this name space it
+2:00:36
+there was nothing but you can see there's lot of port they launch
+2:00:42
+graphana they launch a launch carry the launch promethus
+2:00:47
+uh they launch but main thing is ste there's no citadel or galley and pilot
+2:00:55
+because the new version all the component will come under one this box one port that is called ST they are the
+2:01:02
+one who is complete control tower or control plane okay this is one thing so uh ID has been
+2:01:11
+launched guys give you some graphical portal so in the graphic portal if you want to
+2:01:18
+login okay even though they allow NMS login with a login password but we can also
+2:01:23
+set the login and password okay if we need maybe need in the future class maybe.
+2:01:29
+So this is not a complicated step but here this step is going to uh set up the
+2:01:36
+kali some password. Okay by they give you a anonymous also
+2:01:42
+but if you disable the anonymous I'll show you how then this login password we need. I think this is admin user admin
+2:01:48
+password. So again no compulsive step right now but let me run it. Okay. So,
+2:01:54
+uh it will create a secret. If you guys know about in in Kubernetes, secret will
+2:01:59
+store some secret data. That's what they create for you. Okay. In the same name space.
+2:02:09
+Okay. But last step that I'm going to do is very important.
+2:02:14
+Okay. Important. Even though guys right now
+2:02:20
+STO has been set up how I know the S2 has been set up successfully
+2:02:26
+there's no error and guys in my case they run very quickly if you run this setup guys in your environment you will
+2:02:32
+see 111 but here we see 000 it's still creating right
+2:02:37
+okay in my case run very quickly because I'm running this Kubernetes in AWS cloud
+2:02:43
+where my work uh uh worker node for Kubernetes have a
+2:02:48
+lot of RAM and CPU so this very faster so I launch very quickly but if you're
+2:02:55
+running this cubernet in mini cube or some small environment it takes some
+2:03:00
+time to launch sorry take some time to launch okay so
+2:03:07
+you wait for some minutes but if you have limited RAM then it should fail
+2:03:12
+also so minimum requirement I mean if you let's say you're using mini cube for
+2:03:19
+kubernetes okay you have to give minimum 4 GB RAM at least so in the mini cube if
+2:03:26
+you guys install the cubernetes if you install the mini cube your memory requirement
+2:03:32
+okay that you have to give because when you launch a mini cube
+2:03:38
+that time they they have one option you can pass this memory option I think they
+2:03:44
+might be giving you some in commands if they have here. So in the mini cube guys while starting the mini cube you can
+2:03:50
+pass one argument okay and where you can pass the memory
+2:03:56
+um let's say 4 GB memory so 4G minimum
+2:04:01
+requirement otherwise it won't work it will fail something like this you can
+2:04:06
+pass the memory uh while installing if you're installing with a mini cube
+2:04:14
+okay otherwise I don't know how you're going to install the cubernet is right but in my case run very quickly because
+2:04:19
+of the worker node I have given big insights okay but many case sorry
+2:04:28
+is working great there's no challenge right but
+2:04:34
+now if I launch my application right
+2:04:39
+sorry if I launch my application okay one more thing I want to do here uh tell you here is uh every
+2:04:47
+uh uh component Kelly is a different tool. Agger is a different tool from is
+2:04:54
+a different tool. Every tool guys you can connect independently right and to
+2:05:00
+connecting this port you guys know if you want to connect any port you need as service. So they have launched service also
+2:05:08
+they launch service also. So Kelly we have a different service running.
+2:05:14
+Okay, Prometheus we have different service running agger we have a different service running graph
+2:05:20
+different service running okay but the code that I have given you
+2:05:27
+okay is uh is creating a service in a way that
+2:05:32
+you are creating managing your own personal cubernetes your master node that what we have given a node port
+2:05:41
+okay but if you're using uh if you're having a cubernetes managed by cloud
+2:05:47
+guys for example AWS I'm using here EKS then note port might not help you to
+2:05:53
+connect okay so in my case right now in my case you don't have to do okay if you're
+2:05:59
+using EKS then you have to do also okay what I have to do if I want to connect to Kelly so kei sorry
+2:06:06
+I have to change my service type that's called load balancer
+2:06:13
+Okay. Then only I can connect from outside because my my plan is to have
+2:06:19
+the Kelly uh dashboard here. So what I'm going to do here the service that is known as
+2:06:28
+Kelly. Okay. I'm going to change this name. And
+2:06:34
+you guys know anything that is running here in the cubain you want to edit something you can use edit keyword.
+2:06:40
+I will change this type. Okay. because note port I can't use here
+2:06:45
+as such in EKL we can use some way but we can't use directly okay so I am going
+2:06:51
+to edit this service only thing in the down instead of node port I'm going to
+2:06:56
+use load balance is one of the type this case sensitive l and b is capital
+2:07:03
+there's no space save and you notice as soon as save automatically kubernetes
+2:07:10
+launch the load balancer because there's AWS cloud EKS service. So they launched load
+2:07:17
+balancer in AWS world but does not matter where they launch but this is the final URL
+2:07:24
+for my Kelly. So if you want to use the Kelly this URL
+2:07:30
+and this is the port number of this load balancer. Okay, right now because the load of for
+2:07:37
+it takes some second to launch but in some second if you go to this URL
+2:07:42
+on this port number the port number whatever come in your case okay make 21
+2:07:48
+you will see cali going to come up in some second because load balancer take some time internet to launch
+2:07:55
+okay similarly whenever we I want to use tracing
+2:08:03
+okay guys here by they give the interesting but it's actually it is a actually I change is also load balancer
+2:08:11
+okay when I look at graphana I'll change to load balancer so as we we progress I keep use changing
+2:08:18
+it when we need it but right now my minimum requirement to show you some demonstration cali
+2:08:25
+so I have the cali service is been exposed to the
+2:08:31
+outside world at this URL That's what me need I have right now. So uh in some
+2:08:39
+second you will see we have this load bs are going to come
+2:08:44
+up. Okay. So this one thing but now interesting
+2:08:50
+thing is we have up and running. How I know in the name space is go to system
+2:08:56
+everything working fine. It means now we have add one extension
+2:09:02
+on the top of Kubernetes called STO that give you a service bass
+2:09:07
+but I don't have any application here
+2:09:12
+no application here okay so what my intention here is I'm
+2:09:18
+going to launch application okay and now I want my application is
+2:09:24
+completely controlled by service mass let's see it will work or not. Okay,
+2:09:30
+before this I want my this things to be come up now guys they come up carry come
+2:09:36
+up write up a login with NMS user okay but
+2:09:41
+they come up this almost same thing what I show in my last class and what they show you
+2:09:47
+okay they show you in your default name space
+2:09:53
+okay in default name space there's no application they can say zero application that's what they capture and
+2:09:59
+there's There's no traffic also. Okay, the capture it means if you create
+2:10:05
+more name spaces, okay, more name spaces they auto detect
+2:10:10
+for you. That's one. These are the internal cubid name space they they use for the purpose. They won't show you
+2:10:16
+here. Okay, any apart from any of these they will show you when they create a
+2:10:21
+name space or the projects. Okay. Plus, if you see the graph that I
+2:10:27
+show you yesterday also, there's no graph created because there's no name
+2:10:33
+space. We can select the name space here is a new setup. So, you want to monitor
+2:10:38
+all the plates are running in a default name space. That's what we want to do here. I want to do here. So, I will go
+2:10:44
+to graph and say my name is space I want to capture is default not to default.
+2:10:51
+But in the default name is space is empty. Why? Because there's no application running.
+2:10:58
+Okay. Now let me launch the application. Right? Is running. K is running. We tested. Okay. So let me launch
+2:11:06
+application the way I show you today. Same application. I'm going to launch deployment.
+2:11:11
+Let's say my from the image. I use that image today.
+2:11:19
+Okay. I'm going to use this image. Okay. So, it's like a monolithic
+2:11:27
+application. There's no microservices but does not matter application application, right? Okay. And they
+2:11:33
+launch. Okay. And the launch is running.
+2:11:38
+But if you see here, Cali is not able to detect this.
+2:11:44
+Here they normally guys yesterday very quickly they detected right? Even if you see the overview. Okay. They can see one
+2:11:50
+application running. They detected one application running. Okay, that's what they detected here
+2:11:58
+in GI. But if you see the graph,
+2:12:04
+okay, they can't see anything else traffic.
+2:12:09
+Okay. Okay. They know one application running but they does not able to see
+2:12:15
+the traffic. Okay. You know why they not see the
+2:12:20
+traffic? Because there's no service mass available in this defaulted name space.
+2:12:28
+How I know? Okay, one way to know is because we know S2 and how to work. STO
+2:12:34
+always inject a proxy. Okay, and every port they launch one
+2:12:41
+extra container. You can see there's no number two here, right? Okay. Because whenever you inject the
+2:12:48
+proxy there's a multi-container port side car you can see two number right here but there's only one running is
+2:12:54
+your main application right now okay so even though let me if I have the
+2:13:00
+command which I use today here here you know through which I
+2:13:08
+I'll launch the let me launch one more time
+2:13:14
+so cubectl expose your deployment. I'm
+2:13:20
+going to deploy my D or a type called uh
+2:13:28
+um with a type called uh what I type load balancer.
+2:13:34
+Okay, load balancer and we can give a service a name guys. This is the command I uh told you today already. Okay. So
+2:13:43
+deployment we can use a type called I think load balancer.
+2:13:49
+This I'm exposing my current application right. It's not a studio. My application I'm launching and I'm giving my service
+2:13:56
+a name. Let's say my service. Okay. Or maybe app and my port is
+2:14:04
+port is hitting. Okay. So even though we have a
+2:14:09
+connectivity you can route the traffic also in my current name is space we have the service running and they connect
+2:14:16
+outside even though I can give this URL to you also it again say sometime because AWS load balancer but in some
+2:14:23
+second and this port number 80 you can see your application connected this
+2:14:29
+application I'm talking about application this one my point is
+2:14:36
+everything is there application is working in second you can see the place also connected
+2:14:41
+okay but but you won't able to detect even the
+2:14:47
+also running
+2:14:55
+is also uh uh running there's no no challenge here
+2:15:02
+but running epics running is working
+2:15:07
+okay but Kali is not able to detect even I'm just waiting for this application to show you is also working I'm waiting for
+2:15:14
+load balancer to become up okay why they're not working that's important point right
+2:15:20
+one reason is not working that you can very quickly see here is in my application right now monolithic or be
+2:15:26
+microservices my uh my proxy is not injected here
+2:15:35
+my proxy is not injected here. Okay, there is a big challenge.
+2:15:41
+So my point here is right um if you want let's say application going to come up
+2:15:49
+applicable to take this
+2:15:56
+okay why because um because
+2:16:03
+uh in the Kubernetes there's a multiple name spaces I told you already today
+2:16:10
+every Name is space you're running is every name is space to run different application maybe monolithic or maybe
+2:16:16
+microservices but not every application you want to manage by
+2:16:22
+service mass. Okay. So what can you do? Whichever name
+2:16:28
+space you want to manage with service mass that go st you can tell to the
+2:16:37
+kubernetes. The kubernetes I want default name space to be managed by
+2:16:43
+service message to okay with many more name space. Maybe we
+2:16:48
+have a HR name space, technical name space, web name space, project one name
+2:16:53
+space, project two name space, right? Whichever name space you want to monitor, you have to tell
+2:17:00
+how. For example, every name guy for example before is just a name of the
+2:17:05
+name space. Okay. And if you see the description of this nameace.
+2:17:13
+Okay. So in the description we can add one level here
+2:17:20
+and there special level that has been accessed by by S2 there's metadata also
+2:17:29
+so add one metadata here and we write one special metadata it's called key value pair and then key value pair is
+2:17:36
+actually known by sto by this is to come to know that I have to inject my proxy
+2:17:44
+in this name space all the application microser is running in this name I have to inject my proxy
+2:17:52
+okay sorry you have to inject this right so point is okay by default it still is
+2:17:58
+working but you have to tell which name space you want to set up the service mass
+2:18:04
+okay so that name is space in the header in the metadata in the label you add one keyword keyword is like inject inject
+2:18:13
+true or inject STO true or inject proxy to some kind of this keyword you have to
+2:18:18
+write that keyword you can find from the website or there's one more file I have
+2:18:23
+given you here in my GitHub this file
+2:18:29
+okay where you can tell in your name space what name you have default HR project one it add metadata level is to
+2:18:38
+injection enable this is one keyword word from the STO by this STO come to
+2:18:44
+know that here we have to inject our NY proxy.
+2:18:49
+Okay. So either you can edit this default by edit command type by yourself
+2:18:55
+or you can run this code it will do the same thing. Okay. So if I run the cube ctl apply or
+2:19:05
+create command or maybe apply command because you already created anything created you you can't use a create command. You use apply to re rechange
+2:19:14
+the settings. Now uh there was some warning but thing
+2:19:20
+has been updated and now what do you see? One more metadata come up. This is a
+2:19:27
+special keyword key value pair. Now stew know
+2:19:33
+this keyword is key for monitoring does we have any name space that we have this level of
+2:19:39
+metadata and because they see this level of metadata now they come to know any
+2:19:44
+project or application monolithic microservices is going to launch in this
+2:19:49
+name space I'm going to this name space they inject the proxy
+2:19:56
+sorry they will inject the proxy that is the right term Now if you see guys nothing is there no no difference come
+2:20:02
+come up right because I told you proxy in the studio
+2:20:08
+work as a init container okay and in the in in the init container
+2:20:14
+world proxy will run first then your application will run second but in this
+2:20:19
+case application already run right okay and that easy reason it will work
+2:20:24
+after this mean now in the future any application launch here then it will work. It won't work with a
+2:20:32
+previously created one. Okay. If you want to work with previously connected but you know you
+2:20:37
+guys know this prox the port running with the replica set. So what we can do we can delete this and when we delete
+2:20:44
+automatically recreate and when again the recreate you will see your proxy will be injected.
+2:20:51
+Okay. So cubernet is delete. I'm going to this port is running and injection will done
+2:20:59
+in the newer port only after this. So what you will see
+2:21:07
+okay as soon a port delete because replica said port will again recreate but now you see one interesting thing
+2:21:13
+this is what I was trying to tell you see here status right here init
+2:21:19
+like a code initialize it out of two zero initial now everything come right
+2:21:25
+so your proxy has been injected and we're going to car sometime you can see
+2:21:30
+something happen here Okay, it's a multi-container port. And
+2:21:36
+now if you see in the inside this code one is our application that is your PHP
+2:21:41
+code from my image but one container come from image that's for envoy or
+2:21:48
+studio uh proxy and auto injected
+2:21:54
+okay and now it means in this name space
+2:21:59
+okay any application I launch you don't have to worry about will auto inject at
+2:22:06
+the uh the uh proxy. Okay. And now if
+2:22:12
+you see here uh in your in your
+2:22:17
+current port. Okay. Um there's a two container
+2:22:26
+running. Okay. One is init container. There is a STO.
+2:22:31
+Okay. running from this proxy image this image name but this image actually Intel
+2:22:37
+have get the code from envoy. So actually they im this image contain the
+2:22:42
+envoy code. So this one container running is a init container and this container going to
+2:22:48
+launch your application container. Okay and there are a lot of things they done behind the scene for you. Okay. And
+2:22:57
+anybody who know about proxy behind the scene proxy mostly use IP tables or
+2:23:03
+nettings. That's what you can see the netting is happening. Okay. If you know otherwise there's no requirement to to
+2:23:08
+know about this. Okay. And we launch one more content.
+2:23:13
+This is your main container from my image. This application container. But this content has been launched with the help of init or control by proxy.
+2:23:22
+Okay. And about this proxy they will tell you this is what the proxy they use and they work as a sidec car for you
+2:23:30
+okay and many other details also whatever we need in the future to be discussed we will discuss about many
+2:23:37
+more things we keep on coming here and I'll tell you multiple things but point is even though if you understand this if
+2:23:43
+you don't understand this does not matter even though I make you understand but it does not important important
+2:23:50
+thing is now onward whenever launch anything automatically your proxy
+2:23:57
+will be will be uh injected
+2:24:03
+okay injected in your container or the port okay that is automatic you don't
+2:24:10
+have to worry about only thing you tell is which project or which name space you want to inject because not all every uh
+2:24:20
+name space I want to implement surface me. Now your proxy content is keep on
+2:24:28
+capturing log matrix tracing data and keep on sending to the studio.
+2:24:37
+So we go for st uh name space.
+2:24:43
+Okay. So they these guys keep on retrieving and whoever want to use it Kelly agar
+2:24:51
+pro method they using it and store it showing you the graph if you see here you can see the information coming
+2:24:57
+nothing is visible but let me show from last 10 minutes nothing is there because I haven't done anything after this so
+2:25:04
+let me refresh this page and you can see uh some live traffic going to come in
+2:25:12
+and uh car guys This is not the micros service I'll deploy here. It's monolithic. But I want to show you
+2:25:17
+monolithic also can be captured. Okay, there's one thing I'll show you in
+2:25:23
+a minute because my proxy is sending that to H2D. H2D is storing somewhere
+2:25:30
+then Kelly is picking some takes some second and now I can see is now connected right.
+2:25:36
+Okay. What do you see here? Two names here. Okay. Two names here. One you see my
+2:25:44
+service app and this one right. Right. So what it means now what they they capture that one we have connected to a
+2:25:52
+service who connected your load balancer
+2:25:57
+is connected to a name called my service app. So we have connected to this
+2:26:02
+service or this load balancer. So carry directory myaser apps here.
+2:26:09
+And this load balancer has connected to a port.
+2:26:15
+The port name is called my. So you can see my one here they show the deployment not
+2:26:22
+the port name actually the port because you launch but deployment. So they show you the deployment name here that's
+2:26:29
+called my you can see the traffic is showing you right. Okay. So that's what they show you here.
+2:26:38
+Okay. Or we can also guys Kelly is long topic. I
+2:26:44
+have to explain you every point about the Kelly. All right. Uh but
+2:26:49
+again this is this is one single pool right? So um and only one single version
+2:26:56
+of this app we have one single service we have one single edge means one single service we have they detected here.
+2:27:03
+Okay. But if you just go you going you what is this a pool right? Okay let me
+2:27:09
+do one small thing. Okay, let me scale
+2:27:14
+my deployment my D with the replicas let's say three
+2:27:24
+okay now three port the launch the other port they launch again say
+2:27:31
+automatically they injected the the proxy
+2:27:37
+the proxy it means if If I let me use the curl command to to connect. If I hit
+2:27:46
+enter, I connect to 146. Now connect to 146. Let me and after some time 146 and
+2:27:53
+some then my load balancer will connect to other port maybe.
+2:28:01
+Okay. Let's say 29. Okay. So what you will see here?
+2:28:07
+Okay. You will see um here one service over with three ports again there's no
+2:28:12
+version right they mostly talk about versions in still my version is same right
+2:28:18
+okay but you can see somebody from outside okay connect to this load balancer this load balancer connect to
+2:28:25
+this particular um uh this particular uh port
+2:28:32
+again they are only showing one because file you connect to one port only there's no versions right when I have
+2:28:38
+multi version that we explained you yesterday you can see the versions also as well here they show you only one
+2:28:43
+thing right but you want to know more about what is happening first of all everything is green the communication
+2:28:49
+vttp okay that's what we can see the output okay we can see incoming request
+2:28:56
+everything is okay green green okay this got 200 access code
+2:29:02
+okay but if you want to see more about this I can do right click And you can see all the little traffic
+2:29:10
+logs, metrics, everything over here. For example, if you click on this and what
+2:29:15
+is this? This is your port or deployment I can say. You see the so
+2:29:20
+details, they'll talk about it, right? They say this is what the deployment name where my port is running. Say
+2:29:26
+deployment, they know it is deployment. And in this deployment now there's no there's three port running. That's what
+2:29:31
+we launched. Okay. And this port has been actually managed by the services to do load
+2:29:37
+balancing. Okay. And you can see the traffic also here.
+2:29:43
+Okay. Metric is the log. So they show you the logs of the port. If you if you guys know the log, right? Apache server.
+2:29:49
+So this is the log they show you here. Inbound metrics, outbound metrics, everything they show you with volume.
+2:29:56
+But my guys my point is you will get interest in this example if you know little part of open shift and cubernetes
+2:30:04
+cubernetes also have their own personal dashboard these kind of details you can see there also
+2:30:09
+it's not a big deal these kind of details you can see in the cubernetes personal dashboard they have
+2:30:15
+this the things that I'm showing is not very interesting interesting it become when you launch the micros service
+2:30:23
+when you launch a micros service then it will become become very interested. Okay, there the meaning of tracing and
+2:30:30
+the observability going to come in play. We can see the entire traffic how is they going on
+2:30:35
+because in the microservices there's a lots of
+2:30:41
+there's lots of component connected here and there. Okay, which component going
+2:30:48
+where? Which which version of the delay lag? everything we can see that makes
+2:30:54
+more sense right I'm showing this example here just to show you okay that
+2:31:00
+you don't have to worry about as you launch any application in this uh name
+2:31:05
+space everything will be injected by the envy proxy
+2:31:11
+it means let me delete everything here cubectl delete
+2:31:17
+all I guys need 20 more minutes or maximum 20 15 10 minute more
+2:31:22
+then we'll conclude. Okay. I'm going to show you one quick uh example of microser deployed here.
+2:31:29
+Okay. So, I'm going to deploy the micros service. Okay. Same that I show you
+2:31:35
+yesterday. Okay. To tell you a service makes more sense when you
+2:31:43
+deploy the micros service, right? Then it become very interesting.
+2:31:49
+So what I'm going to show you here is like you will see in a minute it will be gone maybe in the last one minute if you
+2:31:56
+see there's no uh application running right now. Okay.
+2:32:02
+Now, what I'm going to do, I'm going to uh in my GitHub where it is in my GitHub.
+2:32:11
+Okay. There's one URL you will find.
+2:32:17
+Okay. Is this one book example this same example guys I was showing you
+2:32:24
+in my last class. This is a official example from S2 only. you can also find and here this was the example I was
+2:32:30
+showing you yesterday. Okay. Now we have a setup you can take
+2:32:36
+any example whatever you have available in the market but I'm going to take this example.
+2:32:41
+Okay. So guys this also the thing what they're talking about right I injected right in my name space. So this also one
+2:32:48
+of the way you can inject. Okay. So I in my I I set a level in my
+2:32:55
+name is page default project one and this what I injected. So whichever name is injected automatically
+2:33:02
+to start working if you have this to set up. Okay. And this is the book example I'm
+2:33:09
+going to take here. I'll just open a new tab. And this example right. So this is the
+2:33:15
+this is the micros service example and as soon as I apply
+2:33:22
+this micro service here you will see fantastic kei
+2:33:28
+will detect the entire setup. Okay. About why? Because as soon as a
+2:33:35
+micros service deploy any service deploy right in this pool they inject here they
+2:33:41
+injecting in in all the microservices and because now they injected now we
+2:33:47
+have a complete visibility. Okay, means we access data and because
+2:33:54
+we visibility all these data points we connect together and we can see the entire view end to end view
+2:34:02
+or observability observability of the entire things side actually they still deploying this
+2:34:10
+now they launch okay and obviously you want to access
+2:34:15
+this you need a load balancer to access this application okay so
+2:34:23
+Right now guys, if you want to access the u the uh application, you might know
+2:34:30
+by looking at this diagram from where we get the code and your
+2:34:36
+entry point is product page. Okay. So either what you can do you can add the
+2:34:42
+load balancer product page or there's one more way you can access your application guys that is given by I will
+2:34:49
+talk about it in in detail in the future classes is to give you gateway
+2:34:55
+this called ingress gateway if you want to connect to your
+2:35:00
+application from outside world okay you can
+2:35:06
+attach the gateway okay this is called public gateway or ingress gateway
+2:35:13
+that also we can do. So we have a detailed discussion on the ingress gateway in the upcoming class. But they give you here in this URL
+2:35:20
+command to create the gateway. There's a command they give you.
+2:35:29
+Okay. So this is what I'm going to uh run here. This also guys one kind of cur
+2:35:37
+okay custom resource for kubernetes okay by the stew
+2:35:44
+which I'm going to apply
+2:35:51
+okay so now any traffic is coming up so
+2:35:56
+guys Intel guys they created a gateway even though we have one more gateway new
+2:36:01
+resource come up B2B
+2:36:08
+okay come up that is connected to these guys. So you can think like a router or gateway.
+2:36:15
+Anybody in the outside world come here and they can access my product page and with the product page they can access
+2:36:20
+other things also. Okay. And you can get the IP address of
+2:36:25
+this gateway from your ST uh name space.
+2:36:33
+Okay. And this is a ingress gateway. Ingress gateway.
+2:36:40
+Okay. So this gateway help us to connect to this product page. So if I go to this
+2:36:47
+URL, okay, they're working on port number 80.
+2:36:53
+So go to this URL and you can access your application right you can see nothing is here in the
+2:37:00
+Kelly but if you go to this URL uh you won't find anything because my
+2:37:08
+application running on I say 4 on4 error means page not found you you connect to
+2:37:14
+load balancer port number is working but page not found because again if you read
+2:37:20
+this application who were created by uh whoever created this application here.
+2:37:26
+So book info they write somewhere in the code that the application is working on
+2:37:31
+the path called or route called or end point called product page.
+2:37:39
+Okay. So just type this URL product page. Then you can see the application
+2:37:45
+what I was showing you in my last class. Okay,
+2:37:52
+it come in a minute. Okay, and you can see this application. This was exact
+2:37:58
+application I was showing you yesterday. My point is developer create the application, you
+2:38:04
+launch it. But as soon as you launch, as soon as you launch,
+2:38:11
+okay, everything will injected. And now your proxy is keep on keep on
+2:38:18
+fetching the information and keep on sending to stut and studio
+2:38:24
+is sending to Kelly and Kelly is showing you this live
+2:38:30
+visibility of end to end the somebody
+2:38:35
+okay has connected this okay and they can see this data okay if
+2:38:43
+Try this. Go to this URL again. Okay. Cali will direct this and show you
+2:38:49
+in last 1 minute. This was the traffic is flowing. This was what I was showing you yesterday. Okay. But what I'll do
+2:38:55
+can see here. This is what happened, right? Somebody connect product and product to detail and it will be connect to V1 and then
+2:39:02
+what they show you to V1 whatever the thing would be. Okay. Enter they show you even though
+2:39:08
+guys there's a lot of different kind of graph here. If you see the the service graph, you can see better view and
+2:39:16
+workload graph. Okay, every graph will show you something for you as we
+2:39:21
+progress in this training and when we go deep into the CI in my last last next class. I will explain you the difference
+2:39:28
+in the versions and there are many more options they have here and we go more
+2:39:34
+deep into this to to see what is happening. So my next plan guys, next class same example. Even though I have
+2:39:42
+some more microser example with me, the real examples we will deploy this example here. I'll share the code to
+2:39:48
+you. We will deploy some example here. And um and um
+2:39:55
+then we'll go with this SC topic in detail. Then I we go for agger and then
+2:40:01
+we go for respective thing. Right? There's le lot of component which to like ingress gateway, egress gateway, virtual uh
+2:40:09
+services and then we move to how to set the up policies and authentication and
+2:40:14
+security. We go more deep into this topic. My plan is to give you architecture of today. Even though guys
+2:40:21
+this is the public URL. I'm sharing this URL to you in your chat box. If hit this
+2:40:27
+URL your traffic also coming here. Okay. So I'm just sharing this URL to
+2:40:33
+you in your chat message in the zoom meeting. And when you hit enter, you can see huge traffic is coming here. A lot
+2:40:39
+of guys is connecting. Okay. And even though we can do one more interesting thing here, this option in this uh
+2:40:47
+display is the is the traffic animation. I can see the live traffic animation
+2:40:54
+here. This live traffic animation happening. How my traffic is going. And guys a huge traffic is coming right now
+2:41:01
+here and a lot of guys is kind of first time so they're going to version one
+2:41:06
+okay and some of the guys refreshing they're hitting the version two so again refreshing there so there is going to
+2:41:14
+three but huge traffic is coming up because I I given this URL to you in
+2:41:20
+your chat box and you guys are hitting this application and you will see that
+2:41:25
+live traffic is coming up. That's what a workload is showing you the live traffic
+2:41:34
+about uh this application uh what you guys are hitting at this point in time.
+2:41:41
+Okay, this is what you are seeing multiple different views of we can see here at this look good and somebody
+2:41:47
+might also think like they put in the curl command they use for the loop. So huge traffic is coming uh uh right now.
+2:41:55
+That's very very uh nice. But many more thing we can go deep
+2:42:01
+and see how traffic is going. Percentage requests per second uh tracing many
+2:42:07
+more. Okay. We will uh see in the future
+2:42:12
+class. We can inject the rule where we can drop you guys, drop some connections and many more things we can do. But
+2:42:18
+that's all that's okay. we'll see in the future classes. Right? So I would like to conclude guys here my intention is to
+2:42:25
+show you the detail architecture of S2 many more with more about architecture
+2:42:30
+we see in the future I show you step by step to install of the S2 the complete setup but we'll show you one more time
+2:42:37
+setup in the future classes with step by step right and then I show you the important part injection in the name
+2:42:44
+space now as you inject this keyword in a name space as soon as you deploy any
+2:42:49
+application monolithic microservices H2 and service mess start working okay so
+2:42:57
+uh that is a thing that's all next class will be cali and agger and more
+2:43:03
+information about the service I believe this tool makes sense right to work on
+2:43:09
+the real world that's what we need and makes more sense as I start explaining
+2:43:14
+you main capabilities of the sto that we'll discuss in the upcoming class
+2:43:19
+that's all from my side. See you in the next class that will be on next weekend Saturday and Sunday. We'll update you
+2:43:25
+the schedule and time. Any query if you have till now you guys can ask.
+2:43:34
+Thank you for super majara. Thank you Amole.
+2:43:39
+Um beautiful nice uh
+2:43:47
+please give you this training who has train microservices uh
+2:43:52
+which way I'll I'll try okay because microser a different training all together okay and there uh there's a
+2:44:00
+very basic overview discussion of service me we already did even though more in detail in my last class okay so
+2:44:07
+even though let me try if how Can I give access of training to the the micros
+2:44:13
+service students? Right. Yeah. It is my is very highly recommend for EKS guys because right now I deploy everything on
+2:44:19
+the top of EKS only. Right. Because finally cubernetes guys if you work on the real
+2:44:26
+world you have to deal with service mess. Okay you deal with these two kind of
+2:44:32
+tool that's what the final deal would be right. So if your good knowledge in cubernetes is nice but
+2:44:39
+having this tool make you ready for the production work load.
+2:44:45
+Okay sur thank you very much
+2:44:52
+is nice I believe um in testful can you share some e yes uh guys uh my
+2:45:00
+team by my maybe in one or two days we will provide a portal for the for the uh
+2:45:08
+hash 13 where I will upload uh ease video how to set up the EKS and plus
+2:45:14
+basic video of cub where it that we committed soon you guys get it.
+2:45:19
+Okay. Uh yes may you can set up this thing in the local EKS also. Only thing is
+2:45:26
+instead of load balancer just go for node port. Okay. And node port means
+2:45:31
+whatever the IP address of your mini cube or local system IP address of your mini cube or you can have mini cube
+2:45:37
+space IP command. Whatever IP you give that will be node IP. You can use the node IP to connect. Otherwise everything
+2:45:44
+is exactly same. So sir I want to learn active directory
+2:45:52
+and all the method of authorization. Obviously we are going to dis we are not
+2:45:57
+going to discover anything about AD here. Okay but I am going to show you if
+2:46:02
+you know about AD or any dactive services and any authorized service how you can integrate.
+2:46:08
+So we have different training for authorization and directive services we have but I'll use some of the tool and
+2:46:16
+there I will show you uh how we can integrate okay that's what we see here
+2:46:23
+uh resilience does not means HA am a amole okay HA is aability
+2:46:30
+if one is not available then we connect to second okay uh so that can be one of the
+2:46:37
+feature of HA Okay. So, resilience is is can one of the part of res can you
+2:46:43
+achieve for H but main thing is resilience is a huge term. Okay. Lots of
+2:46:49
+thing is a lot of principle of the resilience you have to follow right if
+2:46:54
+your application feel how you maintain the fall tolerance application give any
+2:46:59
+any exception how you handling the exceptions. Okay. So there's a kind of multiple full
+2:47:05
+tolerance principle come in the residence world right H is one of the part but a lot of things is there right
+2:47:10
+so I'm if you was the part of my micros service training that I talk about fault tolerance and multiple principles right
+2:47:16
+that are come under resilience part
+2:47:24
+so Vikas we'll update you in your respro group wherever group you guys are connected or mail them maybe of the link
+2:47:34
+for the uh uh for the for the Kubernetes classes and the EKS classes right we'll
+2:47:41
+provide you the link uh that's all
+2:47:50
+so can we achieve the continuous availability over HA uh there's nothing called continuous aability right there's
+2:47:58
+nothing called continuous but I don't know what you're talking about okay uh
+2:48:04
+If I don't know if you can re ask your requirement if you tell me your use case I can I'll tell you okay a there
+2:48:12
+continuous monitoring is there continuous feedback is there continuous deployment is there continuous
+2:48:19
+building is there there a lot of CI/CD things but what exactly you asking here if you can tell me recommend as a use
+2:48:25
+case I will explain to you awesome thanks and amazing explanation
+2:48:30
+love it thank you very much Vikar Yes guys, I'll share this code to you. Even though let me share right now. Even
+2:48:37
+though we'll um my team guys will prepare one document for you, reference document step by step. We'll share the
+2:48:43
+document also to you. You can refer this document to have the entire setup ready. Okay? Or um and I'm sharing this link to
+2:48:51
+you of my GitHub. You can get this code here also. I will keep on adding many more thing in the future classes. So I'm
+2:48:59
+just sharing this code to you. Okay. Uh and I given this link of with
+2:49:06
+the GitHub in your chat me in the zoom meeting. You can get here from here.
+2:49:13
+Okay. So that's all guys uh from my side. See you uh in the next class with
+2:49:19
+more in-depth discussion about about
+2:49:24
+um the service mass industry. Okay.
+2:49:32
+services in my name will become inaccessible via route or lo as soon name space added
+2:49:38
+okay to service mass member uh role uh maybe uh I don't know how you added
+2:49:46
+there okay um if you uh if you apply
+2:49:52
+this command so there's possibility you already have already have some
+2:49:59
+um if I open the score where it is uh if you apply this score there may
+2:50:05
+possibility you already have many more metadata previously created you override
+2:50:11
+it you remove it the possibility okay so because of this some of the
+2:50:17
+thing might be might not work right so I am using this in my current clean environment but if you environment is
+2:50:24
+already there okay I suggest edit the file of name space and write
+2:50:30
+this line otherwise you have previously set up thing as a metadata many more things
+2:50:36
+will be override and removed maybe okay so this can be one of the reason who are asking this question this can be
+2:50:43
+one of the reason okay why just think is so just again rerun your older name
+2:50:48
+space you had with you okay and then manually edit and type this line that's
+2:50:54
+all
+2:51:01
+Can you use GitHub code file for setting up V2 environment on actual? Yes, why not Rome? You can set up anywhere in a
+2:51:07
+strategic environment and any other environment, right? It will work ex exactly the same, right?
+2:51:15
+Uh in the current infrastructure, yes, you can store service me why not, right? Har is same setup, right? You can
+2:51:22
+install the service mass in your kubernetes wherever you have. But if you say we you have already old running port
+2:51:32
+you want your port to be injected with service mass proxy. No it won't.
+2:51:37
+Okay. So because this init container right so you have to remove the port and
+2:51:44
+relaunch the port or it's also going to restart the port. So there you have to use some kind of uh
+2:51:52
+your hack techniques or some kind of if you know the deployment strategic techniques like that that your live
+2:52:00
+traffic does not impacted let's say 10 port is running so remove two port
+2:52:05
+then automate new port launch they injected so some kind this technique you have to perform there if your port is
+2:52:11
+running already in your current existing environment Okay.
+2:52:18
+So, thank you so much for beautiful so much knowledge access. So, thank you. Thank you very much.
+2:52:25
+Uh uh when I have student added sidecard and an edit container port yl does take
+2:52:31
+place before sec controller or after
+2:52:37
+sec controller you need obviously after right. Okay. SEC container you need always
+2:52:44
+after whenever application whenever container launch inside the container you run a
+2:52:52
+application right with entry point and with the cmd those application need sec
+2:53:01
+okay so it is sec obviously we create always first before we launch a port but
+2:53:08
+the use of sec come in the last when application needs some extra power and permissions
+2:53:13
+Okay, then we need SEC. Okay, so it is how it is like. So
+2:53:20
+there's no meaning we create first but it used last when we uh when we launch
+2:53:26
+any application, right? So I think you got the sense right. So
+2:53:32
+anything else guys? Anything else you want to discuss?
+2:53:41
+No. So that's all uh guys from my side. See you in the next class when more deep
+2:53:47
+and very powerful beautiful examples and use case we'll see in the upcoming classes. Bye. Good day. Take care and
+2:53:53
+good night and good day. Bye.
+
