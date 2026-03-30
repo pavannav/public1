@@ -1,0 +1,2700 @@
+
+
+
+0:00
+All right, so we saw how basically you can deploy a two tier application, so where the
+0:15
+front end was in cloud run, we built a Docker image, we deployed it in cloud run and we
+0:22
+connected to basically a cloud SQL instance. So that is what we had seen.
+0:28
+By doing this, we were able to also understand that we can have the concept of environment
+0:35
+variables. So if I go to the revisions.
+0:42
+So we saw that we can use environment variables similar to configuration map or config mapping
+0:53
+And instead of using secrets, what we did is we use secret manager instead of using
+0:59
+Kubernetes secrets, we use secret manager where the server details, the database username,
+1:06
+password, all those things was mentioned in the cloud or cloud secret manager.
+1:12
+So that's the thing which we saw here. We also saw one important functionality is having a dedicated service account.
+1:21
+So having a dedicated service account was one of the important things. So if you don't mention it by default, it is going to be always compute engine default
+1:33
+service account. So that's another thing. So we have seen so far like virtual machines always use compute engine default service
+1:41
+account, Kubernetes also uses compute engine default service account, cloud run is also going to be the same thing.
+1:47
+So if you wanted a different functionality. So we had a use case where this cloud run service needs to connect to secret manager
+1:59
+to get the secrets. So that is where we had given.
+2:16
+If I go to the service account.
+2:23
+So we had given that service account secret manager secret accessor role. So with that role, I should be able to get the secret value.
+2:31
+That is what we had done. So what we'll be doing as a next one is we'll do a couple of demonstration, which was basically
+2:39
+also asked as one of the questions. The first is so we will have two cloud run services calling one cloud run service calling
+2:55
+the other cloud run service. That is what we are going to do it. So something like the one which we have been using so far.
+3:03
+So if I were to get this kind of an option, we have a front end.
+3:11
+Now assume this is the architecture which we want to implement. So user is V, we are going to invoke the front end.
+3:18
+The front end is what you will invoke it. And if you look at the architecture, the front end can be invoked by anybody, we can be called
+3:27
+by anybody. So it is like unauthenticated invocation.
+3:33
+That is a kind right for going forward, a user cannot directly call recommendations
+3:40
+service. The user cannot call add service that is basically blocked.
+3:49
+So rather, it is going to be the front end will call recommendation service, the front
+3:55
+end will call add service. So meaning one micro service one cloud run micro service is going to call the other micro
+4:03
+service. How do we achieve that? That is what we are going to do it will not write fancy codes, all those things we as
+4:09
+an architect will not focus on that. But we will use our same hello world engine X, those kind of stuff and see how we can
+4:16
+invoke that. That is something which we will see as one of the important concept micro service inter
+4:22
+or I would say like inter communication between two cloud run services or two micro services
+4:29
+in simple terms. That's the first thing which we will see. The second thing which we will see is we had done the zone printer.
+4:38
+We'll be using and we did the same thing with communities, multi cluster ingress, where
+4:45
+from different different locations you access the communities cluster based on that it is
+4:51
+it used to show different flags. Similarly, we will use the same zone printer container image and we will basically use
+5:01
+and we will basically use cloud run in maybe Mumbai, London and in US Central will have
+5:11
+a load balancer and see how it is going to work. So that is another thing which we will see it.
+5:18
+Then we'll primarily look into the next part where all these things we assume we have to create a Docker file.
+5:24
+We already created a Docker file. We have containerized it. We have pushed it to artifact registry all those things.
+5:30
+So that we will see you don't need to create a Docker file. If you have a source code, more like your app engine, if you just have your source code,
+5:38
+you should be able to just build a Docker file automatically, push it, then deploy it.
+5:45
+How do we do that? That is another thing which we will see. And we'll see definitely the drawbacks of cloud run.
+5:51
+So cloud run is like not the best features. We already know one functionality which cloud run does not support.
+5:58
+It is only for stateless workload. It does not support stateful workload, meaning I cannot run a database.
+6:04
+We have seen it in the previous session already that you cannot deploy a MySQL database in
+6:09
+cloud. So let's get into the first functionality where two microservices should interact with
+6:19
+each other. So something like this. I have service one, I will have service two.
+6:39
+So service one, so for our understanding what we can do is this service one can be really
+6:52
+can be like a front end.
+7:00
+That's what we can do it. So we'll come to that in a bit. So first we'll go back to some basics.
+7:08
+So what we will do is this is the inner service or internal service.
+7:16
+So how do I make a service internal? The only thing which you have to do it is the invocation force.
+7:22
+For example, if I go back to my cloud run service.
+7:32
+So if you see this one, this is the line which you are, this is the column which you have to look for. So if it is allow unauthenticated invocation, if you click on the service, you'll see a
+7:43
+hyperlink which is clickable. And when I click it, it's not going to work. The reason is I don't have the database running.
+7:50
+So let me just show you that. So but it is having an external IP, like it's having an endpoint and the domain is provided
+8:00
+by Google with the name run dot app. So it is going to throw an error.
+8:05
+Only reason is I deleted the database. I did not delete the cloud run functions because it scales down to zero.
+8:14
+So having something with an external or a clickable in very simple terms, a clickable
+8:19
+endpoint is going to be like allow unauthenticated invocation. The first step which we are going to do is this is maybe for the front end is always
+8:29
+good, but for the inner services, internal services, this is not going to be a good choice. So what should we do?
+8:35
+We should make it as a required authentication. Only the required services should do that.
+8:40
+So going back to this one. So what we will do is we know virtual machines, we know Kubernetes cluster to a great extent.
+8:48
+Let's have a simple use case where a compute engine, then we'll come to the little sophisticated
+8:54
+to microservice communications. So let's go with what we know first. So a compute engine invokes a cloud run service.
+9:11
+So this is what we are going to do first. So that's the stuff.
+9:18
+That's the thing which we are going to do it. So this cloud run should invoke a internal service.
+9:35
+So that's the first thing which we will do it later, we will try to do another cloud
+9:40
+how it can access it. This is what we'll first do it. So first we'll have an internal service running, we'll configure it.
+9:48
+So for simplicity reasons, so that you can also try it yourself, we will use a publicly
+9:55
+available Docker image. That's what we will do it.
+10:01
+So I will delete this one. It had an endpoint.
+10:07
+It is not giving me something like if I just copy this for a minute
+10:21
+and try to access it in command line because this is going to be really helpful. So this shows an error to be very frank.
+10:32
+If you look into the HTTP code, it could be different.
+10:37
+What is that? The HTTP code is going to be very important for the demonstration, which we are going to do today. So if you get a good response, that's going to be 200, right?
+10:46
+So let's see what is the response which I get it in browser, we don't see it if I'm
+10:52
+not wrong. So I do curl minus I, when I do that, it is going to give me that response, whether it's
+11:01
+200, whether it is service unavailable, meaning 5xx error, which is more of a server side error or is it 4xx error.
+11:07
+So client side errors. So that you will come to know. Let's wait for that response.
+11:14
+So let's just wait to get that.
+11:22
+If it is having the right valid database, it will get the response quickly. Since it is not having, it is trying multiple times and then it is going to show as an
+11:31
+error like this timeout, connection timeout. So let's just wait for it.
+11:38
+So this is one way you can see it or you can use something like if you want to call a service
+11:45
+which is having only like required authentication, we'll see what are the other options.
+11:51
+So curl is one easy way of doing it. The other way which you can use is postman.
+11:58
+So if you see it, we get this message, which is very much similar to what we see it here.
+12:06
+The one important thing for us to note here is this one, folks.
+12:12
+It is a 200 okay response. So everything is good. It is something with your application, something is breaking, no server side error, no client
+12:22
+side error. So 200 okay response is what you are getting. So that is something which you need to, meaning you can invoke it, right?
+12:31
+You can invoke it. That's what I want to basically convey here. So what we will be now doing is first create a cloud run service, which will not have this
+12:45
+type of authentication. That is the first thing which we will do.
+12:50
+So let's go create a service. For simplicity reason, as I mentioned, we will be using NGINX.
+13:01
+So which is a publicly available image, NGINX.
+13:09
+So I will call it as internal service.
+13:22
+Now what is the name? That is going to be your, what I would say, the end point.
+13:29
+It will be part of your end point. So what are the name you want to give it, you can give it. So let's be in US Central.
+13:34
+We have no issues with this thing. Now this is the most important piece which you wanted to use.
+13:43
+Now if you have made a mistake, not a problem, right? It's not something like one time you do it and you cannot change it.
+13:48
+You can do it. So except so far the services which we have seen, App Engine, Compute Engine, Kubernetes
+13:57
+Engine, Cloud Run, and even the future products which we will see like Cloud Run functions,
+14:03
+they give you that flexibility. If you make a mistake, there should be an option where you can edit it or you can destroy
+14:08
+completely and create a re-create a new thing, not like App Engine, right? So where you may do some things like regions and all will not be allowed to be changed
+14:18
+itself in App Engine. But here you get that option. So require authentication is what I'm going to do.
+14:26
+So manages authorized users with a Cloud IAM. So to invoke this function itself or this Cloud Run service itself, you should have
+14:36
+a specific rule. So if I go to IAM, roles, let's put a filter used in Cloud Run.
+15:00
+So Cloud Run comes up with these many IAM rules, close to eight to nine IAM rules.
+15:07
+So the one which is important is this one. This could be an interview question also, folks, two microservices, one service microservice
+15:16
+one needs to call another microservice two. What is the minimum IAM rule you have to give it?
+15:23
+So it should have Cloud Run invoker rule. It has only two permissions to run that or invoke it.
+15:33
+Now to be very frank, I would say I need only one permission that is run dot routes dot
+15:39
+invoke. Now, what is this? We'll talk about that maybe at the second half of the session, which is called as Cloud
+15:46
+Run jobs. So what we are doing is a Cloud Run service, right?
+15:53
+So Cloud Run jobs is another service or another I would say offering from Google Cloud under
+16:00
+the Cloud Run category. So we'll talk about that to invoke that you need this rule or this permission.
+16:07
+So only one permission is what I need Cloud Run invoker rule. So we have to give one service account access to it, something like that.
+16:18
+So let's go with required authentication. So remaining, I'll make it as something like the default setting.
+16:27
+What is the minimum you want so that if you have zero, you will have cold start. It takes a little time to start it up.
+16:34
+But if you have a website where you don't want cold start to occur, you can go with
+16:40
+basically more than one instances. But remember, if you keep one instance, there's going to be a cost.
+16:47
+We'll also talk about the pricing soon. So if you don't want cold start, go with minimum one.
+16:54
+So this could be very, very important depending on your requirements, right?
+17:01
+So I may would have told you this use case which I did it.
+17:06
+So still worth repeating it here. So I had done one implementation where it was an IVR system for a US customer.
+17:21
+So the use case is in US, even if you wanted to like get a rented house, you have to get
+17:28
+a prior appointment. In that prior appointment, they will capture some good number of information.
+17:34
+Do you have pets? Do you smoke? So how many people are there?
+17:40
+All those kind of stuff, they basically capture it. So they had a system where you call up a number, it is going to say, OK, what's the time you
+17:48
+want to attend or look at the house, the rented house?
+17:54
+How many people are there? So do you have pets? Blah, blah, blah. So it's a series of questions which the system is going to ask.
+18:01
+That is going to be written into a database. That's a functionality. So this team had done something in Cloud Run Functions.
+18:12
+So this was, I would say, 2020 time period, during the COVID time, Diwali time.
+18:20
+That's what they had done this. So they had Cloud Run Functions. We have not seen what is Cloud Run Functions.
+18:26
+It can scale down to zero. It's a single endpoint which you can call. So we'll talk more about it. So it can scale down to zero.
+18:33
+So and they had written the information into a database.
+18:40
+So the IVR is going to invoke.
+18:46
+And the Cloud Run Functions is going to write insert statements, simple. Insert the phone number, update when the person wants to visit the house, all those kind of
+18:56
+stuff. This was a thing. So the problem was this scales down to zero, minimum zero.
+19:07
+And max, you can have anything, whatever the number supports. So this functionality was not there.
+19:13
+So it is always going to be set to minimum as zero only. So you cannot set as minimum one. That was basically the problem there in 2020 time period.
+19:22
+Now they have made that changes. So the problem with minimum equal to zero is your endpoint will have a cold start, meaning
+19:32
+let's simple understand. Let's not put so many jaggons here. The person calls.
+19:39
+The user, sorry, user calls this number.
+19:51
+That's how the IVR system works, right? So calls that number and basically this, OK, it asks, what's your name, x, y, z.
+19:59
+So where do you want, in which location, something like a series of questions.
+20:04
+Because it is having this cold start, the first few information is not inserted in the
+20:10
+database itself. My name is not inserted. Maybe how many people are going to be accommodating me, that information will not be there.
+20:18
+So it will take a few milliseconds. But it would have asked me so many questions, right?
+20:24
+So some answers which the user had given was not inserted into the database.
+20:30
+This was a problem statement that customer came to me. So then I understood it is having the cold start issue.
+20:38
+In 2020 time period, there was no option for min and max in Cloud Run functions.
+20:43
+So the only option which I had to do is I had to migrate them from Cloud Run functions to Cloud Run, where we can have minimum one instance, meaning one instance is always running.
+20:57
+I'm going to pay for it. That's OK. But I'm not going to lose a customer. I'm not going to lose some vital information the customer shares.
+21:04
+So if you want to avoid any kind of cold start, set one to reduce the cold start.
+21:10
+That's the important thing, OK? In virtual machines, you will not have these issues because there will be always one instance
+21:16
+running in your MIG, right? Even when you have a horizontal pod autoscaling in Kubernetes, you'll always have one, right?
+21:23
+So in Kubernetes, in Compute Engine, you'll not have this problem. With serverless products, you will have this issue of cold start.
+21:32
+So if you don't want to get into that path, I would say go with minimum one instance.
+21:39
+In our case, we don't need to have the, we don't need to worry about it. I'm going to leave it as zero, OK?
+21:45
+So we'll talk about the other stuffs when we start looking into the VPC piece of it.
+21:51
+The one which I wanted to show most importantly was required authentication.
+21:59
+Required authentication is the most important thing which I wanted to get it.
+22:07
+And nginx runs on port 80. That is something which we will do it.
+22:12
+So remaining stuffs, we'll leave it like that. The only thing which I will do is I will have a cloud run service works or the service account.
+22:24
+So what I would be doing is I'll use this one.
+22:31
+Let me create one. Let's the service account be like this.
+22:37
+That's always going to be a good choice, right? This service account may be invoking something.
+22:42
+Maybe it may connect to a secret manager. It can connect to a Google cloud storage bucket.
+22:47
+Something like that, right? So let that be it. So I'll create one service account.
+22:58
+And I'll not give a single role to it. No role, OK?
+23:03
+So this is what we have done. So let's create it.
+23:21
+OK, the cloud run service has been created, folks.
+23:26
+And for the first time, you see it is not clickable. It's not a clickable link.
+23:32
+So maybe if you wanted to make a very quick comparison. If I go to the PHP microservice, it's not working.
+23:45
+But you see it is a clickable link. It's a clickable link, right?
+23:53
+Whereas this one, it's not a clickable link, folks. Even if you think, oh, maybe there's a bug in the UI, you copy it and run it.
+24:06
+It will say forbidden. So what is the HTTP code for that?
+24:11
+So it should be something in 4xx related stuff. Because it's a client side.
+24:17
+I am not allowed to access it, is what it indicates. So if I want to get a better picture, curl command is a very good choice.
+24:26
+Or you can use postman. I'll show you that in postman also. So curl is a little easy one. You can just open it in your cloud share.
+24:32
+And you should be able to see that part. Let's wait for the terminal to be ready.
+24:45
+So curl minus i. If you don't put minus i, that information will not be shared.
+24:50
+So if I do this, you can see this one, folks. 403.
+24:56
+It's a client side error. Any U, whoever is invoking it, they don't have the necessary,
+25:03
+I would say, authorization to basically invoke it.
+25:08
+That's what it basically forbids. So whereas this one, even though there was some database,
+25:14
+that's something internal to the application. But I was allowed to call it. 200 versus basically 403 is what you see it.
+25:25
+So a client side error is what we are getting it. So how do you basically invoke it?
+25:30
+That is something which we will see it. So if you want to invoke it, you should have a capability
+25:38
+to basically invoke it. So meaning you will pass something like an identity.
+25:46
+That's what you are going to do it. Then only you'll be able to do it. So because in Cloud Shell, I'll be
+25:54
+using my account, which is LearnJSVwithMahesh. So I'm an owner. So what I have to do it is I have
+26:00
+to pass a specific identity to folks. If I can pass the identity, I should be able to get in.
+26:07
+So I should have a specific authorization. That is a key part.
+26:13
+So here, gcloud auth list.
+26:19
+I have it. So I have to get an option where how can I pass this thing. So if you do a quick search, invoke Cloud Run
+26:32
+required authentication.
+26:38
+So authentication for this thing. So all I need to pass is this command.
+26:49
+So where I will have authorization, the bearer token, that you are going to generate it.
+26:57
+And you should be able to get it. Simple. This is what we are going to do it. And this is a beautiful command. First, it's going to get the identity.
+27:04
+That will be passed as a bearer token. Then your function, whatever the URL you are going to give it, it's going to come up.
+27:10
+So let's check it out whether this works. So this is currently forbidden.
+27:15
+I'll copy this.
+27:24
+This is the one. So I just need to copy this command, folks. This will make it. So first, it's going to generate the identity.
+27:32
+Remember our Cloud IM session. So we have seen this part, right? So if I go here, sorry, this is my identity, folks, right?
+27:51
+So I will use this. And how it's going to generate identity?
+27:57
+Because I have logged in as Mahesh.
+28:04
+And Mahesh is basically the owner.
+28:16
+Mahesh is basically the owner. So obviously, he will have that invoker role.
+28:22
+So based on that, if I now copy this command. If I do this, I will get a response, folks,
+28:32
+which is welcome to Nginx, that example. That's what you get.
+28:38
+So the reason I'm using this command is I'm not going to get a response from this. I'm going to get a response from this.
+28:45
+So the reason I'm using this command is I'm not going to get a response from this. So based on that, I'm going to get the same response from this.
+28:54
+example on that's what you get it right so this is what you get it now let's
+28:59
+make it a little more interesting so we are passing a header here I can also
+29:06
+pass one more information I so that you know what is the response is it a 200
+29:11
+okay response or something else so we get the response this is the information right 200 so where if you directly call it it goes you 400 403
+29:24
+error client said forbidden error if I use the authorization header I'm able to
+29:30
+do so quickly I have made this service a internal service now anybody who has the
+29:37
+capability to invoke it they can do it now I as a owner was able to do it which was good so can we go back and use this functionality a cloud a virtual machine
+29:52
+invoking it so it should be very simple we'll create a virtual machine we'll
+29:58
+have a dedicated service account for that that service account should have a invoker role that's it job done so that cloud runner that function service
+30:09
+account can have a cloud run invoker role either for the project level or at a specific service level that's something possible right so that's what
+30:18
+we are going to do it going back I will do a one more thing similar one I'll call this as internal service to
+30:40
+build be nginx we are not worried about the code right that's not our this
+30:46
+thing so internal so somebody a developer would have build a code so
+30:51
+that's not our headache so let's not worry about it so I will only make this
+30:57
+require authentication so I leave the rest of the stuffs default changing
+31:03
+only the port because nginx listens on port 80 so and let's make it a different
+31:10
+service account folks this is another thing so yeah it's going to create a
+31:15
+service account like this
+31:22
+again it's going to be like not a clickable link you don't need to click
+31:32
+on the resource and find it out whether I'll be able to access it just click on this piece if it's required authentication you cannot basically
+31:42
+access it directly that's a simple thing right so now since I'm the owner I
+31:49
+should be able to invoke it meaning I copy this go to my so here I change this
+32:04
+one
+32:10
+it will work it works it gives me this part 200 so it's
+32:17
+working fine right it's working fine maybe just for the simplicity reason
+32:24
+because both being nginx does not make sense so for the different microservice
+32:30
+is it request to use will come to that that is the key part we'll come to we'll come to that so what should be the approach that's the only reason why I
+32:37
+create two microservices I know this question is going to arise so what we will do it instead of having both as nginx I'll do a small change folks let's
+32:47
+not have nginx let's have this hello world one or I can use HTTP the Apache
+32:57
+web server let's have this as the option so that you can differentiate it right
+33:02
+microservice one is nginx microservice two is Apache web server so that is
+33:08
+something a small difference we will do it so it's there I will just go ahead
+33:17
+invoke that service to the response would be different the response is it's
+33:24
+just the simple it works that's the output it gives nothing else it's 200 now if I go to my page so I don't need this
+33:47
+my use case is
+33:53
+internal service
+34:03
+see if I basically use cloud shell
+34:10
+I am able to invoke it you saw that right
+34:16
+owner I have access to both the cloud run functions I'm able to access it or
+34:22
+sorry cloud run not cloud run functions cloud run services I'm able to access it so this is a success so
+34:33
+this is access this is also success so now we will do this functionality so can
+34:45
+can a virtual machine invoke both microservice one and microservice two
+34:56
+that's what we are going to see it later we will try to do it in the next video
+35:03
+later we will try to see one front end right one cloud run service how it can
+35:11
+basically access microservice one and microservice two what should we do those
+35:18
+are things which will see it so meaning I'm going as a kind of like how do you deploy it first right so you have the cloud run functions meaning it's
+35:28
+containerized it's been like they have provided the container image the moment they have provided the container image I can deploy it right I have deployed it
+35:38
+and how I am able to invoke it also now before making it private or required
+35:44
+authentication right if you need a functionality this is what I would say yes it's as always good practice to have required authentication but if I don't
+35:58
+have another microservice to call all this kind of stuff I want to see whether standalone it is running right every microservice should work standalone maybe
+36:06
+if you pass the right credentials right details it should work instead of basically doing all those things right for a short time if you want to make it
+36:15
+allow authentication you can do it check it out whether it's functioning then
+36:20
+revert back to required authentication like if you have something wrong you put a print statement console dot logs right whenever any kind of code is written
+36:29
+so that's what we can do it first first do that but deploy the service is it
+36:35
+running standalone because these are star likes pretty standard containers
+36:40
+like nginx and had Apache web server I did not do it but if you still want to
+36:46
+do it you can do that it's very simple how do I convert a required authentication microserve or cloud run service to allow authentication the step
+36:56
+is very simple you just need to click on the specific service they change the
+37:06
+functionality very often one minute so you select this you select that specific
+37:11
+one you click on permissions now you have to give somebody cloud run in
+37:19
+worker role who is that somebody everybody in the world right so everybody in the world is all users everybody in the world should be able to
+37:29
+invoke cloud run this specific service that's the functionality which you have
+37:36
+to do so whenever you have I would say allow all in what allow all invocations
+37:44
+this is what is going to be happening behind the scene all users the whole internet will get access to cloud run in no curve or will get this role so
+37:56
+meaning they can invoke it so let's just do this part so this is saying adding
+38:03
+all users all all authenticated users to this resource will make it publicly
+38:08
+accessible to anyone on the internet so if this resource contains data that
+38:13
+should be may not meet you take a call right so that's okay we want to test it out real quick the moment I do that this becomes allow unauthenticated
+38:24
+invocation meaning in simple terms you have a hyperlink so the one which did
+38:31
+not work if I do now will show me engine X so this way as DevOps engineer as a
+38:40
+developer whatever be the role which you are handling you know this is running standalone it is working fine right so only when will you do this
+38:49
+intercommunication all those things the service should be working on its own first of all if it's running you do all the next fancy stuffs intercommunication
+38:58
+all those things so this is running fine similarly let me see the internal
+39:10
+service to
+39:19
+all user loud run invoker can invoke cloud run functions and cloud run jobs we'll talk
+39:29
+about cloud run sorry can invoke cloud run services and jobs what is jobs we'll
+39:34
+talk about it later we are looking into services so let me make it again public
+39:41
+so now it will have a hyperlink so these are the two outputs it works is from
+39:52
+HTTP which is Apache web server this is nginx output okay so now what we wanted
+39:58
+to do is maybe it is running stand the two services are running standalone so
+40:06
+what you do is go back look at this specific role remove the people whom you
+40:14
+don't want just remove done it comes back to required authentication same
+40:21
+thing
+40:29
+let's remorse
+40:37
+let me refresh it why this is still showing and did I remove it
+40:49
+yes was this a bug in the UI it shows still I'm not allow
+40:59
+I removed that it should not have anything but let me just check it
+41:07
+let's wait for it we have removed it then why it is showing that's the only
+41:34
+thing which we have to add permissions owner is me editor will be some service
+41:44
+accounts this is specifically a cloud run agent so we don't need to worry so
+41:51
+it is not publicly accessible why it is still yeah it took time folks it took
+42:01
+time to get this updated so meaning this one will throw an error no okay so
+42:09
+for a minute I got little shock what is happening so it is now back to required
+42:14
+authentication now before I go to the the things right I wanted to show one
+42:25
+additional thing yes you wanted to check it like standalone we went and
+42:31
+added one specific group called as all users
+42:39
+this is one possible way
+42:50
+the other possible way which you can do is not open to the whole world let's do
+42:55
+something like this allow authenticated uses so what does the difference mean so
+43:04
+I'll come to that in a minute let's give that same rule now what does this
+43:09
+authenticated user means is so here I was able to log in and show you
+43:16
+previously when it was working right so if you see if you have to go to Google
+43:21
+I'm not even signed in folks I'm not signed in so just a browser that's it I
+43:29
+don't have an identity here and on so I'm not logged in so like in very simple
+43:35
+terms if you are not logged into your Google account you cannot give a like to a video you cannot comment a video in the YouTube you cannot get into you
+43:43
+cannot access Gmail so if I click on Gmail it will redirect me to accounts and you have to log in right that is the thing so this is like all users so what
+43:54
+I wanted to do is
+44:01
+let's copy this and the standard one which we always use let's log in as
+44:10
+simple GCP user
+44:18
+yeah
+44:25
+I guess I have not logged in let me log in here so it does not work right it
+44:33
+does not work so what I will do is I'll go to
+44:38
+I'll go to accounts.google.com I have a dummy user which I always use so simple
+44:49
+GCP user you
+45:06
+it's not required okay just give me a minute I'll add this in
+45:11
+somewhere
+45:18
+okay not required that's not required I just cancelled it so I'm there so I go
+45:27
+back you can see I have logged in as simple GCP user so this is like an
+45:33
+authenticated user so there's an authentication done I have authenticated myself as simple dot GCP user so will this work now
+45:44
+no because we have not given anybody right oh so they should have something
+45:50
+so what you can do is it's the I so here I can do this piece folks allow authenticated users so let
+46:07
+me click on it so anybody in the world who has authenticated who has a Google
+46:13
+identity they should be able to invoke it but if they are not logged in they'll not be so at least a little better one opening to the whole world rather than
+46:22
+just like people who have logged in with their Google account so that is what we have done it so if I refresh it it's still with required we just need to
+46:32
+give a little time for it to update it that's what we saw in the UI so it takes
+46:39
+a little time so if you see the permissions it shows it has been added
+46:46
+it also shows it is public right so let's just wait for it to show it or will
+46:56
+it show or not or not let's give a try
+47:03
+let's give a try so it's not worked
+47:16
+I'm with this user
+47:24
+let me see you I've not seen that part working with allow authenticated
+47:31
+invocation still it shows the same thing
+47:38
+let's see that maybe I'll come back on this piece that allow anybody anybody
+47:45
+that's that functionality is not working
+47:51
+that's not working folks we'll ignore we'll ignore this part we'll ignore this
+47:56
+part we'll come to this so what I will do is
+48:05
+I'll edit okay I guess okay I guess the other way you have to do it is it will
+48:15
+work one minute let me just show you directly accessing it will not work I'll
+48:24
+go to console dot cloud or google.com as simple GCP user as simple GCP user I
+48:32
+don't have any do I have some projects but our oh this project is also there
+48:38
+what's the role which I have given one minute folks
+48:43
+okay that's this is a different project this is a different project so right so
+48:51
+as simple GCP user you
+49:03
+what I will do is I'll use a curl command generate the identity pass it and then I'll get it so directly when I invoke it it will not work so if I rather use this
+49:18
+way it is going to work folks so gcloud list
+49:37
+it shows simple GCP user so when I do this I get it I get the response okay so
+49:46
+even if you if only if you make it all users you can access it in the browser no authentication pro or nothing if you mention it as allow authenticated users
+49:56
+also you have to get the identity using
+50:01
+auth print identity token and then do it it's like all the people all the people
+50:07
+in the world should be able to access it who have authenticated into a Google account they should be able to do it right so that's something possible so
+50:18
+other way of doing it is now anybody can basically get in so if I log in as say
+50:25
+for example with my org account this is my org account
+50:33
+this is a different account so mahesh at the rate learn GCP with mahesh.com so this
+50:42
+user definitely does not have access we have not given any explicit way but since we had mentioned all authenticated users anybody in the world who has
+50:53
+authenticated with Google cloud they should be able to get access to it so
+50:58
+the same thing let's just wait maybe I'll get in an ephemeral mode to get it
+51:03
+quickly
+51:12
+so before I run it gcloud auth
+51:21
+gcloud auth list it will show mahesh at the rate learn GCP with mahesh.com
+51:28
+so if I do it it will work it will work it shows me the response thank you for
+51:36
+using blah blah blah welcome to nginx blah blah those kind of so this works so
+51:42
+this the way we did it is anybody who has authenticated should get in now if
+51:52
+you don't want that this is at least okay is what I would say compared to all users if you want to test it also I would say just go with that option that
+52:02
+is won't be a good choice so if you say no I don't want to open to the whole
+52:08
+world who have logged into Google account what you can do is and this will
+52:14
+still show as public so what you can do is you can remove them all authenticated
+52:20
+users rather you add explicitly the people simple dot GCP user
+52:31
+and invoker role there's like a human to whom you are granting it so it is now
+52:37
+still private so what does that mean is if I go back as simple GCP user I should
+52:56
+be able to get the response and I should get a 200 okay response whereas I
+53:04
+switch as the other users mahesh dot my head right lunges with my head dot com
+53:13
+so if I switch as this user hopefully the propagation has changed so the access
+53:22
+I should get a error four zero three error right hope you get this stuff so
+53:30
+we first went tried with our owner access which is my lunch is with Mahesh at the red gmail.com it worked then we made it open to the whole world all
+53:40
+users then we did with all authenticated users then we have come to a specific
+53:46
+user so these were all humans is what we did it right the next part which we
+53:51
+wanted to do is we don't want humans but rather we wanted a virtual machine so
+54:02
+virtual machine will have an identity that is nothing but its service account so we'll have a service account what role needs to be given you know that now
+54:09
+so it has to be basically cloud run invoker role and if you use a curl
+54:16
+command and invoke it you should be able to invoke it so that's going to be as simple as that so what we will do is we'll create a virtual machine will have
+54:26
+before we create a virtual machine will create a service account we may not need to give any role to that we first create a service account with that new service
+54:35
+account try this curl command it will throw four zero three error then to that service account will give a invoker role cloud run invoker role it should work so
+54:46
+if that is working our second step is our second thing is working lastly we'll
+54:52
+go to a cloud run which invokes another cloud that's what we are going to do it so that for that we may have to write a slightly a code right so meaning in the
+55:01
+code you have to invoke this function kind of a stuff we'll try to do that we will not write heavy code but we'll take the help of what I would say chat GPT or
+55:15
+the deep seek and try to generate a code containerize it and try to do it this
+55:22
+conference will now be recorded alright so what we are going to now do is we'll
+55:29
+do this functionality where we create a virtual machine with a service account
+55:36
+and that service account will not at all have an I am role then what we will be
+55:43
+doing is we'll try to invoke one of the or both the cloud run functions cloud
+55:50
+run services my bad so cloud run services and see what happens it will
+55:55
+throw an error and we'll give the appropriate role which is cloud run invoker rule so let's do that part
+56:05
+and is this a valid functionality in the real world will people invoke will
+56:12
+somebody from a virtual machine invoke a cloud run service absolutely possible
+56:19
+absolutely possible it is like in the data side where they don't generate some
+56:26
+data and all right it is possible that you want to invoke it so it may not be a
+56:31
+stand-alone virtual machine it could be a Hadoop instance in Google Cloud they
+56:36
+call it as data proc so it could be data flow so there are lots of services which
+56:42
+may want to invoke a cloud run service so in one of the implementations which I
+56:49
+had done so I was running a data proc job a Hadoop job basically which needs
+56:55
+to hit a cloud run service which was basically accessing some external API
+57:03
+sender so that is how the communication was done so meaning I should have
+57:09
+created the virtual machine and the virtual machine should have the invoker rule so so it's still it's a valid use case so before I create any virtual
+57:21
+machine as usual we will try to create a
+57:28
+we'll see whether we have a right service account if you have a service account we'll use it otherwise we'll create a new one so GC
+57:43
+we don't have one which is going to be a good one so this is a good one
+57:49
+a good one so this one will remove folks the App Engine editor role we don't want
+57:54
+IR privileges we don't want so I can see I don't see in this thing so let's
+58:03
+create one I'll call it as GCE is a Google Compute Engine service account
+58:13
+and as usual no I am role will be given to it we'll decide the role later done
+58:21
+so then I go to my virtual machines now in the previous demonstration I did not
+58:32
+had any VPC I had shown that cloud run service does not need a VPC that is
+58:41
+very clear similarly our App Engine standard does not need a VPC but App
+58:47
+Engine flexible required a VPC that we know right so now since I am going to create a virtual machine I have to have a VPC I've already created one the
+58:59
+standard default VPC okay so let me just go back
+59:07
+create a VM so I'll call this as data generator what are the name you want you
+59:18
+can give it that's not a problem so I'm going to leave everything default the one which I am interested is only the security piece of it where I am going to
+59:26
+choose my right service account is my service account yeah this one with full
+59:36
+access code right so that's the only change click on create
+59:56
+so inside the VM now the identity is changed right so all the previous demos
+1:00:03
+which we did it was all humans right whether I invoke directly in my browser
+1:00:08
+it was a human in cloud shell it was like learn this with Mahesh at the rate
+1:00:14
+gmail.com simple GCP user at the rate gmail.com or Mahesh at the rate learn GCP with Mahesh.com so those were the users right but the first time we are
+1:00:23
+using a virtual machine which is going to have an identity which is nothing but our service account so it does not belong to any humans right so let's
+1:00:34
+SSH into it you
+1:00:49
+SSH you should have the necessary IAM rule as a human we know it's again impersonation right so Mahesh is able to impersonate as the virtual machine so
+1:01:00
+now if I run gcloud auth list it will show me that service account yes now if
+1:01:10
+I go ahead and use this
+1:01:18
+it will throw me forbidden error so
+1:01:31
+it will be 403
+1:01:40
+sorry I should put minus same it will show forces now the problem is it will
+1:01:52
+show you very nicely so 403 further it goes and shows you that little
+1:01:59
+information which was more helpful insufficient scope kind of stuff that's
+1:02:06
+what it basically shows right so please don't get confused I can still generate
+1:02:12
+the identity that is there print identity token I can generate the token
+1:02:19
+the only thing is that I'm not authorized so what should I do is
+1:02:29
+how to grant this service account a rule right either you can do it at a project
+1:02:39
+level so there is one use case where it should in it should call all the cloud
+1:02:45
+runs a cloud run services then grant it at a project level
+1:02:52
+cloud run
+1:03:00
+in Mocha this is going to be a good choice
+1:03:08
+so you should be able to see this is one way are you going particularly for each
+1:03:15
+and every micro services you turn it on either way is fine okay so now let's go
+1:03:24
+to the virtual machine so
+1:03:30
+now I should not have any issues it's still not yet one minute is it
+1:03:36
+propagated still showing us this error let's wait for it in sufficient scope
+1:03:50
+it work let's just give it a few it will be also quick yeah it took time folks I
+1:03:59
+for the first time saw it was very slow so cross project everything is possible
+1:04:06
+that's not a problem so you can see it it is now 200 so it was taking little
+1:04:12
+time to propagate the changes so once it was done I'm able to get it I'm able to
+1:04:19
+get it so and the simple concept is you are in a virtual machine get its service
+1:04:27
+account that's a first step grant the service account in worker role to a
+1:04:33
+particular service or at a project level it should work now whether the service account is in this project or is it in a different project does not matter
+1:04:42
+because cross project is something possible that's not at all a problem okay
+1:04:47
+so so it's working so I'm able to invoke it easily and it is working and since I
+1:04:55
+have given it at a project level even service to I can do it folks internal
+1:05:04
+service to where it is from the HTTP or HTTP which is nothing but Apache web
+1:05:10
+server it shows me this part it works so good so I'm able to invoke it nicely
+1:05:18
+which is working so so we first did allow unauthenticated invocation it
+1:05:26
+worked then we use our cloud shell it worked now we used invoker it is also
+1:05:32
+working right so whether this cloud run is going to do something else that's not
+1:05:37
+our part so the moment I can invoke this it is going to do its specific work the
+1:05:44
+work could be like it can generate some data and write the data into a bucket similarly the virtual machine invokes service to and it may read something from
+1:05:57
+a secret manager so that is not at all our worry can I invoke it the moment I
+1:06:03
+invoke it it's going to definitely do its necessary work so I would say it's a kind of still an impersonation only right so we just give somebody it could
+1:06:11
+be a human or it could be a service account a cloud run invoker role that is
+1:06:16
+going to invoke that service cloud run service and that cloud run service is
+1:06:21
+going to have access to some other steps so kind of proxy impersonation is what
+1:06:27
+you can still take it as okay this is good the next one which I wanted to show
+1:06:32
+is another cloud run service so something like this example front end
+1:06:41
+calling recommendation service and add service so we'll call this as yeah front
+1:06:48
+end so so how it will call these two things so that's what we wanted to do it
+1:06:54
+lastly there was one question how will I do this piece service one calling
+1:07:05
+service two so can I get something like this like this both are internal
+1:07:11
+recommendation service calling product catalog service how can I do that both we will see it folks okay so recommendation cloud run service one
+1:07:22
+calling cloud run service two that is something which will see and another service like a front-end service which calls both of this so in this case it's
+1:07:30
+all cloud run services one cloud run calling another cloud run or a new cloud
+1:07:36
+run calling these two cloud run services that's what we are going to see it so in the next few things so for a cloud run which may be exposed now this could be
+1:07:47
+so it could be something like this allow so it is having allow
+1:08:06
+allow unauthenticated so this is what is going to happen so anybody can call front end but from the
+1:08:20
+front end it is going to call one of them or either one of them so we have to have that kind of a stuff so for this you need to write a code right so will
+1:08:31
+not too much break our head so we leverage a large language model these
+1:08:36
+days and we can do it I heard something new so I would like to also show that
+1:08:42
+part so we can use chat GPT or I'll use the screen
+1:08:53
+we'll use chat GPT and get it so or we can use the deep seek this is also going
+1:09:03
+to be good now in deep seek it can do something very similar to what your chat GPT does it can also do a deep think which is really a new one I would
+1:09:13
+say so meaning the moment you give a question it will not give you something from its knowledge base immediately it's going to think like more like a human
+1:09:22
+and start giving us up this is really awesome alright so leverages this is also free so leverage it is what I would say so we'll try to use it now this week
+1:09:33
+basically I used both of them chat GPT and deep seek for one of my use case the
+1:09:40
+response from deep seek was helpful where I was able to resolve my problem so this is small thing so let's go ahead and let's give a prompt and I'll give
+1:09:50
+the prompt to both the system and which suits very appropriate we'll go with
+1:09:56
+this so we may have to write a code and to avoid writing a code I'm leveraging chat GPT or deep seek so the prompt is so something like let's be very
+1:10:08
+explicitly in mentioning the stuff so I have to cloud run services
+1:10:23
+okay so
+1:10:30
+now if in your organization they are allowing chat GPT deep seek kind of a
+1:10:36
+stuff you can go but make sure you remove this information what is this
+1:10:44
+this is nothing but your project number let me just show you that
+1:10:50
+this is my project number ending with 129 so don't put that one that's a
+1:10:56
+little sensitive one so I would say something like project number the other
+1:11:06
+things are all okay if you don't want to put the entire URL you can also change
+1:11:13
+something so so it is going to understand it so for better understanding
+1:11:19
+I am putting like this and still we don't want to put any sensitive data so I have two cloud run services so which is basically this one I want a front end
+1:11:34
+cloud run service which will invoke which will invoke these able to services
+1:11:53
+okay
+1:12:04
+so it has got me a simple service so I did not give any specification it took
+1:12:13
+assumed a node.js stuff and it is going to do the remaining piece right so let's
+1:12:23
+just wait for it similarly I can do this one here I will say I need a Python co sample so you can
+1:12:43
+do a search folks it's normal kind of a thing or you can also do a deep think so
+1:12:49
+you can do this part it's a it's the next level in 2025 right so LLM models
+1:12:57
+done so this is like reasoning models so which things and does it a next level I
+1:13:03
+guess yesterday you would have seen something on chat GPT if you are aware operators is something new coming so meaning what are the necessary steps
+1:13:13
+which you do maybe I go to e-commerce portal click on something compare it and
+1:13:20
+basically add to cart and then do a check out this entire stuff which you do it you can say it in a prompt it's going to do it's called as operators so that's
+1:13:31
+now the the current buzz in 2025 is AI agents so just try to see sometimes
+1:13:38
+whenever you get sometimes so so that you are up to speed there so coming back I'm going to use this option and hit enter so it's now you see it is thinking
+1:13:48
+okay it thinks like a human so and then it's going to give us a final output
+1:13:55
+what should be the code kind of a stuff so by the time it generates this part okay it is generating it the Python code is little comfortable then to this thing
+1:14:09
+so and I'll show you some two differences here so I'm not going to
+1:14:17
+spend time on this part what it read all those things so the one which we need
+1:14:22
+let's think as a quick like I am in an organization I want to get things very quickly so what it's going to do it's going to generate me a Python code so
+1:14:31
+it's a flask application web-based so I have service one service two so I have
+1:14:36
+the entire URL mentioned here then the main method so call service one service
+1:14:46
+two so something like it's going to directly call it is that we want to call it once it calls it so the way it's going to do is you can see it here folks
+1:14:56
+call internal services so it's going to generate the identity token or the
+1:15:02
+token not identity so my authorization token my bad so it is going to hit it
+1:15:09
+and get a response so and short that's it simple so very simple Python code so
+1:15:17
+this is what so in one of the session and the previous session there was an ask how does it call so you use the same the end point only you are going to do
+1:15:26
+it which is not accessible from the outside world because it requires an I think I would say an authorization and plus an authentication so you need to
+1:15:36
+call it from your front end service the front end will have the capability to invoke this so that is what it's going to do it so since it's a flask it has
+1:15:45
+some dependencies so we have to put this then you put that requirement or text file and this is a Docker file why you need this Docker file because you have
+1:15:54
+to build this Docker image push it to artifact registry then invoke it that's
+1:16:03
+what is the procedure which they have given this is one approach okay so the
+1:16:09
+other approach is which strategy PD has given so we'll come to this strategy PT
+1:16:16
+part later the only reason is it is in node J's I can change the prompt that's
+1:16:22
+not a problem I can change the prompt I will show you that maybe I can copy this prompt itself
+1:16:35
+let it generate it now this is going to give it from its base knowledge basis
+1:16:40
+which it has so it gives me something very much similar I'm not sure where the
+1:16:49
+code is going to work so we are going to check it out it now gives you
+1:16:58
+something very similar folks okay it gives you this one so there is one
+1:17:04
+option which we have not yet looked into it we'll talk about this we know how to deploy something in cloud run right gcloud run deploy here it uses one
+1:17:14
+parameter called as source dot one so what is that we'll talk about it later meaning you don't need to have this Docker file it can generate a Docker
+1:17:25
+file build a Docker image push it to artifact registry then do a deployment so
+1:17:32
+it behind the scene uses cloud build packs where we had seen even the app
+1:17:39
+engine was leveraging that we'll talk about that later so more or less the code looks similar is what I would say and small observation which I have seen
+1:17:51
+the way I have started doing it now is I use the same thing put the prompt in
+1:17:58
+both in fact I have done something like this I have created a group so when I
+1:18:05
+click on this it opens deep seek this one you can remove it so it opens
+1:18:12
+basically cloud so it opens up Gemini it pulls up also charge if it so that's
+1:18:20
+what I have done it so all four good LLM models it opens up I put the same okay
+1:18:31
+I'll close it later so meaning the same prompt I put it in all then which one
+1:18:39
+works better I use that that's what I am basically doing it so going back what I
+1:18:44
+observed is the response from chat GPT and deep sick almost looks similar you
+1:18:52
+know chat GPT is from open AI a US company and deep seek is from Chinese
+1:18:59
+it's a Chinese one so you will definitely understand there could be a thing which they would have got inspired and taken something so looks very much
+1:19:08
+similar the output that's what I see but sometimes deep seek responses are really good so going back so I'll just get this code
+1:19:21
+I'll close all the screens too many screens
+1:19:29
+you
+1:19:41
+yeah so Let me launch my Cloud Shell.
+1:19:58
+So I have to do a small code build. But I'm not going to write it. I'm just, I don't know the steps.
+1:20:03
+I need to have main.py, requirements.txt file, Docker file, run a Docker build, push it, Docker push,
+1:20:10
+then do gcloud run deploy. Those are the steps.
+1:20:16
+So I'll create one folder, make directory,
+1:20:37
+Intercommunication, or front-end microservice.
+1:20:57
+So I will have to have main.py. I should have requirements.txt file.
+1:21:05
+I should have a Docker file, Docker file. So let's just wait for it.
+1:21:12
+So we'll copy this one. Then we have the requirements.
+1:21:17
+We have the Docker file. And basically, we'll do the build part.
+1:21:26
+So let me copy it.
+1:21:35
+Copyed this thing. I have to change this exact one, right? So let me just copy it.
+1:21:42
+Because we did not want to share that confidential information. So I had removed that part.
+1:21:47
+I'm going to add this. So project, project, project, project, project.
+1:21:56
+So this is service two.
+1:22:13
+So done.
+1:22:19
+It will show me the response from both the services first. That's what it's going to do. It's going to listen on port 80.
+1:22:25
+So let me get the requirements.
+1:22:32
+It's a Flask application. It uses a couple of Google or Python modules,
+1:22:38
+like Request and Google Auth. And lastly, my Docker file.
+1:22:47
+So this is the piece. Then we know the remaining things.
+1:22:52
+So if I just spend a few minutes on the Docker file, the requirements are text file. You copy all the three files.
+1:22:59
+And you run something called as Gunicon. That's something usually used in Python
+1:23:06
+to run a Flask application. So Docker build minus t.
+1:23:12
+Let me get a artifact registry repo name.
+1:23:19
+Cloud run. We already have one.
+1:23:26
+So copy this one.
+1:23:32
+I will say frontend version 1.0.
+1:23:43
+Just t, not it, my bad. Tag. Let's get this part built.
+1:23:57
+You can also use Cloud Build, folks. We have done that. So just wanted to use whenever you want which option.
+1:24:05
+Whichever is something, you feel comfortable, you go with that. So we have this thing. So if I see Docker images, I see this one.
+1:24:15
+Let me just push it.
+1:24:40
+Waiting for it to be pushed.
+1:24:55
+Yes, it is pushed. So if I go to the artifact registry,
+1:25:02
+I should see a new one.
+1:25:07
+Yeah, frontend just now. So now it's just a matter of deploying it.
+1:25:13
+And don't have a full hope that it is going to work. We have got it from a large language model.
+1:25:19
+So chances of it may not work is also going to be there. So don't have too much of expectations there.
+1:25:26
+So however, we know how to debug it. We look in the logs. We try to see what can be done.
+1:25:32
+So setting the expectation a little low, that's it. So let's go ahead and deploy it to Cloud Run.
+1:25:41
+So let the name be frontend. So this one, everybody wants to invoke it.
+1:25:46
+I should be able to invoke it. So that's it. Default code is 8080.
+1:25:53
+I should not have any issue. Let's go and deploy this. The first hurdle which we have to cross
+1:25:59
+is this should get deployed. It should have an endpoint. So it should be completely deployed.
+1:26:05
+That is the first thing. So if we are not able to solve that, we will get an error like this.
+1:26:11
+So meaning it shows the port 8080 something is going on.
+1:26:17
+So something to do with this thing. So if we go back, we did mention the port.
+1:26:30
+The port was basically 8080.
+1:26:38
+It's not running, but I have the port details
+1:26:59
+mentioned very clearly.
+1:27:05
+Let's give it a try. Now, the good part which you can always do
+1:27:12
+is you can see the logs if it can help you out.
+1:27:18
+Can it give any information? So all you can put this error message in the prompt
+1:27:24
+as the following thing. So here it shows Gunnicon not found. Very simple.
+1:27:31
+So meaning for that, there is going to be a module which you have to install. That is not there. So I can literally mention this piece in my prompt.
+1:27:42
+So this is the part which is very important, like follow up stuff.
+1:27:49
+If I do it, it is going to tell me what is the change required.
+1:27:54
+So I may have to slightly modify my requirements.txt file
+1:28:01
+and my this thing. So you can see this one. Add this.
+1:28:06
+That's the part which has to be added. So it should be all this. So just add. Changes is only that.
+1:28:12
+Add additional optional parameters. That's OK. So I have to have this one.
+1:28:18
+That was a mistake. So let me just add that.
+1:28:28
+So that's a Python module. That's it.
+1:28:33
+So let me just build it. So done.
+1:28:56
+Let's push it.
+1:29:03
+So it's pushed.
+1:29:22
+So what I do is this is the one grid.
+1:29:29
+So I just wanted to show what is the output it shows.
+1:29:35
+Just copy this one. It will show something like this.
+1:29:43
+If I use a curl command, that's 404.
+1:29:57
+Not found. It's again client side error. So curl minus i.
+1:30:03
+The front end one is going to be 404. So the other one was forbidden.
+1:30:09
+So now what you can do is you can edit the deployment.
+1:30:14
+You can change the version. It's two, which has a fix. Let's see whether this works.
+1:30:28
+Good. We have made a success. So now let's click on this one.
+1:30:33
+Now this service, I would have made a mistake.
+1:30:40
+It uses Compute Engine Default Service Account. Now if I copy this one, go to IAM.
+1:30:50
+It does not have a rule. So meaning this service account cannot invoke my internal
+1:30:57
+service one and two. So that's a mistake which I did. Now you can click on it anyway because we have deployed it.
+1:31:04
+It should throw an error. Have that expectation. So it will show cannot invoke.
+1:31:10
+This shows a JSON one, which is a beautiful way of showing it. Has no attribute ID token.
+1:31:15
+Something is what it is showing. So it's an error basically. So the main reason is it cannot invoke it.
+1:31:23
+So what I will do is I will have a new cloud.
+1:31:32
+I will have, I can use this service account,
+1:31:40
+Compute Engine, which we created. We did one, right?
+1:31:46
+Let me just, the Compute Engine service account. That service account itself we can use it because that is also having an invoker role.
+1:31:53
+So GCE, yeah, this one folks. This role, if you give it, should be good enough.
+1:31:59
+So I have to again do a deployment. Let's go ahead, edit the deployment.
+1:32:05
+So version two, which is a working container image. Under my security, I change it to GCE, the service account.
+1:32:24
+And deploy it immediately. That is going to serve the traffic. And you change.
+1:32:36
+So if you look at the security, it is our right service account. So let me click on it and see what does I get as a response.
+1:32:45
+So I get a response like this, which is same like what we had. So in simple terms, it is still getting an error.
+1:32:53
+So this one is nothing to do with the infra piece of it. I would say it is something to do with the code itself.
+1:33:00
+So where it is showing credentials, object has no attribute.
+1:33:05
+So this is now going to a code level, which basically we have to get it resolved.
+1:33:12
+So let's see whether the logs helps us in any way.
+1:33:18
+Or something to do with the code where something is missing. So if you see here, it shows the logs.
+1:33:25
+So it is a 200 OK response, folks.
+1:33:30
+So previously, was there a 200 OK?
+1:33:47
+Yeah, here, when we got the first time. So still it is not really using the service account
+1:33:54
+is what I can see because it was giving you this part. So now we may want to share this information.
+1:34:04
+I have a small plug-in which shows a JSON response. If you try it, it will show you like this, raw.
+1:34:11
+So I have a small JSON formatter. That's why it shows like this one. So I can put this as a prompt.
+1:34:24
+I'm getting this error. So I should basically get a response for something
+1:34:34
+to do with the code piece, folks. That's it. And we don't want too much break ahead.
+1:34:39
+So we'll leverage this one. So now it starts thinking it in that way.
+1:34:45
+That's the beauty. So mostly it looks like there's a code change.
+1:34:51
+So which we may have to add it. Replaced the credential approach.
+1:34:59
+Remove the dependency. Added proper ID for fetching. That's what it is saying.
+1:35:04
+I'm going to literally follow it. That's it. So I'm not going to do anything further. So you can also check it locally if you want.
+1:35:12
+You can just run python main.py. Is it working? Kind of stuff. That's another approach which you can do.
+1:35:17
+So you don't want to build the image. Then basically, what I would say, build the image.
+1:35:24
+Push it. Then try it. All the things you can run locally also. So let's just give a try with this option with this code.
+1:35:32
+So.
+1:35:55
+And have the updated requirements.txt file.
+1:36:03
+This is something newly added. So those are things.
+1:36:09
+The Docker file does not have any change. So if you want, you can check it locally.
+1:36:16
+Let me run that. So that's the Docker file. So I'm going to run it locally.
+1:36:23
+Let me run that real quick. I'm sorry.
+1:36:28
+Where was my code? Yeah, here. So I can just do this one.
+1:36:34
+It's going to say I'm listening on port 8080. Let's just invoke it and see if it works.
+1:36:43
+Beautiful, folks. It's working. See? This is the output, right?
+1:36:49
+So and this is the output of your service too. It works. It just got that part. So meaning the code is now working after a couple of iterations.
+1:36:57
+So I should be able to get the same thing working.
+1:37:03
+So let's just do a build. 3.0
+1:37:20
+Done. Push it. Done. Push it.
+1:37:47
+Waiting for it to be pushed. So now we should be all good.
+1:37:53
+Edit the deployment. Change the version to version 3.0.
+1:37:59
+Remaining everything remains the same. The service account, all those things should be proper.
+1:38:07
+We have our fourth revision.
+1:38:14
+And please note, you can have a number of revisions. The endpoint looks, it's the same. More like your App Engine.
+1:38:20
+So let's see what is the response.
+1:38:28
+So it's working, folks. It's not a beautiful output.
+1:38:34
+So it just gives you the HTML code. So I have called from a front end, which is having allow
+1:38:46
+unauthenticated invocation, meaning anybody can invoke it. Then it calls to internal services and gets the response.
+1:38:55
+Beautiful, right? So the whole reason for showing you this one is the way you are
+1:39:02
+going to invoke it is going to be something like this. Hardcoded sometimes.
+1:39:07
+Now this could be done much better by a developer. So they will usually have something in an environment
+1:39:13
+variable, something like that. If you want to put it in secrets, you can put it. So whatever way you want, you can do it.
+1:39:19
+So I can change this. I can read it from a secret. That is also possible.
+1:39:25
+So all those things, I can definitely do them. That's not at all a problem. So this is the way you can invoke from a front end to services.
+1:39:35
+So now it should be clear.
+1:39:42
+This approach. So I did not want to show this demo for App Engine
+1:39:48
+because App Engine is old. So I wanted to show you something which is for a modern service, which is like Cloud Run service.
+1:39:55
+So that's the only reason I did this part here, not with App Engine. I used to do previously for App Engine, where it was popular.
+1:40:03
+Now it's not that. So there's no point looking. It's a similar way. So similar way. So this is the thing which you can do it.
+1:40:10
+Now what we want to do is these two.
+1:40:16
+Internal service one wants to invoke internal service two. Again, there's going to be a code which you have to write.
+1:40:22
+So something very similar. Something very similar is what I would say. But before we do it, I'm going to revoke the role folks
+1:40:32
+and see what kind of error we get it. So it may not be immediately propagated.
+1:40:39
+At some point of time, it should get propagated. So no need of any role.
+1:40:57
+So I have removed the role. GC, Google Computer Engine Service account
+1:41:02
+does not have this one. So if I go, this was the response.
+1:41:10
+Let's see what is the response. I get it now. So still not yet propagated. We know it takes a time.
+1:41:16
+So let's open it in an incognito mode.
+1:41:27
+Still I'm getting 200. So I should get something like 403 error folks.
+1:41:35
+Forbidden. That is what I should get it. Just waiting for it to propagate the changes.
+1:41:43
+We just need to wait for it. So just checking it from all the sites.
+1:41:55
+Or I can use my Cloud Shell.
+1:42:00
+What it shows, it's still OK response. Still not yet.
+1:42:06
+So let's wait for it. So we know that propagation takes a good time. So let's wait for it.
+1:42:11
+By the time we wait, we'll do this piece folks.
+1:42:19
+Service one calling service two. That's it. Now how do you invoke service one?
+1:42:25
+You have to use the same. Get an authorization token. Do those things. So service one.
+1:42:31
+So both are internal. Both are internal. How do you basically invoke it? So the code, again, we'll leverage either
+1:42:38
+ChatGPT or DeepSeq. Get the code where we'll just put the prompt. Service one wants to call service two.
+1:42:44
+That's it. Simple. That's it. Nothing else. It's going to generate me the code. All those things. We'll then use that part.
+1:42:51
+So we'll use that part. So let's see whether it has now propagated.
+1:42:57
+Beautiful. I can see it. One minute. I'll show it in a beautiful view. So this is the one which we are getting.
+1:43:03
+200 OK. I'll just duplicate it. Refresh it.
+1:43:09
+This is what you see, folks. So where it very clearly shows forbidden.
+1:43:14
+Whereas the working one was 200. The one which is not working is 403.
+1:43:20
+And you can see client does not have permission, blah, blah, blah, those kind of stuff.
+1:43:26
+That's what you get it. So you now know what needs to be given. Give the invoker role. You should be all good.
+1:43:31
+And it takes time to propagate. That's what we have seen it. So the last part of the demonstration
+1:43:37
+which we want to do is an internal service calling
+1:43:46
+another internal service. So it's the same process. We'll have the code.
+1:43:51
+We'll build it. It may not be immediate success. Maybe we can use the best practice. Run it locally and check it.
+1:43:58
+Like run it in your cloud shell. Check it if it's working. Then we can do the remaining steps.
+1:44:03
+That's the next part which we'll be doing. This conference will now be recorded.
+1:44:10
+All right. So let's look into the last piece, which is an internal service calling another internal service.
+1:44:16
+That's what we are going to do it. So the thing which we need to make it very clear
+1:44:22
+is let's assume this is the service. We already have this micro service or internal service
+1:44:29
+with a service account. And assuming it is having access to Google Cloud Storage Bucket,
+1:44:34
+we would have given this role. Similarly, this service account, which is service two,
+1:44:41
+will have to access secret manager. So it is going to have a role which is like secret manager, secret server.
+1:44:48
+Now, if the use case is this one needs to invoke this, right?
+1:44:56
+So this one.
+1:45:05
+Then the service account should have Cloud Run Invoker role.
+1:45:13
+That role is what it should have. Which service account?
+1:45:18
+So this internal Cloud Run.
+1:45:29
+If there's a service account like this, it will have two roles. That's it, folks.
+1:45:34
+So that's what we are going to do it. So again, we leverage ChartGPT or DeepSeq
+1:45:40
+for getting us a sample code. So I'm going to go back to DeepSeq.
+1:45:55
+So what I will do is I will change my prompt.
+1:46:08
+So I have two microservices, blah, blah, blah. So what I would say is generate a Python code.
+1:46:23
+If we want, we can modify the existing code. We don't want to do that part.
+1:46:28
+So both Cloud Run services are configured
+1:46:43
+with required authentication. Generate a Python code to invoke from.
+1:47:13
+That's it. So because it knows the previous context and all,
+1:47:19
+so this time, there's a very high chance in the first attempt itself the code which we get could be basically correct.
+1:47:26
+That's what I have observed, folks. So it is very smart.
+1:47:31
+It used the previous stuff, and it is trying to get it. Let's see whether it is going to work.
+1:47:40
+It has given me the stuffs. So what I'm going to do now is I will make a directory.
+1:47:52
+Service1, service2, has main.py, requirements.textfile,
+1:48:22
+and the Dockerfile.
+1:48:43
+One minute. I'm just closing these things. Let me open it one more time.
+1:48:48
+Yeah. So let me copy the code, and let's just
+1:48:58
+do a small sneak peek, whether things are correct or not. So first, I'll get the microservices.
+1:49:10
+First, I'll get the microservices2's endpoint.
+1:49:19
+So this is the actual endpoint.
+1:49:27
+So I'll just start from the main. So port 8080, fine.
+1:49:33
+So then it's going to call the run.
+1:49:40
+So wherever you have, so now they have put a small, instead of slash, if you put slash call service02,
+1:49:49
+it is going to start invoking it, and it's going to get me some response.
+1:49:55
+So it is also saying, you want to replace with your endpoint. We don't have anything apart from our endpoint.
+1:50:04
+Hopefully, this should be good to call it.
+1:50:11
+And you should not put just slash. You should put slash. That's what it is given. So if you compare the code with the other one, which
+1:50:18
+we just generated, you should see,
+1:50:25
+so if you see the router slash here the route is slash so slash call hyphen
+1:50:42
+service 0 to something like right so or if you want you can leave it as this one
+1:50:48
+so that you get immediately this thing so your choice so it gets authentication
+1:50:57
+failed all those things then it makes service to slash end point you don't
+1:51:05
+have anything like that let's give a try that's not a big deal let's give a try with this code we are not yet containerized it or anything so we'll
+1:51:15
+just run this main.py so done let me just do a preview so this is what it is
+1:51:27
+going to show URL not found because the end point is you have to call it like
+1:51:34
+this so now this this is what I get it by expecting value one character so at
+1:51:51
+least you get an error quickly so and that too okay okay this is now you got a
+1:51:59
+and the response is expecting character in line okay what is this need to see
+1:52:09
+that what is this piece let me just check it out call response I just have
+1:52:22
+it replace it the actual end point so I'll just have this that should be good enough this should be good enough we don't have anything else let me do a
+1:52:31
+ctrl-c let me try it one more time
+1:52:39
+this is what I get it expecting line one call I'm sure what is this part we can give a try
+1:53:01
+we put that prompt back there okay it's something to do with the parsing piece of it let's see if there's
+1:53:17
+any change in the code required
+1:53:26
+so the deep think part of the it can be little slow if you want faster you just
+1:53:33
+use a normal search option so
+1:53:44
+returns HTML
+1:53:51
+to diagnosis okay so this is the code fixed to code which they have so okay
+1:53:57
+let's use this
+1:54:03
+this piece is a code they have given as a fix so let's just do that part I don't
+1:54:16
+have an actual end point so I'm just going to remove this let me just retry it
+1:54:33
+it's not even responding let me just close it
+1:54:56
+so I'll go into this
+1:55:03
+so let me run it one more time it's already in use okay that service was
+1:55:16
+running for some reason it did not get stopped so I do process I may have to
+1:55:24
+kill that this one let me kill that sudo kill minus 9
+1:55:36
+now it's running so
+1:55:45
+we have to give the end point because we have this around this is more of
+1:55:52
+Python plus don't much worry about it okay this is fine where it shows an
+1:56:01
+internal error it throws an internal error okay now we are going little
+1:56:07
+closer the only reason is it says the name Jason has not defined so maybe the
+1:56:15
+import part so it is already saying that part so you have to have import
+1:56:22
+Jason that's the thing so let me just do a ctrl-c run it one more time
+1:56:37
+beautiful folks it is working and this is the output right of our second service
+1:56:42
+it works that's what it is showing beautiful right so done small fix we
+1:56:49
+were able to get it so now it's just a matter of and please note I'm able to do
+1:56:55
+all those things in cloud shell in cloud shell I'm able to do it the reason is I
+1:57:01
+have the capability I have the necessary roles right I'm the owner right just
+1:57:07
+keep that in mind so now the regular process so we'll do a docker build
+1:57:12
+docker push all those things and just get the stuffs running so in docker build
+1:57:25
+done microservice to microservice
+1:57:41
+I didn't have to copy my docker file my bread it's empty
+1:57:51
+I will get the Dockerfile content here, done and let's see things works or not.
+1:58:21
+I will get the Dockerfile content here, done and let's see things works or not. I will get the Dockerfile content here, done and let's see things works or not.
+1:58:51
+I will get the Dockerfile content here, done and let's see things works or not.
+1:58:57
+I will get the Dockerfile content here, done and let's see things works or not.
+1:59:05
+I will get the Dockerfile content here, done and let's see things works or not
+1:59:12
+We will get the Dockerfile content here, done and let's see things works or not. I will get the Dockerfile content here, done and let's see things works or not.
+1:59:20
+So, we see this service two folks, let's deploy to cloud run, service to service, so this
+1:59:43
+is going to be required authentication. So, because both are internal, so something like this, this is what we are trying to do.
+2:00:00
+Both are internal, like will have required authentication only, so required authentication
+2:00:12
+and this runs on 8080, how do I know that? In the code, we had mentioned, in the code it was mentioned as 8080, so that should
+2:00:25
+be good. The one which needs to be taken into consideration is the service account.
+2:00:30
+So, what we will do is, this let it be a new service account, service to service, that's
+2:00:40
+the service account which we want to create, no currently IAM roles given, done, create.
+2:01:02
+This is something again the port related issue, so meaning it can work locally, it
+2:01:10
+all work fine, so but when you containerize it and then deploy it, it is not working,
+2:01:17
+so what could be the possible reason, may be you have not bundled the things properly,
+2:01:22
+so the logs can help us, so there is a possibility some of the bundle is not there, so again
+2:01:32
+the same Gunnicon example, so for some reason it is not getting it properly, the Gunnicon thing is not there, so we know that part right, we will add that and do it, so and you may
+2:01:42
+ask how it worked in Cloud Shell, because the Cloud Shell comes with Gunnicon automatically,
+2:01:47
+so if I were to show you, it was a spelling, so the Cloud Shell comes with lots of built-in
+2:02:09
+pip3, so when I do this and I do a grep,
+2:02:40
+there is one, here we don't have anything, sorry in the Dockerfile we have it right here,
+2:02:58
+so in the Dockerfile only we are using Gunnicon, so that's the reason the thing is not working,
+2:03:04
+even in Cloud Shell it is not there, in Cloud Shell we directly run the main.py,
+2:03:13
+so only in the container we have this Gunnicon, we have to have this part, so let me add that part,
+2:03:20
+hope that is clear, in Cloud Shell it is not there and we don't need it, because the way we invoke
+2:03:27
+this is just using python main.py, in the container, so this has to be the important
+2:03:36
+stuff, in the Dockerfile we have Gunnicon, so meaning we have to have that in your build, so what I will do is we'll get that added this line, we'll get this part added, oh I don't have
+2:03:56
+a requirements or text file itself, my bad, oh my bad, so I did not add that itself,
+2:04:12
+even here they anyway don't have it,
+2:04:20
+so I'll get the same requirements folks,
+2:04:27
+I did not even bundle the requirements, that was a problem, so
+2:04:33
+waiting it again,
+2:04:53
+let me push it,
+2:05:03
+let's go ahead and do a new deployment, version 2,
+2:05:33
+good, it gets deployed and we see it is not clickable, so because it's internal communication
+2:05:49
+only, so or required communication only, so this is a service account, so if we go ahead and try
+2:06:00
+to invoke it, copy this, go to add this URL, even if I do it from cloud shell, it will not work,
+2:06:11
+that is a key thing, so I copy it, I'm in the cloud shell, gcloud authlist, I'm the owner,
+2:06:23
+I'm the owner, so when I run this here, it will basically fail,
+2:06:29
+it's okay, I have to, did you check, 404 is what it's showing, one minute,
+2:06:38
+it should not show 404, this is front end, okay, I have to call it like this right,
+2:06:52
+there was a route, we have to use this, I have to call it like this, so when I do this, it shows me the permission related stuff, so you can
+2:07:16
+see this client does not have permission, so the one which we need to understand here is,
+2:07:22
+this service, or I have a new service, let's make it, let's make it like this, or this service itself,
+2:07:33
+let's take it, so I have a new, I have a service, I can invoke the service because I'm the owner,
+2:07:38
+but that service should invoke another service, so this has to be done only by that service account,
+2:07:45
+not by me, so unless I don't have the invoker role, I cannot get it invoked, so that is what
+2:07:52
+it very clearly shows here, permission denied, so what we will do now is, go to the service account,
+2:08:07
+this is service account right, so let me copy the service account, go to cloud run,
+2:08:14
+I am using service 2, or internal service 2, so I'll just grant that specific
+2:08:35
+service account the role to this specific cloud run service,
+2:08:45
+that's it folks, so now you understand how the service account, the way you have to do it, so
+2:08:54
+that is done, and we know it takes a little time to propagate, so
+2:09:03
+still the same, a small thing which you can do is, do a pipe jq, if you do it, it will show you
+2:09:11
+in a beautiful way, okay, so that is something which you can do, and you can also put minus
+2:09:22
+i minus s, so that it will not show you anything like, okay, minus,
+2:09:31
+let me not put those things, minus s should work silent, sorry,
+2:09:38
+minus s is silent, it will not show me the output like it is downloading and all, kind of stuff,
+2:09:45
+now it is working folks, so 200 response, and the output which you got, is something there,
+2:09:55
+right, so this is something working, so by just giving the im rule, so that's all I basically had,
+2:10:04
+to share on the required authentication piece of it, so how things works, we saw various combinations
+2:10:15
+from allow unauthenticated invocation to a place where two microservices, both are internal, how
+2:10:22
+they invoke it, so one way, so now the service two cannot invoke service one, please note it, so if
+2:10:29
+you want you have to have the code, then you have to basically have to give the im rule, all the
+2:10:34
+things comes into picture, so it is one way is what we have implemented, okay, so similar to what
+2:10:41
+you see it here, recommendation service needs, meaning it is recommending some products, should
+2:10:47
+I buy an iphone, should I buy a laptop, something like that, right, so it needs, recommendation
+2:10:53
+service depends on product catalog, product catalog is an independent product, right, so
+2:10:58
+catalog is an independent service, so like this what we had is, internal service two is an
+2:11:04
+independent service, service to service had to call that part, that's what we have done it folks,
+2:11:11
+so to be very frank, it's very simple, the one which invokes a service, a cloud run service,
+2:11:21
+that should have cloud run invoker role, as simple as that, so we saw lots of combinations,
+2:11:27
+so that it becomes very clear, and you can also use it in your real world implementation, in the exam it could be very simple, like a cloud run invoker role, but the reason why we
+2:11:38
+spent almost like two, two and a half hours is, you know how to do this now, in a real implementation,
+2:11:45
+that was a key part, okay, so now what we will do is,
+2:11:52
+we will have a load balancer, folks, we'll have a load balancer, so we will have
+2:12:04
+lb, the load balancer, we have already done this in one virtual machine, manage instance group,
+2:12:10
+then we have done it in gke, what I would say, the multi cluster incursor, now it's time to do it in
+2:12:18
+cloud run, so we will have something like cloud run, us,
+2:12:32
+we'll have one in london, we'll have one in london,
+2:12:42
+we'll have one in london,
+2:12:48
+we'll have one in mumbai, okay,
+2:13:01
+I would also want to show something in singapore,
+2:13:11
+and this is easy in cloud run, so I can have that simple, so we'll have a load balancer and which is very smart, it understands the proximity based on
+2:13:31
+where the request is coming from and depending on that it is going to send the response, so there's
+2:13:40
+a user and the user will hit just one end point, that's the load balancer's external IP address,
+2:13:48
+so and we'll see how this works, so we use a standard zone printer demo and see how things
+2:13:54
+are going to work, so first you need to create these four microservices, that's what you are
+2:14:02
+going to do, so let's go ahead and do that part,
+2:14:13
+so I need the docker image,
+2:14:19
+the zone printer one, okay, so let's go ahead and do this part, I'm going to delete this one, folks, this is not of any use now,
+2:14:30
+so others we can leave it, if there's any questions I can answer on that later, so first I'm going to
+2:14:37
+deploy a cloud run service, jobs will come to that, so this is a publicly available image,
+2:14:44
+so I'll call this as mumbai and I will change it to mumbai that's what I have it and I will basically
+2:14:53
+for now make it allow unauthenticated inverse, so I'll call this as mumbai and I will change it to
+2:15:06
+mumbai, that's what I have it and I will basically for now make it allow unauthenticated invocation,
+2:15:15
+okay, so later when we look into we will come back to this demo one more time in
+2:15:23
+what I would say in our networking class when we talk about something called as IAP identity aware
+2:15:29
+proxy where we will revisit it at that time we'll make it required authentication,
+2:15:35
+so I'll make it allow unauthenticated invocation and this listens on port 80,
+2:15:42
+that's what we say and I wanted to make something very clear here, I'm going to create a service
+2:15:48
+account, I'll call it as zone printer and I'll not at all give any role to this one,
+2:15:59
+okay,
+2:16:10
+can I make it allow unauthenticated invocation,
+2:16:21
+one minute let me, let's do this part and then try to remove allow unauthenticated invocation and see how it works,
+2:16:32
+so Mumbai is done, so what is going to be the output very simple it's going to be in Mumbai, so it's going to show Indian flag boom it shows that part the data center is in Mumbai Asia
+2:16:44
+South one good, so let's do the same thing like for Singapore,
+2:16:53
+so make sure you choose that
+2:17:07
+the service account
+2:17:15
+zone printer good, so this should show Singapore flag,
+2:17:23
+let's wait for it,
+2:17:32
+click on it Singapore flag and it also shows the data center name where
+2:17:39
+Jurong West that's the location, so and it's working it does not need any kind of
+2:17:48
+because it's just a code which needs all internet related stuff, so meaning it gets the
+2:17:56
+image from Wikipedia or Wikimedia and shows you that, so it does not use any Google cloud related
+2:18:02
+service, so that service account does not need to have any role that is the key thing, okay,
+2:18:07
+so that's something which I wanted to make it very clear, however this could be a tricky interview
+2:18:14
+question if somebody wants to check your understanding, a virtual machine can have
+2:18:20
+no service account that's something possible folks, so if I just jump in here
+2:18:30
+so we know there's an option right no service account you can definitely do this I don't need this vm I can have no service account a vm can have no service account still it is
+2:18:51
+like you can provision it whereas if you want to create a cloud run service right
+2:19:02
+it needs to always have a service account, so allow unauthenticated invocation
+2:19:14
+so you need to have that there's no option to skip that if you don't mention it it's going to default service account it's not only ui problem it's
+2:19:23
+also the what I would say even in the terminal when you do it it's going to be the same thing
+2:19:29
+or in using the cli option it's going to be the same thing let me prove that part very clearly so so that's a small thing which you need to keep in mind so you need to have a service account
+2:19:43
+so if I just go gcloud run deploy so we'll call it as london that's the name of our service
+2:19:52
+what's the image you wanted to use this is the one I want to use allow unauthenticated invocation
+2:19:58
+and the region which I wanted to use is europe west 2 this is what I mentioned I have not
+2:20:09
+mentioned anything about the service account right so if I don't mention it by default it
+2:20:14
+is going to be compute engine default service account so let's do that part what happened it is saying it needs a project you don't need to mention it
+2:20:33
+let me just try to see
+2:20:39
+it usually takes it something has gone wrong let me give a try with giving the project
+2:20:45
+sometimes the environment variable will not have that option or it would have lost that information so now I just pass it and it is getting and when we go and look into this
+2:20:55
+cloud run service it will have compute engine default service account just for your information it's running if I click on it it should show the london flag or the uk flag so go back
+2:21:07
+go back to the services london and if I go to the london revisions is what you have to click on it
+2:21:20
+and security piece it shows compute engine default service so
+2:21:29
+you have to make sure that it is always having a service account folks
+2:21:34
+uh slightly out of topic if I go to kubernetes also
+2:21:43
+when you create a kubernetes cluster you are going to create the node pools right so even there
+2:21:51
+so if I go
+2:22:01
+node pool security okay if it's a virtual machine you get that option
+2:22:09
+so standard node standard kubernetes cluster you get the option to mention no service account
+2:22:16
+that's something possible virtual machine possible standard kubernetes standard gk it is possible autopilot we know it is basically behind-the-scenes
+2:22:25
+users workload identity right so that is something which you need to keep in mind
+2:22:30
+maybe a tricky interview question somebody wants to ask it so the last one which I wanted to create
+2:22:36
+is the us one
+2:22:49
+so
+2:23:03
+so let's call it as us central is fine any region in
+2:23:11
+us if you mention it's going to come up so allow another we get an invocation and the security piece will change it to our zone printer done
+2:23:33
+so when I click on it obviously it should show the us flag good so now I have us flag I have
+2:23:40
+singapore flag I have mumbai flag similarly I also have the london flag
+2:23:56
+we have three four micro services in respective regions now I have created like this
+2:24:03
+now I wanted to have a functionality where user from london should get routed to london
+2:24:14
+why I need that because the latency is going to be less right so the user will get a response
+2:24:19
+quickly so for that kind of functionality is what I want to do it it could be something like a
+2:24:27
+I would say like a kind of a streaming platform so getting videos from london will be faster than
+2:24:33
+rather than getting the response from us server right so that's the functionality which we wanted
+2:24:39
+to see with the help of cloud run we had done this in the past for compute engine using managed
+2:24:45
+instance group with gke we had used multi cluster ingress so now we are doing with cloud you can
+2:24:52
+also do this with app engine I skipped that part because only reason is it is old that's the only
+2:24:58
+reason so now let me go ahead and create the load balancer force
+2:25:12
+so I will go to my network services we have a little experience on creating load balancers
+2:25:19
+we'll talk more about load balancing your module five so but on and off we have been keeping we
+2:25:25
+have kept on creating load balancers we'll create this one one more time so don't even
+2:25:32
+look into any of these options because we have not looked into it thoroughly I'm just going to simply do next next next next the standard procedure any software developer does so the
+2:25:45
+name is cloud run lb that's the name of the load balancer the front end you you can just leave it
+2:25:54
+nothing I don't want to spend much time on the load balancer because we are not looked into it we know what part needs to be given that part will focus on remaining will not focus much so
+2:26:03
+I'll just leave everything default in the front end the only part which I have to do is the back
+2:26:09
+end piece of it where we have in the past created backend services where we have used instance group
+2:26:16
+group when we use managed instance group unmanaged instance group demos of virtual machine
+2:26:23
+we have looked into zone zonal network endpoint group when we worked on Kubernetes so now today
+2:26:33
+we'll be working on this backend type which is serverless network endpoint groups so which is
+2:26:42
+going to be for app engine cloud run and cloud functions now cloud functions to be very frank
+2:26:48
+has been now changed to cloud run functions okay they are not updated in the ui so the one today
+2:26:55
+we'll be focusing is on cloud run app engine I will not look into it only reason it's outdated
+2:27:02
+okay let's focus on cloud run we know the things which we have run we have already completed app engine only from the exam perspective and if there's a migration stuff we have seen it so
+2:27:12
+we'll try to skip the app engine part as much as possible where it is not much relevant so let's focus on this option let's use serverless network endpoint group so where I'll create a
+2:27:26
+backend when I do this it it's going to pop up me a screen like this where I'll do it for India
+2:27:34
+yeah region is Mumbai
+2:27:40
+and what is your serverless backend this thing group type is it an app engine is it a cloud run
+2:27:47
+kind of a stuff so for a minute if I just show you north Virginia that's where our
+2:27:55
+cloud run app engine was there right if I click on this oh it does not it shows me the service yeah
+2:28:04
+it should show our service books so I do not want to use app engine because it's oldish
+2:28:10
+so let's go with cloud run so cloud run Mumbai what's the service it shows only Mumbai
+2:28:20
+good so I'll leave rest of the stuff default done I have one backend similarly let me create
+2:28:28
+one more backend Singapore
+2:28:41
+then two more backends London or UK
+2:29:09
+the last one
+2:29:16
+America so and if you choose something else it will not show you any service
+2:29:22
+keep that in mind so the region has to be matching so in us central I have a service
+2:29:29
+oh I have so many services the one which I have to choose is US
+2:29:47
+that's it folks remaining everything we can leave it as default you don't need too much worry about it for now so okay just give a name backend
+2:29:56
+serverless back end
+2:30:07
+done so we have
+2:30:13
+four network endpoint groups so remaining and all I'm not going to even touch now
+2:30:20
+we'll talk more in detail in our networking class on this part so click on create this we know equivalent to our communities ingress
+2:30:30
+multi-cluster ingress all those things are gateway API in communities so this will take
+2:30:37
+us five minutes so we have to wait for this till it comes up let's wait for it so
+2:30:45
+it may show quickly like in 30 seconds or something like it is up but the end point
+2:30:51
+or the IP address when you access it you will not get a response now since I am in Bangalore
+2:30:56
+so when I try to access the load balancer IP address it should show me Mumbai stuff in
+2:31:02
+simple terms which would show Indian flag so when I try to do it from my cloud shell
+2:31:07
+cloud shell we know it is in Singapore it should show the Singapore related stuff
+2:31:13
+similarly we will have a proxy tool where we will try to use it as if like from we are from Netherlands it should show London and US one we may have to try it with a virtual
+2:31:25
+machine or something to try it out right so that is what we may have to try it out to get to know
+2:31:31
+it is sending the response from a specific from the closest to proximity so where the user is
+2:31:38
+it is getting routed to that closest healthiest cloud run service so it's still going on let's
+2:31:46
+wait for it so
+2:31:53
+so
+2:32:15
+it should at least show that part the initial part that itself is taking a little time today
+2:32:21
+so let's just wait for it so at the end it should be creating a
+2:32:27
+external IP address which we know right this is the IP address folks so
+2:32:34
+let me see whether it is showing up now yeah it is showing up so we have it
+2:32:42
+this is the IP address this is the same thing which you see it so if we try now right away it will show definitely
+2:32:51
+not found so we have to wait for five minutes then only it is going to work because it has
+2:32:57
+lots of things to be done behind the scene so I'll put the link in the chat so depending on
+2:33:05
+your location you will see different flags so if you are from any part of Asia either you will see
+2:33:12
+or if you are part of India you are currently logged in from India you should show see the
+2:33:17
+Indian flag if you are in other parts of Asia possibilities depending on the proximity either
+2:33:24
+Singapore flag or Indian flag will show if you are from London or any part of
+2:33:29
+EMEA region it will always show you basically the London flag and if you are from US it will
+2:33:37
+show the US flag that's what is going to happen so five minutes is what we have to wait for
+2:33:45
+so let's wait for that this conference will now be recorded
+2:33:54
+so let me refresh this page now since the changes should have been propagated if everything is
+2:33:59
+working fine I should see a flag like this so Indian flag because I'm in Bangalore the closest
+2:34:06
+region to from Bangalore is going to be Mumbai that's what it shows so now I copy the same thing
+2:34:12
+I open my cloud shell so if I do curve it will show me welcome to Google cloud Zirang West Singapore because
+2:34:27
+cloud shell is in Singapore only so the closest region is going to be Singapore so if you want
+2:34:32
+to see in the UI you may want to install this client or browser based or terminal based client
+2:34:45
+so
+2:34:59
+it shows you but the image does not render it so at least you get a text based browser output so welcome to blah blah it does not show that HTML stuff but the image is not shown so good
+2:35:11
+what else we can try it we can use this browser-based proxies
+2:35:18
+which we have done it for all the demos like for compute engine and for kubernetes engine so if I go here I'll pretend as if like I'm coming from netherlands
+2:35:30
+it should show Europe beautiful so for the US one either we create a virtual machine or
+2:35:38
+see some proxy options that's what we can try so let me quickly create a virtual machine
+2:35:50
+in any part of US let's try to create something in Mexico so
+2:35:57
+Mexico so
+2:36:09
+Mexico region is not showing for me yeah it is there Mexico I'm doing it for the first time
+2:36:16
+so and I literally don't need any service account for this I just need internet access that's it
+2:36:27
+so obviously from Mexico the closest region is going to be
+2:36:36
+the closest region is going to be US it should show us by the time this comes up I will try to
+2:36:41
+create one more Doha so in the middle east so if I wait yeah Doha
+2:36:53
+yeah Doha just to show you what happens
+2:37:04
+so by the time these gets created if I go to GCP regions and zones
+2:37:11
+so Mexico here proximity wise that's the closest one compared to London,
+2:37:27
+Mumbai and Singapore so from Mexico I should get US flag similarly from Doha
+2:37:35
+I'm in Doha and when I try to access it the closest one should be Mumbai I should see a Mumbai flag
+2:37:44
+yeah so so we have VMs so let me SSH into it
+2:38:01
+so let me SSH into it
+2:38:13
+so
+2:38:22
+okay I'm in Mexico machine so I'll just install the text-based browser
+2:38:31
+so
+2:38:40
+just to get a better view folks nothing else
+2:38:45
+otherwise it will show the HTML code and all let's it looks a little difficult to see it that's the only reason nothing else
+2:38:55
+makes it very clear it shows it is served from US central beautiful so that's very very clear
+2:39:01
+so quit here done
+2:39:08
+let's go to Doha
+2:39:31
+so install the text-based browser
+2:39:40
+no prompt
+2:39:47
+geographically looking at India or Mumbai is the closest one which I can see it let's see whether our understanding is correct
+2:40:01
+okay it shows London so as the closest one so let me go back and see the geography
+2:40:10
+Doha here London here Mumbai here so the load balancer thinks
+2:40:21
+the closest region is London is what it thinks so out of curiosity because I
+2:40:29
+see Mumbai is closer
+2:40:34
+map I just try to see it is just to see whether is there any specific logic behind that so London
+2:40:52
+basically Doha
+2:40:58
+so it is around this much of kilometers
+2:41:10
+let me just do this for
+2:41:16
+Doha so
+2:41:33
+it's not sure the kilometers
+2:41:40
+distance let me just do something else
+2:41:47
+so
+2:41:56
+it is lesser only that's what I was understanding London is far need to see why it is
+2:42:04
+basically so between Doha and London it's little more
+2:42:19
+kilometers yeah so it's little far so I need to see why it is basically so maybe take it as a
+2:42:28
+small assignment if you wanted to see what could be the reason why it is basically doing that part
+2:42:34
+so let's give a try one more time
+2:42:49
+it is giving that only consistently let me try to do something like this
+2:42:57
+just to evaluate the cash if there's anything it's always hitting London folks I also need to
+2:43:04
+explore this part why it is basically giving that geographically it is closer is that one
+2:43:12
+something which we need to basically look into so another thing which I wanted to show which may
+2:43:19
+break the system and I wanted to give this as a small assignment for you to check it out so that
+2:43:25
+you are learning is going to increase it so what we will do is now we see whenever I access from
+2:43:31
+Doha it hits basically London right so what I will do is
+2:43:47
+I will go to to cloud run
+2:43:59
+and what I will do is I'll do a small change the small change which I am going to do is
+2:44:11
+I will delete it so maybe they are calculating the route instead of air distance maybe I'm not sure so just check it
+2:44:18
+out as something a good thing which you can try it out so possibilities are there air distance or
+2:44:26
+the actual distance what it should be basically not the it should not be air distance to be very
+2:44:36
+it should not be air distance to be very frank it should be
+2:44:43
+the normal distance because if you see it it the pipes they have network right so they all go
+2:44:51
+under the sea or on terrestrial so it should not be air distance but anyways let's not much
+2:44:59
+worry about it so what I wanted to show you now is what if I delete the cloud run service
+2:45:06
+in London right so meaning pretending as if like something has gone wrong in London region
+2:45:17
+if we if you want to mimic it what can we do it so I may show as if like it's like if it's
+2:45:23
+a virtual machine we do as if like literally delete the VM kind of a stuff so here we are going to
+2:45:29
+basically delete the instance itself so let's see what is going to happen
+2:45:46
+so it has been deleted folks so now I'm back in yeah I'm back in the Doha machine and let's see what happens
+2:46:02
+so this is what I get folks so not found it is hitting so
+2:46:11
+so it is hitting a page it is still hitting basically what I would say is
+2:46:23
+the US sorry it is still hitting the London one it's not basically getting routed to the
+2:46:30
+healthiest or the available one this is something which I have observed okay so this is something
+2:46:39
+which needs to be basically addressed so with the serverless one what I see is this one
+2:46:46
+I have also I also need to explore this part so think about it what could be the reason
+2:46:52
+right what could be the reason so this is something which I had observed recently when out of curiosity I was trying it so if it was something like
+2:47:01
+multi-cluster ingress it will route it to the proper like if US is done it will route it to
+2:47:10
+like London if it's the same thing with MIG if it is overloaded US is overloaded the request goes
+2:47:17
+to Mumbai or to London but in cloud serverless network endpoint group I don't see that part
+2:47:25
+so either the way I did it and showed you the demo was wrong or it could be the limitation so
+2:47:30
+this is something needs to be basically explored I can show one small thing just to see if I can
+2:47:36
+get this part running it does not work so what I will do is I'll go to the load balancer
+2:47:54
+I'll go to the load balancer and remove one of the backend which is the London one
+2:48:08
+I'll remove UK
+2:48:15
+now it should definitely be having no residues it will not send the request to London
+2:48:23
+because it was thinking it is the closest region so which is not now there itself so it should go
+2:48:29
+to Mumbai if my calculation is correct not to Singapore obviously so not to US also should be
+2:48:42
+Mumbai let's wait for this and because it's a load balancer change let's wait for it and it
+2:48:48
+should not take five minutes this time it should be a little faster
+2:49:00
+yes it has been updated it has only four
+2:49:06
+these things so let me just do this part
+2:49:13
+this is strange
+2:49:18
+very strange why it is routing to there only
+2:49:35
+let me just do one more thing folks I see something is not correct because it should not be routing there itself right it should be or it's it's going to take some time let's wait for it
+2:49:45
+so let's wait
+2:49:54
+I'll scroll command for now
+2:50:04
+now it is showing oh now it is going to US it is now going to US
+2:50:09
+I need to check this part okay so but if you have some time and if you want to do some kind of an
+2:50:17
+exploration you can do it looks now at least it is giving you a response so but it's US
+2:50:30
+either you can look into the documentations you can get that option or you may want to use this
+2:50:37
+thing deep seek or chat gpt for examples you can give it like this so I have provision let's see
+2:50:46
+what it gives provision cloud run services for in
+2:50:59
+Mumbai London
+2:51:06
+Singapore
+2:51:12
+US Central
+2:51:17
+then user from Bangalore or Bengaluru accesses this
+2:51:29
+I have provisioned a cloud runs in and in the below four regions created a
+2:51:41
+serverless let's see what is the answer serverless network
+2:51:51
+endpoint group
+2:51:57
+and attached a layer seven load balancer
+2:52:06
+so so when I access this load balancer
+2:52:14
+this load balancer I get Mumbai I get response get response from
+2:52:23
+Mumbai cloud run
+2:52:30
+cloud run so when when I when a user from
+2:52:42
+Doha accesses it where the response from where the response from where the response
+2:52:53
+should come and why need a detailed explanation
+2:53:04
+now this is what you will do folks like a big prompt okay let's make it think and get
+2:53:10
+the response and we'll use the same thing in chat gpt we'll see also what does that
+2:53:15
+give so we know what has happened so in this scenario okay in this scenario provision blah
+2:53:23
+blah blah yes yes geo uses geobase routing and latency based routing to decide which
+2:53:32
+backend response okay it's not only that so okay this is what maybe we have to spend a little more time so primary factor geo routes to the closest nearest region based on this for example Bangalore
+2:53:44
+goes so its load balance secondary latency so for the Doha one the actual response depends on
+2:53:52
+geo so if latency and okay I'm not sure whether this is the correct one
+2:54:03
+so but we got response from London right so this response was not correct I'm not sure whether
+2:54:11
+that's the right one is our recommendation okay and they have given a little better response
+2:54:21
+so it based on latency regional capacity backend service health all those things so
+2:54:29
+distance this is little better response Mumbai so analyzing Mumbai is around this much London
+2:54:35
+is this Singapore is this this thing so a little I would say I'm not sure whether it is really
+2:54:43
+correct but looks something like which is like somebody can at least say yeah looks like possibly
+2:54:50
+the way so the network path is an interesting one so Doha submarine so I told right it goes
+2:54:56
+via the submarine sort of systems so analyzing it I'm not saying this is the right answer we
+2:55:06
+have seen what is the option connects to okay meta submarine the lowest latency for Qatar
+2:55:15
+Mumbai connections often route through Europe okay
+2:55:25
+Google practices switch to for Middle East due to better peering agreements okay it goes
+2:55:32
+beyond something folks so it has given a little better explanation so which makes it also very
+2:55:40
+clear that latency wise London and depending on the network the what I would say is the path
+2:55:52
+the coaxial care sorry the optic fibers those part and some agreements so point of presence so
+2:56:02
+it's becoming more of a networking stuff so which at least makes sense and that's what we have seen
+2:56:08
+it so it it says it goes via this med a submarine cable so which is a little faster all those things
+2:56:18
+is what they say so at least that's a small explanation now now you see a better response
+2:56:24
+whereas in charge equity also you will get that soon if I'm not wrong here this is a little new
+2:56:30
+one folks the think piece of it the same prompt if you try to do it
+2:56:41
+I will not use deep think I'll just put this normally let's see what is the response
+2:56:49
+so this is going to be like more like the chat GPT kind of a response the conclusion response come from Singapore so which we don't
+2:57:05
+under agree but the the deep thing r1 reasoning is a new feature so leverage it is what I would say
+2:57:12
+so so looks like at least this is a little acceptable one not very sure this is the 100
+2:57:21
+correct one but what we have seen is basically this option okay so that's a small functionality
+2:57:29
+which I wanted to show how the load balancing works still if one service goes down
+2:57:38
+it is supposed to send a request to others it is not happening so I will also check it from my side if you have some time you can also check it out that way you will explore your understanding
+2:57:49
+much better that's what I would say all right so let's move on to the next functionality
+2:57:58
+which is a cool option which is a cool option so so far we have done some at least like 10
+2:58:05
+microservices we are deployed in cloud run either there was an existing docker image
+2:58:11
+or we have created a docker file you with the help of chat gpt deep seek and all and we have
+2:58:17
+pushed it to artifact registry and then deployed it what if I can do without a docker file more
+2:58:25
+like our app engine standard style is that possible definitely possible with the help of
+2:58:31
+something called as cloud build packs even app engine was using the same thing so using cloud
+2:58:44
+build packs we are going to do it so the way you are going to do it is you are going to basically
+2:58:51
+introduce this one just this one flag folks hyphen hyphen source dot meaning what is the source
+2:58:59
+that you have to just mention it then it is going to create a docker image it's going to generate a
+2:59:04
+docker file build a docker image push it to artifact registry and then deploy it so many
+2:59:10
+tasks it's going to do it that's a really a cool feature so let's go ahead and try it with one of
+2:59:16
+the examples we already created two docker images or docker files today and docker images today
+2:59:21
+what I will do now is close all these things
+2:59:38
+so I will literally copy
+2:59:51
+this so I will copy this
+3:00:05
+cloud run without apps
+3:00:20
+so what I am going to do literally is remove this file folks
+3:00:25
+this is what I am going to do it I will literally have like a developer code the actual code the requirements or text file that's it so with this can I do cloud run
+3:00:40
+cloud run deploy the name of the service is without
+3:00:49
+without without docker file so the region could be anything I'll put it as us central
+3:00:59
+US central so we need this is a required authentication demo bed we will do this allow no
+3:01:14
+no allow
+3:01:30
+what is the flag for that allow
+3:01:42
+this is okay I'll come to that part so we'll have this in this region and I will not mention
+3:01:53
+image folks if I mention the image there's a container image already created and it references
+3:02:00
+from the docker hub artifact registry those kind of stuff I will not mention that rather I'll
+3:02:06
+mention the source and dot why I mentioned that because in my current working directory I have my
+3:02:14
+source the source code is there that's it so this one let's see how long it's going to take
+3:02:21
+right so it will okay for some reason project is okay one minute folks let me just get this fixed
+3:02:32
+I don't want to mention the project again and again but sometimes the environment variables
+3:02:38
+may be lost because for a longer session or something so let's give a try now
+3:02:51
+so
+3:03:06
+so if you see this is my source code so now this should work it should not prompt for my project
+3:03:15
+something to do with the terminal there that's not a that's the thing so now it is asking
+3:03:21
+deploy you see this part that is a beauty deploying from source requires an artifact registry
+3:03:27
+repository to build at this thing the repository named is in the region will be created so this is
+3:03:34
+a standard one it creates so if I go here
+3:03:43
+like how our app engine created this one
+3:03:54
+so app engine created the repo like this
+3:04:04
+we'll come to cloud run functions so what this is going to do is it's going to create a dedicated
+3:04:10
+repository name cloud run source build in us central why because you have mentioned the region
+3:04:17
+as us central so it's going to do that part okay so first I'll say and please don't consider the
+3:04:27
+time here because we did an explanation and also I'm just going to do ctrl c so I will do minus q
+3:04:35
+so that it does not prompt me that it is creating everything so it is building it so creating a
+3:04:52
+container image uploading the source so it has failed basically
+3:05:01
+okay the reason is behind the scene it uses cloud build that's what it's going to do it so
+3:05:11
+and this service account does not have access to the bucket to do all the things so for today
+3:05:19
+I'm just going to give this computing and default service account editor mode in the next session we will basically fix this piece okay because we have to talk
+3:05:28
+little more on this part so for now I'm just going to make it a little simple
+3:05:34
+we'll give it a role
+3:05:42
+we'll run it one more time
+3:05:59
+we'll run it one more time
+3:06:10
+it is doing it the okay we know this kind of error if it comes it's primarily because it has not yet propagated let's just wait for it
+3:06:28
+you
+3:06:58
+and behind the scene it is also going to be cloud build only folks
+3:07:17
+so private google access not required for this not required so this is behind the scene using
+3:07:23
+cloud build only so if you just go here it is also going to do that behind the scene
+3:07:32
+you see this so it would have created the docker file and behind the scene it is using cloud build
+3:07:38
+packs so that's what it shows so it's not using behind the scene private google access which we
+3:07:48
+have not yet seen in net that comes under networking but yeah oh screen got one
+3:07:59
+sorry there was a small glitch so
+3:08:05
+yeah so back here so if you see this the service is behind the scene is also using cloud build only
+3:08:13
+so it's building and this is going to take a little longer time the only reason is it has to
+3:08:21
+generate the docker file all the things it has to do it it is going to be a little longer time
+3:08:27
+so building using cloud builds build packs and deploying the container to it meaning it has
+3:08:32
+lots of stuff to do it has to generate the docker file it has to build it it has to push it and
+3:08:38
+to push it to artifact registry then it should basically
+3:08:43
+deploy it so so many stuffs covered under one so i would say this is like a very very powerful
+3:08:49
+command this is equivalent to docker build docker push gcloud run deploy with hyphen hyphen image
+3:08:57
+so all the three commands it's combining and doing it and obviously you may expect it to be
+3:09:03
+a little delayed one so okay build is successful so meaning i should be able to see in the artifact
+3:09:13
+registry yeah this is the one which has got created so
+3:09:21
+so image is also there folks it's been pushed just now one minute ago so
+3:09:33
+yeah it took three minutes so and this is what it is running so let me see
+3:09:41
+cloud run
+3:09:49
+without this thing so it is require authentication so default is always require authentication only if you don't want you may want to say allow unauthenticated invocation
+3:09:59
+so meaning if you just directly click on it it will throw you forbidden rather than that
+3:10:05
+if you go to this page get the token
+3:10:17
+copy it i'll use jq so that i get a better printable response so
+3:10:31
+what is happening oh okay i have to put an end point right what's the end point name
+3:10:42
+this one
+3:10:52
+i can put minus s also so that you don't see this information it is getting downloaded blah
+3:11:00
+blah blah those kind of information will not show up
+3:11:06
+and to get a beautiful output in a formatted fashion i can use jq if everything is good i
+3:11:13
+should get a response and it's 200 okay response boom so without me creating a docker file without
+3:11:20
+me building it without me pushing it with just one command dot hyphen source equal to dot does
+3:11:30
+the magic for us and behind the scene it is all a product called as cloud build packs but keep in
+3:11:37
+mind this is not going to be supporting everything right so remember we had done for a pearl right
+3:11:46
+so for a pearl language if you try to do this it is not going to work so cloud build packs only support specific languages so if you try to do it for some
+3:11:56
+other thing it is not going to work so for example where did i had my pearl code
+3:12:05
+so
+3:12:20
+oh sorry it was a repo which we got it from there right it was a public repo app engine sample
+3:12:26
+so so this is the code which we had used right so if i basically just copy this
+3:12:40
+to the outside world we call it to the main folder
+3:12:45
+so
+3:12:53
+so i have this so i have pearl here and pearl is not going to be supported by build packs so we'll talk about
+3:13:04
+the documentation soon so what i will do is i don't need this readme file i don't need this docker
+3:13:09
+file i don't need this yaml file app.yml is for app engine so this is all i need so
+3:13:17
+if i basically go ahead and try to do this cloud build or cloud run
+3:13:27
+i will call this as pearl so the response which i would get is i cannot containerize this because pearl is not supported
+3:13:37
+by cloud build pack something like that is what it should show
+3:13:46
+let's wait and watch for the output
+3:14:02
+it has created a cloud this thing the cloud build let's wait for it yeah it has already failed
+3:14:08
+it's failed here let's look into the output if we see the output it failed the more details you will only get it
+3:14:20
+in your cloud build so this is what it tried to do and here it is throwing a
+3:14:31
+let me put it in a full screen mode so let's look at the error the error
+3:14:44
+no build pack groups attention please check you are running against the correct path all those
+3:14:49
+things so it's not there it's not there simple so it is if you see it it is trying with various
+3:14:59
+options so various run times what and all is possible so this is what it is trying to do it
+3:15:07
+so analyzing so it analyzes the code it analyzes the code and it looks for the detector is it dot
+3:15:15
+net no then similarly it did not find anything with dot net so nothing to do with dot net then
+3:15:30
+it goes with go go lang so i'm not sure what is happening let me stop sharing and stare at it again
+3:15:48
+i'm resharing it so then it checks it it has a detector what is the language used so go lang
+3:15:56
+that also did not get anything so then the output no go lang files right so then it goes with java
+3:16:07
+and it figures it out there is no java related stuff so then it goes with
+3:16:16
+java it should show somewhere java java uh
+3:16:24
+none of them so there's no palm file this is all for java so similarly it will then go with
+3:16:32
+python again it will say opting out there's no python so like this it is going to say ruby
+3:16:41
+php so node js so it failed everything basically and it says it cannot support it so cloud build
+3:16:56
+build packs detectors so what are the runtimes it is going to support
+3:17:15
+these are the one which supports it folks so meaning python specific versions node js
+3:17:21
+specific versions java go ruby php dot net core so there is no other language support
+3:17:32
+so it's more like a little marketing i would say cloud build packs dot hyphen like hyphen
+3:17:38
+hyphen source equal to dot will do everything no it is not going to do everything because it is
+3:17:48
+going to be controlled by cloud build packs and the languages supported are those things now to be very frank most of the modern languages are there i wanted to show an extreme case where like
+3:17:58
+uh pearl is not supported so it's only these supports now in the exam if oh sorry in the
+3:18:03
+not exam in the interview if they basically ask using a cloud build packs can you containerize any
+3:18:10
+uh language uh answer is no because it supports only a set python in python very specific versions
+3:18:22
+even python 3.12 is not there folks please note that okay so was this here okay there is a new
+3:18:31
+one which they have which supports it so older versions are not there so it's always going to be
+3:18:38
+with these runtimes uh it becomes now more like your app engine kind of stuff python node js java
+3:18:47
+java specific versions then go ruby uh php this is what you see it so the answer to the question
+3:19:02
+in the interview should be like it's going to be the languages which cloud build pack supports
+3:19:08
+not everything that should be the apt answer
+

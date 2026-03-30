@@ -1,0 +1,2934 @@
+ript
+
+
+0:02
+This conference will now be recorded. So in a previous session we had looked
+0:07
+into cloudVPN. Both uh classicVPN and HAVPN is what we had seen where we saw
+0:15
+in classicVPN we only get static routing and in um HAVPN we are going to get dynamic
+0:23
+routing and we saw the benefits of dynamic routing. So the advertisements of routes is going to be completely
+0:29
+automatic with the help of a component called as cloud router and we also saw
+0:35
+how HAVPN works. Even if one tunnel is down the connection still works kind of a stuff right that is something which we
+0:42
+saw in our previous session. So now we will proceed further and we'll try to
+0:49
+look into something called as NAT here and there wherever it was required we had seen the concept of NAT. So today is
+0:56
+like the official session on uh cloudnat. So cloudnat stands for network
+1:02
+address translation. So what is the whole purpose of this one is uh uh there
+1:09
+are instances like say for example red hat server uh kind of a stuffs which may
+1:15
+need to reach out to the outside world uh usually called as satellite server to get updates updates to their operating
+1:23
+system. So in that case you need to have access to internet. So if you need to have access
+1:30
+to internet there are few specifications which Google says. Let me bring up the a
+1:37
+link for
+1:45
+that. So this is the official document cloud.google.com/vpc/doc/vpc
+1:52
+google.com/vpc/doc/vpcin internet requirement. So you have to fulfill this requirement if your VM or your
+2:00
+Kubernetes cluster needs access to internet. So what are those things? So
+2:06
+the first one is the the network must have a valid
+2:12
+default internet gateway route or a custom route whose destination IP
+2:19
+is open to the whole internet. So this has to be there. This route defines path
+2:27
+to internet. So this information has to be there.
+2:32
+Now if we see any of our uh VPCs say for example if we go to our
+2:43
+uh tech where most of our networking class we have worked on it. So if we go
+2:50
+there this will get created automatically when you create the VPC itself. That's what we know right? So
+2:58
+when we go to
+3:07
+routes, they're talking about this one, folks. Default internet gateway. Uh yes,
+3:14
+it is possible to delete it. Uh as long as you have this, this first check is
+3:21
+fulfilled. And just to highlight this u we had already seen this one. The moment
+3:27
+you create a VPC, this route gets created. So as a small this thing, let
+3:34
+me just uh show you one more time. Uh in the UI, you are always forced to create
+3:42
+a subn network. So you can never create a just a
+3:47
+VPC. Let me just show you that.
+3:58
+uh the VPC uh user interface has been created in such a way that you create a VPC followed by you have to create one
+4:05
+mandatory subn network but that's not the necessary thing so let me just show
+4:11
+you in the command
+4:36
+Bye where I'll just create a VPC folks just VPC the moment I create a VPC this
+4:43
+route will be created that is what I wanted to make it very clear so meaning this is default you don't need to do
+4:50
+anything explicitly even when you do it by terraform in any form this will be
+4:56
+getting created so this is like a default thing so uh you literally don't need to take care of this part that is
+5:02
+what I wanted to first convey so let me just show you this by creating a new
+5:10
+VPC so G-Cloud compute uh in sorry
+5:19
+networks create uh the mode in which you want to create is uh the name is
+5:27
+custom BPC 0 what is
+5:33
+it 03 03 and the subnet mode is going to be
+5:40
+uh like uh custom that's it folks this command
+5:47
+when I do it it will create a VPC no sub networks but it will also create a
+5:54
+default internet gateway so let's verify
+6:12
+And you can easily see it it has created and it also says you have to create firewall rules all those things that we
+6:18
+know. Uh and this is one important part in the command line. So it is always
+6:24
+verbose right it says you have to create a firewall rule if you want to communicate if the instances needs to
+6:30
+communicate that's okay we have already learned firewall rule concept to a great extent if I go back to my user interface
+6:38
+and try to refresh it I see this there is no subn network however if I go to
+6:46
+routes select the new VPC which I've created any region is fine even to where
+6:52
+we don't have anything. That's okay. We wanted to know the default internet
+6:58
+gateway. Okay, just give me a minute folks.
+8:13
+uh sorry folks. So what we see is uh we see a default internet gateway.
+8:21
+So to get access to internet the first requirement is fulfilled
+8:26
+automatically by when you create a VPC. Now there are possibilities that you can
+8:34
+delete it. So if I just go here you can delete it. If you have
+8:41
+deleted it make sure you have created one. That is the important thing. So let's just do that part.
+8:53
+So I'm just deleting that. These are from different VPCs. The one which is of
+8:59
+custom mode VPC03 I'm just deleting it. If you still want to create Yas, no problem. You can
+9:06
+create it. But the requirement is what they're saying is uh
+9:13
+default VPC uh
+9:20
+gateway change it to your new VPC uh static route destination is the
+9:29
+internet. So yeah this is also something which you can do. So either way you
+9:35
+manually create it or you leave it just the VPC to create it that is your choice. So it should not be a problem.
+9:42
+So this is something which we just created it. So that's the first requirement you have to fulfill. So
+9:48
+there are three requirements one needs to fulfill to get access to internet. The second requirement is this one. So
+9:54
+firewall rules must follow eress traffic from from the instances unless overrun
+10:01
+by a higher priority implied firewall rules for eress uh permits outbound
+10:06
+traffic from instance. We know there are two firewall rules, right? When we just
+10:11
+go back to create an
+10:19
+VPC, you know this
+10:25
+one, this is by default when you create a VPC, the outgoing traffic is going to be
+10:32
+always allowed. So unless we have blocked it by putting an eress firewall
+10:39
+rule to deny it then it is going to be a problem otherwise
+10:44
+even the second requirement firewall rule must allow eress traffic from the
+10:50
+in outgoing traffic from the instance should also be there. So that's what they mentioned by default it is turned
+10:55
+on. So in very simple terms uh the the first two
+11:02
+requirements are fulfilled automatically folks. The one which is going to be the
+11:07
+most important is this last one. So either the instance must have an
+11:14
+external IP address. If it's having external IP address no problem it can access
+11:20
+internet. Simple. But we are against external IP address
+11:26
+and we already have a policy. We already have an AR
+11:36
+policy at the or level like in a real world this is what they would have done. Definitely right. Even in our this thing
+11:42
+we have done the same thing. uh if I have external
+11:48
+IP if I have this define allowed external IP address for VM it's
+11:54
+completely denied no VMs no Kubernetes clusters can have external IP address
+12:00
+then you cannot fulfill this requirement then this is an R condition folks either
+12:07
+one of the following must be true so you cannot have an external IP address then what you should have is the NAT So this
+12:14
+is where our NAD concept comes into picture, right? Network address translation. So either you go with uh
+12:21
+the instance must be able to use cloudnat or a instancebased proxy that
+12:26
+is a target for a static uh route.
+12:32
+So a NAT is going to be a better choice. You can also use some kind of a proxy.
+12:37
+So instancebased proxy is what you people usually use in your organization right. So uh every request
+12:45
+which goes from your organization will have one IP address usually that's the proxy IP address. So here we are going
+12:52
+to use NAT. So now we understand the importance of NAT. So when your resource needs to get access to internet it needs
+13:00
+three requirements to be fulfilled. It should have default internet gateway route which is always turned on. It
+13:07
+should have an outgoing traffic which is always going to be turned on unless explicitly turned off and the last one
+13:14
+is not having external IP address but having with a NAT so that is going to fulfill. So that is the whole reason of
+13:22
+looking into this concept. So if I need access to internet now to be very frank if I don't have access to internet I
+13:28
+don't need to even uh worry about NAT there are instances
+13:34
+where your resource does not need access to internet for example if there's a virtual machine and all this virtual
+13:40
+machine is to do is get connected to uh say u any Google services any Google
+13:47
+cloud services it can rely on private Google access which we have already seen it Right? It can just do all its work
+13:55
+only when it needs access to internet comes into picture.
+14:00
+So that is a key part. So now uh how NAT
+14:05
+works is it allows outbound traffic. That is a key part. So the
+14:12
+incoming traffic or inbound is completely blocked. Now let's just take
+14:18
+a very simple example, right? uh you have a VM and this VM is trying to reach say
+14:26
+for example an outside world component like a
+14:36
+MongoDB MongoDB so meaning from the VM it can send a request now it has sent a
+14:44
+request maybe MongoDB is what it's a nosql database so what would be the response it will give the records
+14:50
+collections. MongoDB is more or less similar to our fire store. In fire store, you have collections, you have
+14:56
+documents and uh uh properties. Something similar, you'll have
+15:01
+collections, which is nothing but tables. So, what this is going to do is it's going to give the response. Now,
+15:07
+when it is coming right, this is an incoming traffic. So, established inbound
+15:14
+response for those connections are going to be there. meaning I have initiated
+15:20
+the VM has initiated the uh request. So an established inbound response from to
+15:29
+those connections are allowed. So that is what is going to be there. So however
+15:36
+uh if there is a connection which is directly established say for example there's a
+15:44
+VM there's a VM and a
+15:52
+MongoDB directly it is establishing a connection no this will not be allowed so only outbound access is implemented
+16:00
+and inbound access is going to be completely completely disabled. Now if I were to give a very very simple example
+16:07
+u this is like this uh I usually don't pick up calls uh if it's an unknown number u so even if it's not a spam it
+16:16
+shows a name so I have a true caller installed uh the free version of it uh
+16:22
+if the name does not sound something like which I know I don't pick that call
+16:27
+uh this is the thing so it's something like uh because somebody's trying to call me it's an incoming request I deny
+16:34
+it. I just uh don't even take the call. This is the first part. The second thing is uh don't take me wrong but this is
+16:42
+what I expect. Uh when I call anybody, they should pick my call. So that is
+16:48
+like your nat. So you try to reach anybody will basically pick your call.
+16:54
+Even if it's a prime minister, the president of a country, they should be able to pick it up. That is the expectation. So something very similar
+17:02
+in a very simple name if I want to put it right. So that's where uh NAT comes
+17:08
+into picture and these things I usually don't read the slides but these slides
+17:13
+are or this content the slides are very important that's the reason I have highlighted it. Uh what else provides is
+17:20
+the source network address translation snack
+17:25
+uh for the VMs without external IP address and it also provides destination
+17:30
+network address translation for inbound response packets. So
+17:37
+meaning every time uh what the
+17:42
+uh the IP is there it is going to be shown differently folks in very simple terms because I'm going to connect to an
+17:50
+external world right so for example there is a VM
+17:56
+uh let me just use a small diagram
+18:15
+VM and let the VM's IP address be 10.5.4.2.
+18:33
+This is my BM's internal IP address. Now it cannot reach
+18:42
+internet. I have MongoDB.
+18:56
+Now when I try to reach this there's going to be nat in
+19:10
+between this is what is going to happen there's going to be nat in between so uh
+19:15
+when MongoDB sees right NAT will have an external IP address we'll do demonstration on this
+19:23
+35.455.65. I'm just making it up folks just for simple uh this thing. So this
+19:29
+is my NAT IP address. So when I see at MongoDB I don't see
+19:39
+10.5.4.2 but rather I'll be seeing 35.45.65. So this is called
+19:48
+as this is called as source network address
+19:54
+translation similarly um it is going to also do the destination address
+20:00
+translation for the establish inbound request. So meaning when the response is
+20:07
+coming from MongoDB again this VM will see it
+20:13
+in a different fashion. It will not be the MongoDB's actual IP address. So both
+20:18
+source and destination uh address are translated folks. That is what it
+20:24
+basically means. And the last one is implements outbound NAD in conjunction
+20:30
+with static routes in your VPC uh for those next
+20:35
+hops that are default internet. So it's also going to implement uh basically uh
+20:41
+along with the default static routes which we have it's also going to have outbound NAT that's what it basically is
+20:48
+going to say and NAT is going to be a regional resource. So what does that
+20:53
+mean is uh if you have a VPC and you have two sub networks one in US central
+21:01
+one in basically maybe in Mumbai you cannot you have to create two
+21:06
+uhnat you have to create two NAT one in uh what I would say um uh US one in
+21:15
+Mumbai then only the resources in Mumbai and US can reach internet but if I just
+21:21
+created in Mumbai the US machine cannot even access intent. So that has to be something made
+21:27
+very very clear. So let me just show you this
+21:34
+diagram. So if you see um in this diagram we have two sub networks sub
+21:41
+network one sub network two uh and we have created resources uh in zone A zone
+21:47
+B kind of a stuff all are going to be internal IP address. So if you see here
+21:52
+I have created NAT gateway US East similarly NAT gateway European
+22:00
+Union. So then they reach out to the external world they connect to basically
+22:06
+a uh what I would say uh update service maybe a satellite
+22:12
+service kind of a stuff. So the gateway translates the internal IP address to a NAT IP address. So for example, if you
+22:20
+see the NAT IP address here 19851.00.1. So this is what the update
+22:27
+service will see it folks when they are trying to communicate. So it will not
+22:32
+see your actual internal IP address. So basically my address gets translated.
+22:38
+That's where the snack concept comes into picture. So let's do it with a very simple demonstration slowly make it a
+22:44
+complex one where uh we'll also see how uh if we have some kind of uh VPC
+22:52
+network peering we know two VPC networks uh cannot peer if they have sub networks
+22:59
+which are overlapping but withNAT private NAT there is one option
+23:04
+the one first concept which we are going to see is called as public there's also a new feature which is uh released
+23:10
+almost like a year and a half if I'm not wrong called as private net. So you can
+23:16
+also use that where you can communicate between like you can peer between two
+23:21
+networks even if there's an IP overlap because with network address translation
+23:26
+I will show as if like it's a different IP address. So then I will not have any issues. So that's what we are going to
+23:32
+see it. So first uh let's just go
+23:39
+ahead and uh create a small
+23:52
+demonstration. So first I'll show the
+23:57
+VPC. Uh for this one I'm going to use this VPC folks.
+24:05
+this VPC and uh we will try
+24:11
+to at some point of time we are going to also this one I don't need it I'm just going to delete it which was just
+24:17
+created to make uh make it very clear that when a VPC is
+24:22
+created default internet gateway is also created that is something which I just wanted to highlight it so I don't need
+24:28
+that VPC anymore uh this one there's another VPC
+24:37
+uh which is in South Africa. Now at some point of time we are going to do a VPC
+24:43
+network peering between these two one. We know it will not work by default but
+24:50
+I wanted to make it work this time with private net. So at a later point of time
+24:56
+we are going to see it. Uh but for now I'm going to
+25:05
+create I'm going to create uh sorry let me just
+25:12
+this I'll create one in
+25:21
+uh US central IP IP is the same but it is in a
+25:28
+different
+25:37
+region. I may have to create a firewall rule. So private Google access I'll turn
+25:42
+it on based on our best practices. So we have this part created.
+25:52
+So firewall
+25:57
+rules. Oh, there's a peering already established. 1
+26:02
+minute, which is good. So when I was trying to add the new subn network, it did not happen because there was also
+26:09
+already a peering established between here. So it has failed. It has failed,
+26:15
+right? Which is good. So for now, I'm just going to delete the peering.
+26:21
+or okay I let's keep the peering uh we'll come back I'll try to use a
+26:28
+different subn
+26:33
+network that US central did not create folks because there was an
+26:40
+overlap so
+26:48
+subnet US central
+26:56
+one. I'll use a range like 10 uh
+27:04
+5.5.0/24 private Google access turned
+27:13
+on and I want to create one more
+27:22
+your central uh
+27:37
+demo 10 uh 172.16
+27:50
+private Google access turned
+27:57
+on. Okay. So I have it. So the point which I wanted to make it is we have two
+28:04
+regions where we have a sub networks and in US I have two sub networks itself.
+28:09
+Okay. So if you have a setup like this and you
+28:14
+are trying to create a
+28:37
+VM and if I choose
+28:43
+address if I choose this one right you will see two sub networks
+28:50
+folks you'll see two sub networks because in the same uh region we have two sub networks that's how it
+28:56
+shows okay so just wanted to highlight that part so now let's go
+29:08
+to Uh, VM US.
+29:37
+So what we will do is uh we'll not have an external IP address
+29:45
+because we know if you have an external IP address you can reach we don't want to have external IP address so uh that's
+29:52
+something which we wanted to do we are just going to have internal IP address
+30:04
+created and since private Google access is turned on. It should be able to access every resources any Google cloud
+30:11
+related products it should be able to access if the service account is having the right IM role. So that is something
+30:17
+which we
+30:23
+know. Okay, let me just get in. I also create one more
+30:30
+VM. Just give me a minute. Let me just see what's the service account which we
+30:38
+have. It would have been a better thing if I had used the right service account.
+30:48
+I just use this service
+31:03
+account US
+31:12
+01. So no external IP
+31:20
+address. I will use this. That's it folks.
+31:33
+I'll create two
+31:41
+more here. I'll use the other sub network. The other subn network, no
+31:50
+external IP address. And I'll make sure I create the same use the same service
+31:55
+accounts.
+32:01
+Oh, I did not change the access scope uh for that one. I'll do
+32:08
+that. And the last one is for Mumbai. I just stopped this one folks. I forgot to
+32:15
+basically make it full access scope. I'll stop and do that part
+32:22
+quickly. By the time I'll just finish Mumbai.
+32:47
+You should see Mumbai sub network. Uh let's not have external IP address under security full access
+32:55
+scope. This one default SA right that's
+33:08
+it done uh so what we will be doing is
+33:14
+based on our knowledge so far uh these VMs cannot reach internet but these VMs
+33:20
+can reach to Google services Google cloud services because of private Google
+33:27
+access turned on at their sub network level. So
+33:35
+there's no doubt there right anyway I have a service account which I have uh
+33:41
+is what's the role I have storage admin I can show that it should work uh so it
+33:48
+should work so that part is something which we wanted to see it the next part which we
+33:55
+wanted to see it is uh we wanted to see it also showing access to internet without external IP address how do we do
+34:02
+that it is with the help of uh uh NAT that's what we are going to do it
+34:08
+so before I do this this VM is stopped let me edit the access scope to
+34:14
+full access scope and then do
+34:39
+We have just updated it. Uh then we should start it.
+35:11
+Okay. So, one by one we'll do a quick check.
+35:56
+Okay. Uh, we may have to make sure the firewall rule is configured. Let me just
+36:02
+check it out. Oh, sorry, not this
+36:11
+one. because if it's taking a longer time it's not going to work. Uh let me
+36:16
+just check is there anything which I have missed with the firewall
+36:21
+rule VPC custom VPC firewall
+36:33
+rules AP Oh man. Okay. Uh the thing is that it was based
+36:40
+on a specific service account. Uh now we are using a different service account. It's not matching. Uh for the quick one,
+36:47
+I'm just going to change this to use our best
+36:55
+s. Okay, that should be fine.
+37:06
+You don't need to wait till the stuff happens because the moment it is having some issues with firewall rule that's
+37:13
+where you'll see a delay. So I wanted you to quickly see that part and just fix it. So now if I go back I have all
+37:21
+three VMs. I should be able to SSH into everything. First US
+37:34
+should get in. Should not have any
+37:46
+issues. Yes. So, I should be able to access my
+37:55
+buckets. Yes, it's working. Similarly uh
+38:10
+curl any Google related stuffs I should be able to do it uh where it's showing
+38:16
+4301 but if I do the same thing for something which is non Google related
+38:22
+stuff like uh Bing which is from Microsoft
+38:28
+soft it will not even connect because for this it needs internet it is not
+38:34
+going to work. So we have seen this concept already right. So it is going to be the same thing for
+38:41
+other resources also. Let me just SSH.
+39:06
+So GS2 because I'm using the same uh sorry I'm using the same service account
+39:12
+right so I should have access to
+39:18
+it I see the buckets so and the last one
+39:27
+is Mumbai
+39:36
+This one will not work in
+39:43
+US2 and in mobile also just because they don't have an external IP address.
+39:54
+So we have a problem statement and the solution for this one is to have cloudnat configured. So that is what we
+40:01
+are going to configure now and when I go
+40:12
+to network services that's where the net is going to be there. So when I click on
+40:22
+NAD, NAD lets your compute engine instances and Kubernetes engine
+40:28
+container ports communicate with internet and other VPC using a
+40:33
+shared public IP address or a dedicated NAT subn network. Now thing is that it
+40:41
+boils down to it may look like a very uh very hi-fi uh functionality but it at
+40:50
+the end everything boils down hey you want access to internet you should have external IP address whether it's a
+40:57
+dedicated IP address or a shared IP address that is nothing but a shared IP address folks if you have a shared IP
+41:04
+address which is external I will give you external access that's it very simple It boils down to that much. It's
+41:11
+a shared public IP address, right? That's what it indicates. So, NAT uses
+41:18
+NAT gateway to connect your subn network to a router, a virtual router that
+41:23
+connects to internet or other VPC. So, behind the scene, it's going to use router also. So if I just can go
+41:34
+there just wanted to make sure is there any router which we had created under
+41:45
+connectivity cloud router we have one let me just delete
+42:04
+Yes. All right. So, let me just create a
+42:13
+NAT. So, I'll create it as uh cloudnat.
+42:23
+US. Okay. And to start with we'll create a p public net. Slowly we'll move to
+42:29
+private net. Okay. Private net is a different one which we are going to use it. So you choose a VPC. Now you can see a
+42:37
+very smart thing in the user interface. So if I choose uh
+42:43
+VPC then it is going to only show two regions folks. The reason is uh we have
+42:49
+only sub networks in US and in Mumbai. It's very smart. They have done the user
+42:55
+interface very smartly. Similarly, if you go
+43:02
+to the other VPC, it was in South Africa if I'm not
+43:09
+wrong. VPC2 custom VPC2 the sub network was only in uh South Africa. Meaning if
+43:17
+I choose this one, it shows you this. Now the the
+43:23
+thing is that the UI has been made such nicely.
+43:28
+So you don't create a subnet to sorry a NAD in a region where there's no subnet network. It does not make any sense
+43:35
+because if there's no subnet network, you're not going to create any VM. If you're not going to create any VM, why do you need to have a NA there? That is
+43:42
+a key part. So custom VPC and you're going to choose
+43:51
+US central. Now you have to create a router
+43:56
+the cloud router which we have already seen it. So I'll call it as cloud
+44:03
+router US. So here you don't need to mention about AS number nothing. You just need
+44:10
+to create a router. That should be good enough. So the moment I do that you should you
+44:18
+will see the router coming up here once the entire page creation happens. That's
+44:24
+it. Now comes how do you want to basically do the natting right VM
+44:29
+instances Kubernetes nodes serverless components also possible. Meaning when
+44:35
+you have cloud run, cloud functions or cloud run functions or app engine, they
+44:41
+want to access something from the outside world, you can also use that. So this is going to be applicable for that.
+44:48
+You also have something called as a manage proxy load balancer. We'll talk about it later. So first let's go with
+44:54
+VMs. And you have an option because our uh sub networks are all using IPv4. So
+45:01
+it just shows IPv4. Now you also have an option saying like to which VM you want
+45:09
+to give NAT option for everything. This is the first option only for the primary
+45:16
+range not for the secondary range that also you can do it or only for one VM
+45:21
+range you can give it not every VM should have that only one VM should have
+45:26
+that those kind of combinations you can do it. The first one which we are going to do is we are going to keep it
+45:33
+open. Okay. And the next one which we are going to use is the NAT IP address.
+45:39
+How the NATP address should be created. So there are two options
+45:46
+automatically allocate IP address based on the usage and there is one more thing called as manual uh static IP that
+45:53
+should be used when performing uh cloud app. So which one is the best option? As
+45:59
+per Google, it is recommended is automatic. There's a drawback with this.
+46:04
+I'll also show that part. Let's go with what they recommend. So the remaining thing like service tier all those things
+46:10
+we have not talked about it. We are going to leave it as default. So what we literally did is we created a NAD in
+46:19
+uh US central. The moment I chose US central, right, it selected it's saying
+46:25
+there are two sub networks folks. If I use this thing, it has one sub network.
+46:31
+So you may have n number of sub networks in the same region, but all you need is just one. That's what is makes it very
+46:39
+clear that.
+46:49
+So under advanced options uh you have logging. We'll talk about that logging
+46:55
+later. So uh by default logging will be turned off. So if you want uh a better
+47:02
+clarity what is happening kind of a stuff in a learning mode or in a debugging mode you may want to turn on
+47:08
+translation or basically the error translation meaning the network address
+47:14
+translation how the translation is happening that one if you want to see it you can turn on translation only or if
+47:20
+you want to only see errors you can only also do that but for learning mode this type of logging is going to be a good
+47:27
+one in a production one I would recommend commend using only error logging. The reason is more logs will
+47:33
+incur more cost. As an architect, we want to make sure we have a cost reduced
+47:38
+or a optimized solution cost optimized solution. So, I'm going to turn on this one. Then, port allocation allocates
+47:46
+source port to compute virtual machine instance in Kubernetes engine that uses a gateway. Enabling uh dynamic port
+47:55
+allocation will allow you to use custom maximum. uh this will give you more ports dynamic
+48:01
+ports. So for now we have only two VMs that's not required uh so and some time
+48:07
+out related stuff that's it. So these are the things which we have let me just go ahead and create it. The moment I
+48:14
+create it what is going to happen is this bing was not working right.
+48:21
+Similarly, uh sudo apt or I'll just do
+48:30
+ping. This is also not working right.
+48:36
+So the moment I enable the net, the ping will start working. Okay. So let me pull
+48:44
+this way.
+48:51
+this way. So I'm going to create
+49:02
+net. It's created folks. Let's just give a few minutes for it to basically have
+49:08
+this entirely configured. Once that is configured, we should see the ping should start working.
+49:25
+That's it folks. Things are working. It just took a few minutes for it to configure everything and it is working
+49:31
+fine now. Uh that's what you see it.
+49:36
+Not only for this VM, even for this VM because they are all in the same
+49:44
+region, US region. So if I now do curl, it will give me a response. If I do
+49:51
+ping, it will give me a
+49:56
+response. It'll give me a response. However, if you use the Mumbai
+50:03
+machine, it will still not give you a response because there is no
+50:11
+NAT. There's no NAT. Now, what has happened behind the scene? Everything is
+50:16
+an external IP address behind the scene. So, can we see the external IP address? Definitely yes. So, the NAT is running.
+50:25
+Uh if you click on
+50:34
+this it don't show the NAT the cloudnat's external IP address in this
+50:41
+you can basically see it in your IP address.
+50:52
+Now these are all the internal IPs the VM's internal IP address. There's only one external IP address which we have
+50:59
+called as this one. Now you see this is my external IP address. So the external
+51:05
+word will see this as my IP address. So it will not see the VM's IP address. It
+51:11
+gets translated to this one. Now uh this is called as auto IP. What does that
+51:18
+mean? So that is what they mentioned to use. So we had used that option uh allocation automatic. So what does
+51:26
+that mean is if I delete this
+51:34
+resources. So let's make a note of this
+51:47
+one. This is our IP address folks. Okay. So now what I'm going to do is
+51:53
+[Music]
+52:06
+uh I'll delete all the VMs folks. Sorry. I'll close all the VM connections. So
+52:12
+what I will do
+52:18
+is let me launch my cloud shell.
+52:40
+So, G-Cloud uh
+52:46
+compute that G-Cloud
+52:53
+compute
+52:59
+on I'll just do this one addresses list. What this is going to show is the list
+53:05
+of external IP address which are reserved or static. So
+53:11
+this one this is a static IP address. Out of those uh four IP address only one
+53:19
+is static right? So that's what it shows.
+53:25
+So I will keep this in a watch mode.
+53:42
+Done. Now what we are going to do basically is
+53:49
+um we are going to basically go and delete the resources folks. G-Cloud
+53:54
+compute
+54:05
+instances G-Cloud compute instances. So
+54:38
+That's it folks. So I'm going to delete this. So when I delete this, what is
+54:43
+going to happen? Uh one VM goes off. Still this external IP address will be
+54:49
+there. The second time when I do it, there is no VMs in the uh US sub network
+54:57
+or US region. Now why should I have this IP address simply allocated? Because nobody is using it.
+55:04
+So in that case what is going to happen? it will remove this IP address also. So
+55:10
+this is a very good choice. You should never reserve an IP address, external IP address and not leave it uh like unused.
+55:18
+Currently it is being used which is good. If you see it, it is used by the
+55:23
+router which is good. So but if it's not used meaning there's no VM, why should I
+55:29
+have uh a cloudnat IP address the the reserved IP
+55:34
+address? the knack will be there but the IP address will not be there. So it's now deleted. It is still there. The
+55:41
+reason is we have one VM. So I'm going to delete even this one. The moment I
+55:46
+delete it, you can see on the top panel the address will be removed. Nag will be there but no
+55:53
+external IP address. So this is like very dynamic in nature. That's what you see. This is a cool functionality but it
+56:00
+has a drawback also. I'll show you that.
+56:07
+Let's wait for the resource to be deleted and we should be focusing on the top panel.
+56:37
+That's it folks. It's almost getting deleted. It has already removed the IP address. So the reserved IP address is
+56:45
+not there is what it very clearly shows. This is also going to come out. Yeah, no
+56:50
+resources. So if you go here that will be
+56:56
+removed which is good. Now is the most interesting thing which I wanted to show
+57:01
+you where
+57:13
+Now let me create a new IP address. The moment I create a new IP, sorry, what is
+57:18
+that network?
+57:23
+What's the sub
+57:43
+network if I do this the moment there's a VM in that region possibilities are
+57:50
+there this VM needs to connect to internet immediately ly an external IP address will be created and the NAT will
+57:57
+be completely running right so and this could be a new
+58:02
+IP address folks now the V oh sorry and this is another beautiful thing so even
+58:07
+a mistake was helpful here so when I created this the VM was already created with an external IP address so there was
+58:15
+no NAT created so let me just delete
+58:25
+it this has no impact. The next one which I will create it is so meaning if the VM is having an external IP address
+58:32
+NAT will not get created. If the VM is going to have an internal IP address and
+58:37
+you have a NAT enabled in that region uh basically it is going to create
+58:43
+automatically a new external IP address. This is automatic allocation.
+58:50
+So this is going to work very well if you have a scenario where you create
+58:57
+resource and delete resource and the moment you create the resource those resource should have access to internet that's it nothing else they can go
+59:05
+download anything kind of a stuff you don't have any restriction in that case this automatic allocation is going to be
+59:10
+a good choice where it will not be a good choice is if you have to whitelist it by
+59:17
+the time it gets deleted. So here you may want to
+59:22
+whitelist here only if request comes from this one allow MongoDB to communicate. If you do this this IP
+59:30
+should be static and should not be keep changing right. So in that case what you
+59:36
+may have to do is let me just show you no address no external
+59:44
+address. If I say with no external IP address, a new IP address will be
+1:00:00
+created. Do you see this? And it it was a new IP address
+1:00:08
+range. You can see it. It's a different one, right? So if it keeps changing it,
+1:00:14
+I have to again and come and update it like this. I don't want this one. So if
+1:00:19
+you don't want that kind of a functionality, what you have to do is edit your
+1:00:31
+mat. Don't use that. Have a manual one, right? Have a manual one and save it.
+1:00:43
+Okay, one minute.
+1:00:55
+Uh have a manual one, you can create a new one. So, let me just delete this
+1:01:04
+resource. I don't want that. And we know when we delete it, this IP
+1:01:11
+address is going to also get deleted. So what I wanted is a very static one which
+1:01:16
+never changes very much static not
+1:01:22
+static. Now whether you have VMs or not or anything does not matter. I will
+1:01:28
+always have this IP address. By this way what I'm going to do is I have to whitelist my stuffs only once and this
+1:01:36
+will be always there. So now I'm going to create
+1:01:52
+it done. And if I go to my you will see the routers, the one
+1:02:00
+router which we created. And if I just go to IP
+1:02:08
+address, this is the one which I created, right? It will be always
+1:02:15
+there. Always there whether you have VMs or not, it will be always there. I don't
+1:02:21
+have any VMs in US Central.
+1:02:29
+Uh but I still have the IP address. So two different use cases depending on
+1:02:35
+what is your thing. You can just basically look into it. So let me just create one more time a VM.
+1:02:46
+I'll just try to ping and show or I'll try to reach the internet
+1:02:52
+and try to download and try to show you what happens because you can see it in the
+1:02:57
+locks what is basically captured because we have turned on the translation and
+1:03:03
+the error related stuff
+1:03:10
+right this VM
+1:03:19
+Okay. Oh, the service account would be different. My bad. One
+1:03:35
+minute. Otherwise the firewall rule will not work right. So let me just put the
+1:03:41
+fire on the right service account.
+1:04:05
+uh you can say Google platform that's what you usually mention
+1:04:17
+it. So when you create a VM
+1:04:29
+This one maps to a equivalent option called as uh Google platform. If
+1:04:37
+you just mention this that should be full access. Okay. So this one should be
+1:04:43
+created.
+1:04:57
+Once it gets created, we'll try to go and download a
+1:05:09
+software. Two VMs are there. So,
+1:05:17
+US full access, right? Let's SSH into
+1:05:29
+it and I'll try to do something uh like try to download git try to
+1:05:37
+install something like an outbound traffic is what I'm trying to do. So before I do anything, I come to
+1:05:46
+my NAT. You can see the logs. It will already show some logs
+1:05:53
+because we did some stuffs already. It should show some logs in the last 1 hour. So two connections is what you see
+1:06:00
+it. So my local time is around 712. Let me just do something now. sudo
+1:06:08
+apt install
+1:06:27
+git is it required to update the firewall rule? I did not update the firewall rule but rather I made a VM
+1:06:34
+with the right service account. either you update the firewall rule basically
+1:06:42
+uh to use the SSH option or I created a VM with the right service
+1:06:48
+account that's the reason I did not update it but changing your because this
+1:06:54
+IP has nothing to do with your firewall rule so this is for outgoing traffic already it is going to allow you there's
+1:07:00
+no issues right the eress firewall rule is already there so there is no need of changing any firewall rule
+1:07:07
+here. Now the kit is installed. Let me just go ahead and see the logs. Is there
+1:07:13
+any kind of locks for the things which we did? Yes, 72 or 712 is where you see one
+1:07:22
+connection. So if I just go and look into that logs, it can give me more
+1:07:29
+information. So where the destination IP is this, port is this. Look at the NAT
+1:07:35
+IP folks. So that was our net IP, right? 149.
+1:07:41
+That's what it shows. And what is the source from where it came from? That is
+1:07:47
+our VM. So what's our VM's IP
+1:07:52
+address? 555 uh 10.57. That's what it
+1:08:00
+shows. That was a connection. And destination
+1:08:11
+destination. So this is a public ASN number 54113 continents America and the same
+1:08:18
+because the US it was in a US machine so it used that end point uh nothing much
+1:08:26
+here uh router details it gives
+1:08:34
+me what else I can show you it just shows the destination books
+1:08:41
+where it went and tried to reach that's it right so that's what we can basically uh see
+1:08:49
+it so it's because of
+1:08:54
+the the pseudo ad command which tried to reach internet to get access
+1:09:01
+so this is this was my destination IP address right so this is how you can
+1:09:08
+have your access to your internet kind of a stuff. Now um the Mumbai machine
+1:09:16
+was not still able to connect. If you want the Mumbai machine, you have to have basically uh a NAD configured there
+1:09:24
+in that region. So the key thing which I wanted to convey is you can have n
+1:09:29
+number of sub networks in the same region does not matter just one is
+1:09:36
+sufficient. That is one thing which I wanted to convey. The second thing which I wanted to convey is if you wanted to
+1:09:42
+use a static one go for it because you would have whitelisted this in your
+1:09:50
+external system. You don't want to keep changing it means go with static one or
+1:09:56
+manually allocated IP address that will be always there. So even if you don't have any
+1:10:03
+resources you still pay for the external IP address.
+1:10:09
+If you're okay go for it otherwise you can go with the dynamic one. So those
+1:10:14
+are the things which I wanted to convey first. So the next thing which we are going to see is primarily how we can
+1:10:24
+use the private one how we can use the private net. So
+1:10:30
+this is primarily going to be used when we use the VPC network peering. Okay. So
+1:10:35
+we are going to try to leverage this part. So
+1:10:42
+this conference will now be recorded. So uh whatever is there in the slide we
+1:10:48
+were able to see it uh in action like NAT is a regional resource. NAT is going to give you basically uh allow only an
+1:10:56
+outbound access. That is what we have seen it. And what
+1:11:15
+we so uh what you are going to basically now see is uh uh the private NAT option.
+1:11:24
+So which was uh a year year and a half back introduced. So what is this all about? Let's look into it.
+1:11:38
+Uh so
+1:11:43
+private net GCP
+1:11:58
+So what does this it private net enables private to private address translation
+1:12:04
+between the networks between the networks meaning it is what between two VPC networks. So IPs which you wanted to
+1:12:12
+show you want to show it in a different one. So that is where this private net is going to come into picture. So uh
+1:12:20
+private net for network connectivity this
+1:12:38
+thing. So go for this option. So whenever you have a private to private uh address
+1:12:45
+translation to be done go for it. There's also something called as hybrid uh NAT enables private to private N
+1:12:52
+between VPC and onremise. So if you have
+1:12:59
+something like okay okay so VPC to VPC is something
+1:13:05
+which you are going to do it. So you can just give me a minute.
+1:13:12
+This conference will now be recorded. So private net can be really helpful. Uh
+1:13:20
+there are few specifications where which we have to keep in mind. So private net
+1:13:25
+allows outbound connection and inbound response for those connection which we always know inbound response for
+1:13:33
+those connection which was initiated. Uh that is something which we see each
+1:13:38
+cloudnat for uh private each cloudnat gateway for private net performs source
+1:13:46
+snack on egress and destination net for the established packets. So this is not
+1:13:53
+supported for auto mode. We have already seen a good number of stuffs. This is one more reason. So to avoid auto mode,
+1:14:00
+let me just update this in our this thing. Uh if I just go to real
+1:14:07
+implementation tips
+1:14:12
+uh if I just
+1:14:22
+go we had some nine reasons we can also
+1:14:28
+add next reason private now does not support that's something official uh
+1:14:36
+does not support unsolicitated uh inbound response from a connected network even if the firefall rules uh
+1:14:45
+those otherwise permit these request for private net of a single uh
+1:14:53
+network region and cloudnat support
+1:15:01
+any cannot use private to transit primary or hosting range for a given uh
+1:15:08
+there was one option which I had seen that cannot use to translate specific
+1:15:15
+the given sub network always performs net on all yeah it's always on the all the IP address for a given sub network
+1:15:22
+which is
+1:15:29
+good let me just use this so instead of going through each and every point right
+1:15:35
+uh what I will do is uh I'll show you a small
+1:15:40
+demonstration where we'll have this one public let it be there uh we'll have a
+1:15:46
+private map also created so I just go
+1:15:55
+back if I go back here [Music] um first let me uh remove the PPC
+1:16:04
+network pairing
+1:16:11
+box. We remove this pairing.
+1:16:43
+Then the reason why I have done is I wanted to have a overlapping IP and
+1:16:48
+we'll try to use uh private net and try to see how we can basically mitigate
+1:16:53
+this one. So I will go ahead and do
+1:17:04
+There are use cases. One of this could be using this. So two VPCs having
+1:17:11
+um overlapping. How can we basically mitigate it?
+1:17:20
+So we see three sub
+1:17:27
+networks. Okay. So we see these things. Similarly, I'm going to
+1:17:41
+have I'm going to add this one. I'll add one more sub.
+1:17:59
+Let it remain in the same region for simplicity reason Google
+1:18:07
+access it should get created because we don't have any VPC
+1:18:13
+network so what we wanted to do is
+1:18:34
+What we want to do is we want to set up a network.
+1:19:06
+Let's use it for the other one. Uh meaning uh
+1:19:13
+this one I don't want it to show for South Africa this IP I want it to show something else that's what I want to do
+1:19:20
+so so when it shows something else I have no issues I can click right I can basically do it so uh I just go
+1:19:31
+back here let me just show
+1:19:44
+01 this is from VPC to VPC to no
+1:19:50
+external IP address the first one will go through the second one will not go through and you'll say there's an
+1:19:55
+overlapping VPC so now what I wanted to do is I will have VPC like that and I'll
+1:20:03
+show like as if like if it is showing the same IP address that is where the problem comes So I'm going to show it in a different
+1:20:10
+way right with the NAT it's going to translate my IP address to a different IP address then I should not have any
+1:20:18
+issues it will throw an error
+1:20:24
+now yeah it shows there is an overlapping IP u an IP range overlaps
+1:20:31
+with the IP so which is fine right so this is what we want to try to solve
+1:20:36
+with the new functionality folks because what if they have already established a connection just because you want to peer
+1:20:47
+it. So how do you basically that's what I wanted to see it uh show you that. So
+1:20:53
+what we will do is we go to Matt.
+1:20:59
+So Mac and I'll use it on the second
+1:21:05
+network where there's only one uh region which is South Africa. So I'm going to create a new
+1:21:21
+router. So for VMs uh custom let's make it to
+1:21:29
+all you can define your custom tool uh root should have a unique ID.
+1:21:40
+So let me just create
+1:21:52
+this. I'm creating a private one.
+1:21:59
+So, if I go to
+1:22:21
+my not show anything, but let me give a try uh by doing a bearing.
+1:22:43
+Pink between these two.
+1:22:53
+I not tried this option but I have read it in the documentation long time.
+1:22:59
+Uh going
+1:23:18
+in single private roads and for all [Music]
+1:23:24
+private this option only one private [Music]
+1:23:37
+Okay, I'll come back to this one part uh folks. So on the private minute I'll come back because I remember seeing this
+1:23:44
+option is possible. Uh I'll come back and show you in the in a in a later
+1:23:51
+session. So I'm not able to do this part.
+1:23:56
+Um let me just go back uh to the next topic. So
+1:24:04
+private net I'll try to show you in the next class I'll or maybe possibly tomorrow itself I'll try to do some
+1:24:11
+small homework on that but I'll try to fix this part. So NAD we saw uh how it
+1:24:16
+works. Uh a very handy option. Now uh remember in our uh private Google access
+1:24:23
+session uh I had mentioned private Google access is completely free but
+1:24:29
+even though it is free Google does not turn this on by default
+1:24:34
+uh whether it is in the UI in the terminal or in terapform the sub networks will not have private Google
+1:24:41
+access by default turned on you have to turn it on now there are two reasons why
+1:24:47
+they don't turn it uh one a fun part is if everything Google does it we don't
+1:24:53
+have a role to play that is one way of saying it the second reason is Google
+1:24:58
+assumes that your workload meaning your parts your virtual machines will
+1:25:03
+definitely reach out to internet and Google also assumes that you will definitely put a organization policy not
+1:25:11
+to have external IP address no external IP address but you still need access to internet then what is the option you're
+1:25:18
+going to use NAT. So when you use NAT what is going to happen automatically the private Google access
+1:25:25
+is going to be turned on. So that was a whole assumption what Google had thought okay anyway you have
+1:25:32
+a project you will have a VPC you will have a that then why to do turn on
+1:25:37
+private Google access. So that was the assumption which basically had Google had used and because of which they were
+1:25:44
+not turning it on. So just to show you that part if I have an ad running right.
+1:25:50
+So if I just go to
+1:25:57
+my and go to my this
+1:26:03
+thing I will turn off for Mumbai where there's no there's
+1:26:12
+no turn nothing
+1:26:29
+has turned up. Nothing happened. Let me just refresh it
+1:26:36
+here. Nothing happened. But whereas in the region where we have turned on the
+1:26:42
+NAT US central any of these new sub networks if you turn off it it will show
+1:26:49
+a nice message. Let me show you that message.
+1:27:01
+This is a place where UI
+1:27:17
+is you see this folks uh uh you see this folks. So where it is
+1:27:25
+pretty much it is mentioning the private service access is still an input even
+1:27:31
+though it has not been turned on manually for packets from this sub network uh because cloudnet is
+1:27:37
+configured for those regions that's what it indicates very quickly. So Google
+1:27:43
+assumed this you will have a VPC a sub network you would have created VMs
+1:27:50
+Kubernetes clusters those kind of stuffs and these will have internal IP address
+1:27:55
+and you may have a outbound traffic requirement so meaning you'll upgrade a
+1:28:00
+so if you upgrade that private Google access is turned on by that's what it
+1:28:06
+indicates. So that's a small additional thing which I just wanted to share
+1:28:14
+it. Uh is the this conference will now be recorded.
+1:28:19
+Now uh we finished cloudnat. Uh we understood the concept uh how it works and the connection between private
+1:28:26
+Google access and cloudnat also we saw right. So if uh NAT is turned on,
+1:28:33
+private Google access for that specific region does not need to be turned off. This is a beautiful message, right? So
+1:28:41
+leverage it is what I would say. Uh so uh there's no harm turning it on to be
+1:28:47
+very frank. This is completely free. There's no harm. uh if you still want basically uh like a kind of uh hidden
+1:28:54
+stuff this like uh like this usually uh like you don't need
+1:29:00
+to share everything with your team. So keep some secrets within you so that you
+1:29:06
+have a real value within the team. So this could be something like this where you may don't want to turn on private
+1:29:11
+Google access but since still the n is kept in you can definitely see the
+1:29:17
+communication is going to be using using the internal way so a VM is going to communicate with the Google cloud bucket
+1:29:24
+internally so that is what you may try to select so now let's go to the next
+1:29:30
+option uh so there was a small jump we finished VPN uh then we should have gone with interconnect uh but we went with
+1:29:38
+cloudn the only reason is cloudnat was relying on something called as cloud router cloud router was used in VPN so
+1:29:46
+there was a small connection that's the reason I slightly jumped to n concept and came back the next option which we
+1:29:53
+wanted to see is called as cloud interconnect so what is this option this
+1:29:58
+is also another way where two networks can communicate one of the network is
+1:30:05
+going to be google the other one is going to be onremise AWS, Azure kind of
+1:30:10
+a stuff. So now what is the difference between uh cloud interconnect and basically
+1:30:19
+the VPN piece of it? Bandwidth hosts. Bandwidth is the important thing here.
+1:30:25
+Interconnect can give you in a range of uh bandwidth. So it can start with
+1:30:31
+something like 5 Mbps. It can go up to 200 Gbps. So it's
+1:30:37
+a wide range is what they can provide. Uh and they have some criterias which
+1:30:43
+you have to fulfill. If you fulfill it, you should be able to either use dedicated interconnect or partner
+1:30:49
+interconnect. So the small diagram which you see it here is
+1:30:56
+uh the private NA option. I will try to show a demonstration uh in the next
+1:31:01
+class because today it is breaking. So the whole purpose of private net is uh
+1:31:08
+what is the IP address which you see that can be translated into a different IP address. That is the whole purpose.
+1:31:15
+Uh one of the use case which I wanted to show is if there are two VPC networks
+1:31:20
+which has an overlapping IP can be basically peered with private land. That is what I
+1:31:26
+wanted to show in the tomorrow session. Okay. So uh we have paused it because it
+1:31:32
+was breaking. We'll talk about it in the next class. So coming back to interconnect
+1:31:38
+uh two options are dedicated and partner interconnect. So from my
+1:31:44
+onremise I reach Google's point of presence. The moment I reach it from
+1:31:51
+there the communication is going to be using Google's network. So it's like a a meeting place
+1:31:58
+there is going to be two uh networks. they are going to meet up at one place usually called as collocation
+1:32:05
+facilities. So once you meet at that position place uh the routes are going
+1:32:11
+to be exchanged the communication is going to be established. So can you reach Google's point of uh presence or
+1:32:18
+the collocation facility it depends on how far is your data. This is one of the
+1:32:24
+very good architecture diagram which I would say with respect to interconnect. So the reason is you have Google cloud
+1:32:32
+on one side you have onremise on other side. So in the Google onremise you have
+1:32:38
+a sub network you have which is class uh this
+1:32:44
+is class C you have class A uh internal IP
+1:32:50
+address then these two network my network and
+1:32:56
+the onremise network should come. So the how we are going to do it we are going to make sure these two network meet at a
+1:33:03
+common location called as collocation facility once they meet right they are
+1:33:09
+going to exchange their routes now on the Google cloud side you should
+1:33:14
+have a cloud router even on the onremise side you should have a onremise router
+1:33:20
+now this onremise router is not mentioned in most of the architectures only in dedicated
+1:33:26
+interconnect they mentioned Even in VPN if I just go a few slides
+1:33:34
+back this is one thing which I have but this is again taken from Google's uh documentation only you will see in
+1:33:41
+Google cloud side I have
+1:33:49
+a but here I don't mention about any router I just mention the gateway to be very frank there is a router there is a
+1:33:57
+router also which you have right. So in that way this architecture is a
+1:34:04
+very good one which talks about both uh the cloud router on both side and an onremise
+1:34:12
+router like Cisco juniper kind of a stuff on the this is a physical router
+1:34:18
+physical router so it is going to look like something like
+1:34:42
+Mercy which you can touch and feel. Whereas the cloud router which we know it's basically virtual
+1:34:55
+So the key part is make sure there's no overlap. But we have already seen it there's an overlap. You can use your
+1:35:00
+cloud router to advertise specific things only. So if it's there's no overlap, it's a little easy game. That's
+1:35:07
+it. So make sure your Google cloud project network and your onremise meet
+1:35:13
+at one common collocation facility. Exchange the route and the communications must be established. Now
+1:35:19
+uh can my onremise reach out to Google cloud or meet at this collocation
+1:35:25
+facility? It is going to be a matter of distance folks. So where is my onremise
+1:35:31
+environment? Where is my collocation facility? So because it's a physical optic fiber which has to be laid. So can
+1:35:38
+I reach there? Is it like 50 kilometers, 100 kilometers or it is 10 kilometers?
+1:35:44
+Right? there's a a physical hardware which you have to buy and all. So it is
+1:35:49
+going to matter whether you can connect to that collocation facility or not. If you cannot connect here uh I'll come to
+1:35:57
+the slide in a
+1:36:06
+minute. So if you cannot connect to the collocation facility, one
+1:36:12
+of the possible reasons is the distance is very far.
+1:36:18
+my data center and Google's collocation facility is very far and cabling is
+1:36:25
+going to be more expensive then you can go with something called as partner
+1:36:35
+interconnect where a partner is going to help you out these are usually ISP providers like air loaf kind of a stuff
+1:36:42
+they will help you out to connect your onremise system with Google cloud because they would have created all the
+1:36:48
+cabling already. So in dedicated interconnect you are going to do
+1:36:55
+this. It's something between you and your data center and Google data center.
+1:37:00
+And this is going to be an unencrypted connection. Why? It's a private connection folks. It's not public
+1:37:07
+connection. It's not a public internet. So it's going to be unencrypted by default. If you want to encrypt, you may
+1:37:12
+have to use on top of it VPN kind of a stuff. But I'd say you don't need those
+1:37:18
+kind of a stuff because it's an overhead because the private connection. Nobody's going to basically tap onto that. So
+1:37:25
+it's unencrypted. You can communicate if you can reach out. If you cannot reach out, you can basically use a partner to
+1:37:31
+help you out. Who can do this part? When you use a partner interconnect what is going to happen is you are going to rely
+1:37:37
+on the partner to do all the things provide the hardware all those things and also the service level agreement is
+1:37:43
+going to be coming from partners not from so for this one the most important thing
+1:37:50
+is you need to have a uh onpremise network so I don't have that but I just
+1:37:56
+wanted to show you a small portion of the demonstration uh if I just go
+1:38:04
+network connectivity under that interconnect you have two more additions we had seen in the slide uh dedicated
+1:38:11
+interconnect and partner interconnect now there are two more things which has been added we'll talk about that also
+1:38:17
+the first one is I want to set up a physical connection so we have dedicated
+1:38:24
+interconnect so connects your onremise uh network to Google cloud DPC uh
+1:38:31
+network by connecting a new fiber to your equipment. A new fiber optics is
+1:38:38
+going to be connected. So there is some kind of physical devices which is going to be there. So this is what you can see
+1:38:45
+it onremise to basically the Google cloud piece of you also have one more
+1:38:51
+option called as partner interconnect. So connects your onremise network to the
+1:38:56
+Google cloud through a connection from a supported service provider.
+1:39:02
+So there's a partner who's coming in between. There's also a new functionality which they had launched called as crosscloud inter. So what if I
+1:39:11
+want to connect between Google cloud and AWS. If it's Google cloud and AWS, you can definitely use VPN. But the problem
+1:39:18
+with VPN is the bandwidth 3 Gbps is a max per tunnel. So if you want more
+1:39:25
+bandwidth, you may have to add more tunnels. More tunnels means more overhead kind of a stuff. If you don't
+1:39:31
+want to get into that kind of a stuff but you still want to get more bandwidth in a easy option cross cloud
+1:39:39
+interconnect is an option which you can do. So recently they have also introduced something called as cross
+1:39:46
+site interconnect. So connects your site with a private secure sight to sight
+1:39:52
+uh network across Google's high performance global network offerings. So I have to see this part what it is. It's
+1:39:59
+still in preview. So this is the new thing which which they have also introduced. It's in preview. Let's not
+1:40:04
+much worry about it. So three options is what you get. If I go with interconnect
+1:40:11
+option now let me order a new connection meaning it's a physical device which or
+1:40:17
+a physical connection which we are going to create. So I'll call it as IC1 interconnect
+1:40:23
+one. And this is a collocation facility. So if I click on this, it is going to
+1:40:28
+show me almost like 159 collocation fac. The place where my network and Google's
+1:40:35
+network are going to uh meet. So basically this is uh uh a meeting point.
+1:40:42
+So if I basically say city
+1:40:49
+Mumbai in Mumbai I have two collocation facilities uh Tata Mumbai IC GPX Mumbai.
+1:40:58
+So if I want to know the location of that I can just click on their hyperlink. It is going to take me to the
+1:41:07
+spearingdb.com where it will also tell me very exactly the lat and longitude.
+1:41:13
+Now from here how far is your data you capture that distance. If it's very far
+1:41:20
+there's no point in laying a cable an optic fiber. Better work with a path.
+1:41:26
+But if it's nearby, leverage this one because you can get a very high bandwidth. Very high bandwidth in the
+1:41:34
+range of 200 Gbps. Right? So that's the thing. So let
+1:41:40
+me just select Tata IDC, Mumbai IDC. That's it. So this is a examination
+1:41:47
+questions. The one which dedicated interconnect can support. It can support a Ethernet link of 10 Gbps, multiples of
+1:41:56
+10 Gbps up to 80 or it could be 100 Gbps and multiples of 100 up to 200
+1:42:03
+Gbps. So if I go with this one, what is going to be the thing? It's the ultimate
+1:42:10
+capacity which you can get and at the same time the price is also going to be high. It is going to use two networks
+1:42:17
+folks or two redundant networks connections not network two connections
+1:42:22
+why what if this connection creates so to do that they create a redundancy so
+1:42:29
+if you want the redundancy you can add it but if you don't want the redundancy you can reduce the cost to five but you
+1:42:35
+are not going to be served by a SLA service level agreement will not so it will come down to 34 but if you say I
+1:42:42
+want to have a redundant network go for it. It will be double the cost. So you choose
+1:42:52
+IC2 that mention the company name
+1:42:59
+demo. Technical contact should be something
+1:43:06
+like the technical contact should be your uh that organization's networking
+1:43:13
+teams. So if the company name is demo uh
+1:43:19
+networking
+1:43:27
+at and uh demo.com something like this now you
+1:43:35
+when I click on next you will get a letter of authority.
+1:43:42
+So how to set up the circuit turnup uh configuration all those details you're
+1:43:48
+going to get it. So you can see it I have IC1 it is going to be in Mumbai
+1:43:54
+zone one. So two zones is what they have it and another one Mumbai zone 2. So the
+1:44:01
+details when I place it I'm going to get the order all those things and this will take minimum 5 days. Five business days
+1:44:10
+is what it's going to take. uh and we know in our session right uh with all
+1:44:16
+the explanation in two to three hours we were able to set up the cloud VPN itself. If you already know VPN concept
+1:44:24
+like as I mentioned in like 2 minutes you should be able to set it up if you use any kind of G-Cloud command it could
+1:44:31
+be less than a minute if you are using. So in the exam if they say you
+1:44:37
+have to basically do something like quickly set up a connection between onremise and Google cloud the quick one
+1:44:43
+means VPN because whatever you do this interconnect option will take minimum 5
+1:44:51
+days because there are there is physical work like cabling or those kind of a stuff it will be slow. So if in the exam
+1:45:00
+if they say talk about like quickly establish a connection VPN is a good
+1:45:06
+choice. So if I go ahead and see it there are
+1:45:13
+two zones. So this is for redundancy purpose. If you say no I don't want redundancy. I'm going to remove
+1:45:20
+it. Now you can choose where you want your one connection zone one or zone 2.
+1:45:27
+So that's what you can mention. If I say I want zone one, it's going to be 34 34K and it is
+1:45:36
+going to show this. This is what it shows. Say for example, if I
+1:45:42
+say my location is not Mumbai but my location is
+1:45:48
+uh Chennai. Fortunately, Chennai also has
+1:45:54
+it. So same thing we should be able to follow it. So if I choose
+1:46:06
+Hyderabad, Hyderrobat also has uh one so you can choose it. But unfortunately if
+1:46:13
+I use Bangalore both the flavors I'll put it
+1:46:18
+Bangalore does not show anything.
+1:46:28
+is not meaning. This is a situation where assume um in Bangalore there are
+1:46:35
+uh data centers
+1:46:42
+like so a tech folks u this a tech uh my
+1:46:48
+first company where I worked so they had their data center in this tech park so
+1:46:53
+and this is in Bangalore so that's what you are going
+1:46:58
+to see now If I have something like this, if I have a data center in ITPL
+1:47:06
+Bangalore and I want it to connect uh it needs to connect to Google's uh network
+1:47:13
+and I have a bandwidth requirement of say for example 20 Gbps VPN I don't want to do it because
+1:47:20
+one tunnel is 3Gbps roughly seven tunnels is what I have to achieve if I have to have 20 Gbps. I don't want to go
+1:47:28
+I think of using uh dedicated interconnect when I come here I find out
+1:47:33
+that I don't have a collocation facility then what should I do basically I have
+1:47:39
+to work with a
+1:47:47
+partner so I work with a partner I work with a partner
+1:47:56
+share I work with a partner I want to find a partner I don't have because the
+1:48:02
+partner would have created all the connections I just need to find the right
+1:48:08
+partner and they will give partner details uh from different uh geographies
+1:48:14
+so if I'm in
+1:48:20
+India Okay. Partner interconnect in India. So
+1:48:26
+I have Mumbai and Delhi. Chennai is there. Delhi is there. Hydroband is
+1:48:31
+there. Mumbai is there. And these are the providers. So
+1:48:37
+Bangalore is not there folks. If what does it mean? The closest
+1:48:44
+location to Bangalore. So maybe I have to work with this provider.
+1:48:52
+I have to work with this provider called as direct cloud that is
+1:49:00
+what I feel like the company name. So I have to work with that to get this
+1:49:05
+connection. So they showing you this one right so they have a cloud provider so
+1:49:10
+it connects to this thing. So this kind of a stuff is what you can get. So you
+1:49:16
+have to work with a partner that's what I'm using. There's one question in the chat. Uh so
+1:49:23
+cloud router uh cider range and onremise cider range both can be same. Uh IP
+1:49:29
+overlap will not happen in that case. Uh we had seen a small demonstration on this part itself.
+1:49:35
+So the ideal scenario is IP should not overlap. If there's no overlap the all
+1:49:42
+the sub networks can start communicating each other. That is the best way. But if
+1:49:47
+you have uh three sub networks in onremise or three sub networks in Google
+1:49:52
+cloud, one subnet network in onremise and one of them are overlapping, what
+1:49:58
+you can do is with the help of cloud router, you can say not to advertise this custom routing. So advertise only
+1:50:05
+the one which is not overlapping. The one which is overlapping, don't even advertise it. So that way you can still
+1:50:10
+set up the BN. It's going to work. But the overlapping one will not be able to communicate. So that is what you can do
+1:50:17
+it. So ideal condition no overlap. But if you have a overlap I will suppress
+1:50:23
+that sub network. I will not advertise it. So that way just because something
+1:50:28
+is overlapping I don't want the entire connection to be uh failed. So what I will do is I basically
+1:50:35
+uh advertise custom routes with cloud routing. Hope that makes sense.
+1:50:43
+That's what you can do it with interconnect dedicated interconnect partner interconnect. So let me just
+1:50:49
+show you also the new
+1:51:00
+one. If I go to physical connection
+1:51:07
+cloud order.
+1:51:14
+So [Music] cloud providers folks these are the this
+1:51:22
+is the important thing from the exact perspective. So what are the providers? Alibaba cloud, Amazon, Azure and Oracle
+1:51:29
+cloud infrastructure. So if I choose Oracle cloud infrastructure. So what are
+1:51:35
+the locations? So these are going to be usually the AWS locations. AWS has a
+1:51:40
+location in Hyderrobad if I'm not wrong. They don't have
+1:51:50
+it. Yeah, this is Mumbai. So they select
+1:51:57
+it. Select it and you get almost the same
+1:52:03
+range. This is something which you can choose.
+1:52:13
+Uh so it gives us two colloc remote collocation facility and basically the
+1:52:19
+collocation facility of Google. So GPX mobile which we already had right that's
+1:52:25
+what you're going to choose it choose what should be your bandwidth 10 multiples of 10 up to uh 80 100 and
+1:52:32
+multiples of 100 up to 200. Now just to give you if I have this
+1:52:37
+range cost is going to be expensive that's okay uh but if I have that kind
+1:52:43
+of a range right so let's make it 200 Gbps right if I have that range kind of
+1:52:50
+a startup how much I can transfer it uh GCP transfer
+1:52:58
+appliance remember we had a small image which used to show how much data you can transfer it let me just use
+1:53:15
+Now I have 100 Gbps
+1:53:20
+connection not even 200 100. Now you can transfer even 100 terabytes of data in 3
+1:53:29
+hours. That's the thing which you can achieve. So if you have really a use case where
+1:53:36
+huge amount of data is going to be transferred from onremise to Google cloud or vice versa or from other cloud
+1:53:43
+to Google cloud this could be a very good choice. this could be a very good choice because a bandit support is like
+1:53:49
+awesome max range is what you're going to get it leverages and if I have 200
+1:53:55
+GPS I should be able to finish this one in um what I would say like in uh 90
+1:54:03
+minutes that's only possible
+1:54:22
+So a huge thing you may get this thing a kind of confusion should I go with uh
+1:54:28
+transfer appliance which we have already seen it under Google cloud storage or
+1:54:33
+should I go with internet connect so dedicated partner anything right which one is better so the question is every
+1:54:42
+day are you going to transfer a huge amount of data or you're going to transfer only once a
+1:54:48
+day one time transfer transfer appliance is a very good choice.
+1:54:53
+Um and every day you're going to generate it means then basically an
+1:54:58
+interconnect kind of an option is a very good choice. When people generate this much of data, possibilities are there.
+1:55:05
+Possibilities are there. And towards the end in our
+1:55:12
+training, we look into a case
+1:55:22
+study. We look into a case study called this is basically an IoT device.
+1:55:29
+And you can see the amount of data it can generate. So basically they have
+1:55:35
+some vehicles connected vehicles which generate around 500 mgabytes of data per
+1:55:40
+week. Right? And they say they have 2 million vehicles. If I just do a small
+1:55:48
+math 2 million. So this is 2 million vehicles
+1:55:54
+each generating 500 mgabytes. So this much is the megabytes of data
+1:56:00
+which I'm going to get it. So if I just go megabyte to
+1:56:08
+pabyte conversion one data will be generated
+1:56:15
+every day which may have to be transferred. Now meaning if you have that much of huge amount of
+1:56:25
+data one it will take around 30 hours to get
+1:56:32
+transferred. If I have 200 Gbps 15 hours is a better one. Every day one of data
+1:56:39
+generated needs to be classed with means interconnect specifically dedicated interconnect is going to be a good
+1:56:45
+choice and specifically 200 GBs is going to be a good choice. Many there are use
+1:56:50
+cases where you may have to transfer huge amount of data every every day then
+1:56:56
+interconnect is a good choice but if it's only once in the initial migration
+1:57:04
+then place is something which you can consider this something which you can
+1:57:10
+[Music] so if I just go
+1:57:16
+back we saw partner dedicated interconnect, partner interconnect and uh crosscloud interconnect. Dedicated
+1:57:23
+interconnect and uh crosscloud interconnect uh was almost supporting the same kind of bandwidth. Partner
+1:57:30
+interconnect has a capability where they can provide
+1:57:35
+you like sorry not 5 Mbps my 50 Mbps I told 5 Mbps in the beginning 50 Mbps to
+1:57:43
+50 Gbps it can provide. So meaning it can provide you a subgrade
+1:57:49
+bandwidth one which you want to choose it. Now 50 MPS if you want VPN also will
+1:57:55
+not support but if you want a very very low bandwidth support but you just want
+1:58:00
+onremise to Google cloud kind of stuff partner interconnect would be a good choice. So uh you can also do a partner
+1:58:08
+interconnect between two different organizations two different Google cloud organizations that's something possible.
+1:58:16
+Right. Dedicated interconnect on the other side uh the customer needs to meet
+1:58:21
+Google's point of presence the collocation facility and it can provide you like 10 Gbp like 10 Gbps to 80 Gbps
+1:58:29
+100 Gbps to 200 Gbps they can provide you that data possible uh it's a
+1:58:35
+physical link right it's a physical link uh this has to be under the same organization you cannot share it but
+1:58:42
+partner interconnect has lots of benefits it can communicate with two different organizations or it can be set
+1:58:48
+up between two different organizations separate bandwidth into it kind of a stuff. So uh what I would recommend is
+1:58:56
+to start with if you just want to see a connectivity between your onremise and Google cloud h and you don't want any
+1:59:02
+kind of dependency go with VPN. Once you see everything is working
+1:59:09
+bandwidth is a constraint then go with partner interconnect because you can get a little better
+1:59:15
+bandwidth because and you are not investing anything in the hardware. Now if you feel that this is all good and
+1:59:21
+you need a very ultimate bandwidth go with dedicated interconnect. It's a step-by-step journey VPN partner
+1:59:28
+interconnect and dedicated internet. So if you go in that way it is going to be a good choice. It's going to be a good
+1:59:34
+choice. And I just wanted to show something from the exam
+1:59:40
+perspective
+1:59:59
+dedicated to connect. You don't need to set up anything. They have already set it up. You just need to go ahead and use
+2:00:04
+it small comparison page where something very useful. It shows one minute. Let me
+2:00:11
+bring it up.
+2:00:59
+this thing which I want to highlight dedicated interconnect versus spark interconnect. So a direct connection to
+2:01:05
+Google. So but this is through one of the service graphics flows directly between network not through public
+2:01:12
+internet. It is the same thing. There's no difference. So because it does not flow through public internet it can be
+2:01:18
+unencrypted. you get like 10 Gbps, 200 GB sorry 100 Gbps circuits. So here it is like 50
+2:01:26
+Mbps to 50 Gbps. This one you have to remember from the exam perspective. If they say I want to communicate between
+2:01:33
+my onremise and Google cloud my bandwidth requirement is like uh something like 40 Gbps. I don't want to
+2:01:39
+have a dedicated connection like I don't want to buy hardware kind of stuff. Partner interconnect is a very good
+2:01:48
+choice service provider in this case it's going to be the partner the bandwidth we have already talked about
+2:01:54
+it what is the range it can do here it is 50 Gbps 50 Mbps to 50 Gbps in partner
+2:02:01
+in dedicated interconnect up to 200 Gbps you can achieve it here requires routing equipments uh
+2:02:09
+equipments in the collocation facility that supports the region that you want to connect You can use any service
+2:02:15
+provider to connect. Here you see equipments are required the VLAN the uh
+2:02:22
+Ethernet switch all those kind of stuffs you have to purchase it here. I'm not
+2:02:27
+going to purchase any I'm going to rely on the so that's one thing here it is going
+2:02:34
+to use BGP behind the scene. So border gateway protocol, cloud router, all the
+2:02:39
+things are going to come into picture. Here also you can use VGP if you want. You can also use layer three
+2:02:47
+connections the network layer. This is the most important thing which I want to
+2:02:52
+talk. Encryption deploy HAVPN over interconnect to encrypted
+2:02:59
+traffic. Havn over interconnect is supported for dedicated. So if you want
+2:03:04
+with encryption you can turn it on. By default it's not going to be encrypted. So same thing applies here
+2:03:12
+also. If you don't use H uh HAVPN it's going to be an unencrypted connection.
+2:03:18
+It is okay because it's a private connection. It's not on public internet. So that is something which I can do. SLA
+2:03:25
+Google is going to offer end toend SL. Whereas with the partner interconnect, Google is going to provide SLA between
+2:03:31
+the Google and the service provider. You have to work with the partner to get the service level. So that's something which
+2:03:38
+you need to keep in mind. Pricing wise, dedicated interconnect is going to be expensive. Partner interconnect will be
+2:03:44
+cheaper. So those are the things which I just wanted to highlight it. uh quick
+2:03:50
+quickly we look into two more products called as carrier pairing and
+2:03:57
+uh carrier pairing and direct pairing. So what a car sorry direct pairing and
+2:04:02
+carrier printing this is something which we'll see this is not a Google cloud product it's a Google product uh where
+2:04:09
+did we use this is what we are going to quickly see it and do a small comparison kind of so this is not a great use case
+2:04:17
+but maybe from the exam perspective no this is not really so we look into it
+2:04:24
+this conference will now be recorded now let's look into the Next type in
+2:04:30
+which we can connect uh business network to a Google's network. Uh usually now
+2:04:36
+this one is called as pairing direct pairing and carry pairing. So direct
+2:04:41
+pairing means if there's a specific set of conditions if you are unable to fulfill
+2:04:47
+that condition so Google workspace basically you can connect your
+2:04:53
+onremise with Google workspace kind of a script. So those kind of functionalities you can achieve it. So basically it
+2:04:59
+helps you to connect your business network and Google edge network. So and you're going to use a very high uh
+2:05:05
+bandwidth support. It can give you something like uh 10 Gbps of bandwidth support easily. This is not a Google
+2:05:13
+cloud product. So that's the reason if you just go and uh
+2:05:20
+search for direct peering. You'll not get a
+2:05:27
+product. You may get a document. This is a
+2:05:33
+document. Direct pairing helps enables you to establish direct pairing connection between your business network
+2:05:39
+and Google's edge. So, but it is not a Google product, a
+2:05:46
+Google cloud product. It's a Google product. So, it is available in few uh
+2:05:51
+locations. Uh the key part which you need to keep in mind is uh the communication is not going to be uh
+2:05:58
+using internal IP address. When we used VPN it was using RFC 1918 standard. When
+2:06:05
+we looked into the demonstrations of interconnect dedicated interconnect partner interconnect and crosscloud
+2:06:12
+internet at the conceptual level we understood that it is also going to be using internal IP address only. But this
+2:06:19
+one right is going to be not using an internal IP address. It's going to be using a public IP address. Okay. So
+2:06:26
+that's something which you need to keep in mind. Uh so uh if you want it to use
+2:06:33
+an internal communication then direct peering plus VPN is what you have to
+2:06:40
+have. So that is what you have to do it and uh
+2:06:46
+um to fulfill the requirements of direct pairing you have to just go to peering
+2:07:04
+dotpingdb.com that code one
+2:07:13
+Sorry not pairing db it is different pairing.g google
+2:07:19
+google.com you have to come to this website. So it's a direct interconnection between Google's network
+2:07:25
+and another network to support exchange of traffic. So you have to first submit a request.
+2:07:35
+that what is your listing all those details you have to mention it then this is going to be reviewed by Google if you
+2:07:43
+fulfill their requirement then Google is going to share the case and number all
+2:07:48
+the necessary details so that your Google workspace can communicate with uh
+2:07:55
+onremise your business network can communicate with uh the Google network those kind of stuff they can do it and
+2:08:02
+Everything is going to be using a very high uh bandwidth of 10 Gbps but using
+2:08:09
+external UPS and when will people use this kind of a option if they cannot
+2:08:16
+afford to buy there's a business they cannot afford to buy a uh dedicated uh
+2:08:23
+networking component like for dedicated internet you need to have uh uh like
+2:08:29
+Ethernet switch we learn lots of infrastructure you have to buy if you cannot afford that and uh you're okay to
+2:08:38
+go with a external IP address uh the bandwidth is a major concern for
+2:08:44
+you and if you can get most of these things freely direct uh peering is a good
+2:08:51
+choice the only drawback here is you're going to use communication between the networks is using public
+2:08:58
+IPOs so a small comparison between uh dedicated interconnect and direct
+2:09:06
+interconnect is this requires Google cloud. So this
+2:09:12
+is primarily a Google cloud offering so can be used in Google cloud but it is not a required one. So I can do it
+2:09:19
+between my Google workspace the office 365 equivalent of that with onremise
+2:09:25
+that is also something possible. Think of this uh I have a Google drive and I want it to connect to something which is
+2:09:32
+my onremise kind of system. If you want direct pairing is going to work. So this
+2:09:38
+does not give access to any G Suite. Google workspace previously was called as G Suite but it gives access to all
+2:09:46
+Google cloud products and services and connects to onremise. This primarily gives you direct access to Google
+2:09:53
+Workspace. From there you should be able to connect to uh onremise system. So
+2:10:00
+here you have to set up and maintain the uh vlan also. This is a maintenance
+2:10:07
+cost. Here there's nothing. You have to just fulfill certain requirement that
+2:10:13
+your location is close to Google's u peering location those kind of a stuff.
+2:10:18
+If you do that that's all good. Uh here we use objects like interconnect uh VLAN
+2:10:25
+attachments routers all those things here is nothing folks completely it is
+2:10:31
+going to be like uh uh very opaque it's not transparent so meaning if something
+2:10:37
+goes wrong also you not get much visibility what is going wrong so there's no
+2:10:44
+SLA whereas here you get four lines of SLA and if something goes wrong with
+2:10:50
+your internet you'll get notifications and you'll get to know where things have been changed kind of a stuff but this
+2:10:57
+one you need to contact always Google for any changes if you want because it's
+2:11:04
+more like a black box so with all the things direct
+2:11:09
+pairing is going to be very very cost effective uh it is not going to be really helpful
+2:11:14
+when you're working with Google cloud it is going to be really helpful when you're working with Google workspace
+2:11:20
+If you want you can leverage this. So there's also an option called
+2:11:27
+as carrier peing the opposite of like how dedicated interconnect if you are
+2:11:33
+able to reach Google's collocation facility can use dedicated interconnect. If you cannot reach that you have to go
+2:11:38
+with partner interconnect. Similarly, if you fill this
+2:11:45
+form, if you just fill this form and you get rejected because you are not fulfilling the uh the requirements of uh
+2:11:53
+PNA, direct PNA, then you may reach out to a uh a
+2:11:59
+carrier ISB provider who can help you out. then it is going to be called as
+2:12:09
+uh carrier period. So who can help you out to do connectivity between your uh G
+2:12:16
+Suite previously called as G Suite now called as Google Workspace with onremise
+2:12:22
+kind of stuffs. So that's what you can basically do. Now if I were to compare all the
+2:12:29
+three options dedicated inter or interconnect uh VPN and peering the
+2:12:35
+things which we need to keep in mind is VPN and interconnect have a
+2:12:41
+commonality meaning they are going to help once we have set it up a VPN and or
+2:12:47
+a dedicated interconnect or partner interconnect or a crosscloud uh interconnect the communication is going
+2:12:53
+to be using internal IP address RFC 18 space whereas your peering is going to
+2:13:00
+use an external IP address. If you don't want to use an external IP address then you may have to use a VPN setup. Coming
+2:13:09
+to capacity it is going to be maximum 3Gbps. It's
+2:13:15
+encrypted whereas uh this one 10 to 200 Gbps. The
+2:13:21
+connection is not encrypted. If you want to encrypt it, you may want to add billion on top of it. But if you ask me,
+2:13:28
+that's an overhead. That's an overhead is what I would
+2:13:33
+say. And the last one is it can give you 10 Gbps per link and max depends on the
+2:13:41
+availability. So minimum you can get 10 Gbps meaning a very high bandwidth almost like cost effective but using
+2:13:49
+external IPs. If you want you can leverage it partner there's no partner involvement
+2:13:55
+here. So if you're not able to fulfill Google's uh collocation requirements you
+2:14:02
+may have to work with a partner 50 Mbps to 50 Gbps is what you can sorry 50 Gbps
+2:14:08
+is what you can do it and it goes in multiples of 50 100 200 300 400. I
+2:14:15
+remember seeing a question like if I want to have a connectivity between my onremise in Google cloud and the
+2:14:20
+bandwidth requirement is like 400 Mbps in one exam I don't remember which
+2:14:25
+exam but something in that range they had put specifically in Mbps then
+2:14:31
+partner interconnect is a very good choice carrier peering is something which you get if you cannot fulfill the
+2:14:38
+peering requirement you can go with part carrier price wise when it comes to
+2:14:44
+interconnect connect uh sorry when it comes to VPN the outgoing traffic and the tunnels the gateway those are the
+2:14:51
+cost which you're going to get it when it comes to interconnect eress cost meaning the outgoing traffic the
+2:14:58
+VLAN setup those things are going to cost you
+2:15:04
+here when you're going to use uh peering you will have an eress cost but the
+2:15:10
+connection the setup to set the the thing to set up the connection and all right that is literally free because it
+2:15:18
+is free there is no SLA if something goes wrong you have to
+2:15:23
+wait till it comes like if I were to say in very simple terms it's like it's a
+2:15:29
+summer season uh power failure right so everybody will be in some place so there
+2:15:36
+will be a like electricity board they don't have any kind of an SLA right if a
+2:15:42
+power failure happens because of some reason there's no SLA that in next 30
+2:15:48
+minutes the power will be restored it is like that but if you are using some very
+2:15:54
+specific services right uh the moment you raise any request they will try to
+2:16:00
+serve this within a specific time period that's an SLA so because there's a paid
+2:16:06
+one so VPN is going to give you like uh three lines of SLA if it's a classic VPN
+2:16:13
+four lines of SLA if it's a HAVPN and basically dedicated interconnect can
+2:16:18
+give you four lines of SLA if you go with two connections one connection will
+2:16:24
+not have a SLA we have seen it here totally no
+2:16:30
+SL and lastly at the OSI layer where does this operate interconnect operates
+2:16:38
+in layer two the data layer the VPN And
+2:16:43
+basically this one operates at network level. That's a small compar. The most important thing to remember is this
+2:16:50
+piece. It uses public IP address whereas VPN and interconnect uses internal IP
+2:16:56
+address. So if you want to go with internal IP address either VPN or
+2:17:01
+interconnect. If your volume is bandwidth is very low VPN. If your bandwidth is very high go with
+2:17:07
+interconnect. In interconnect we have flavors dedicated partner crosscloud
+2:17:19
+interconnect. So we have been seeing this kind of addition tree so far. So
+2:17:25
+let's use the same similar stuff even now where we wanted to see what kind of
+2:17:31
+connectivity should we go for. So for example if I say I need private to
+2:17:37
+private connectivity meaning RFC 1918 standard. So the first option if you say
+2:17:46
+uh yes to that use VPN. Yes band performance of the current connection is
+2:17:52
+okay just go with VPN. If you say no I need a better bandwidth kind of a stuff
+2:17:58
+use dedicated interconnect. manage the equipments. Make sure you are able to
+2:18:04
+reach to Google's collocation facility. If you can do this things, go with dedicated interconnect. If you cannot do
+2:18:11
+this, go with partner interconnect. That's the first option.
+2:18:17
+So this is all internal IP address
+2:18:24
+RFC 1918. If you say uh no I'm not expecting
+2:18:32
+private to private connectivity you can use just public IP address what a big deal
+2:18:37
+simple or if you say uh the bandwidth is not great then is where you are going to
+2:18:44
+use direct peering where uh there's not much equipments here but
+2:18:51
+you have to just fulfill Google's peering requirement if you fulfill it direct peering is going to be supported
+2:18:57
+if If you cannot fulfill it, carrier peering is what you're going to be using.
+2:19:04
+Simple. So, private connection
+2:19:11
+VPN interconnect option. Um if you don't want private connection then use
+2:19:17
+external IP address easily or basically use uh what I would say
+2:19:22
+um carrier pairing or direct pairing like
+2:19:28
+simple now a small recap so that you understand what we have done so far and
+2:19:33
+then we'll jump into basically something called as few other uh individual topics
+2:19:38
+like VPC flow locks service tier kind of a stuff but before we go There a quick
+2:19:44
+recap. So if I want to communicate between virtual machines in
+2:19:52
+the same VPC in the same project in the same organization. So the moment it is in the
+2:19:59
+same VPC obviously uh it is going to be in the same organization that is something possible
+2:20:06
+but it may not be the same project because we know there's a concept called a shared VPC. So if one VPC it is in the
+2:20:15
+same project same organization what you can do is very simple use default
+2:20:20
+VPC or custom mode VPC make sure you
+2:20:26
+have created the fire rules and all so that VM toVM communication can happen
+2:20:31
+simple straightforward the first demo which we did it the next one is same VPC but
+2:20:40
+different projects. What does that mean? Shared VPC, right? So, service project
+2:20:46
+A, service project B, there are VMs in service project A and there's VMs in service project B and they want to
+2:20:52
+communicate internally using RFC 1918 standard means VPC is a very good
+2:21:01
+choice. Moving on to the next one. Different VPC network one, network
+2:21:08
+two. It could be in the same project, same organization. Meaning something
+2:21:15
+like
+2:21:27
+this, two different networks in the same project. Cloud architect. how they can
+2:21:32
+communicate VPC network pairing. We have also seen that with VPN also you
+2:21:39
+can do it between cloud VPC sorry VPN and VPC network pairing which one we
+2:21:44
+will prefer if it's a very straightforward requirement VPC network pairing is going to be good because it
+2:21:50
+is cheaper literally $0 but VPN is going to be
+2:21:57
+expensive similarly communication between uh VMs in two different
+2:22:03
+VPC in two different projects in the same organization again pairing VPC network
+2:22:11
+pairing is what I can do it right
+2:22:17
+so the next one is between VPCs in different projects in different
+2:22:25
+organization the software as service offering which we talked about where we
+2:22:30
+talked about an insurance company trying to get an AI capability that is a requirement what is that requirement is
+2:22:35
+going to be fulfilled with VPC network PN. If you want a little expensive
+2:22:40
+solution, BPN is going to be a good
+2:22:47
+choice. The next one is now all this time it was all Google
+2:22:52
+cloud. This was all Google cloud. So the first time we are going to basically go
+2:22:58
+with Google cloud and onpremise network. It could be another cloud provider or it
+2:23:06
+could be another Google network also possibly if that is the case meaning I
+2:23:11
+want a use case or a functionality which can support Google cloud to Google cloud, Google cloud to AWS, Google cloud
+2:23:18
+to Azure, Google cloud to onremise. If I want all the things with one product
+2:23:24
+then the option which I can get is
+2:23:31
+basically VPN. VPN is what I can basically get
+2:23:36
+there now with the current offering of crosscloud site uh cross cloud uh
+2:23:42
+interconnect even interconnect can also support it currently. Previously when I
+2:23:47
+did this live this was not supported. So if you want something between onremise
+2:23:54
+and Google cloud extremely a very good connectivity
+2:23:59
+interconnect. So onremise and Google cloud or onremise and I should say not
+2:24:06
+Google cloud frank it should be Google workspace very high bandwidth support
+2:24:13
+direct P. This is going to be using public IP
+2:24:19
+address. So that's a quick summary. So a clearcut winner in most of the scenario
+2:24:25
+is VPN folks. It can basically handle most of
+2:24:30
+the scenarios here. If you see yes cost is there but most of the scenarios easy
+2:24:36
+to set up this VPN. That's what I would say. Um so if I were to give it in a very
+2:24:43
+very simple term so you would have seen some personalities they gel with
+2:24:48
+everybody all right uh high-end people low-end people any kind of categories of
+2:24:53
+people they gel very easily so something like that VPN is an option which works with any combination most of the stuffs
+2:25:01
+right uh is something where it can work so keep VPN as a option in most of the
+2:25:06
+scenarios So now switching to the next concept VPC
+2:25:13
+flow logs. Uh what is this VPC flow? So this is something which you are going to turn
+2:25:19
+on at a subn network level. Similar to your private Google access whenever you
+2:25:25
+create a sub network you will see this option is going to be there. So when you turn this on, what is going to do is
+2:25:30
+it's going to capture the uh the traffic which is going to be sent
+2:25:35
+from uh what I would say from VM that's what is going to happen.
+2:25:43
+So from the VM to the VM uh traffic is flowing. So if you want to
+2:25:50
+capture those kind of stuff you should be able to leverage this one. Now you may say why I should do this. So if you
+2:25:56
+want to do any kind of foreign detection, who is sending traffic to my VM? Why are they sending it? If you want
+2:26:03
+to do those kind of a you can basically use. Now please
+2:26:11
+note traffic going out of a BM. What is that called? Egress. Egress is charged. We know if we
+2:26:20
+know where the essence is flowing through we can control that means we can uh reduce our
+2:26:26
+expense. So expense optimization is also possible. So and is there any kind of a
+2:26:35
+bug which is kept in my virtual machine because of which it is sending traffic to an outside system or it is receiving
+2:26:42
+or there's a firewall rule which is made open. So because of which which I'm getting continuously and incoming
+2:26:48
+requests in any kind if you wanted to monitor all this kind of a stuff VPC flow logs is going to be a very good
+2:26:55
+choice and this is turned on at a sub network level particular sub network
+2:27:00
+only when you do that there you will be able to see
+2:27:05
+the the log information. So let's do a small demonstration on this part.
+2:28:06
+I'm in the network engineering project. And I go to
+2:28:28
+VPC flow locks. That's all. So can be
+2:28:33
+enabled or disabled kind of. So if I just go to
+2:28:42
+London, let me create a sub
+2:28:47
+network. We have been so far learning we we have learned what is private Google
+2:28:53
+access presence. BPC prologs is what we are going to do it. Now by default it will be turned off because these are
+2:28:59
+logs. Most of the time the locks will be turned off folks to reduce the cost. Um
+2:29:05
+I have told this many times if I'm not wrong. So I had seen a couple of projects where Kubernetes was running
+2:29:13
+more than the Kubernetes cost the log it was generating that cost was
+2:29:19
+more. So you have to be very cautious with log. So just don't simply turn it on because it is going to be
+2:29:26
+uh it could be really helpful. Yes, it could be helpful but at the same time you have to pay the cost. think whether
+2:29:34
+you need it or not. That's very important. And whenever you turn on the logs from that time onwards only the log
+2:29:41
+will be enabled. It will not go in a retro style. So go back in time get all
+2:29:46
+the things enabled. No, that will not happen. So you have to turn this on. Now
+2:29:52
+since I'm not turned it on in this project, if I go to my
+2:29:57
+networking, sorry, if I go to my
+2:30:16
+login look at VPC log, it will not show me anything Even if under
+2:30:23
+resources I don't see it because that lot is not to enable it. What I'm going to do
+2:30:30
+is I'm going to do a very very very simple demonstration. So I'll go to
+2:30:42
+US turn on this one. And you can also do a
+2:30:48
+sampling because if everything I'm going to send it it's going to increase the
+2:30:53
+cost the log. So uh what I want to do is I want to sample it out. So information
+2:31:00
+for sample record is aggregated over an interval to generate a flow logs record. So you can say like I want every 5
+2:31:08
+seconds. So you can also put some specific match. I'm not interested in seeing everything. put a filter right
+2:31:16
+you can only keep logs that match a specific filter the filter you have to figure it out what should be
+2:31:21
+these kind of stuffs you can do it I'm not going to put any filter so
+2:31:28
+uh 5 seconds let's capture
+2:31:38
+it now we have VPC flow locks turned
+2:31:58
+Oh do a very simple demonstration. I'll create VMs in the sub network. I just do
+2:32:06
+a ping folks. That's it. send request back and forth and I'll show you what
+2:32:11
+happens in the
+2:32:19
+logs. Search for the CL
+2:32:38
+This is fairly there's no network in this network of this thing. So I'm going to use a shared VPC. No Excel is
+2:32:45
+possible. That's
+2:32:56
+good. What is a firewall rule? Just check it out.
+2:33:35
+[Music] to all the instances. So that should be
+2:33:40
+okay. So I have this VM I create
+2:34:00
+game.
+2:34:17
+Now you just look at ping which we have been doing so far right but this ping is
+2:34:24
+going to be captured that's what I want to show you because it's flow and flow the traffic
+2:34:30
+flowing between the VMs if you want to capture this VPC flow locks can be turned on this is at a subn network
+2:34:37
+level so because it is a sub network level so this is a regional configuration
+2:35:09
+Thank the address.
+2:35:32
+request coming from VM2 and it has been sent to VM. This part is what I want to
+2:35:38
+capture in the loss. That's it. Let it keep pinging. See what is the log
+2:35:46
+information. It's going to be if I go to log explorer refresh
+2:35:57
+it. Uh I've not put anything. It is showing in the last 1 hour what I did. It's all showing up the logs and the
+2:36:04
+local time is uh 9:30 uh 96 and all the logs which you see is
+2:36:11
+96 and if I specifically look at logs called as VPC blue logs this was not showing up
+2:36:19
+now it shows up just stop this in
+2:36:31
+pink. So if you just open up one, you can see what is going to be
+2:36:38
+captured connection. First let me just show you the VMs
+2:36:44
+5.2.431 and 32 that is the IP address. So you can see connection destination IP
+2:36:56
+uh destination IP it's connection to Google API. So
+2:37:02
+this is for Google APIs
+2:37:10
+and not clear. Let me ask Gemini to explain this.
+2:37:46
+indicates the VPC capturing traffic between VM1 in this thing and an external service traffic from a shared
+2:37:54
+VPC. This log itself cannot indicate an error rather than record. So this is
+2:37:59
+just to indicate it was communicating with an external
+2:38:05
+IP this one and how it is able to communicate with an external IP address
+2:38:11
+uh that's because do we have an
+2:38:23
+M it is still able to communicate the the reason is it is a Google API
+2:38:30
+destination Google service it's a Google API because private Google access is turned on it's capturing that
+2:38:37
+information similarly I wanted to show you something on the
+2:38:43
+ping thing is this
+2:38:52
+only try to hide this let me try
+2:39:02
+to this this is better so what I have done is I have tried to hide this one I
+2:39:10
+don't want this communication with Google APIs I'm interested between the communication between uh
+2:39:36
+That's
+2:40:14
+[Music] getting small for a minute. Right. I'll
+2:40:20
+just disable uh the this thing private Google access. uh I'll disable it so
+2:40:26
+that I don't get unnecessary connections uh connecting to other APIs kind of a
+2:40:33
+stuff. What I will do
+2:40:38
+is and go to the network. I just want to show this two communication mode nothing
+2:40:48
+else. Go to the network. We already seeing the communication is happening. What I wanted to do
+2:41:07
+is
+2:41:20
+next to people access. So now what I'm going to do is
+2:41:31
+uh 912 I just wanted to see from 912 what's
+2:41:39
+happens just I'm interested in seeing only
+2:41:45
+logs from the last one
+2:41:59
+Okay. Something just connection.
+2:42:12
+So
+2:42:25
+what's 32?
+2:42:52
+to see [Music] why installation
+2:42:59
+IP looks weird.
+2:43:13
+[Music] And
+2:43:26
+relaxing again.
+2:43:44
+The map is something which you are able to get it the source from where and it is coming. So the destination I'm not
+2:43:49
+able to get a hand on uh why it is communicating with the uh Google
+2:43:56
+service. It's basically looking at the IP. Uh it says it is
+2:44:01
+uh Google cloud related stuff but why it is communicating. Uh
+2:44:09
+not sure not sure of that part. Need to see
+2:44:14
+that. Uh by send [Music] zero let's see if this by send is
+2:44:22
+something which is non zero. That's what
+2:44:31
+I think might be
+2:44:46
+[Music]
+2:44:53
+something we'll be Once it is happening by center this
+2:45:05
+one explore this piece uh I'll let you know again on this part
+2:45:13
+later the key part which I wanted to highlight here was uh the moment you enable the locks the VPC flow locks and
+2:45:20
+you can see the amount of information that the amount if you're able to see it. I think this
+2:45:27
+should be [Music] um it's again a Google network.
+2:45:36
+So you will be able to see this kind of blocks very easily. Uh it's not really
+2:45:44
+helpful. Not very clear why it is communicating with so many Google services.
+2:45:53
+So by turning on this VPC flow locks you get an idea. Yes, it has gone to communicate
+2:46:03
+uh we'll try to do one small thing where uh source and destination. So this is
+2:46:10
+all happening because we have a eress traffic. uh what kind of filters we can
+2:46:15
+add the one which we are interested we wanted to see specifically it is reaching out uh to a specific IP or not
+2:46:22
+those kind of filters is what you can basically add so instead of getting so many logs you get a uh refined logs so
+2:46:31
+whatever you see in those logs will be really helpful so that is what you can basically add it in the filter condition
+2:46:37
+when you are creating the VPC flow locks so uh what I'm going to do now You see
+2:46:44
+lots of logs for lots of stuff sent uh and these are Google stuffs. This
+2:46:51
+indicates capturing network traffic uh this thing on this thing the traffic originated uh basically
+2:46:59
+uh traffic originated from shared VPC blah blah blah
+2:47:27
+So basically by sign which means could be a potential could indicate this could
+2:47:32
+be this is something they saying
+2:47:38
+potential we have some bytes sent. So what I can do is
+2:47:46
+uh with our uh here there's no by
+2:48:01
+send this kind of a uh filter you can just put it
+2:50:33
+21 where the connections are basically not uh It's greater. I'm trying to do this
+2:50:58
+bad. So here we are seeing some traffic has been sent. Let's see things here.
+2:51:08
+destination. Uh this is the outbox. This is what I wanted to show you. Now you can see because when we do a ping and
+2:51:14
+pawn, we are sending some count of data, right? So you see this kind of a stuff
+2:51:20
+where uh from the destination and the source. What is this thing? So this is
+2:51:26
+these two IPs only, right? That is now very clearly shown.
+2:51:33
+Now to the question which was asked in the chat. What kind of filters can we use? Maybe you can have a filter like
+2:51:40
+this where the payload is more than this only I'm interested. Don't send me payloads which is like uh zero bytes
+2:51:48
+that I don't want to log it because when I log it it's going to also incur storage cost. I have to pay for it. So
+2:51:54
+now if you see most of the logs let me see what is it.
+2:52:03
+is going to be basically give me a
+2:52:49
+So you can see sometimes it is also going through some other uh IP
+2:52:55
+also. So this is all because we have a fire which is pretty much open. So if
+2:53:01
+you restrict all those things you can see now we are able to get some analysis. Now this IP if you see
+2:53:19
+it just do a quick IP look up. It is going to be also another Google cloud
+2:53:24
+related stuff only not getting a uh clarity on that
+2:53:30
+part. So now by turning on the VPC prologs you understood what kind of stuffs comes. Now you may want to
+2:53:36
+finetune your firewall rules all those things because your outgoing traffic can be controlled. So this is going to help
+2:53:43
+you to fix the stuffs. So let me just try to show you this one where I'll put
+2:53:49
+this as my filter condition. So then I'll go
+2:53:58
+to VPC.
+2:54:26
+put the so filtering whatever you want this way works. So only something which
+2:54:33
+is relevant is what we want to capture going forward. So I'm turning on this
+2:54:39
+log at around 925. Okay.
+2:54:51
+This is how I have to put it. Sorry, my
+2:54:57
+bad. By send. Okay, I should be able to use
+2:55:04
+that. What? Byte sent only, right?
+2:55:09
+Put that please by send and uh by send I can save this. This should
+2:55:18
+be my filter condition. So I don't want anything which is zero bytes. Okay.
+2:55:39
+condition
+2:55:49
+undeclared. Condition
+2:56:24
+I can use this kind of filter. So only something if the source is this it should come. Similarly, I should be also
+2:56:31
+able to do the byes
+2:56:55
+settle for the for sorry my so you cannot put as a filter. Anything else
+2:57:00
+you should be able to do may well. So remaining stuffs whatever the conditions which you find uh say for example you
+2:57:08
+can think of this reporter
+2:57:19
+source anything which can be basically so my source IP I'm looking for this
+2:57:30
+one should basically
+2:57:58
+Well, you can see us use this kind of an option.
+2:58:19
+[Music]
+2:58:25
+So you have you have to just remove that uh this thing the payload option and
+2:58:32
+then use it. It should work. So filter conditions like this can help you reduce
+2:58:38
+the amount of
+2:59:03
+see there. So I'm going to say uh I'm doing this at around uh 29. So only the
+2:59:10
+sources from this I have to get it. So me what I will do
+2:59:19
+is this is I will use this one. This is my
+2:59:26
+source and try to ping the other. So this information
+2:59:34
+should not be captured. Uh the reason is I have filter condition. So sources only
+2:59:39
+if it is coming from VM2 it should be captured from VM1 it should not be captured. So that is what
+2:59:46
+I have done it. So at around 9:30 so if I just go and look at
+2:59:54
+the logs specifically the VPC flow logs for
+3:00:00
+the last 1 minute. Let's see how much logs we have
+3:00:06
+captured.
+3:00:13
+So the scopes is this one. So it is still not updated. Let's just wait for
+3:00:22
+it. We have put a filter
+3:00:30
+[Music] condition. This one false. You see that
+3:00:36
+source. So we are sending
+3:00:45
+traffic. I'm sorry sending
+3:00:51
+traffic. Let me see it one more time. So the last entry 31
+3:01:23
+That's complete.
+3:01:59
+I want to open traffic kind of a stuff. Uh so sources
+3:02:17
+that this information should not be captured which is basically turned on at around 9:33 kind of a time period. Let's
+3:02:26
+leave this come back and see what is the amount of logs it's going to capture. So
+3:02:32
+filtering is possible. So that's finally the VPC
+3:02:37
+logs. By turning on you're going to get more logs with this log you'll get an idea what is basically happening right
+3:02:45
+and the the biggest thing which you can uh how much is the sample information
+3:02:51
+which you want to get it. What is sample rate? How much you want to get it? So you want to get everything or you want
+3:02:57
+to get a sampled data right that is what it means basically the
+3:03:03
+sampling. So how much percentage so if you put 100% s for example if the second
+3:03:10
+sample is set to the same samples 100% of the same entire thing. So 50% is what
+3:03:15
+you want to sample it out. So lesser the sample rate less amount of information is what you're going to get. Okay hope
+3:03:23
+that makes sense. So what you wanted is what you can capture it by just setting
+3:03:28
+these things. Um and you can see a good amount of
+3:03:35
+logs generated. Uh 34. Let me just see
+3:03:40
+the source.
+3:04:01
+capture that will be I need to check this
+3:04:13
+one only at match
+3:04:28
+So
+3:04:40
+something check this.
+3:04:51
+Let me check this out folks. I had couple of things which did not work today. I'll check it out. So one last
+3:04:57
+thing which I wanted to show with the VPC flow logs is all the things are working. Uh all these things are
+3:05:03
+working. The reason is uh if you see it uh all these things are working. The
+3:05:10
+reason why it is working is the fire. The moment you disable the egress firewall rule, all of these things will
+3:05:16
+stop working. Let me just do that and show you so that you get a kind of a
+3:05:22
+connection between your firewall rule and this thing. Because it's a shared VPC, I will have the firewall rule in
+3:05:30
+my shared VPC host project. So I'll put a deny
+3:05:47
+fire all the instances
+3:05:53
+everything. So this is what deny.
+3:06:01
+Now when I do this one right uh what's going to happen
+3:06:09
+is I'm denying it. So the rule which I have tried to do it is at around uh 37
+3:06:17
+time period. The moment I do this, what's going to happen is uh the flow
+3:06:23
+log will stop doing because you cannot communicate right that is what should
+3:06:30
+happen. Let me just go and show you that the last one
+3:06:40
+minute. Let's wait for it.
+3:06:46
+But because these are all outgoing traffic from source to destination. So it's an outgoing traffic. We have
+3:06:52
+completely blocked it with the firewall rule. Hopefully we should not get
+3:06:58
+anything. Let's wait for it. So let's leave it for some time. Come back. It's
+3:07:03
+around 9:37. Let's come back at around 9:40 time period. No log should be
+3:07:09
+there. Uh that is my understanding. We'll come back to this on the filter
+3:07:16
+condition. I'll get back to you again. So there is some issue which I have I'm not able to figure it out. Uh but with
+3:07:22
+the right filtering we can make sure what needs to be captured. The next concept which I
+3:07:28
+wanted to talk is uh so there's a small animation but it's not working out. I'll show it in a UI uh in a web page.
+3:07:36
+Something called as uh network service tier. Now what is this network service
+3:07:42
+tier? So let me show you this in
+3:07:47
+a there's an article on this. Uh I had an image but the GIF image is not
+3:07:52
+working in that line.
+3:08:23
+I like this image.
+3:09:08
+Okay, that image is not working. Okay, so think of this one. You
+3:09:14
+have a load balancer. We have created load balances so far. So good number of load balances. Uh in the next class
+3:09:21
+we'll be talking more about load balances in detail. So but we have created few good number of load
+3:09:27
+balancers. We have created ingress in Kubernetes gateway API in Kubernetes right all of those were load balances.
+3:09:35
+Now how you reach the load balancer from your laptop you're going to have an ISP
+3:09:41
+provider. So where you purchase your internet so from there it is going to reach Google's quantum presence. From
+3:09:47
+there all the communication is going to happen to the specific resource. Right? This way
+3:09:54
+of approaching is called as premium service PL. So this is like traveling on a toll
+3:10:02
+road or an express route where you can reach the
+3:10:07
+destination very quickly. So there's also one more option which is called as
+3:10:13
+standard tier. Now this is called as hot potato
+3:10:20
+meaning I leave my SP provider then I have multiple
+3:10:26
+hops. So by the time I reach my uh uh what my um Google's point of
+3:10:34
+presence I would have done multiple hops. So there's going to be a latency
+3:10:39
+here. This is also called as hot potato. Means like if you have a hot potato in your hand, you will start juggling up
+3:10:46
+and down, right? Something like this. The other one is called as cold potato because it just goes straight away. So
+3:10:55
+here it is like traveling on a country road, humpy dumpy road where you will
+3:11:02
+reach the destination but it will take longer time and you don't need to pay any toll kind of a stuff. So it's going
+3:11:08
+to be cheaper. Whereas the other one is going
+3:11:13
+to be expensive. So what is the difference in it's going to be around 25 to 33% difference is what I would say
+3:11:21
+between the cost. So when should I use this? Whenever you feel there should be no
+3:11:27
+latency from your load balancer meaning the user tries to access your load balancer. You want to get a response
+3:11:34
+quickly. In that case premium tier is going to be a good choice. If you feel
+3:11:39
+like okay uh I want to reduce the cost it's a non-production environment latency is not a major concern then
+3:11:46
+going with a uh standard T is going to be a good
+3:11:52
+choice. So that's what I wanted to convey here.
+3:11:58
+So we'll do a demonstration here in two different styles. one the most easiest
+3:12:04
+way is I'll show you a demonstration on this uh live demo but I want to show the screenshot so the first thing which I
+3:12:10
+can do is I can create a VM with an external IP address there are two ways in which you can do the demonstration
+3:12:15
+one VMs with external IP address second a load balancer an external load balancer and you can see the concept
+3:12:21
+there so I can ping the not ping trace route if I do it it is going to show
+3:12:27
+this is a external IP address of a VM if I basically ping
+3:12:33
+it it leaves my ISP provider that's my here this is my ISP provider act is what
+3:12:40
+I use the next hop is basically a Google cloud network box this is Google cloud
+3:12:48
+network whereas if I have meaning the number of hops is only eight whereas if
+3:12:54
+I use a standard tier you can see the servers are in US we'll try to mimic the
+3:13:00
+same thing and show you the the moment it reaches the US server
+3:13:07
+35.2592.225 Octo 25 it is going to take a big route Bangalore to Chennai to
+3:13:13
+Mumbai to London to Chicago kind of a stuff that's what is going to happen so
+3:13:18
+it's going to take a longer time latency won't be there so but cost is going to be cheap so which option you want to
+3:13:25
+choose you can choose it by default it will be always premium tier so far all
+3:13:32
+the demos which we have done with load balancer with external IP address all the things which you create is always
+3:13:38
+going to be premium tier. Why? Because that is a default setup. Where can you
+3:13:45
+see that one? You can go to your view all
+3:13:50
+products under
+3:14:01
+networking. You can see network services.
+3:14:16
+You will see by default it is premium host. If you want to change it at a project level, you can change
+3:14:23
+it or you can also change it at a VM level when you're creating a VM or when
+3:14:30
+you're creating a load balancer. So when you're creating a VM
+3:14:37
+uh if you're going to create and this is going to only apply when you have an external IP address. So since you don't
+3:14:44
+have an external IP address you cannot do this. If I show you with the other project where I don't have a
+3:14:50
+restriction. If I go with external IP
+3:15:15
+atlas you can see folks the moment I have an external IP address you will have this you will
+3:15:21
+Right. So the moment I take off the external IP address the network service
+3:15:26
+tier goes on. So this is for VMs with external IP address entries. So you can
+3:15:34
+also have for back for and all those things are possible. So we'll see this
+3:15:41
+as a demonstration. But before we do that uh now it's time is almost like uh
+3:15:47
+more than 9:40. Let me see the
+3:16:07
+long output by send. Okay.
+3:16:32
+It's trying to see if the bite side is more than zero.
+3:16:43
+This is fine. This is fine. Byte center is zero. More than zero there. So for
+3:16:49
+the last uh 5 minutes also if you see it there's nothing if I'm not wrong. This
+3:16:55
+is good. So this is all because we have turned off the
+3:17:01
+ess. That's a small thing which I want to show you. So which gives you an idea. The VPC flower gives you an idea what
+3:17:08
+happens uh what kind of data is going so you can also push it to bitquery which
+3:17:14
+we are not yet looked into where we can do some kind of an analytics. So moving on to basically the
+3:17:23
+demonstration on premium tier versus standard tier. We'll do a live thing so
+3:17:28
+that we can see the same thing and we can also ping each and every IP and find out whether it's a Google IP or
+3:17:34
+something else. I'm taking a standard something is going to be using is a Tata
+3:17:40
+network. That's what I have seen it. We'll see this in the demonstration.
+

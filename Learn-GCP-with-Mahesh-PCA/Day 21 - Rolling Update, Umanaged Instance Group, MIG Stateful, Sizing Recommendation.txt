@@ -1,0 +1,2736 @@
+ript
+
+
+0:00
+this conference will now be recorded So in our yesterday's session
+0:05
+we had looked into few Concepts where we saw how we can do rolling update we also
+0:12
+saw the importance of the firewall rule specifically the health check probe
+0:18
+which is going to be used by the load balancer and we saw the most interesting one scale down to zero using metric
+0:26
+based uh Auto signals right Auto scaling signals where we saw the entire demo
+0:34
+from scaling from 0er to maximum four depending on the number of pops up messages then once we acknowledge all
+0:41
+the messages from 4 to zero it scaled down so this is possible when you are
+0:46
+using metric not when you're are using uh CPU utilization or HTTP base so that
+0:55
+is something which we had seen and we also saw one last demon demonstration uh
+1:02
+where we were seeing our uh where we had seen one more
+1:09
+version not the flag but the one more version where we had a small game uh
+1:16
+State less application where every time you finish one level you close your
+1:23
+browser or refresh your browser you're going to come back to level one only so
+1:29
+even though now I'm in level two if I I can start playing in the middle
+1:35
+something happens I have to pause it there's no option to pause it if I come back again and refresh it I'll come back
+1:42
+to level zero because it's a stateless communication it does not preserve any state we don't have any database so this
+1:49
+is what we had seen as a second level now I don't want to see the screen also I want to see something new right so
+1:57
+yesterday when we did it uh we had some ports change where we had to touch every
+2:03
+components uh every component which we had configured we had to check it so if I just go back to the
+2:13
+architecture just to move from that graph based or the flag based uh
+2:18
+application to this uh gaming application I had to change
+2:24
+the image that is obviously going to happen template have to change these two are okay but I had to touch migs the
+2:33
+load balancer all those things that was not acceptable even health check we had to check it change it so that was not an
+2:40
+uh acceptable demonstration I would say but uh good to know that if you have to change the port you have to change
+2:45
+everything so what we are going to do today is uh one final demonstration on
+2:51
+Mig where the same load balancer IP address
+2:57
+is going to be preserved but instead of of showing welcome to engine x what it
+3:02
+is going to do is it's going to show from which zone you are coming in that is what it's going to do now you may say
+3:09
+this is the same demo which we did with the flag absolutely agree
+3:14
+so there it was a goang code so now the script which I'm going to do is it's
+3:21
+just a simple shell script right so there's always going to be two different approaches one with a complex one one in
+3:28
+a very simplistic approach this is going to be the most simplistic approach where we'll use something called as metadata
+3:34
+server query it get something a little bit of a shell scripting is what we are going to do with so it's not going to be
+3:40
+a fancy page but it's going to just to show from which zone the request has been served from that's it so that way
+3:46
+you will know and this is going to be running on the same at Port so I'll not use enginex but I'll use Apache web
+3:53
+server both are going to run on uh Port 80 so I'm not going to touch anything related to 5all rules I'm not going to
+4:00
+touch anything related to a health check no load balancer change no Mig change
+4:05
+only golden image will be created uh template will be created and we'll do a
+4:11
+rolling update okay so with that as a background let's go and do that piece of the demonstration
+4:17
+so I need first a VM to do all the entire setup so let's go ahead and do
+4:23
+this one Apache
+4:30
+so I'm going to leave everything default this one in our last class we
+4:37
+did it so when you are going to create a VM which is going to be used for the golden image creation make sure
+4:46
+the boot dis is kept so that I can use that dis and create a custom image out
+4:52
+of it otherwise I have to shut down the VM all those things I don't want to get into it I want to make it very simple so
+4:58
+keep the boot disk even if the VM is deleted that is one setting as usual
+5:03
+we'll make sure we use a service account whether it is useful or not we will always use this as a best practice so
+5:10
+done then we don't need to touch the firewall
+5:17
+rule uh I'll come and create one small startup script the startup script is
+5:23
+basically uh to install Apache web server because deban operating system will not have Apache web server by defa
+5:30
+so AP install Apache 2 minus y so that's a
+5:37
+simple script which should install the Apache web server
+5:47
+done now when the Apache web server gets created uh it will have an external IP
+5:53
+address in next few minutes Apache web server will also be installed but the only thing is that you will not be able
+6:00
+to access it using the external IP address why is very simple of the
+6:07
+previous session which we did so you see this let me just remove this
+6:14
+create time yeah so if you see this uh there an external IP address so if I try
+6:21
+to access this and see it will not it will show page not found or not reachable that is
+6:28
+what it is going to show the reason is all other demos which we had done in the
+6:34
+similar fashion it used to work but this was not going to work because yesterday we removed the firewall rule which was
+6:41
+open to the whole world 0.0.0.0 that we removed it this is what
+6:46
+you see it site not reachable uh the reason is the firewall
+6:55
+rule we use one of the best firewall rules uh
+7:01
+yesterday this one these are the health check probes used by our load balancer
+7:07
+so now 0.0.0 is not there hence it's not going to work now if I still want to make it work right I can do it I have to
+7:16
+add either 0.0.0 so that everybody is going to see or only for testing
+7:26
+purpose I will add my IP so my ISP provider would have provided
+7:32
+me an external IP address this is my IP address now instead of opening to The Whole World opening to myself is okay
+7:39
+right for testing purpose so that is what I'm going to do it so this is still
+7:44
+not reachable I'll just add it it's a temporary one and afterwards I'll make sure I remove
+7:52
+it that's one fixed IP one IP address and if I restart my router in my home IP
+7:59
+address can change so this is only to check whether Apache web server is installed or not
+8:06
+there's another way which you can also do it get into the system and do it SSH just put curl local you should see it
+8:13
+different options this is another option so now I have the 5all rule if I refresh it if everything is done I see my page
+8:21
+beautiful it is working fine so that's all I need from the VM folks remaining
+8:27
+everything is going to be a small start subscript which we are going to do it so what I will do is close this
+8:36
+this also remove this farall rule that is only for a temporary one so I don't
+8:42
+need this I just need these two things only so save it
+9:00
+done so this VM is not required anymore so I'm going to delete this VM but the
+9:05
+disk will be there using the dis I'm going to create a golden image three so
+9:11
+delete this
+9:26
+VM waiting for the dis VM to be deleted e
+10:05
+taking a little longer time let's just wait for it only when we
+10:11
+have it we can go and create a custom image out of it yes it is deleted if we go to the disk we should see a
+10:19
+persistent dis with the name Apache that is what you see it this one yesterday
+10:25
+for the game we had created we don't need it I can delete it because we have an image already so I
+10:31
+don't need it don't incor cost for 10 GB of persistent dis
+10:36
+so appache is what we have so I'm going to create an image out of
+10:47
+this image out of Apache disk so automatically Apache web server will be
+10:53
+there so I'll call this as golden image
+11:03
+Apache so that's the one so it could be in a multi- region so we have already
+11:08
+discussed y number of times on this multi- region stuff so I'm just going to create
+11:15
+it so the golden image is now created so the next step is create a template out
+11:21
+of it and then update the templates in all the MS only the template so since
+11:26
+this listens on 0 Port I don't need to check all look into my health check
+11:31
+which we had created or updated yesterday so we should be good
+11:39
+with this health check itself Port 80 itself should be good enough so I don't need to touch my load balancer
+11:47
+also so the image is getting created let's wait for
+11:56
+it okay the image is created now what we will do is we'll create a
+12:06
+template so I'll copy one of the existing template to make my life
+12:19
+easy that's the name of the template so the important stuff is I'm going to
+12:27
+use a different image which is the one which we created just now we have three
+12:33
+images so we have already used image one which was the flag which was showing
+12:39
+different flags for different countries uh then we use the game the The Maze
+12:44
+Game now today we are going to use basically the golden image so
+12:52
+done then service account is going to be the the same one we don't need to touch anything that should be good the most
+12:59
+important thing will be the Ser uh startup script
+13:04
+so we don't have any startup script but what is the intent is when I create this
+13:11
+image and use this sorry when I create this template and use this template to create a VM in Mumbai
+13:17
+region the VM is going to come it will have a Apache web server so on top of
+13:23
+that what we are going to see is uh we are going to overwrite that HTML page where it was showing uh
+13:30
+Apache web server working something like that it showed right that page will be overwritten by a small piece of code let
+13:38
+me show this
+13:45
+code or let me open it in a
+13:51
+notepad so let me explain the code so that you get an idea it's completely a shell script so where first thing is I
+13:59
+get the I query the metadata server of which machine the machine in which the
+14:04
+script is running so if the machine is running in singapur or in Mumbai right
+14:09
+so it's going to get that specific resource or that vm's zone so
+14:15
+if I copy
+14:21
+this and run it in my cloud shell
+14:35
+because the cloud shell is in Singapore it should show one of the zones in
+14:49
+Singapore so if I Echo this variable it
+14:54
+will show this one fine that that's the first script the second one is I want to get
+15:02
+also the instance name if there are multiple instance in the same region from which specific instance it is
+15:08
+served from I wanted to know that so this is the next
+15:16
+one it shows the instance name the actual instance name is this one folks
+15:22
+workstations blah blah blah okay that's what it shows the next one is I write a small
+15:29
+script here where I don't want to get it's a zone right I don't want to basically get project name blah blah
+15:36
+blah whatever is there here after Zone I want to get that so I'm going to use
+15:42
+said to do some small regex so when I do
+15:48
+this I get only that clean stuff which zone that's the
+15:55
+one then I output or write this information into an HTML and this HTML
+16:03
+is going to be located in this location and this is a place where either enginex or Apache web server is going to serve
+16:09
+its pages so I'm changing the default HTML page Itself by doing this that's it
+16:16
+folks that's all the code and this has to run for every VM and doing this should not take a much longer time it's
+16:23
+completely four or five lens of shell script it's going to be super fast so that is what I'm going to add it here
+16:28
+here so in the template level so the template is going to assume it is using
+16:34
+a image which is already having enginex or Apache web server only then that slw
+16:41
+/ww HTML will be useful because that's where the htmls are going to be served
+16:46
+from so good so let's go ahead and create it
+17:00
+once the template gets created we'll try to create us a VM once see everything is working fine if it's working fine we'll
+17:07
+go ahead and uh test it out or do a rolling update so this is the one let me
+17:14
+create a instance out of it one single
+17:21
+instance and I'll will purposely create something
+17:27
+in Belgium so Belgium dzone
+18:03
+because in our template we have mentioned the external IP address should be empty so you will not see an external IP address we only have an internal IP
+18:10
+address to check it out we will use a curl command so the instance is created
+18:16
+let's go to the get into the
+18:23
+system SSH
+18:35
+H Local Host this is what it shows folks this is the HTML code which we had done this
+18:41
+request is served from this instance which is present in this zone now where
+18:46
+is this file out of curiosity if you want to see it it is going to be in slw
+18:53
+/ww ww/ HTML Index this is a play is
+18:59
+previously it was different but our startup script went and override this this is what has happened so meaning our
+19:06
+template is working fine so we don't need this instance now anymore now it's just a matter of going
+19:13
+and doing a rolling update so when we are doing the rolling update we should
+19:20
+not see any downtime so either we should be seeing something like welcome to enginex or the HTML page which we have
+19:28
+created but should never be like uh like no Upstream uh no healthy Upstream
+19:34
+errors or drop overload no errors like that should come okay that's the whole
+19:40
+stuff which we wanted to see it and we are not going to touch any of
+19:45
+our health check or our load balance configuration
+19:50
+so if I go to instance groups so first let me go ahead and
+19:58
+update the Mumbai manage instance group where I'll click on
+20:10
+update I don't need this I need only one which is the Apache that's the only
+20:17
+template which I needed so I'm going to use uh the automatic one
+20:25
+so that it can be replaced immediately so the same yesterday's setting so nothing changed I'm just going to change
+20:30
+only the template
+20:51
+done by the time this happens I'll do it for the other resources
+20:56
+also for Lear and then also I'll do
+21:05
+it update the VMS let's not have multiple uh this thing let's have one
+21:11
+template which is
+21:16
+Apache remaining should be good
+21:22
+for London I'll not do changes I'll tell you why
+21:29
+let London be same only for Mumbai Mig and US Central
+21:34
+will change
+21:44
+it I'm changing it for us Central
+22:01
+so if I keep refreshing it this is still served from Mumbai we
+22:09
+know that it will be proved soon once the rolling update happens in Mumbai why
+22:15
+I did not do it in uh London region is we have a proxy based tool
+22:24
+right hide me so I can only test it in some of the emia regions so what I
+22:31
+wanted to show is I have done a rolling update the changes are going to only reflect in us and in Mumbai not in emia
+22:37
+so meaning when I try to access it from emia it should show me basically the old image first I'll show you that then I'll
+22:45
+update it so that you know what is really happening so if I just go
+22:52
+back to instance groups so Mumbai is getting updated us
+22:58
+is getting
+23:04
+updated the old one is being deleted which was created
+23:11
+yesterday is running okay this one it should be updated one minute why
+23:17
+the date is showing wrongly today is sixth right yeah
+23:22
+sorry so I actually had scaled it down so I had started it at around in the
+23:28
+morning so that is getting deleted so now the local time is around
+23:34
+6:29 so we have a new instance this old one is getting deleted so if I try to do
+23:39
+this one now this is what you see you can also give a try I'll put it in the
+23:45
+chat if you want you can give a try so depending on where you're coming from
+23:53
+uh it will show you what is the instance which is served and and in which zone it
+23:59
+is what's the instance name and which zone it is that's going to show you that okay
+24:05
+so now if I try to use the same
+24:10
+IP in this proxy tool and pretend as if like I'm coming from Netherlands if I do
+24:17
+this it will show me the engine X page
+24:22
+so yeah it will show me the engine X page it will not show this kind of a stuff because we have not done any
+24:29
+updates to that region yeah so so it does not reflect it but if you are
+24:36
+coming from uh say for example uh any part of Asia any part of us then
+24:43
+it's going to basically show you that let me see that us proxy is not working
+24:49
+uh let me give one last time a check if it can work
+25:01
+uh us does not usually
+25:08
+work that's okay leave it so what I'm going to now do is this is what you see
+25:14
+it in emia so let's go ahead and update even emia then it will show the details
+25:22
+of it now you can get full details this is a small implementation just to show
+25:28
+the instance name the Zone all those details uh that way you know from which region your request has been served so
+25:34
+if you also go to the virtual machine
+25:44
+screen so if you go to the virtual machine screen the request this is the instance
+25:53
+name folks I can copy it search it
+26:00
+this is the instance it is in B Zone very clearly it shows that right you'll get that kind of an information let me
+26:07
+just do the same thing for London also so just for your
+26:12
+information if you see you see two Mumbai instances the the one which we
+26:20
+are getting served is with ending with W5 then what is the other one this is
+26:26
+the one which was created previously so that is going to be deleted soon and it is in the progress how do we verify it
+26:33
+very simple click on your
+26:39
+Mig you will see this ending with qn it is the same thing ending
+26:47
+with ending with qn if you Mouse over on it it shows it's in the process of
+26:53
+getting deleted it will take few minutes for it to get deleted we have seen 5 minutes in the last last session we had
+26:59
+seen it takes around 5 minutes so and we did not had any issue with the heal check because our application was
+27:06
+running on the same port 80 Port we did not had any impact so let me do the same
+27:11
+thing for emia
+27:18
+now oh sorry I should have done update
+27:29
+I don't need this I want this this should be good
+27:38
+enough I'm changing it to Apache golden image so that's
+27:55
+it this approach of changing one by one uh you can use it in a real scenario
+28:02
+let's assume you have an application which is like uh spread across multiple
+28:08
+regions right so you want to do an update now currently what is the time it
+28:14
+is like 6 6:30 kind of a stuff so most of the Western countries would be uh
+28:21
+it's going to be night for them all right so here now you can do a deployment kind
+28:27
+of a stuff meaning you can first deploy it in us see everything is working fine don't
+28:32
+deploy anything in Australia or in Singapore kind of because they are already uh morning for them so afternoon
+28:38
+for Australia so try to deploy it in a region where it
+28:44
+is quiet see everything is working fine if everything is working fine you can easily roll it out to the other regions
+28:49
+at a later point of time you can use this as a small strategy because of MiG
+28:54
+Okay so now even emia is getting now Mumbai is
+29:02
+fully up to date the old instance is also removed so if I just go and refresh it this 1 wqn should be
+29:11
+removed yes we are left with only one which is W3 W5 so London has to soon one
+29:18
+will be removed so if I go to this proxy base
+29:25
+tool and try now as if like I'm coming from
+29:32
+Germany there's a header which is basically blocking this one
+29:41
+minute if I see the source sorry inspect yeah this is what it shows
+29:49
+the header is blogging me that part so it shows your request is served from
+29:55
+emia this is basically Mig London 54 LV
+30:00
+or 541 whatever it is in us uh Europe Zone 2B if you verify
+30:07
+it it is just instance hooks so it very clearly shows it has
+30:12
+been served there right this a small script which you can basically use it for uh uh checking it out and the script
+30:20
+is also there in the drive so if I just show you this so if you come to module 3 you will
+30:28
+have this custom script this was a script which I used to use in the beginning days to show this but the flag
+30:34
+was a little interesting one so I switched to that so this is the same script which we are using
+30:40
+it so now good we have done uh a rolling update everything is working fine now a
+30:46
+small Improvement is what I wanted to do it so very very small uh Improvement uh
+30:52
+the Improvement is can I just make this bold can I make this bold very simple
+30:58
+requirement now uh how do I go ahead and do it I have to basically uh what I would say I have to
+31:08
+change my template all those things I don't want to do that is there any other way other alternative option which you
+31:14
+can do is just to show that this feature can be used we have seen when we go to
+31:20
+our Mig we have edited it right when we want uh different Autos scaling signal
+31:27
+we have used the edit option updates we have done it restart and replay we have
+31:32
+never done it so I would like to take this opportunity to show this functionality where I want to restart a
+31:39
+particular uh resource so and
+31:46
+uh restart if I do it why do I need to uh do a restart if I
+31:54
+were to say it uh it could be like you have updated a startup script so that
+32:00
+you wanted to basically fix it so when you restart it it can come into picture that's one use case of this so if I
+32:07
+directly go and restart it it may not be really helpful in our case the the
+32:13
+reason is uh we have a template which we have created where it is using a startup
+32:20
+script which is inline let me use a little different one
+32:25
+where I'll update my startup script and put it in a bucket read that stter
+32:30
+script and we are going to do a restart so let me just do this one quickly I'll create a I'll create a new
+32:39
+template the only change is don't read the template from the loc from the sorry
+32:46
+don't use the startup script from the template itself meaning if I go to this
+32:54
+one it's an inline startup SC script right it's an inline we don't want this
+33:02
+what I'm going to do is I'm going to copy the same thing exactly the
+33:10
+same so VI
+33:17
+uh my
+33:25
+startup this is the one which I wanted what I will do
+33:30
+is I'll move this code to a bucket folks I'll tell you the advantage so we have
+33:37
+one bucket so let's use this
+33:45
+gsutil copy my shell script to the
+33:54
+bucket now when I do this you will see that shell script now what I will do is a small trick the
+34:01
+trick you will really appreciate once you see the demonstration so what I'm going to do is because we cannot edit
+34:08
+the template I'm going to create a new template I'm going to create a new
+34:16
+template copying this Apache
+34:25
+one 02 everything is going to remain the
+34:30
+same but having uh this many lines of startup
+34:35
+script here may not be a good choice a small Improvement what I will do is I will not
+34:42
+use this but rather I will have startup
+34:55
+script URL this is what I'm going to do it where this is my location so the what
+35:01
+is the advantage of this one is tomorrow you want to change your startup script like the one example which I had I want
+35:09
+to change something uh make this bold or add some more information I it becomes very difficult
+35:17
+so to directly go and change the VMS all those things instead of that you create everything in a temp the startup script
+35:24
+put it in a centralized place that's our bucket so you go and update it once and
+35:30
+all you need to do is just restart the VM we know when the restart happens the startup script is going to get invoked
+35:35
+again so automatically your changes are going to reflect and restarting should not impact anything because it's a
+35:42
+manage instance group so when it is restarting when a request comes it may be routed to a different zone so that
+35:48
+way you don't have any downtime but still you are updating some of the stuffs this is another option just to
+35:54
+show that update and replace VMS concept we are using the approach so let me just create one more
+36:06
+template and just to see that this is running from the template what I'm going to do is I'm going just going to
+36:18
+add I'm just going to add a small line Ser from bucket something like that a
+36:23
+line just so that we know our startup script is working fine or not
+36:41
+I'll add one more
+36:51
+line startup script served
+36:59
+from uh GCS that's a small line so I'll make sure I upload it into the
+37:07
+bucket done so now we'll do the same change so we will go ahead and uh update
+37:14
+our
+37:22
+migs instance groups so let's let's go with Mumbai
+37:34
+first update the VMS with my new template Apache template
+37:41
+Apache 02 that's it
+38:03
+and please note when it is doing this right the VM needs to get access to the
+38:09
+bucket then only it is going to be able to get the uh script so if we see all our VMS using
+38:19
+the template which we have
+38:25
+created if I use this one so all the VMS use a specific service
+38:32
+account this service account and this service account we have already granted
+38:38
+access right so we should not have any issues
+38:44
+[Music] so the Mumbai one is getting updated so let me do the same thing for emia
+39:02
+just change the
+39:20
+template I just do the same thing for M us also
+39:45
+so we have done all the necessary changes
+40:00
+let me go ahead and see whether what it shows did I do the changes correctly
+40:08
+to Mumbai
+40:16
+Mumbai what's the template it is
+40:22
+using it is using the right template
+40:33
+template two this
+40:44
+one it should be a new instance
+40:58
+all are using the latest one uh uh everything was good let me see
+41:05
+what's wrong here we had the
+41:15
+template two and this template was
+41:23
+using Apache golden image that is fine we had a small startup script startup
+41:31
+script URL that is fine uh and the script has a new
+41:38
+content uh let me just see it it should be reflecting that one extra line it is not showing
+41:45
+up uh why did not it do
+41:51
+that let me just try it one more time the update F something was not proper
+41:58
+with the update VM let me just do it one more time update to this
+42:05
+one that's the right
+42:15
+one this looks good
+42:24
+only let me try this one
+42:36
+does not show me that that extra line which we added let
+42:43
+me check whether that has been copied to the bucket or
+42:53
+not I can use a cat command just to see that
+43:03
+do I have that line added I did add it and this line is there it's not
+43:09
+reflecting so let me give a try by and it's showing that it is using the latest
+43:15
+template all those things so what I will do is I'll go to
+43:22
+Mumbai Mig I'll try to restart or replace
+43:27
+so maybe a restart of the instance will help me out so let me restart only restart instances so let me restart this
+43:36
+it's literally like going and stopping and doing it but you are doing it via the console
+43:42
+so so if I just go to my VM
+43:55
+screen this should be basically restarted this
+44:01
+instance so that's what is going to happen we can also see it from here by
+44:09
+going to the instance group yeah it is
+44:22
+restarting it is being restarted can we see that change just
+44:27
+here in the VM it's not yet reflecting so if I now
+44:33
+go ahead and try to uh see it obviously because the Mumbai region is going down
+44:39
+or getting updated we don't get any uh service unavailable kind of stuff but it
+44:44
+gets nicely routed to us which we have already seen which is the capability of the load balancer till
+44:51
+Mumbai comes up all my request is going to be served from Mumbai so
+44:57
+let's just wait for the Mumbai to come up Mumbai instance to come
+45:06
+up it's the same instance everything is same we have a small change in the startups that that's it that is
+45:13
+something which we wanted to reflect it we are just doing a restart now this restart does not need
+45:19
+anything right I just restarting my VM that's it so if you want that's a good
+45:26
+choice using the same template if you have the entire new application all those things creating with the template
+45:32
+and all makes sense but existing VM some patch something you have done it some startup script changes you have done it
+45:38
+if you want to restart it this is going to be a good choice so let me see whether it reflects
+45:45
+here it is does not it does not show it real uh here or it still not reach the
+45:51
+signal here to restart it that's my understanding if I go back to the
+45:57
+instance group it's still doing the
+46:02
+transformation meaning getting into stopped and coming up so let's just wait
+46:08
+for this right so it's going to take a few few minutes for it to do those
+46:18
+changes it says it is getting restarted let's wait for this so this is something
+46:23
+on the migp so soon we will see that uh change changes reflecting so this is one
+46:30
+way now I had mentioned you can also create
+46:37
+Mig or the template first of all you can create a template when you're creating a
+46:43
+template right you can also create the VMS with
+46:50
+spot so you can change it to spot that is also possible now with spot what is
+46:55
+going to happen it can be taken back anytime we know so when it is taken back
+47:00
+the VM will be in a terminated State now if it is that is the only VM which you
+47:05
+have right so only one region if you have done it you will get a something like no Upstream no healthy Upstream
+47:13
+that's what you're going to get it but if you have one in us one in uh Mumbai one in London kind of a stuff if the
+47:19
+Mumbai VM is preempted it will be routed to us something like this or London
+47:25
+something of that sort is what is going to happen so you can also use preemptible VMS or spot VMS in with in
+47:31
+conjunction with SP IMG or Mig is what I would say uh is it going to be a good
+47:38
+one if it's a website where you don't want any kind of a downtime it's not a good choice for a Dev environment you
+47:44
+can use spot VMS that's what I would say let me just refresh it still serve from
+47:50
+us and this is still going restart it's taking a little longer time
+47:57
+so that is something which you can try it as a small activity by yourself create a template with spot and try to
+48:02
+see it and you have to keep running this till it is preempted or you can simply terminate it just go and uh terminate
+48:09
+the VM and see what is going to happen it's going to automatically route the request to another region okay that is
+48:15
+something which you can easily see it by yourself so we have to wait till this gets restarted it takes a little longer
+48:21
+time is what I see it so the next thing which I wanted to talk by the time this
+48:29
+happens is when you create an instance
+48:42
+group when you create an instance group you get three options one option
+48:48
+is what we have finished it that is this one managed instance group stateless now
+48:56
+you know the meaning of stateless the game example which we played right automatically manage groups of VMS that
+49:03
+do stateless serving and batch processing so and the big advantage of
+49:11
+uh managed instance group is let me show you
+49:23
+that the big advantage of this is It's supports load balancing we already know that it can support Auto scaling scale
+49:31
+it up and down again we have seen this in the previous demos Auto healing if
+49:36
+something is not healthy we have also seen that in the SS class so it tries to restart it tries to basically create a
+49:43
+new instance all those things it can do it it can also support multiple zones
+49:48
+meaning a regional Mig is what we were able to do it so any kind any uh
+49:54
+standard workloads you should be able to use it should any website you should be able to use it so these are some of the
+50:00
+advantages of MiG there's an opposite of MiG called as unmanaged instance group
+50:07
+so people sometimes use Mig in the exam also I have seen questions where they
+50:14
+mention Mig okay the opposite of it is usually not called like this I'm just
+50:20
+calling it as IG unmanaged instance group but you will never see Google using it or
+50:27
+most of the people using it so for our demo purpose we may use umig so what is this unmanaged instance
+50:34
+group so unmanaged instance group is in very simple terms it is going to help you have load balancing because you have
+50:41
+n number of VMS so instance group the moment you say instance group it's more than one kind of a stuff so if you want
+50:48
+it to be routed via load balance or all those things unmanaged buiness group is a good choice but when will I use it
+50:55
+when you have uneven instances so what do you mean by that to
+51:02
+understand this uneven instances let me just show you a small scenario okay so you have the first
+51:10
+requirement so there's an application a this application a is running on on
+51:16
+premise not Google Cloud on premise so testing is all done this is getting
+51:21
+launched now assum in on premise it is using VMware kind of stuff even there it is Ed only so they say uh this is a
+51:30
+powerful uh VM all those kind of stuff so we need uh 8
+51:36
+vcpu 32 GB of RAM that's the ask one okay so what we do is we create this VM
+51:43
+or they create it so the company creates it all good now there's always a load
+51:51
+balancer then to the VM this is always a good choice maybe in the ini IAL stage
+51:57
+because they had only one VM they may directly have a VM also that is also possible directly request gets hit to
+52:03
+the VM which is not a good option but if they have done it it is also okay so
+52:09
+good the application receives much response it becomes popular but there's
+52:16
+one complaint from the user it is slow so when it is slow what is the
+52:23
+thing which we'll always think let's increase the resk source so so but we will not increase the same VMS resource
+52:29
+that's going to be vertically scalable we want to go with horizontal scalability what we will do is we'll add
+52:34
+one more instance which is going to be 4 vcpu 16 GB of RAM this is the ask to
+52:43
+done now still the application becomes popular but there is some operational
+52:48
+cost for this company they have a little budget now or literally no budget now
+52:56
+still they have to fulfill it what they do it is they go with with a smaller configuration I cannot afford as a
+53:03
+company for vcpu because of various this this is scenario because I wanted to show ways basically where unmanaged
+53:10
+Insurance Group can be handled so this is what happens so so far somehow this
+53:15
+company has managed to do create three resources definitely there should be a
+53:21
+load balancer in on premise you get load balancers like uh uh something like big
+53:27
+like uh what is that what is that name there are various
+53:33
+this thing big IP uh what was that name I there are few
+53:38
+physical load balances which you get it it could be using that and they may be
+53:44
+doing this vm1 vm2 vm3 big IP I guess big IP is what is one
+53:51
+of the load balancer which you get it so they can do this so this is all good but but still it can happen yes big IP so
+54:02
+this is something which you can think of doing it so but how long you'll keep on doing it budget is a conern all those
+54:07
+things so first thing you see is it's an uneven instances now let's have something like this so you join this
+54:16
+company as a cloud architect now when you join a company
+54:21
+definitely there's always going to be uh something which you want to show off you your skills right initially in the first
+54:28
+week first month kind of a stuff uh but you don't want to too much commit it
+54:33
+what it's going to backfire so what we do is instead of going with these things on premise is always going to be
+54:39
+expensive so what you suggest is a first one first option is let's just do a lift
+54:45
+and shift you as a fully like uh aware about
+54:52
+Google Cloud as an architect you have joined this company you are seeing we have three VMS no problem we'll move all
+54:59
+the three VMS as part of unmanaged instance groups same configuration I can
+55:06
+get 8 vcpu 32GB Ram all those things if I don't get it I can use custom machine type so there is no problem now lift and
+55:13
+shift whatever is there in those three VMS I would have shifted it into a VM running in Google Cloud the only
+55:20
+difference is there it is using an hypervisor which is VMware here it is going to be KVM that's the difference
+55:27
+and I will have a load balancer like what we just created everything is running fine unmanaged instance group is
+55:32
+primarily for uneven instances now you don't stop it here because as a cloud architect you have
+55:39
+come you have proposed your first approach and this is going to definitely
+55:44
+work once this works right everything is in Google Cloud but the problem
+55:50
+with uh unmanaged instance group is it can only give you load balancing
+55:57
+like what you see it here new unmanaged instance group it can
+56:03
+only give you load balancing Auto healing is not there Auto scaling is not there so but we know the company they
+56:11
+have budget constraints can we scale down to zero on a weekend where there is no uh request on maybe on a Friday where
+56:19
+there's a huge request we can scale it up so Auto scaling is going to be a very important one Auto healing is going to
+56:24
+be a very important one so then what can we do is we already have everything in VMS why don't we create a image use a
+56:32
+template and create a manage instance group right
+56:38
+this is the second step so modernize so instead of lift and shift so we don't
+56:45
+stop it at lift and shift but slowly now because we have PR ourself as an architect this approach works now we
+56:52
+pitch in another approach because we wanted to show off more so the more be sure off definitely you can get a better
+56:58
+apprisal better hike all those things is going to happen right a cascaded effect so you move to manage instance group the
+57:05
+moment you come to manage instance group you get Auto scaling Auto healing load balancing all those benefits right which
+57:13
+is a very good added Advantage so in nutshell this will be their current
+57:19
+architecture where user sends to unmanaged instance group one is 8 vcpu
+57:24
+one is 4 vcpu one is to vcpu this is our first proposal which definitely is going
+57:30
+to work and once this is done what we will do is a future architecture we can
+57:36
+show this the approach which I mentioned worked now the company is doing good so
+57:42
+all good now definitely in the future new VM needs to be added no problem I
+57:47
+can add one more VM but this does not fly manually adding it you have to manually add it there's no autoscaling
+57:55
+so if there's no resource requirement you have to go and delete it manually so that I don't want to do it automation is
+58:00
+what we wanted to propose so for that purpose we are going to create a golden image not a problem because we already
+58:07
+have we can take one of these VMS disk create a golden image out of it
+58:14
+then create a template that template we use that and
+58:19
+create M where we can set minimum as zero let's not go with HTTP based maybe
+58:25
+we can go with with some metrics custom metrics which we had seen already so and
+58:30
+the max could be a Kota so you are going to have even instances for vcpu 16 GB
+58:36
+Ram like this it could be y so when there's no need it will come down to zero when there's a need it can scale up
+58:44
+to a big number so this is where uh you primarily use unmanaged instance group
+58:50
+so it is primarily going to be at the starting stage when you're doing a migration from on premise to Google
+58:57
+Cloud so primar it is for that purpose but you should not leave it to always
+59:03
+uh unmanaged instance group you should have some plan to move it to a manage instance group if you want to have
+59:10
+benefits of the manage instance Group which provides Auto scaling and auto
+59:15
+healing so if in the interview if they ask manage insance group is so awesome
+59:21
+scaling up scaling down Auto healing load balancing all those things then uh why people go with managed unmanaged
+59:28
+instance group one approach is for migration purpose right so that is the
+59:33
+answer you should be providing it so this is what we are going to do it and I'll show you one hidden use case of
+59:40
+using an unmanaged instance group I use this very often um uh how do we use that
+59:47
+this part so I'll talk about this primary use case is on premise to Google Cloud if you're doing particularly from
+59:53
+on premise to Google Cloud you can use this as an approach okay so let's do this demo but before we
+59:59
+do this demo let's see whether this migration or what is the output which we getting okay it is now showing it so uh
+1:00:07
+it just took time basically so this is the script which we have added it so without doing any change because we have
+1:00:14
+updated our scripts kind of a stuff it is reflecting here so the whole purpose which we did
+1:00:23
+was so mood our startup
+1:00:29
+script to GCS that is a best practice because you get a centralized way you
+1:00:35
+just go and update it there restart your then uh
+1:00:42
+restart your Mig the changes will reflect automatically simple step right
+1:00:49
+so that way we also learned this how we can use and it took a little time that's
+1:00:55
+okay uh we just restarted it and everything
+1:01:02
+started working so that way you also saw the use of this restart option so if you
+1:01:10
+want to replace it you can also do that so that's a small demo which I wanted to show on the uh restart and replace VMS
+1:01:17
+now you know all the options which is there delete obviously know what is going to happen right
+1:01:23
+so now what we'll do
+1:01:32
+this we'll do a demonstration on unmanaged instance group okay so we
+1:01:38
+already have a manage instance group so but I wanted to show you how you can leverage unmanaged instance group and
+1:01:45
+there are few drawbacks with unmanaged instance group it is going to be very quick to do the
+1:01:50
+implementation uh but at some point of time from this architecture you have to
+1:01:55
+come to this architecture that is what I would say okay so now before we do the
+1:02:01
+unmanaged instance group I wanted to show one last demonstration in the manage instance group itself
+1:02:09
+uh this instance name I want to make it Bard this one I want to make it Bard
+1:02:15
+like a change ongoing change which does not need a creation of a template which does not need a creation of an image but
+1:02:22
+an update to my startup script and just a restart should work so that is what I wanted to show we have already seen this
+1:02:29
+one initially but I wanted to show one more time a complete demo so what I will do is I'll go to
+1:02:40
+my cloud shell I'll update my startup script copy it into my uh Google Cloud
+1:02:47
+sorry to my Google Cloud Storage bucket then I'll do a restart
+1:02:59
+just wait for the resource to come
+1:03:13
+up a simple use case uh if this is not coming up right you don't need to worry
+1:03:20
+because I had my statup script in my bu in my virtual machine or my in my cloud shell if it's not coming up no need you
+1:03:27
+can basically get into an FML mode that will come up very fast you
+1:03:33
+will see that so FML modes are always faster uh where is my code no worries
+1:03:38
+you will not have any code here because it's a new environment but I have my data in my bucket so I can use
+1:03:46
+my existing script modify it first I have to download it to my cloud shell
+1:03:52
+which is in an FML mode then I will do the necessary changes and upload it back simple so
+1:03:59
+don't need to rely on anything forever so copy it was a shell script I'll copy
+1:04:06
+it to my cloud shell now which is in an fmrl mode so which is going to be fastly
+1:04:12
+launching all those things so the hint which I'm giving here is what if you're
+1:04:17
+in front of a customer showing some demonstration and the cloud shell does not open so have some alternative
+1:04:23
+options that's it so what we want wanted is this line it's a small HTML code
+1:04:32
+called bold I can make it bold that's it make wanted to just highlight it
+1:04:38
+that's it nothing else a small change cosmetic change
+1:04:44
+so I can add something
+1:04:50
+like demo on restart
+1:04:57
+demo on restart migs let's make it H3 these are headers
+1:05:04
+that's it that's it this is the change which I have so what I'm going to do is
+1:05:10
+I'm going to copy that from my local to my cloud uh
+1:05:18
+storage now it is going to be updated if you want to verify it is updated or not
+1:05:24
+you can use a cat command
+1:05:31
+it should show the updated one so all the changes which we have mentioned it is showing so how do I make it reflect
+1:05:38
+so it's going to be very simple go to emia
+1:05:43
+replace and start or replace I just need a restart so restart should help me out
+1:05:50
+getting this one so we know it takes a little time for it to to come up so we'll come back in next
+1:05:58
+few minutes and see whether the changes are reflecting by the time this happens we are going to focus
+1:06:04
+on unmanaged instance group a demonstration of it where I'll take two
+1:06:10
+uneven instances and try to show you how I can do a load balancing between them
+1:06:15
+that's it okay so for a unmanaged instance group you
+1:06:23
+don't need a golden image if you have it it is good but it's not mandatory
+1:06:28
+meaning uh an unmanaged insurance group does not expect a template because there's no template
+1:06:35
+it's obviously going to be unman uh it's obviously going to be having uneven instances so then what should I have you
+1:06:42
+just need to have an em VM that's it okay I'm going to make it little exaggerated demo here so where I'll have
+1:06:48
+one VM which is serving one specific content I will have one another VM which
+1:06:53
+is specif which is serving some other content we are going to use a load balancer between them okay this is what
+1:06:59
+we are going to plan it so but the same load balancer is what we are going to use it so what I will do it
+1:07:06
+is I will uh create an instance
+1:07:16
+first so I will use uh we'll not use Mumbai we'll not use London we'll not
+1:07:22
+use us Central we'll use something else so I'll use
+1:07:36
+Singapore so it's a VM so and I'll make sure I use
+1:07:44
+the right service account what we will have it is
+1:07:51
+uh we can use our code which we have it right so this
+1:07:59
+code this is a good code which I can have it I can use
+1:08:05
+it in my
+1:08:14
+startup so this startup script right is going to work only if there is Apache
+1:08:22
+web server running or engine X running so I have to install that also so AP
+1:08:28
+install Apache 2 then you go ahead and uh run the
+1:08:34
+necessary stuffs so and I'll also have a small content here
+1:08:39
+unmanaged instance group in action this is served from this and all I don't need
+1:08:47
+it that's one script Force this is one script done
+1:08:56
+then I will have uh one more VM in
+1:09:02
+Berlin uh sorry not Berlin Belgium will have it uh and try to have the
+1:09:10
+Zone stuff which we have the the flag that we will have it and we'll try to do
+1:09:16
+a balance between load balancing between Singapore and Belgium that's what we are going to do it
+1:09:22
+so I guess I forgot to remove the external address I don't need it
+1:09:28
+uh but we can use it for testing purpose whether it is working or not so real
+1:09:33
+quick I can do a check so I have to make sure I open my firewall rule to my
+1:09:40
+machine
+1:10:08
+okay so the instance should be up let me copy
+1:10:15
+this everything is correctly done I get this output this is unmanaged instance
+1:10:21
+group served from Singapore that is the instance name it is in azone Zone good
+1:10:26
+so the script is working so what I will do is I will I'll keep the script for a
+1:10:32
+few more minutes um what I'm going to do now is
+1:10:39
+uh I'm going to go to my
+1:10:49
+shell I launch it in a normal mode because I had that zone okay I wanted in
+1:10:55
+a normal mode I had the code The Zone printer code the goang code there I'll
+1:11:02
+change the port to 80 Port folks because you know whenever you do load balancing
+1:11:07
+all those things you have to make sure that Port is going to be something important you cannot have multiple heal
+1:11:16
+checks I go to this Zone printer so we'll open this code I'll
+1:11:25
+change the port to 80
+1:11:39
+Port so we had made as 8081 right we are going to make it as 80 Port
+1:11:47
+so the command to build is uh go build
+1:11:57
+this is going to build it it's going to have a new main
+1:12:07
+executable not take this much long to build and please note I cannot run it in
+1:12:14
+Cloud shell folks because Port 80 is a privileged Port nothing to do with
+1:12:19
+Google Cloud it's a standard concept so Port 80 is a privileged Port so you have to be a root user kind of a stuff then
+1:12:25
+only you can do it and Cloud shall have some limitations so you cannot run this directly and test it out you have to run
+1:12:32
+it in a virtual machine and try it out okay if you do it in your local machine that is going to work but directly in
+1:12:38
+Cloud shell if you try to do it by putting this one it will say like this listening on Port 80 but if you go and
+1:12:45
+try to do a preview on Port 80 it will say boss I cannot allow you have to
+1:12:51
+start something from this 2,000 to 6,5 65,000 Port these are non-privileged
+1:12:57
+ports anything about 1,24 is going to be a non-privileged port 80 Port is a privileged Port you cannot do it in
+1:13:04
+Cloud shell so then how can I test it have a new VM deploy it open port 80 and
+1:13:10
+you should be able to do it so what I will do is I will copy
+1:13:17
+this uh main which is an executable into my Google Cloud Storage bucket and I'll
+1:13:23
+have a small startup script where I I use it in Belgium copy this and do all those necessary stuffs which we wanted
+1:13:29
+to do okay so I will copy
+1:13:38
+main into something like uh main 0 this is the file which I wanted to name it
+1:13:49
+as done so what I'm going to do is
+1:13:55
+I'll create one more VM I don't want the same configuration
+1:14:03
+I'm going to use some uneven configuration so I will have it as Bel
+1:14:15
+GM lgm uh not E2 purposely doing with
+1:14:21
+something else something like uh 4 vcpu so uneven
+1:14:28
+instances the same o should be good enough change the service account that's very important because this service
+1:14:35
+account has access to the bucket then only I can access the main 0 file so the
+1:14:42
+startup script which we wanted to have
+1:14:51
+is first do GS util CP copy this to/ opt
+1:14:59
+SL work so before that make directory this
+1:15:05
+work folder will not be there I'm just going to create it then I'm going to copy it
+1:15:14
+as main I don't want main 80 so or you can put it like that itself no issues
+1:15:21
+once I do this I'm going to make sure change mode
+1:15:26
+make it an executable so slash
+1:15:34
+main8 then uh Slash run
+1:15:40
+it this is all we need to do it as a start we had done something very similar for our manage Insurance Group Demo
+1:15:46
+First demo so something very similar on a single VM is what I'm going to do it so hopefully the startup script works so
+1:15:53
+if it does not work we we will definitely fix it so that's it it's in
+1:16:10
+emia line three needs to be removed let me see what was wrong
+1:16:23
+there uh or two slashes that should be okay I guess right it should not create any
+1:16:30
+problem so should work uh but good catch uh should not have an impact it should
+1:16:36
+work is my understanding uh let's give a try otherwise we'll reset it no
+1:16:41
+worries so we have two slashes that's what is being mentioned so we can check
+1:16:47
+it out so Belgium is up so since the firewall rule is still open to my
+1:16:54
+machine or maybe if you want you can try it also
+1:16:59
+first I'll check it in my machine access it from my machine see if it is
+1:17:07
+working it's not working Port 80 is what we had it
+1:17:12
+so it was a very simple command it's not working so simple way let's check it out
+1:17:18
+whether it has worked or Not by SS switching into the VM the startup scrip has worked or not
+1:17:36
+so cd/ op work okay it has been created file has been copied the shell script it
+1:17:43
+has also got permissions folks so that slash double slash has worked not an
+1:17:48
+issue if I just do LS minus l/ opt work
+1:17:55
+main do this thing everything is looking good uh let me see the
+1:18:04
+process uh process is also running maybe it was just a delay let me just check it
+1:18:09
+out whether it is working everything worked uh but still not giving us the
+1:18:15
+response Port
+1:18:21
+80 let me see it here
+1:18:28
+okay here it is showing up Belgium so locally it is running fine so no issues
+1:18:34
+uh then what is the only issue maybe my firewall route got my IP got changed it
+1:18:41
+will not get changed that
+1:18:47
+quickly let me see what is the issue is this working first of all this
+1:18:53
+is working this is it should work let me it's only now
+1:19:00
+fire wall rules that's on P oh we have made it on
+1:19:06
+on ports let me make it
+1:19:11
+this everybody can access it all the TCB Port have opened it
+1:19:19
+because we are going to remove it later for only for our load balancer it's going to be good so just let me
+1:19:26
+just give a
+1:19:31
+try very weird what is that not I'm not able to access it
+1:19:38
+uh I have the VM locally it is running I'm not able to access it uh that's on
+1:19:45
+Port 80 let me check whether this is having
+1:19:52
+that specific firewall rule
+1:19:59
+is that fireball rule it's something to do with firewall rule nothing else
+1:20:05
+uh allow HTP
+1:20:12
+yeah why oh maybe https oh my bad somehow it gets becomes HTTP the it's
+1:20:19
+something to do with the browser uh yeah this works so this is Belgium this thing
+1:20:24
+so so uh you can also give a try it will show up if you're using your own personal
+1:20:31
+laptop because it's unsecure so if you're using a corporate laptop it may block you also so this is something
+1:20:38
+which you are going so I have if I send any request from any part of you uh Asia
+1:20:45
+it should show me this if I send any request from emia I should get this but
+1:20:51
+currently they are different IPS because these are individual vers virtual machines what I'm going to do first is I
+1:20:57
+know it is working fine uh so first of all I don't
+1:21:04
+want it becomes a simple stuff right so say for example just take these two VMS
+1:21:21
+only so if you take these two VMS now if I am uh if I basically uh having
+1:21:29
+business only in emia and in uh and uh
+1:21:34
+APAC and I have these things I will not say oh you are coming from emia use this
+1:21:40
+IP address if you're coming from uh Asia use this that's going to become so
+1:21:45
+difficult so what I'm going to do is first of all I'll not have this first I'll remove the external IP address
+1:22:02
+no external IP address that means we cannot directly access
+1:22:12
+it by the time this happens I'm going to remove that fire wall rule which we had having 0.0 is not a good choice that was
+1:22:19
+only for testing purpose the reason why I added was it was not giving me response the issue was nothing to with
+1:22:24
+firewall rule but it was https and I don't have an SSL certificate so that was a reason so
+1:22:31
+changing the pro this thing to protocol to http it worked so make sure I come
+1:22:37
+back to the same firewall rule which is only used by our load balancer so this
+1:22:43
+[Music] VM Belgium should not have external IP similarly Singapore will also not have
+1:22:49
+external IP address let me remove it I will just have a load balance sir I'll
+1:22:55
+share it with them that's
+1:23:06
+it just the load balancer is sufficient the load balancer will route the request to the actual VM depending on the
+1:23:13
+proximity
+1:23:34
+done so we are good with now so we have VMS now to make these to be part of an
+1:23:42
+instance group primarily the unmanaged instance group where you can very clearly see these are having uneven
+1:23:50
+resources so they have totally it's uneven uh Belgium
+1:23:59
+so uneven instances uneven uh why this resource external IP should be removed
+1:24:05
+uneven resources uneven softwares all those are totally uneven but I wanted uh
+1:24:11
+say for example if it is Singapore I want this response or anybody from Asia they should get this response anybody
+1:24:17
+from imia should get this response right and anybody from us can get either one of the response depending on what the
+1:24:24
+load balancer decides so how do I basically do that so for this
+1:24:29
+purpose once you have the VMS the Second Step which we have to do it is we have to go ahead and create a instance
+1:24:37
+group create an instance group without a template yes it is possible
+1:24:45
+if we are creating an unmanaged instance group so could be an examination
+1:24:51
+question where they say you want to create an instance group but without a template how can you do it it is with
+1:24:58
+the help of unmanaged instance group so if I click on this manually manage
+1:25:04
+groups of load balancing VMS it's all manual nothing is automated so I'm going
+1:25:11
+to call this as
+1:25:19
+unmanaged emia that's what I'm going to call it
+1:25:25
+so if I in US Central I choose a network it's default
+1:25:33
+so I will I'll not see any VM books because
+1:25:39
+in US Central I don't have any VMS so if I change it to
+1:25:47
+Belgium again in B Zone I have it so other zones if I go it I will not
+1:25:56
+see anything so it's a zonal template is
+1:26:01
+what I would
+1:26:07
+say so let's just go to B and I have
+1:26:15
+one this thing so you want to do a port mapping you can do it so this would be helpful I'll call it as uig so unmanage
+1:26:25
+instance group Port 80 done so you're creating a template itself without sorry instance group
+1:26:31
+without a template without a golden image so done the equivalent of this is going
+1:26:39
+to be the g-cloud equalent of this is going to be create instance group but not managed
+1:26:46
+it's unmanaged so everything is going to be unmanaged
+1:26:52
+here create it
+1:27:00
+so I have this so soon it will show one instance is added also there's one
+1:27:06
+instance in
+1:27:13
+that yeah this is what I have been I have done now it's not used by any
+1:27:18
+service any backend service it is not used now let me do one more
+1:27:36
+so unmanaged
+1:27:42
+apack sorry unmanaged apack it has to be
+1:27:49
+Singapore
+1:27:59
+default VPC and default Network in which zone it
+1:28:05
+is either you look into the VM screen it is in a
+1:28:13
+Zone yeah it shows me the stuff
+1:28:28
+done so there's no template there's no Autos scaling capability there is no
+1:28:34
+Auto healing capability there's no health check capability nothing is there here when and unmanage instance
+1:28:44
+group just load balancing nothing else because if you remember when we
+1:28:51
+created the managed instance group this if this is the manage instance group you have to have a template that's
+1:28:59
+one thing for a template to work you should have a golden image that is one thing then you are going to have
+1:29:04
+multiple Zone options but there it is a single zone so that is a
+1:29:11
+drawback then you can scale it up and down that option you get it then you
+1:29:18
+have Auto healing capability so you will also have health
+1:29:23
+check none of these things I'm going to apply to unmanaged instance
+1:29:30
+group so we have two unmanaged instance
+1:29:36
+groups they are serving one one VMS now they don't have any uh back end
+1:29:42
+it's not been attached to any backend so what I'm going to do is first we'll see our uh change which we had done so we
+1:29:50
+had updated our startup script so it should if I refresh it it should show these things should be made as bold and
+1:29:57
+one more line we had added it let's refresh it yes it took its own sweet
+1:30:03
+time by the time it took it we did one more piece of the demo so this is all working fine now what I wanted to do is
+1:30:10
+I want to use the same load balancer but the back end is going to be changed the
+1:30:15
+back end is going to be those two unmanaged instance groups that's what we are going to do okay so
+1:30:25
+before I do that I wanted to show a little more uh uh stuff what we will
+1:30:31
+have it is we can also have something like
+1:30:42
+this so we have a load balancer now it can have good number of
+1:30:49
+backends
+1:30:55
+it could be Mig
+1:31:01
+Mumbai right it could be
+1:31:07
+also unmanaged instance Singapore that is also
+1:31:13
+possible so let me just do that so what I will do is I'll try to add uh these
+1:31:18
+two backends to the same load balance so that way what will will happen
+1:31:29
+is that way what will happen is I can show one of these things which one
+1:31:37
+is near to Belgium geographically the request will be routed uh so I have to
+1:31:43
+see the graph I don't know which or the map which one is closer so meaning when we do it you will see two different
+1:31:49
+responses for emia region so if it's Netherland is very closer to London so
+1:31:55
+let me see the map DCP
+1:32:02
+region I'm not good where where these two stuffs are going to come let me just
+1:32:08
+see this so we have London here so Belgium
+1:32:17
+is going to be which one oh this one be better to use Google
+1:32:25
+Maps uh this thing DCP regions and
+1:32:37
+zones so we have Belgium here Belgium London are closer by uh if I use this
+1:32:45
+Netherlands where is Netherlands somewhere here Netherlands looks like it's closer to Belgium if I'm not wrong
+1:32:55
+uh then uh we have Germany Germany is going to be somewhere
+1:33:03
+here so again Germany Belgium could be closer what else I'm just looking from this
+1:33:09
+perspective Finland Finland oh very far
+1:33:15
+so which one so let's see we'll get two different responses when we are using all those options Finland Germany and
+1:33:22
+Netherlands we'll get different respon responses so how do I add a new back end
+1:33:27
+so go to your load balancer it is already having three back
+1:33:37
+ends it's already having three back ends now we have to add those two more extra
+1:33:43
+back ends which is those unmanaged instance groups so let me edit it
+1:33:56
+add a back end so you will see those two unmanaged also
+1:34:02
+coming so the port number
+1:34:07
+is this one unmanaged
+1:34:15
+again emia P 80 done so we have five backends now
+1:34:25
+so let me just update
+1:34:33
+it now you can use this as a strategy when you are migrating you started with unmanaged something like
+1:34:40
+this something like this slowly add managed instance groups also right so
+1:34:47
+get the request go to that migs then cut this off nice
+1:34:54
+uh cut over is what we are going to do
+1:35:00
+with just wait for this
+1:35:24
+so the two back ends are added it should also turn
+1:35:34
+healthy so this H check is not from the Mig perspective it is from the unmanage
+1:35:40
+perspective but it is from the load balancer perspective so it should know that currently it is z of zero
+1:35:55
+so this is z of zero this is zero so request will not be sent there so we have to wait till it becomes healthy so
+1:36:03
+it does that
+1:36:11
+check and you can very easily compare between uh unmanaged and in managed
+1:36:17
+instance group here you can see auto scaling that column is there for our
+1:36:25
+London Mumbai and for our us but no configuration for our Singapore and
+1:36:32
+Belgium now it is healthy so what it indicates is let's go
+1:36:38
+ahead not this
+1:36:45
+one this is our load balancer right which I already put in the chat so let's refresh it and see it for me it will not
+1:36:53
+do any change because I'm in Bangalore I'm trying to access the closest region to Bangalore is Mumbai so I'll get the
+1:37:01
+response from Mumbai only I have no uh this thing but if I try to copy it this
+1:37:06
+IP and try to use this in this proxy tool pretend as if like I'm coming from
+1:37:12
+Finland let's see what is the output it gives me it gives me this so Belgium is
+1:37:17
+closer to Finland that's what the load balancer decides so if I go back and
+1:37:23
+pretend as if like I'm coming from uh Germany let's see what is the output
+1:37:29
+again looks like that is the closest one
+1:37:35
+Netherlands everything is this one only closest London is very far I'm not sure so that's what it shows uh I can create
+1:37:45
+something like uh in London itself a VM and we can try to access it it will show
+1:37:50
+basically that and another way I can show you is uh we will use a cloud shell
+1:37:57
+so if I use a cloud shell Cloud shell is in Singapore
+1:38:03
+so if I do curl this one it will not show the Mumbai output sered from Mumbai
+1:38:10
+blah blah blah sorry it will not show this one but rather it will show Singapore
+1:38:16
+flag sorry not Singapore not Singapore flag uh the output of unmanaged instance grp that is
+1:38:24
+what it should show because there is a VM in Singapore itself so that's the closest uh region so request is coming
+1:38:31
+from Singapore and load balancer finds out there is a instance group managed or unmanaged that is secondary but there's
+1:38:38
+an instance group in Singapore let me route the request to there that's what
+1:38:43
+it shows so this is what you can see it now if I come as if from uh from us it could
+1:38:52
+be totally different which one it is going to find out as the closest one the requestly routed from so we have created
+1:39:00
+a load balancer with a combination of instance
+1:39:06
+groups which is managed and unmanaged both are possible okay but this was something which I wanted to show that
+1:39:12
+you can use a combination if there's a question in the exam or if there's a need you can definitely use this option
+1:39:19
+as long as it's a backend instance group I should be able to attach it to a load
+1:39:24
+so now what I will do is this is what I get it as a response
+1:39:30
+from uh from Bangalore when I access it what I'm going to do is I wanted to see
+1:39:38
+the different output unmanaged instance group sered from Singapore something of that sort for that one what I'm going to
+1:39:45
+do is very simple remove those back ends so remove the back end which I don't
+1:39:51
+want so I don't want basically
+1:39:56
+Mumbai London and us anything which is managed I don't want I am looking only
+1:40:03
+for unmanaged because we had an instance already so I wanted to show this additional demo the focus was more
+1:40:09
+towards having an unmanaged insurance group so let's update it now it will have only
+1:40:16
+two backend one in imia sorry one in Singapore one in uh Belgium
+1:40:23
+so soon it should get updated they will be removed they'll be removed
+1:40:46
+soon okay we have only these now if I go to the load balancer page and refresh it
+1:40:57
+open it in a new window some reason automatically it goes
+1:41:04
+to secure okay it gives me this one post so
+1:41:12
+now because there's no VMS or no or instance group in Mumbai it finds out
+1:41:19
+the closest one from Bangalore is going to be Singapore it will not be definitely Belgium geographically it's
+1:41:25
+very far so it routes my request to singap simple right so this is what
+1:41:33
+happens so we saw this uh unmanaged instance group going good now if there's
+1:41:40
+a huge traffic which is coming from India so everything is going to Singapore now
+1:41:48
+Singapore we have only 1 VM now what happens they say can you bump it up so
+1:41:53
+so can you have something more what you can do is if you want to have more this
+1:41:59
+thing you have to add a VM and add it in your unmanaged instance group manually
+1:42:06
+there's no scaling up capability because it's everything is manual so the way I have to do it is I have to
+1:42:16
+go I have to go and create one more VM so I'm going to copy this VM
+1:42:24
+with the same configuration similar
+1:42:30
+configuration and I have to keep it in the same Zone folks Singapore second
+1:42:39
+VM so it has to be in the same Zone any configuration is fine I can go
+1:42:45
+also with something like
+1:42:50
+uh micro smaller configuration I can go with that
+1:42:56
+so startup script everything is going to be there because we are doing a
+1:43:06
+copy and this code is anyway going to show me that what is the instance name all those things that should be good
+1:43:12
+enough so this is a second VM I'm creating it because more load is coming people are saying that is slow so I have
+1:43:19
+to add one more instance that's what I'm going to do right after after I add one more
+1:43:25
+instance I have to add this instance in the unmanaged instance group list then
+1:43:32
+only the request will going to be either go to Singapore the first VM or Singapore second VM so that's how it's
+1:43:37
+going it's going to shuttle between these two things so yes it has come up
+1:43:44
+and you can easily see this is not used this
+1:43:49
+column this column indicates whether it is part of a instance group irrespective whether it is managed or unmanaged does
+1:43:56
+not matter whether it is part of an instance group it's going to show you that so this new VM is not part of an
+1:44:02
+instance group so what I'm going to do is I'm going to go to instance
+1:44:10
+groups already you get this because it's not attached to any back end we know this message right we have removed it
+1:44:16
+from the back end so they started sharing message that it's not attached to any back end you want to attach it or
+1:44:22
+not so let me use a imy sorry unmanaged
+1:44:28
+Insurance Group
+1:44:33
+APAC
+1:44:44
+edit where's that option to add
+1:44:50
+one yeah you you can just go to the overview page
+1:44:56
+itself we click on the this thing in the overview page you'll get an option to
+1:45:02
+add more instances uh currently this is one
+1:45:08
+instance let me just
+1:45:15
+add yeah this this is the second instance
+1:45:32
+now we have an unmanaged instance Group which has two resources so let me just go ahead
+1:45:41
+refresh it more than this I can use it in Cloud
+1:45:51
+shell the this is heard from Singapore fine H this one is now coming from
+1:45:59
+Belgium okay for some reason it is Switched this is again from the same
+1:46:05
+machine I wanted to show whether request is going to the second one the Singapore second VM wanted to
+1:46:14
+see whether it goes there it is switching between imia and the Belgian
+1:46:21
+machine and Singapore machine
+1:46:27
+it should not now it is now stable that switch was happening right it was getting a new instance added so that's
+1:46:34
+the reason it was basically showing that looks like let me just do
+1:46:40
+this watch let's see what is the response
+1:46:46
+which it's emia it's going to keep changing it singap I wanted to see that whether
+1:46:53
+the request is going to the second instance you have added new so whether it's reaching it or not so far it does
+1:47:00
+not look like it is
+1:47:05
+reaching have we done the right
+1:47:12
+configurations let me see whether the VM is part of an instance group yes sorry
+1:47:24
+yes it is part of it
+1:47:33
+uh it's not reaching that for some
+1:47:42
+reason my
+1:47:48
+shell still going to the same it you can see it is continuously hitting every 1
+1:47:54
+second it's going to keep hitting it now it is little stable looks like it is but it's going only no it's
+1:48:03
+switching but I'm not getting the second instance for some
+1:48:10
+reason let me basically do something like this let's do as if like a
+1:48:15
+preemptible virtual machine so when it is preempted what is going to happen terminated right so let's terminate
+1:48:23
+now at least the second VM is going to come into PCT so I'm terminating it let's see what
+1:48:29
+happens
+1:48:44
+now still Ser from the same VM because it's not yet
+1:48:49
+terminated so if we terminate it it should extend to the second VM which we created
+1:48:56
+it still the VM is not yet down still going
+1:49:15
+on the VM takes almost like 90 seconds to terminate let's see what happens
+1:49:26
+Let me refresh it here W something is going wrong or it's
+1:49:31
+not reflecting the second VM which we have added is not
+1:49:43
+uh second [Music] VM the request is not going to Second VM
+1:49:51
+itself uh uh
+1:50:00
+why let me just see why this is
+1:50:09
+there there a copy or maybe the
+1:50:15
+startup startup script was also there everything was there prop
+1:50:26
+but for some reason the request is not going here it's continuously going
+1:50:37
+to this one little strange one minute folks let
+1:50:43
+me just Che it up instance
+1:50:51
+groups two
+1:50:57
+instances this is stop this is going
+1:51:17
+uh it's still going to yeah so the first VM is it's not sending to the second
+1:51:23
+VM uh don't see a second
+1:51:30
+one this conference will now be recorded so what we had done is we
+1:51:42
+have two unmanaged instance groups APAC and India in APAC we have
+1:51:50
+two VMS and one of the VM is Singapore where when we shut it down the request is not
+1:51:56
+going to Second VM all the request is going to
+1:52:03
+basically the emia one so where that plag is shown so this is what is the
+1:52:09
+current problem statement so when I access this n number of times it's only
+1:52:15
+going there even if I do it from Shell
+1:52:25
+even from cloud shell where Cloud shell is prion in Singapore I'm not getting response for
+1:52:31
+that let me just copy
+1:52:36
+it I'm getting response from uh this thing so this is Weir so how do we debug
+1:52:42
+it um any thoughts what could be the reason why we are not able to send the
+1:52:47
+request to Singapore obviously it should have sent it to Singapore second VM but is not going how do you debug it for any
+1:52:57
+thoughts logs you can look into it that's one thing anything else quick
+1:53:04
+way put it in the chat private chat would be good good so that everybody can
+1:53:09
+think any reason why this is not
+1:53:20
+working thoughts
+1:53:43
+looking at the locks will get you some good idea so the easiest way which we
+1:53:49
+can find it out the issue is just s books just SSH use your curl command it
+1:53:57
+will come very handy so C Local Host
+1:54:02
+right whenever you are debugging any instance group uh the VM and if there's
+1:54:07
+an any application first to see from that VM can I access it so curl Local
+1:54:16
+Host should give me the response but unfortunately does not give and it says there's nothing running on 480 now this
+1:54:24
+is where the mistake happened so what happened
+1:54:32
+is when I created the second VM the way I did it is this is the actual VM
+1:54:39
+Singapore so I clicked on this VM I use the option of create similar so when I
+1:54:45
+did this it created a similar VM with no external IP address because there's no
+1:54:52
+external IP address the startup script was not able to get the installation
+1:54:59
+completed so there is one thing which it requires is Apache web server this is
+1:55:05
+outside of Google Cloud so it has to reach Internet and get it one option to get this part a VM with an internal IP
+1:55:12
+address to get its get access to the outside world is using NAD that's something which we have not yet seen so
+1:55:18
+for now we were using external IP address because I created a copy the copy was not having an external IP
+1:55:24
+address my startup script did not even work so this is one way of finding it out the easiest way is do a curl and it
+1:55:30
+is going to find it out a little longer way of finding it out is go to the
+1:55:37
+VM look into the uh logs that will tell
+1:55:43
+you whether you have basically uh installed it or not the serial logs is
+1:55:49
+going to the serial Port is going to show it that just search for
+1:55:55
+Apache huh this is the one singapur uh
+1:56:01
+it is trying to huh you can see this this is the startup script where Apache
+1:56:06
+has to install it started looking for it unable to connect to
+1:56:13
+internet it was not able to connect to Internet that was a problem so because of which our load balancer is very smart
+1:56:21
+it knows know it is not getting response from the second VM there's no point in
+1:56:27
+sending request to this is what it realized and that's the reason it is not sending this instance so how do we fix
+1:56:33
+it in this scenario just have an external IP address so that it can reach
+1:56:39
+Internet and get the installation done so let me just have it in a real world
+1:56:45
+it will be using natat but we are not yet there with networking part I'm just going to use an external ipus
+1:56:52
+save it and once I have my external lifeas I should also have to start my or
+1:56:58
+reinitiate my installation the startup script uh
+1:57:04
+what is the easiest way where I can reinvoke my startup script folks easiest
+1:57:09
+way we have done it quite a number of times so I have a startup script it
+1:57:15
+needs to get re invoked how do I do it any thoughts
+1:57:23
+restart is something possible without restart something else we can think
+1:57:31
+of reset is an option which you can do it so which is going to invoke my
+1:57:38
+startup script or you get into the system and do a reboot or you stop and
+1:57:44
+start three options you can definitely do it it is reset it is done looks like
+1:57:50
+so to verify it either you can look into the locks it's going to show you that or the easiest
+1:57:57
+option is SSH and do curl the curl will come very
+1:58:05
+handy believe me or not most of the application migrations which I do from AWS to Google cloud in my current uh
+1:58:13
+contractual jobs it basically helps me out whether the app is running or not C
+1:58:18
+that's a very handy op so various microservices run or not you will be
+1:58:24
+able to find it out it is working folks so curl is working so it is giving me
+1:58:29
+the response
+1:58:35
+so it has not replaced it's just giving the standard
+1:58:41
+output it has not replaced it yet meaning because we had a logic to
+1:58:46
+replace it right the code that is not yet done
+1:58:54
+it has just installed it this piece has not
+1:59:00
+inv let's just go ahead and see it because it is H now it is invoked you saw previously it was giving a big
+1:59:06
+response this was nothing but the actual HTML output that got replaced with a
+1:59:12
+smaller response which our code had right so now it is
+1:59:19
+good the VM is having uh the VM is having engine X all those things sorry
+1:59:26
+Apache web server so I don't need this VM with external ipers now it was only for a temporary purpose I went with the
+1:59:32
+external IP address so that I can get access to Internet I'll remove this
+1:59:42
+s again this is not a great option having a VM for a short time having a VM
+1:59:47
+with an externals for a short time only for internet access and disabling it it's it's a very crude way but the best
+1:59:54
+way is having something called as cloudnet configure so how do we do that we'll see it in the networking class but
+2:00:00
+for now because we only know this much we are using with what we know
+2:00:05
+so now we should have the VM and the VM should let me
+2:00:12
+refresh it the VM is having internal IP address
+2:00:18
+but it is having the necessary software all those things configured so if I go now to my cloud
+2:00:26
+shell I get the response from my second VM H so it is working it's working now
+2:00:34
+if I go here I'm getting it from my second VM
+2:00:40
+now you can see the most important thing which you need to appreciate here is the load balancer it realized that second VM
+2:00:48
+Singapore second VM is not having the necessary software or it is not giving me the response I will not route it to
+2:00:55
+that is what it was able to do very nice right so all credit goes to the load
+2:01:00
+balancer here now what I will do is I will start my Singapore
+2:01:07
+VM so that you can know if the request is coming from Singapore continuously it is going to become round robin between
+2:01:14
+these two VMS anything in imia will be obviously going to only one machine which is
+2:01:19
+Belgium
+2:01:25
+done so if I go to this I'll put a watch command so that it
+2:01:31
+will continously send every two seconds you will see okay why went to
+2:01:41
+Belgium okay Singapore second VM it's between these two it is
+2:01:48
+shuttling uh I wanted to see the just the VM so just the first VM huh it is
+2:01:56
+switching folks now you can see between Singapore and Singapore second VM is what it is
+2:02:01
+switching continuously so that way it is between round robing between this so
+2:02:06
+that's something which I wanted to share on the unmanaged instance now uh I
+2:02:12
+mentioned I use this very often for one specific use case uh not for real
+2:02:19
+projects but when we have this is going to be like this uh so the
+2:02:26
+usual uh scenario which I use this is uh people will not access your applications
+2:02:33
+like this right
+2:02:39
+so we'll never access it like this rather than this it will be like this
+2:02:46
+htps app dot or app to some domain main
+2:02:52
+name learn DCP something like this is what we are
+2:02:57
+going to do with all right so then how will I get this s which basically is an
+2:03:03
+SSL certificate so if you have a domain if you have purchased uh as an organization
+2:03:10
+if you have purchased your domain and SSL certificate you can easily do it but
+2:03:15
+if you have only purchased the domain say from GoDaddy kind of a stuff but SSL certificate you have not purchased you
+2:03:22
+can use something called as Google managed SSL certificate which is going
+2:03:28
+to be for uh 90 days Auto
+2:03:37
+renewed Auto renewal is going to happen
+2:03:44
+it so Auto renew is going to happen so you just need to set it up once and this is
+2:03:50
+free now now there are different types of SSL certificate Comes This one is going to be based on a domain DV
+2:03:56
+verification domain verified there are other more sophisticated SS certificates which you can get this is a basic one if
+2:04:04
+you want you can go with this option so I use this primar because most of the
+2:04:09
+customers will migrate from AWS to Google Cloud they want to have a manage SSL certificate so what I do is I create
+2:04:18
+an unmanaged instance group I'll get an IP address like this then there is a step there's a step
+2:04:24
+which we have to do it like this this is like a real-time use case
+2:04:31
+so I go to the load balancer we'll talk more on this but I just wanted to give a
+2:04:36
+sneak peek of where you can use it if you are going to do no migration but still can I use unmanaged instance group
+2:04:43
+possible for generating SSL certificates so I go to the load balancer
+2:04:52
+uh first I have to make sure this IP is uh reserved what I will do is I will
+2:05:00
+go to my
+2:05:06
+network then external IP address this is the one I will promote it as
+2:05:13
+static my
+2:05:19
+lb so it is yeah it is reserved this is what I do
+2:05:26
+afterwards I go and create or I'll add one more front end we have
+2:05:34
+added many back ends up to five back ends we have added so what I will do is I'll add a front
+2:05:40
+end which is going to be not HTTP base but
+2:05:46
+htps so how do I do it https front
+2:05:52
+end the protocol which I'm going to change is to H EPS so whenever I do that
+2:05:59
+it is going to have one more IP address if I just leave it as FM it will create a load balancer having two external IP
+2:06:05
+address which will not be a good choice but rather I would say use the same load balancer but the protocol is going to be
+2:06:12
+changed to 443 the port is going to be 443 whereas the first one was P
+2:06:18
+80 that is okay uh secured but if you want a secure one 443 is going to be a
+2:06:24
+good choice for this to work out you have to have a certificate course I don't have it either if I get a
+2:06:31
+certificate from any providers right SSL certificate provider I can upload these
+2:06:36
+things I have done this in some organizations projects where I have implemented it if you say can I use a
+2:06:44
+Google manage SSL certificate which is free you can do that so I'm going to do
+2:06:50
+this Google managed C this is what we are going to
+2:06:55
+do it and what is going to be the domain name so this you should have you should have a domain then only it's going to
+2:07:00
+work let me okay the certificate created so we
+2:07:06
+were lucky usually sometimes it takes more than 10 15 minutes maximum 30 minutes so but it got created very
+2:07:13
+quickly uh so it is going to expire on 4th of January so roughly 90 days so not
+2:07:21
+roughly if I put exactly what is the this thing so today is 6th so and if I
+2:07:28
+go to 4th January 90 days books perfect 90
+2:07:34
+days so it's going to renew automatically you don't need to worry so
+2:07:39
+a week before meaning uh first of uh before the 4th of January a week before
+2:07:45
+itself all the renewal process will be made updated by the system itself you don't need to do even touch anything
+2:07:52
+now the set is there now what is the thing which I'm going to do it so if I go
+2:07:58
+here and type htps I should get my response you can
+2:08:04
+see it is a verified it's like a secure site valid certificate you can get the
+2:08:10
+entire details folks even in your corporate environment you can access it
+2:08:15
+so it will give you the entire details issuer all those things it's a proper website which we have done
+2:08:22
+right so this is the main purpose of me doing it uh you can also verify it
+2:08:29
+from here it's going to work previously it was showing it is not having an SSL
+2:08:35
+set now it is working and this page which was not working previously should work
+2:08:41
+now that's the whole purpose now what next I will do is I will come
+2:08:48
+and now this certificate is already attached there's the the
+2:08:53
+certificate it will show it has been attached to the specific uh Target proxy
+2:08:58
+the load balances component what I will do it is I'll go to
+2:09:04
+my load balancer I will delete my load
+2:09:09
+balance using a script so when I delete it I'll only delete the backend service
+2:09:15
+I'll not delete the SSL certificate meaning the certificate can be used later when whenever you want you can use
+2:09:23
+it later and it's going to work so that is a whole purpose I use it in uh uh
+2:09:30
+regular on a regular basis uh unmanaged instance group there's also a better way
+2:09:35
+you don't even need unmanaged instance group something called as Cloud run is also an alternative option but we are
+2:09:41
+not yet there we'll come to that at a later point so primary use case to generate SSL certificates you can use
+2:09:47
+unmanaged instance group in a real form that's the key takeway okay so I'm deleting the load balancer
+2:09:54
+so once I deleted the load balancer if I go to my certificate it will show it is
+2:09:59
+not it's not in use meaning it is free to be you can use it is what it indicates so you can use it and it's
+2:10:07
+going to come up automatically so you don't need to rely on HTP anymore you can directly use
+2:10:13
+htps so let me just wait for this to get deleted but when you're deleting it
+2:10:18
+please don't delete the set if you delete the set c will also get deleted and we will reuse the certificate in our
+2:10:24
+networking class so where can I see the
+2:10:30
+certificate you should be able to see the certificate by going into all view
+2:10:37
+products there's something called as security section they moved it recently under
+2:10:47
+security you will see something called as certificate
+2:11:07
+manager it should show it here let me enable
+2:11:13
+it the two places where you can see it uh if you have a load balancer you can
+2:11:18
+see it in the load balancer page since we have deleted the load balancer you are not able to see it uh or you can do
+2:11:24
+it via this new Option called as certificate manager if here let me enable it and you should be able to see
+2:11:33
+it classic certificates huh this is a classic certificate so this is what you
+2:11:39
+can see now it is not in use so what does that mean you simply go create a
+2:11:45
+load balancer
+2:11:51
+create a load
+2:11:56
+balancer we'll talk more on this in the networking class I'm just doing next next next create a load balancer use
+2:12:04
+https whatever the IP you want you use it then you already have a certificate
+2:12:11
+here directly you can do it this is the whole purpose of using unmanaged instance groups okay so
+2:12:20
+now let's go to the last piece of
+2:12:26
+it when you create an unmanaged in sorry manage instance group so we saw two
+2:12:38
+types we saw stateless we saw one more option which is also stateless only unmanaged so
+2:12:45
+where we did all the stuffs manually something which has been added uh uh
+2:12:51
+year year and a half back is State full what do you mean by stateful meaning my
+2:12:56
+state is preserved in very simple STM where will you preserve the state it is going to be in a cookie meaning cookie
+2:13:04
+file on your laptop right a text file or it could be in a session which could be
+2:13:09
+in a server or it could be in a database right this is where I can preserve my
+2:13:14
+state so when I come back next time it is going to use this information and show it from where I started so in very
+2:13:22
+simple terms um I would say a classic example for preserving the state is like
+2:13:27
+filing tax if you go to the tax filing system uh online it will have a wizard
+2:13:34
+you have to fill lots of uh forms or lots of uh information first your
+2:13:40
+personal information then it's going to be your that specific Financial year stuff then it's going to go uh Bank
+2:13:45
+details all those things so that's a visard so when you finish that first page
+2:13:51
+you'll have an option to click on save you can save it day after tomorrow you can come and again continue it is going
+2:13:57
+to continue from that page because the state is preserved that's stateful right in simple terms if you want to run
+2:14:03
+anything like that a stateful application is going to be a good choice for this a database is going to be required so by default databases are
+2:14:11
+stateful workloads is what I would say so what if I have a requirement I want
+2:14:17
+to create a state full instance group so manage instance group
+2:14:24
+State full now there are something which will not be available so the the
+2:14:30
+superior under these things are this is the one which is the superior
+2:14:37
+most the reason is manage Insurance Group stateless gives you all the
+2:14:43
+capabilities like scaling up and down is possible health check is possible Auto
+2:14:49
+healing is possible everything is going to be using templates so meaning uniform instances so these are all the stuffs
+2:14:55
+which you get except one thing the state will not be preserved so in unmanaged instance group you don't get anything
+2:15:02
+much except load balancing uh but when it comes to stateful right it is something like in
+2:15:08
+between it has some features available which is under the stateless uh which it can do some
+2:15:15
+features which is available under the unmanaged work so what are those things so if I create
+2:15:28
+or M State full so you can see the screen itself
+2:15:35
+you'll get an better idea so templates are there where in our unmanage we did not had it so I'm going to use one of
+2:15:42
+the templates then the number of instances you see this one folks what is the
+2:15:48
+difference you don't have Auto scaling cap capability so if you were to
+2:15:53
+appreciate it it's going to be good you do a small side to side comparison so
+2:15:59
+this is where the UI will be really helpful to compare so if I go ahead and create a instance
+2:16:05
+Group which is the manage instance group so I selected
+2:16:12
+template right so when I select the template I get an option of multiple
+2:16:17
+Zone single zone that is something but this Auto scaling capability Min and Max
+2:16:22
+you don't get it in state full I cannot do that it's
+2:16:28
+going to become very difficult because if it's a database right I have to scale it 10 times where will my data get
+2:16:35
+distributed if I have 10,000 rows how will I distribute the data it becomes difficult there so that's the reason
+2:16:40
+they don't provide you that option of Autos scalability in a state full one then what is going to be stateful let's
+2:16:47
+look into it or what is going to be preserved we look into it multiple zones possible so something very similar to
+2:16:54
+our manage instance group State less we get it even distribution is there now
+2:16:59
+the most unique feature of uh stateful is some configurations what can you
+2:17:06
+preserve is the disk folks the actual data right if you think of a database
+2:17:13
+Microsoft SQL Server my SQL anything the data will be persisted in a disk now
+2:17:18
+think of a stateless one if it's a stateless one right if something goes wrong a new VM will be
+2:17:24
+created but the data in that dis will not be retained it will be deleted but I cannot do the same thing
+2:17:31
+with the database something went wrong it went down when it again comes up it should have the data there then only my
+2:17:38
+tables will have those information assume it's an employee information right if I make it my disate full so
+2:17:47
+what is going to happen is the VM can get deleted but when a new VM comes up it is going
+2:17:53
+to attach the same dis and come up so on permanent deletion what you want to do
+2:17:58
+it so should you detach or delete you can do this so when any new instance is
+2:18:04
+added it's going to be always made with the same disk so that way my data is
+2:18:09
+going to be preserved so that is where you can make the disk State full that's
+2:18:14
+something possible where data is actually preserved you can also have external IP address preserved which is
+2:18:20
+not a good choice right we don't work with external IP address we have already slowly moving into a best practice of
+2:18:27
+always using internal IP address this may not be of a great choice for us the other one which could be of great choice
+2:18:33
+for us is having an internal IP address the same that is going to be a good choice
+2:18:39
+now you may ask why that is required so if I think of this
+2:18:44
+one so you may have
+2:18:52
+uh read
+2:18:58
+replica in a database and a right
+2:19:09
+replica now this will have a specific IP
+2:19:15
+address now something can go wrong with this VM and this is all accessed
+2:19:21
+basically using a system so user tries to access
+2:19:27
+this now if this something goes wrong with the VM so I have to start it I have
+2:19:33
+to delete this and start it again what is going to happen the disk is going to be retained so I can get the data from
+2:19:38
+the disk but what if my IP address also needs to be the same so that way the user is not at all
+2:19:44
+impacted for a short time there could be a glitch but the user still connects using all the uh
+2:19:51
+application is going to still Connect using the same IP address 10.2 3.2.4 so if you have that kind of a use
+2:19:58
+case you may want to preserve your internal IP add so this is what you can basically preserve it or state state
+2:20:06
+preserve the state the disk and the IP address so then the remaining part you will get a auto healing also the only
+2:20:13
+part difference between managed instance group stat less and stateful is there in
+2:20:18
+the stateful state is preserved in very simple terms the dis can be same the V IP address can be same but you don't get
+2:20:26
+Auto scaling capability uh you get Auto healing capability you get basically the
+2:20:33
+template meaning identical VMS you can have it so these are the stuffs which you can get it so that way even if
+2:20:40
+something is getting lost my data is my dis is preserved so that way I should be
+2:20:45
+able to rain so this is the way you do it I don't have a standard demo to show you a database or anything of that sort
+2:20:52
+but we will use this is an okay demo is what I would say having the Mig State
+2:20:58
+full but a better demo is going to be in kubernetes using a concept called as
+2:21:04
+stateful set something very similar but in a very sophisticated way it will be
+2:21:09
+achieved so we'll do a demo at that point of time so I just wanted to show that if you want to preserve the disk in
+2:21:16
+a virtual machine you can think of using this as an option or if you have an
+2:21:22
+existing unman sorry managed instance group State less you can convert that
+2:21:27
+into State full by just clicking on the Mig
+2:21:35
+edit make it stateful so turn off Autos scaling this is important uh turn off
+2:21:42
+instance redistribution you can do it which one you want to preserve it you mentioned so this is another way of
+2:21:48
+making it a stateful so you start with state less later the requirement changes you may convert that into a stateful one
+2:21:55
+also so this is possible so this is a place where you can think of
+2:22:00
+using manage instance group State full primarily for databases folks that's
+2:22:06
+what I would say this is primar for databases or the disk needs to be persisted you can think of using this so
+2:22:13
+uh apart from that there's not much other use cases
+2:22:18
+but Auto scaling is not there keep that in mind so don't expect that auto scaling to happen it will not work so
+2:22:25
+that's something primarily on manage or all types of instance groups which I
+2:22:31
+would say so now why did we spend a good amount of uh time on instance groups the
+2:22:39
+reason is this is going to be the base for the future components which we are
+2:22:44
+going to look into it what are those things kubernetes this is the next upcoming topic which we are going to
+2:22:50
+talk so there are very few slides on um manage inst Group which we are going to
+2:22:56
+finish it and then we'll go into kubernetes uh from the next class when you create a kubernetes cluster it is
+2:23:02
+nothing but a managed instance group folks I'll show you when we do the demonstration you will really appreciate
+2:23:07
+it it is like Google they themselves use their services in another
+2:23:13
+service there's also one more component which we will see in Big Data section at a very high level called as data flow
+2:23:20
+which which is an ETL tool this is also going to be a manage instance group and
+2:23:25
+there's also uh which is not now used composer previously it was used so
+2:23:31
+composer 1 2 three are there composer one which is deprecated was previously
+2:23:37
+using or was using manage instance group whenever you see a groups of instances
+2:23:44
+possibly that component is using cluster right we are going to use kubernetes
+2:23:49
+cluster when there are group this will automatically come into picture so that is where this m is going to be a really
+2:23:56
+helpful option so meaning the concept of MiG is not going to end here you will
+2:24:02
+see its impact or references in kubernetes heavily in data flow heavily
+2:24:09
+that's what I would say that was the main reason why we use this is like a building or the foundation so using this
+2:24:15
+Foundation how we can create a kubernetes cluster is what we are going to see in our future classes
+2:24:21
+a couple of more slides and then uh basically that will uh bring it to the
+2:24:27
+end of our uh uh what I would say uh VM class then we'll go into uh kubernetes
+2:24:33
+class so one last slide uh on the virtual machine is uh you did a
+2:24:39
+migration like for the example the previous scenario which we mentioned is this on premise to Google Cloud
+2:24:46
+migration you did it you use unmanaged instance group one is eight one is 4 one is 2 now who told the VM should be 8
+2:24:55
+vcpu 32 GB of RAM who decided it somebody with uh some high level
+2:25:01
+knowledge would have done it or the developer would have told it somebody or it could be a guess work now in on
+2:25:07
+premise you don't get a very proper utilization it is possible that the 8B
+2:25:14
+CPU and 32 GB Ram was not fully utilized it was bloated is what I would
+2:25:20
+say say so in that scenario can I get some recommendation from Google it is
+2:25:27
+possible so if you leave a instance running as this right for maybe a high
+2:25:33
+configuration system if you leave it as this Google will use the utilization the
+2:25:39
+CPU memory all this utilization it's it's AI driven is what I would say it uses that and it is going to say boss
+2:25:47
+looks like your VM is uh underutilized or over
+2:25:53
+utilized so it's going to give you that information in this uh screen what it is
+2:25:59
+saying me is my current machine type is 4 vcpu 15 GB of RAM but I have not
+2:26:06
+utilize this system very well it is saying can you change this to a new machine type which is 2 vcpu 8.25 GB of
+2:26:16
+RAM almost like half of it by doing that you can save over a month
+2:26:22
+$887 is what it is indicating this is under utilization so you can just click on
+2:26:29
+this and take the necessary steps now please note you are changing the machine
+2:26:35
+type meaning there's a downtime meaning you have to terminate the VM and update
+2:26:41
+this information and turn it back now this is just a recommendation from Google it is not going to be Auto
+2:26:47
+applied you have to apply it whether it's in Dev environment or stage environment you have to apply it so when
+2:26:54
+should I apply it I would say don't apply this if the recommendation is for
+2:26:59
+2 days I would leave the system to be running for at least 7 days so that I
+2:27:06
+know the entire pattern for the entire week maybe there is an application where the traffic on that application on
+2:27:12
+Monday is literally zero but the traffic on that website is very heavy on Friday
+2:27:17
+Saturday Sunday maybe it's a Gaming website people don't play games on Monday to Thursday because it's a
+2:27:24
+working day right so I need to understand the pattern so to understand that pattern leaving it at least for 7
+2:27:30
+days or a good one would be 15 days then apply this recommendation but whenever
+2:27:36
+you apply the recommendation please note the uh there's going to be a downtime so
+2:27:42
+if you're trying to do this in a production right you may need to have a change request an approval because
+2:27:49
+there's going to be a downtime that's one important stuff to keep in mind and this is going to save some cost when it
+2:27:55
+is showing underutilized now there could be an opposite of this you have a Windows VM
+2:28:00
+just for the sake of explanation and you are using this left and right and the
+2:28:06
+configuration is just four vcps 15 GB of RAM but you are fully utilizing it now
+2:28:12
+you may say fully utilizing is always good what is going to happen crash the system can crash so it will say boss you
+2:28:19
+are over utilizing your system so increase from 4 vcpu to at least 8 vcpu
+2:28:25
+and 30 GB of RAM that's going to be better it can give you that recommendation also if you don't uh
+2:28:33
+accept that recommendation what is going to happen possibly your VM can get crashed in underutilization nothing is
+2:28:40
+going to happen but you're going to spend more money so you could have saved it by terminating this kind of a
+2:28:48
+stuff so so one important stuff which you need to do when you are doing this one right uh so I did this in the
+2:28:55
+initial days so when I was working in Cap Gemini so uh I was working for one
+2:29:01
+of the projects so I saw this kind of a recommendation so I thought okay let me get a good name from the customer uh I
+2:29:08
+took a screenshot okay I took a screenshot of this one uh before I
+2:29:14
+drafted so parall I was Drafting and doing this path so I open my Outlook took a screenshot of my this thing
+2:29:20
+saying that save it was a bigger number around $300 or not something of that sort save $300 so uh request screenshot
+2:29:29
+applied this and the lower configuration screenshot also I took it and drafted so
+2:29:36
+I have done this proactively blah blah blah some little uh good words I put it and sent it to the
+2:29:42
+customer nothing response no response came from the customer that is one so
+2:29:48
+the second thing I I got mails from testing team Mahesh yesterday I was able
+2:29:54
+to log in this was a Windows VM so they were doing some load testing so they were saying yesterday we were able to
+2:29:59
+log to the VM now today we are not able to log in what had happened is because it was restarted the external IP address
+2:30:06
+got removed so whenever you do uh terminate
+2:30:12
+because I have to terminate it and do all the things the external IP address is going to be loosed so if you're going to do this kind of a stuff make sure
+2:30:19
+when you re or terminate the VM what and all can impact if you have a local SSD the data will be removed if you have an
+2:30:25
+external IP address which is fmrl that will be changed so you make it static do
+2:30:31
+the stuff and then do it so that is going to be like a kind of a precautionary steps which you have to take into consideration but if you don't
+2:30:38
+do it you will get into trouble so the way I handled that is I had to get the new IP address because I restarted it
+2:30:45
+the testing team was not having access to Google Cloud console they used an RDP to get into a Windows VM now the IP
+2:30:51
+address is changed I went into the console because I sent a mail to the customer right I had taken the full
+2:30:57
+screenshot before and after when I saw before it was something like 35 do
+2:31:02
+something after was 34 do something then I realized that the IP address has changed so I used that IP address shared
+2:31:09
+it with the testing team then they were able to login so the fun part is when you're are
+2:31:15
+applying this make sure the things which get removed when you do a termination
+2:31:22
+you take care of it local SSD and external iers apart from that they should not be any issues so if you don't
+2:31:29
+use local SSD if you don't use external IP address you can easily apply this is what I would say and unfortunately I did
+2:31:35
+not get any appreciation from the customer so I'm not sure whether they saw the message or not uh sometimes this
+2:31:41
+can also happen so under utilization over utilization both are going to be
+2:31:46
+possible and it will be difficult for me to show this demo live because you need to wait for at least 2 3 days what you
+2:31:54
+can do is you can create a VM with a little higher configuration leave it come back after two or three days you
+2:31:59
+will see a recommendation where can I see that usually under this
+2:32:07
+section I usually comment it off or remove that column because I I usually
+2:32:12
+want to show I don't show that pack if I turn this on this is where you can see the recommendation you can try it
+2:32:19
+yourself if you you want I have one video on that I'll put it in the the
+2:32:26
+playlist itself so that you can see it uh
+2:32:34
+size this is the one so here you see a VM which is
+2:32:40
+showing like uh5 $15 you can save it this is what it shows so you have 2 vcpu 7.5 GB of RAM
+2:32:49
+consider ing uh you can lower the this thing it will save you cost that's what
+2:32:54
+it indicates so you just need to apply when you apply it what's going to
+2:33:01
+happen the VM is going to be terminated and it's going to basically uh there's no audio for this one so I just took a
+2:33:08
+screen like a video recording of this one so long back it's like four five years back video so this is one thing
+2:33:14
+which you see it similarly you will also see one more I'll put it in the playlist
+2:33:19
+uh uh
+2:33:37
+overutilize uh this one increase performance so if I show you this one
+2:33:43
+real quick let me just wait for this ad to go off yeah so
+2:33:52
+this one you see this uh let me just dra the machine
+2:33:57
+type this is an interesting one so where it says not save cost increase
+2:34:04
+performance so if I click on this increase
+2:34:09
+performance I'll put this in this thing it is showing that you are over utilizing it you are having 1 vcpu and
+2:34:15
+3.75 GB Ram but the way you're utilizing it is like as if like it should have two vcpus more if you don't do it it's going
+2:34:23
+to crash at some point that's it right simple so I would say preference should be given more for increased performance
+2:34:30
+rather than saving cost saving cost yes it's not going to impact money is going to go but here the application itself
+2:34:37
+can go down if it goes down you will have a business impact because of the business impact money can be lost right
+2:34:43
+so this kind of a stuff you going to do it now this is also a little recent video which I did it if you click on it
+2:34:49
+it is very smart it shows certain information like to change the machine
+2:34:56
+type computer engine needs to stop and start this stopping and may cause resources like local SSD and fmrl IP
+2:35:02
+address to be lost this information was not there in that four years video which I had done so Google is also improving
+2:35:09
+certain stuffs so take a call and apply this when you want this is what I would
+2:35:14
+say
+2:35:21
+the last slide and I'll stop it for the uh day so when should we use compute
+2:35:27
+engine so kind like a final picture when should you use it so whenever you have a
+2:35:34
+lift and shift use case on premise to Google Cloud AWS to Google Cloud Azure to Google cloud and in those sources it
+2:35:41
+is a virtual machine a easy migration is lift and shift so there are tools also
+2:35:47
+available so we'll talk about this in the last module module 9
+2:35:54
+so if you go to any of the VM you see this import so where I can import it
+2:36:03
+from Amazon Azure on premise there's a process for it so this is a very quick
+2:36:10
+win which you can do with Second Use case if it's having local SSD
+2:36:16
+requirement gpus ppus very powerful one so recently was working on one AI
+2:36:22
+related project where they wanted uh tpus so VM was the possible
+2:36:29
+option so soon TPS will be made available in kubernetes also but currently it is going to be only
+2:36:35
+available in Virtual machines so you will use that local SSD if I want to do
+2:36:41
+it so virtual machines are going to be a good shots meaning that the resources which you need based on that you may go
+2:36:46
+with this other options maybe I have something running proprietary some
+2:36:52
+databases I don't get an option in Google Cloud for example I don't have DB in Google Cloud it's not
+2:37:00
+available managed version is not available so what I will do is I'll go to the
+2:37:12
+marketplace I'll go to Marketplace like what we had talked already right in our uh previous demos on Marketplace I go to
+2:37:20
+Marketplace search for mongod
+2:37:28
+DB I may install this on a virtual machine
+2:37:37
+so they have everything on
+2:37:42
+currently SAS offering
+2:37:48
+uh let me take say for example some other database or data warehouse green
+2:37:54
+plump green plump is a warehouse data warehouse more like EXA data Terra data
+2:38:00
+kind of a stuff so if you want this you can install it on a virtual machine so
+2:38:05
+if I go to the
+2:38:11
+pricing why it is not showing the price okay so this you can install it so
+2:38:19
+if I click on get started it's primar going to inser on a
+2:38:26
+virtual machine groups of virtual machines so scenarios where you need something which is not supported by
+2:38:32
+Google you can definitely go with it uh so there's no out of the box options you
+2:38:37
+can go with this other things if you have an SLA where the scale up you want
+2:38:42
+a new resource to be provision in 30 seconds we have seen right 30 seconds we can provision it 15 to 30 seconds we can
+2:38:48
+provision it if you you want that kind of a stuff you can definitely go with this now if you want lesser than this 2
+2:38:55
+seconds can you scale it up to a new instance virtual machine is not a good choice you can use something else like
+2:39:00
+Cloud run kind of a stuff we'll talk about it later so scalability the SLA depending on that you may want to switch
+2:39:07
+it then there could be some use cases where you want to use specific operating
+2:39:12
+systems I want to use Windows 10 or 11 in Google Cloud computer engine only can
+2:39:19
+help you out or CI database which is sorry cly Linux machine which is usually
+2:39:24
+used for penetration testing ethical hacking if you want to do it you can do it but unfortunately if you see it cly
+2:39:31
+Linux is not available in Google Cloud
+2:39:37
+meaning if I go to my compute engine you don't get an image itself
+2:39:53
+if I go here if I look into it I'll not
+2:39:58
+get I don't get that but you can basically
+2:40:06
+get steps easily in internet if you have an
+2:40:13
+existing OS on premise or something how to import K Linux to Google Cloud it's a
+2:40:19
+very old document but still works so these kind of stuffs I should be able to do it where virtual machine could be a
+2:40:26
+very good choice basically they create an image and get the image uploaded right so this is already there in the
+2:40:32
+bookmark you can look into it if you want so meaning where scenarios the last one is an interesting
+2:40:38
+one I'll not talk about this now because we don't know containers some of you maybe already working on kubernetes but
+2:40:45
+some of you may not know that so if I want to run one single container image
+2:40:50
+this is going to be a good choice what is containers all those things we'll talk about it later okay so the next
+2:40:56
+module or these are the scenarios where you may think of using virtual machines now the last one is it's like
+2:41:06
+the sweet spot if nothing works out the only option which is going to work is
+2:41:12
+virtual machines works you may have sophisticated options like Cloud run
+2:41:17
+kubernetes various options mod way of running applications if none of them work you come back to Virtual machines
+2:41:24
+it is something like this if I were to give an example you may have some problem you reach out to various peoples
+2:41:33
+they may not give you a solution but if you come to your loved ones it could be your parents or your spouse there's a
+2:41:38
+very high chance they will give you a response or a solution for that something like that this is like the
+2:41:43
+fall back option if none of the options work try it in virtual machine 100% it
+2:41:50
+will work but it's going to have its own cost all those things uh but this is a good place usually when I do migrations
+2:41:57
+I use this as an option I have something which is not running in kubernetes I try it in a virtual machine install quickly
+2:42:03
+find it out whether it's working where it is basically breaking why it is not making it work in kubernetes I'll figure
+2:42:09
+it out so at least I use it as a debugging option okay
+

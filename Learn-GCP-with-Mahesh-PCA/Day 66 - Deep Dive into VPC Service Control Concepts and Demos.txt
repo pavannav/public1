@@ -1,0 +1,3026 @@
+ript
+
+
+0:01
+This conference will now be recorded. So far we have seen how basically uh
+0:08
+firewall rule works for uh a VM. That is what we have seen. Uh so today we'll be
+0:15
+looking at a service called as VPC service control which is going to be an
+0:20
+important one from a cloud architect perspective to safeguard
+0:25
+uh uh other Google cloud resources. We know uh resources like Google cloud
+0:32
+storage, cloud run uh then bigquery, spanner, cloud SQL instance. These
+0:39
+things cannot have firewall rule, right? At least uh uh the only thing which can
+0:45
+have firewall rule is virtual machines, Kubernetes cluster remaining everything cannot have firewall rules. So but if we
+0:53
+can get something kind of a firewall rule that could be really helpful so that we can protect them right. So a
+1:00
+simple use case if you see it I have I have a uh Google feed storage
+1:08
+bucket. Now I want to access this bucket only from my authorized source. So what
+1:18
+do I mean by that? Let me give a very very simple example.
+1:25
+Um, let me go to my service
+1:33
+project. I go to my service project and I'm going to go to Google Cloud Storage
+1:39
+bucket. Let me see if I have some buckets there. If it's not there, we'll create one.
+1:45
+Okay. So, we don't need
+2:05
+these. What I'll do is I'll create a bucket and I'm going to um simulate as
+2:12
+if like there's some sensitive information. Okay. So,
+2:17
+uh
+2:24
+I GCS VPC service control highly
+2:32
+confidential data and uh this is going to be a
+2:37
+confidential information obviously it should be in a specific region. So I
+2:43
+would say let it be in US central and it's a very sensitive
+2:48
+information. I cannot make it anywhere public. So I'm going to make it sorry I'm going to put that enforcement and
+2:57
+uh retention those kind of a stuff if you want you can turn it on so that you can safeguard it right. So I will make
+3:07
+something like because something goes wrong, a bad guy comes, somebody tries to access it,
+3:14
+we don't want to basically delete the data. So I'm going to make sure uh we
+3:19
+cannot make it too much. So I'm going to make it like uh 300 seconds folks. 5
+3:24
+minutes is what I want to retain for the demonstration purpose. But it's if it's a real word, we can turn it on and uh to
+3:33
+a longer time duration so that all the sensitive information are not deleted even by accident. It is something like
+3:38
+this, right? A bad guy copies the data. Not only just copies the data, also deletes the data uh from the source. We
+3:47
+don't want to get that something has happened. Worst thing has happened where there is a data uh has been copied.
+3:54
+Usually they call it as data exfiltration. So that has happened but can he at least leave the data there not
+4:01
+delete it right that is what I wanted to do it so we want to do that kind of a we have done some protection we'll see but
+4:08
+apart from this still there could be some kind of a loophole that is what we wanted to see today so if you want you
+4:14
+can also turn on object versioning or soft delete if you wanted it
+4:19
+so for now just retention should be good enough done there's a bucket folks there's a bucket
+4:29
+Okay. Uh let me just uh now these things me creating a bucket all those things
+4:36
+assume it was already done. Okay. Uh assume it is already done. And u also
+4:41
+the data population assume it is already done. So what we will do now is I'm just
+4:50
+going to populate something. So I wanted to do something which is from a scratch. I just will create a scenario then I'll
+4:56
+show what needs to be done. So, I'm just going to handle some data
+5:03
+echo uh
+5:12
+sensitive sensitive data.
+5:29
+Uh okay. Uh think as if like these are all already done behind the scene. Okay.
+5:35
+So gs util
+5:41
+ls. So I'm going to copy this data. G uh you can use G-Cloud, you can use GSUL.
+5:48
+I'm just going to mix everything so that we we are aware of everything. So from the exam perspective
+5:55
+uh so star.ext
+6:02
+file. So including the readme file, three files will be transferred folks.
+6:07
+Okay. So that's it. Just pretend this is a bucket very
+6:12
+confidential bucket. Uh it is going to have access to uh these uh like uh
+6:19
+files. These are the content. Now this is the background folks. This is the
+6:25
+background. Now let's go back to this one. So I have a very sensitive data
+6:32
+which is this bucket. Now uh how can I protect it?
+6:38
+meaning with the concept which we know the concept of IM give it to the right people. So for example
+6:46
+uh this bucket access is given to whom. So if I look at the permissions it will
+6:52
+tell who and all has access. So if I go with principle sorted. So who
+7:02
+and who and all is going to have this most of them are the service accounts
+7:07
+which basically get access to like uh viewers of the
+7:12
+project. Then cloud run service agent fire store service agent. So these agents will get usually access because
+7:20
+these are Google managed one. So I don't want to touch that. All right. So I can leave anything which is like
+7:27
+this hexagon. Then the owners of the project, the viewers of the project will have
+7:33
+that access editors of the project. Apart from that there's another service account and our uh um this thing what is
+7:42
+that um comput engine default service account that's another thing which is
+7:48
+having the rows. So these are the rows which we have. So if I go
+7:55
+to I
+8:00
+am. So who's having the role? So let me remove this
+8:06
+[Music]
+8:11
+person. So I'm removing these
+8:19
+people. Okay. Sorry. This is inherited. I'll remove this
+8:29
+person and let these people have the roles. That's okay. Okay. So, the person
+8:35
+only who's having access to storage is
+8:41
+uh the owner Mahes at the right learn with Mahesh.te. Okay, that's the person
+8:48
+who's having access. The one which we wanted to implement is going to be something like um you based on what we
+8:56
+know so far if Mah is the owner he will get access to this bucket right but
+9:03
+think of this if Mahesh goes rogue and tries to do a data exfiltration meaning
+9:11
+tries to steal the data then what you can do then you may ask how we can steal
+9:16
+the data let me just show you a small example that he can steal the data uh in
+9:23
+uh three different styles. Okay. So first and foremost
+9:31
+uh assume uh see the role has been given to him right the role has been given to
+9:36
+him uh and how he can steal the data is what I wanted to show then we'll try to show the fix for this. So first and
+9:44
+foremost stuff because I've been given owner no restriction right. So and maybe
+9:50
+I'll also have one more user this
+10:01
+user. Let me see if this user is
+10:07
+having I can also log in as this user.
+10:19
+Hopefully I can log
+10:31
+in. Okay, good. I'm able to log in. Uh so I'll call this as uh another user.
+10:43
+So currently it's only those uh AP related stuffs is what this person is
+10:50
+having access to. Uh so if I switch go
+10:55
+to Google cloud storage bucket obviously I'll get an error.
+11:05
+So we will give him access to that particular bucket folks. Okay,
+11:11
+particular bucket. Um so that he can try to do it from the con uh cloud shell kind of a stuff. So
+11:19
+what we will do is go to buckets.
+11:30
+I'll also create one more bucket. Uh
+11:46
+uh let's uh make it like something else like uh it could be used for something else. Uh
+11:53
+uh done. So I'm not going to upload any data for that. I'm just going to leave it. So only for this bucket. Okay,
+12:00
+there's a typo. That's okay. Um I'm going to give that
+12:11
+user storage not too much of privilege. Okay,
+12:17
+storage object uh user role so that I can access the
+12:24
+data. Done folks. So I cannot still see it in the UI because only to one bucket
+12:30
+have given not to all the buckets. So in that case um I have to use my cloud
+12:40
+shell. First time when you use the cloud shell this popup is going to show up uh that it is free all those kind of a
+12:47
+stuff.
+13:04
+Let me increase the font
+13:12
+size. If I do it, it will show me the error saying that I cannot list the
+13:17
+buckets but list all the buckets. But I should be able to list one particular
+13:23
+bucket that is this
+13:33
+one. All good. So because you gave storage user role, the person is able to
+13:38
+see it. All good. So now assume these two people are uh one is owner, one is
+13:43
+storage object user role. They are able to access it, right? they're able to access it uh everywhere. So because you
+13:51
+have just given the role. Now the thing which I wanted to show is what if uh one
+13:57
+of these users go rogue. Uh that is one scenario. Uh and another scenario uh see
+14:05
+uh this user this 01 user has only access to
+14:14
+this project. So if I just go he may not have access to other
+14:24
+projects or node and that project only this project is what meaning he's like a
+14:30
+a user or a employee who has access to only one project. This is one case. The
+14:36
+other case is like Mahesh who is the or admin owner
+14:44
+everything. So one powerful role one normal role. This is what we have it.
+14:50
+Now any of these people can go rogue data can be exfiltrated. I'll show you
+14:56
+how I can exfiltrate it. Meaning copy the data, steal the data. That is one thing. The other possible things are
+15:02
+they they are not trying to steal the data but unintentionally they are trying to do something even in that case it can
+15:09
+happen meaning what can happen. So something like this another
+15:16
+project because Mahes is having access to all projects. So he goes to service
+15:22
+project Buckets. Do I have buckets here?
+15:35
+So there's no bucket. So uh this one
+15:41
+is new uh
+15:47
+public facing
+15:52
+app. Okay. So I'm just going to create a bucket like this.
+16:01
+Now what I wanted to show you first is first I'll show that he can access it
+16:07
+from different places. So first he can access why I'm creating this one is he
+16:12
+has access to every project from that project service project A to service project B he can copy it that is what I
+16:19
+wanted to show that also needs to be basically avoided. So first Mahesh
+16:27
+uh can access the data from Google cloud console right he can go ahead and
+16:33
+download this also so can download the
+16:44
+data the data is downloaded if I open
+16:58
+This is my data box, right? This is my data. So, what I saved one minute.
+17:15
+What? Okay. This is my data. Good. Right? I'm able to download it. All good. Now, uh this is one way. The
+17:23
+second way in which he can do is obviously going to be using the cloud shell. So this I will make it as
+17:36
+console. Let me just do one more.
+17:52
+service project a launch the cloud shell. So when I do this one, what is
+18:00
+basically my IP address?
+18:28
+This is my IP address. Okay. So now when I launch my cloud shell, we
+18:36
+know cloud shell from the beginning. This is going to be because I'm in Bangalore. This is going to be provisioned in Singapore. So if we
+18:44
+wanted to verify that, let me just run the script which is already there in our
+18:50
+uh this thing. So I'm just going to run it quickly to show you this the IP
+18:56
+address would be different. This will be cloud shells IP
+19:01
+address something else 35 this thing. And if I use this
+19:11
+one, the metadata server, if I use it, I will figure it out. My cloud shell is
+19:18
+provisioned in this project which I don't own. Google owns it and it is in
+19:24
+Asia Southeast one. What is Southeast one? Singapore, right? Uh
+19:34
+so if I go to virtual
+19:40
+machines, so for people in India and uh any part of Asia, it will be either
+19:47
+Singapore or it would be this one folks, Southeast Asia uh and
+19:54
+particularly it is in a zone. So something like this. So this is where my
+20:00
+cloud shell is. So it's a different IP address. So from here can I copy
+20:09
+it? First of all I will make a directory
+20:14
+uh data
+20:22
+extration. Okay. So I'll remove all the
+20:27
+this thing only this one. So gsutil
+20:37
+ls
+20:47
+copy. So listing of bucket is working. I can copy it. See I am not putting any
+20:52
+restriction on the IP. That is what I am trying to first convey. You first connected from this it worked. Second
+21:00
+you connected from uh a cloud shell. It worked. Only thing is only reason is
+21:06
+because you have IM role you are able to connect from everywhere. We don't want this to happen going forward. We want to
+21:13
+restrict it. So this is what it is happening. And let me show you one more
+21:19
+thing. me copying is one thing. Another thing
+21:32
+is I will do something like this. Copy from my sensitive project to
+21:41
+my nonsensitive project.
+21:48
+Assume uh I work on two Google cloud projects in the same company. It is
+21:55
+going to happen. You would know right? Uh you will be billing like 50/50 here
+22:00
+like uh 20 hours for this project, 24 hours for that project. It is possible service project is a public facing
+22:07
+website which you have to work on and at the same time you're also working for service project A which is a very
+22:13
+sensitive project since you have access to both. Now it is possible that you can
+22:19
+do this mistake. This is not done intentionally but by mistake work
+22:24
+pressure you may would have done this. So but it is copying the data is getting
+22:32
+copied right that is the thing whether you do intentionally or purposely that is secondary for us but data has been
+22:40
+leaked or exfiltrated or stealed that is what has happened. So if I go
+22:49
+here, I'm able to copy it. Okay, I'm just going to delete it just to show that I'm able to do it.
+22:56
+I just wanted to show you. So scenarios like uh the owner is able to do it from
+23:03
+uh different IPs from different IPs. Uh copying into
+23:10
+local machine like load shell. treat cloud shell as a local machine for now and also copying it to another bucket,
+23:18
+another project bucket. This is something possible. Now meaning these
+23:23
+are all the open uh things which we have to fix it. Now let me go as this user
+23:29
+another user. Now this user is much more dangerous. Why I will tell you. So this
+23:39
+user he works in this company and he has been given uh storage uh uh let's make
+23:46
+it like uh uh storage object uh let's make him storage object user role
+23:53
+instead of user role let me make it viewer little lesser
+24:03
+row on that particular bucket.
+24:21
+Okay. And I'll make it like this one.
+24:36
+Let me refresh it. I'll give this user viewer role meaning can only view uh but
+24:44
+cannot do anything else. Uh just wanted to show as of like
+24:49
+uh this
+24:56
+one let's make a scenario. Uh this guy uh is a kind of a security reviewer.
+25:04
+security reviewer. Uh so he wants to view all the things. So what I will do
+25:16
+is to him I'll remove all those
+25:23
+rows. I will give him uh there is a role called
+25:29
+as let's give him viewer role.
+25:38
+so that he can check everything is correctly there or not kind of a stuff
+25:43
+is what we have given. So this guy uh is a reviewer who wants to see everything
+25:49
+is properly configured or not but he is again going rogue. So what he will do is
+26:03
+um he can launch cloud
+26:09
+shell. I'm just setting up the context.
+26:21
+So we I showed him he can access it. Now I have given him little broader role. He
+26:26
+can see both the buckets but he cannot write it into it. Right? So if I have
+26:32
+some data. So if I try to do gs util copy read me to this
+26:46
+bucket it will not work because I'm having a readonly access but this guy is
+26:51
+very very smart. What he will do is anybody can create a Google cloud
+26:56
+account. What a big deal. Assume he has a Google cloud account. So, personally, he's going to
+27:03
+have a Google Cloud account. So, let me bring up
+27:14
+that. Give me a minute. I'll bring up the project. Okay.
+27:42
+I'm getting a small warning. Uh let me see what is the
+27:51
+issue. Just a minute. Uh I'm getting some small message there.
+27:56
+One minute. I'm just trying to share you this
+28:29
+I don't know why I'm getting this banner uh your account has been closed. Uh you
+28:35
+can no longer access Google cloud those things. So it has been coming from uh
+28:40
+yesterday. But if I go to my
+28:45
+bucket, I should be able to see the buckets. Uh okay. Creating is not
+28:51
+allowing. Okay. Let me just try another
+28:56
+project. Okay. Okay. Something has happened wrong. Okay, I
+29:02
+have to use some other project. Just give me a minute. So, what I'm trying to
+29:07
+do is this guy will have his own or her own project and uh copy the data to
+29:16
+there. Here he cannot copy it. Uh assume he does not want to copy to cloud shell.
+29:22
+He wants to copy to some other Google cloud project. That is also possible.
+29:27
+Right? We wanted to restrict all those kind of a stuff because here I'm a read only access but I can have a bucket
+29:34
+where I have full access right that is something I can do it so I have to get
+29:39
+one project so for now uh what should I do I should I just need
+29:47
+a project 1 minute I'm just trying to see where I can get another project
+29:53
+[Music]
+30:00
+uh or I'll basically make uh instead of having it in a project I will make as if
+30:07
+like he wants to copy this to his local laptop. Let's do
+30:14
+that. So I will open my cloud shell sorry my local laptop. So, G-Cloud in
+30:24
+it
+30:43
+initialize. I will log in and authenticate.
+30:58
+I have signed in. The project which I have is only one project which is service project A. I'm there. Uh no need
+31:05
+to set the zone. So good. So I'll go to my desktop. I'll make a data as uh
+31:13
+uh copied data.
+31:22
+I'm here, folks. Now, if you put gsutil
+31:29
+ls, it should show me the bucket. So, I'm going to copy it.
+31:43
+So working hooks. So everywhere just because you
+31:49
+are having the role you are exploiting it or these people are exploiting it. So
+31:55
+this is what I wanted to show. This is the problem statement. So they are able to access it just because they have been
+32:01
+so the you may say yeah there's no issues right but uh if somebody does it
+32:07
+from their
+32:12
+laptop if somebody does it from their laptop like this personal laptop this
+32:18
+should not be allowed right right uh so this is the thing which we wanted to avoid it so the way we have to do is if
+32:28
+somebody is coming from an authorized project, allow
+32:33
+them. No issues. But if somebody comes from a different
+32:39
+source, even if they're using an authorized device, if
+32:46
+they want to block it. So think of this, right? You work for company A and this
+32:54
+company A gives you the option of working in a hybrid mode. uh x number of days from office, y number of days from
+33:01
+home kind of a stuff. They give you a client VPN everything. So you can connect it but there are situations you
+33:08
+may not connect to the client VPN meaning it's just using the office laptop uh for just internet purpose. At
+33:15
+that point of time if you try to connect it it should be blocked. But if you connect to your client VPN it comes to
+33:22
+an authorized IP because uh they will give you that IP range. From there you should be able to access it. When you
+33:28
+connect your client VPN of your office uh then you connected it should be good
+33:34
+but when you are not connected a client VPN it should not work. So that way if you are because when you are connected
+33:39
+or client VPN when you try to do this kind of a data when this users try to do this kind of a data expiltration
+33:46
+it they'll get caught. uh but if they are trying to connect from a Starbucks
+33:52
+uh Wi-Fi some public Wi-Fi home Wi-Fi no traces will be captured because the
+33:57
+network is owned by somebody else right how can we avoid it that is a key part
+34:03
+so to avoid that what we wanted to do is we wanted to put a
+34:09
+parimeter we can put a parimeter across 194 resources as of today so and
+34:17
+this will increase further as time progresses. So once we put a parimeter
+34:23
+who can come, who can access it? That is something which we are going to do it. Uh so even though we have one uh 194
+34:32
+resources which we can protect, there are still some resources which you cannot basically protect it. meaning
+34:39
+cloud shell, Google cloud console, app engine both standard and flexible are
+34:45
+not supported under VPC service control meaning you cannot put a parimeter for these resources that is the key thing
+34:56
+so let's go ahead and uh try to resolve all the things and we'll try to mimic
+35:03
+our final goal should be you are in the right source you are from the right
+35:08
+source you'll get access to. If you're not from the right authorized source you will not get access to uh this is what
+35:15
+we want to do it. So all this kind of stuffs where it worked it will fail
+35:21
+later where it [Music] uh where he was trying to do it from his
+35:26
+cloud shell this another user it should fail. uh so everything should basically fail
+35:33
+the moment we try to put a kind of barrier or a parimeter. So this is
+35:39
+basically VPC service control. Let's try to do a small demonstration which will take
+35:44
+a the steps but first let me put a uh barrier. Now for doing this you need to
+35:51
+have a or node folks. So that's the reason I'm going a little deep. It's more like our shared VPC demo where only
+35:58
+if you have a organization node you can do it. If you don't have an or node you cannot do it.
+36:04
+So what I will do is I will go to
+36:10
+my or node the tech and under that if you go for
+36:21
+security you'll have something called as VPC service
+36:31
+controls. It is completely new. We may have to configure it and all. So yeah,
+36:38
+there's nothing there. And look at this beautiful message. VPC service control, sorry, VPC
+36:47
+service parameter functions like firewall for APIs, GCP APIs. So for all
+36:55
+the GCP APIs except like app engine the Google console cloud shell it
+37:04
+is going to accept those services it's going to work as a parimeter the one which we had as a like uh uh a concern
+37:13
+is now resolved. So you can put you can use this as a parameter for a Google cloud storage bucket for a bigquery data
+37:20
+set for cloud run SQL uh for spanner those kind of a stuff you can do it
+37:26
+right. So you can choose which project you wish to protect to be part of the
+37:32
+parameter and which service you want. So you can protect service project A in
+37:37
+service project A you want to protect uh a bucket not one bucket is possible the
+37:44
+whole buckets are going to be possible okay if you're expecting for one particular bucket it can become very
+37:49
+challenging uh so but whole because the entire project is sensitive protect the
+37:55
+whole bucket so that is what we are going to see it so first let's go ahead
+38:00
+and uh create a parimeter now there are two ways in which you can create dry run. In dry run you can test the effect
+38:07
+of VPC service control uh without impacting the real traffic. So this is
+38:12
+more like a preview. If you want to put it directly you can enforce it. Now
+38:20
+uh first and foremost stuff it is saying you want to a parameter must be created
+38:26
+within a policy. I have not created a policy. I have to create a policy. So how do I do it here?
+38:34
+uh manage policy I don't have any policy VPC
+38:41
+service uh service parameter policy lets you define organization buckets of folders and projects to the business
+38:49
+unit in order to manage at scale you can view the role assignment also so let's go and create a policy first
+38:59
+so what projects what things you want you can basically do configure it here.
+39:04
+So I'll call it as default VPC service control
+39:12
+policy. So what projects you want it to be included, you can add it. Uh what
+39:19
+principles you want, you can include it. So let me just
+39:25
+add X. So I'll add this
+39:31
+project or I'll not add anything. I'll just uh let me just see this. I have
+39:37
+done something similar in other project. Let me bring it up
+39:50
+uh in the com my other or node I have
+39:57
+it configured. I wanted to show something completely brand new. So that's the reason I wanted to use this
+40:04
+or node uh security VPC service
+40:11
+control where I have already created one uh
+40:18
+policy. Let me see if I can. Yeah, this is the policy. So I have a couple of
+40:25
+policy how I have defined the policy. uh policy manage
+40:33
+policies. So default
+40:38
+policy I have nothing. I just created a placeholder. Let me go with this way. Uh
+40:44
+you can also go with Yeah, this should be good. So let me just create a default
+40:49
+policy folks. No restrictions. I'm just going to create a
+41:06
+policy. All right. So now it is showing that policy. Okay. Now I can create a
+41:11
+parameter. So when you see if there's no policy, I cannot create a parimeter. That was the one which we saw. So first
+41:18
+let's go ahead and create a parimeter. The first round we will make as much as
+41:23
+possible default settings. Okay. So the first one
+41:31
+GCS parimeter
+41:37
+par perimeter. So there are two types of parimeter.
+41:43
+Regular a regular service parameter protects service on the project it
+41:49
+contains simple. The next one is bridge. So bridge uh parimeter bridge allows
+41:57
+access between other regular parimeters. So it's kind of a bridge. We'll talk
+42:03
+about br uh the parimeter bridge later. So first let's finish the regular one.
+42:08
+So this is very simple. uh you put a service parameter uh which protects the
+42:14
+service on the project it contains. So meaning I have a project called a service project A. I want to protect
+42:20
+buckets. That's it. Now I want to enforce it right away. So you can do it or you can put it in a dry mode. So this
+42:28
+kind of a question can also come where they say you want to apply your V you want to check your VPC service controls
+42:34
+are working properly but without impacting any kind of uh real stuffs what can you do you can
+42:42
+do it in a dry run mode okay so that's the first part the second part is which
+42:47
+project you want to protect so I want to
+42:53
+protect this project service project Okay. In this project, uh, which service
+43:01
+you want to protect, we'll see it. For now, I'm going to leave the network as default. So, I'm not going to do
+43:07
+anything with the network. I'm just going to leave it as nothing. Then the most important
+43:16
+thing so specifically which service are protected by the parimeter please note
+43:22
+by default none of them are protected. None of them everything is open. Everything is going to be open depending
+43:29
+on your IM role. If you have access, you can see it from anywhere. So that is the
+43:34
+default condition. So now we are going to put a restriction. Specify which service are protected by the parimeter.
+43:41
+Only VPC service uh sorry only Google cloud service that supports the parimeter can be added. To reduce the
+43:48
+risk of your data being exfiltrated, we
+43:53
+recommend all the storage service in in the service list.
+43:59
+So by default nothing is protected and if you have decided to use VPC service
+44:05
+control uh the recommendation is you go ahead and protect all the storage components. So in simple
+44:17
+terms if I go to the
+44:24
+compute they are saying you don't need to put anything for compute why these
+44:29
+are all going to store will not store data it will not all store the data so a
+44:35
+recommendation is not to apply to that if you want you can apply it I'll show you that also so what they say is they
+44:42
+say apply the uh this thing data because where is we are talking about data xfiltration where will you keep the data
+44:49
+so the data will be kept under these storage services Google
+44:56
+cloud storage file store uh when you have backup and DR there data transfer
+45:02
+it's going to be interimly stored uh these things we have not seen it pal
+45:08
+recently added so file store and Google Cloud Storage. Then under
+45:14
+databases all the databases Alloy DB, Cloud SQL, Data Store, Fire Store,
+45:19
+Spanner, Big Table, Memory Store, uh other uh uh this thing. So for other
+45:28
+partner services, these are partner products, you cannot apply it for your own products, for Google Cloud products,
+45:34
+we can apply it. So and there is one more product which we will talk later
+45:40
+called as big query. So what they recommend is turn on for those things
+45:46
+that is going to be a good choice. So that wherever you keep the data if that service the nutshell is wherever you
+45:51
+keep your data if you can protect it that is going to be good right. So to start with I want to just protect my
+45:58
+Google cloud storage bucket. So you can see as of today it is
+46:04
+like 194 and this number keeps increasing when new services comes and there are certain stuffs which is in
+46:10
+beta certain stuffs which are in uh generally available. So if I search for
+46:20
+storage my storage API is there it's generally available. Can I search for
+46:27
+SQL? SQL is there.
+46:34
+Yeah, SQL is there then spanner spanner will be there. So all
+46:41
+the important storage
+46:48
+products it will be there folks. So if you want to protect even a virtual
+46:54
+machine virtual machine is already having a per uh firewall rule that can help you which can access it. So before
+47:01
+accessing who can access it if you wanted to put even that I can do it I'll
+47:06
+show you that also as a part. So even virtual machines are supported
+47:12
+kubernetes cluster you can also do it. So it is possible. So there are 194
+47:20
+services. However, there is one service which you cannot do it. App
+47:29
+engine there's no support for app engine. Similarly cloud
+47:37
+shell it's not supported. So console they are not supported. So
+47:45
+the one which I was trying to show it here, this is very important. Okay. So
+47:51
+and why cloud shell is not supported? Maybe I can cook up a story
+47:56
+and tell you because it is old old version. These are new functionalities.
+48:02
+They may not want to support that. Cloud run is
+48:08
+there, right? functions should be there but cloud uh app engine is not
+48:16
+there possibly it is old they are not even providing any kind of support for that okay so that's a
+48:29
+small so select this
+48:34
+one done so what we have done we have given a name we have gone with a default
+48:40
+option which is a regular parimeter. Then we have protect we wanted to
+48:47
+protect a specific project in that specific project a specific service called as Google cloud storage bucket
+48:55
+remaining everything I'm going to leave it as default first demo right but I'll
+49:00
+just read through this one because we are going to leverage this at some point of time VPC accessible
+49:07
+services so uh what we are going to do here is specify the service that is
+49:14
+accessible using private Google access. Beautiful, right? Uh it comes there. The
+49:20
+networking part comes into picture. So services that can be accessible using private Google access. What are the
+49:26
+things except uh cloud SQL, file store,
+49:32
+memory store, almost all the other services Google cloud uh and Google APIs
+49:39
+can be accessible using private Google access. How will you access it? To use private Google access, you need a
+49:46
+virtual machine, right? So what it means is if you have a virtual machine in the
+49:51
+project, you should be able to access it. So specify the services that are
+49:57
+accessible using private Google access. The parameter boundary is only enforced on resources belonging to the list of
+50:02
+services protected by the parameter in the previous thing regardless of whether
+50:08
+they are in the list of the VPC accessible service. So what they primarily try to say is uh we are going
+50:15
+to only protect GCS that's it right. However by default all services
+50:22
+configured uh virtual IPs are accessible are accessible using private Google
+50:27
+access. What they mean is you protect the bucket. That's good. But if I want to access it I can come from an
+50:34
+authorized source. What is that? The network. So using that network the sub network if I have a VM I can access it.
+50:42
+That is what they're saying. So if I say none none of the service on the configured virtual IP are accessible
+50:47
+using private Google access. If I turn this on what is going to happen is even from the VM I cannot access it. So for
+50:55
+now I'm going to open it. I'm just leaving it default. Access level we don't know what
+51:02
+it is. I'm going to leave it. Ingress rules I'm going to leave it. I'm going to leave all those things default and
+51:08
+create it. Now before I create it, I just want to show you one last time how the UI looks
+51:14
+like. So for Mahesh, the UI is going to look like this where he can see all the
+51:22
+buckets in the console. Similarly, he can continue doing
+51:29
+Xfiltration it is going to do. Okay. Similarly this guy
+51:36
+[Music] uh G-Cloud uh
+51:49
+config this guy uh the 01 mah.com command.01 continues to again copy it to
+51:56
+his personal laptop. So these are all working. The moment I now put a parimeter, all this will stop working.
+52:04
+Okay. So let's go and create it. So it is at around uh
+52:12
+659. So by 771 this parameter should be in force and everything will be blocked.
+52:20
+Everything will be blocked. So then we will try to find out first we are we
+52:26
+wanted to do the damage control. So we wanted to block it. So if I go back to
+52:31
+VPC service
+52:39
+control done folks, one project, one resource protected. Now is the most
+52:45
+important thing. I will go here. Now it's 7:00. Now let me refresh
+52:55
+it. Boom. gone even from your console does not matter whether you have access
+53:02
+or not if you're coming from console I will recognize you as an external source
+53:08
+I'll not even give you access and there's also one official page VPC
+53:14
+service control uh supported
+53:27
+services. I search for Google Cloud Console.
+53:50
+Google Cloud Console. Now, if you see, I'm under VPC service control
+53:55
+documentation. So, if I go to uh okay, CloudShell, VPC service control
+54:03
+does not support cloud shell. VPC service control treats cloud shell as an outside of the service parameter and
+54:10
+denies the access to the VPC service control protect. However, VPC service
+54:15
+control allows access to cloud shell if the device meets a access level requirements. What is access level?
+54:22
+We'll talk about it later. Similarly, Google cloud console because you're accessing it from internet. Because
+54:28
+Google cloud uh console is accessible over internet, it is treated as outsider. Meaning anything which is
+54:33
+outsider, I want to not allow access to it. That is the key part, right? uh when
+54:41
+you apply a parameter the Google console interface for services that you protected may partially or fully be
+54:48
+inaccessible for example if you protect logging with parimeter you won't be able to access the login interface this thing
+54:55
+so what it is saying is it was working but now parimeter is put you are not
+55:00
+able to get in simple right so this is the same thing which happened to me also
+55:05
+when I work for one contractual job So
+55:12
+u the way it was done is they had given a virtual machine. So if you log into
+55:18
+that virtual machine I can see the buckets everything was working. But if I log in from my laptop it was showing
+55:24
+like this because my laptop is considered as an external one. So they had blocked it but from the virtual
+55:31
+machine they were allowing it. So now you cannot access it folks. But it shows me a message which is of no use. I don't
+55:38
+get any kind of information. This is what I get it. Now,
+55:45
+is this information also captured in the log? Right? We'll look into it in a minute. But first, let me see from cloud
+55:52
+shell. Right? Is this guy able to still do data
+55:58
+expiltration? Boom. It is not working. So where it shows access denied uh 403
+56:06
+request by what is
+56:14
+403 forbidden right you have been forbidden your your access has been uh forbidden uh by a organization policy
+56:23
+VPC service control unique identifier. So you can capture this
+56:31
+ID and go to the logs and check it
+56:41
+out. So here and there we have seen locks. So, I'm just going to use
+56:48
+that small information to show you that I go to
+57:05
+logging last 1 hour is not required. Just 10 minutes is enough.
+57:12
+You already see lots of information. And if I try to search for that specific
+57:20
+info, do I get anything? Yes, I get one. What is that? Let me read
+57:27
+that. Expand it. So this is the uh worst
+57:32
+part which Google has not done this. See this is the whole purpose is they wanted
+57:37
+to know who is trying to steal the data that at least that who part should be
+57:43
+very clearly captured. Unfortunately they do a masking folks. I don't know
+57:49
+why Mahesh at the rate learns with Mahesh.te is a person who's trying to steal the data. It shows it in this
+57:57
+fashion which is of no use to be very frank. But this is how the system is
+58:02
+right. This could be a uh thing which can be improved in the later stage but
+58:07
+currently it is like this. So it shows this and it shows device state
+58:15
+unknown. Then he was trying to list the buckets
+58:21
+and copy. So there is a resource not in VPC
+58:27
+parimeter and that is the reason it was blocked. And from which IP it came? This
+58:32
+IP. So if I just verify
+58:44
+it the IP is 120 ending with 120 that is what it shows. So every information is
+58:51
+captured because of VPC service control it is blocked. It only gives this level
+58:57
+of information. uh but nothing can be done folks. So it does not give a full information. Somehow we have to figure
+59:03
+it out who is this user. So show matching entry it shows like this. This is what I
+59:11
+can use. So it's not complete there. Uh somebody has done it incorrectly the uh
+59:17
+setup that's what I would say. So that is there. So from the UI gone from the
+59:25
+uh from the cloud shell gone uh then let's go to this
+59:32
+guy the 01 user. Uh can you copy it?
+59:41
+So gone. So we have completely blocked everybody. So again if I copy this
+59:52
+Go
+1:00:04
+back. It shows that one entry. My local time is 77. That's what it shows. And
+1:00:10
+when I open it up, unfortunately, it is the same thing, folks. It does not give
+1:00:16
+that full thing. So uh we cannot do anything here. This is how it has been captured. So uh nothing can be done
+1:00:22
+here. So it is a uh little thing which has to be resolved at some point of
+1:00:28
+time. So the one which I wanted to show is the IP folks. Where is the request
+1:00:33
+coming from? It is coming from my laptop and my laptop's current IP address
+1:00:43
+is this one ending with 68. That is the same thing it shows
+1:00:51
+here. So it is blocked. It is blocked from everywhere.
+1:00:58
+It is good. Now uh you may ask if you block me everywhere how will I work
+1:01:04
+right? So no issues you can still work folks you can still work only service
+1:01:10
+which we have blocked is the bucket we have not blocked virtual
+1:01:17
+machines right we have not blocked virtual machines so let me go ahead and
+1:01:22
+create a virtual machine in service project A. So, GCS
+1:01:30
+client. So, before I create it, let me see if I have a service
+1:01:38
+account because I need to access a bucket. I should have an IM a service account to access it. I don't have one.
+1:01:46
+Let me create quickly something which is related to storage admin. Oh, I have one. Okay, I have
+1:01:52
+these two. But these are little confusing service accounts. I'll just delete
+1:02:01
+it. I don't want that. These are really little confusing one. We we did once uh
+1:02:08
+a mistake with this service account. Let's not have
+1:02:14
+it. I'll create a brand new service account. I'll call it as uh
+1:02:21
+GCS or something like VPC service control
+1:02:29
+SA for now I'm going to give it access to storage
+1:02:39
+bucket admin I'll give it we know what needs to be controlled so for simplicity reason I'm going to give admin
+1:02:46
+done. So now we'll go and create a virtual
+1:02:59
+machine. So at least from the virtual machine if you try to access it, it is good, right? So GCS
+1:03:12
+client, it's a shared VPC. So nothing is this. But in the shared VPC we have it.
+1:03:19
+No external IP address. Okay. Uh service account has to be changed to this one.
+1:03:25
+Full access scope. All good.
+1:03:45
+done. Now uh before I go if I go to this
+1:03:53
+network which is in our networking network engineering project and I go to my VPC private Google access should be
+1:04:01
+turned on. I guess we have turned it on but wanted to just verify it once.
+1:04:07
+VM was created in US central and oh we have made it off. Let
+1:04:13
+me turn it
+1:04:20
+on turn it
+1:04:25
+on but we can uh but we can copy the data from GCS to VM and then from VM to
+1:04:31
+locally I'll come to that people will think of that way. So I'll come to that also. Right. So done. So this is good.
+1:04:39
+Now let me just go and GC uh this
+1:05:04
+thing. Okay. I'm there. So now if I do gs util ls I
+1:05:11
+should be able to see both the buckets
+1:05:18
+uh did I apply it? It was applied one minute.
+1:05:26
+Uh in this network this is a shared VPC
+1:05:31
+uh VM is created.
+1:05:37
+Okay, let me just see what is the
+1:05:46
+error. It's already blocking which is good. We wanted to unblock it at least from one
+1:05:59
+source. People can still do it. meaning they uh that's what I'm going to add
+1:06:05
+this. No, no, you don't need to add the parimeter. You just need to basically use the VPC service control part. So
+1:06:13
+it's we have already done that part. So if I just see it, let me see what IP it is trying to block.
+1:06:23
+Uh it is this IP and it is showing it is
+1:06:30
+blocked. Okay. So if I come
+1:06:36
+back the shared VPC let me just do the
+1:06:45
+setting. Let me just try it one more time.
+1:06:56
+VPC
+1:07:02
+security, VPC service
+1:07:10
+control. We had mentioned that very clearly, right?
+1:07:17
+So under this one all by default all services configured virtual IP are
+1:07:23
+accessible using private Google access. So it should work. It should work.
+1:07:33
+Uh restrict only in the previous step. Okay. Only this should work
+1:07:42
+folks. Okay. Let me add this network here because it's a shared
+1:07:48
+VPC. Let me try to add the network from where it should be allowed. Uh so I'm
+1:07:55
+going to use this
+1:08:00
+one. So this project, this network should be something which we want to do.
+1:08:06
+We are not adding a uh parimeter for the G VPC or for the VM. We wanted to just
+1:08:14
+make sure if you come from this network, V would be
+1:08:25
+allowed and it shows a small G kind of a style. What you have changed? You have
+1:08:31
+added a uh restriction. It should be from the specific network.
+1:08:42
+Okay, so we have added it. Let's wait for a few minutes for it
+1:08:48
+to
+1:08:53
+propagate working. Okay, so because I did not put that restriction, it was
+1:08:59
+little confused. If it was usually in the same project, it will take it. But we have network in a different project,
+1:09:05
+bucket in a different project because we are using shared VPC, a real enterprise setup. So in this case you had to put
+1:09:12
+the network. Good. Now I'm able to do it. Now let me come to the question which is put in the chat. What if
+1:09:19
+somebody copies the data like this? Let me just close this
+1:09:27
+once. I'll SSH. This is absolutely possible. Right?
+1:09:34
+So somebody SSH meaning it's just a mindset. Right? So if somebody wants to
+1:09:39
+do uh some kind of a data exploration they'll try it from all the angles. The
+1:09:44
+the bad guy will try from all the angles. So gsutil
+1:09:51
+ls working now gsutil
+1:09:56
+uh sorry gsutil
+1:10:03
+copy. So data is copied. Now the question is somebody copies to the VM.
+1:10:09
+VM is an authorized source, authorized network. Now what if somebody downloads
+1:10:15
+it from here? Possible,
+1:10:27
+right?
+1:10:32
+Download. I should show a popup. Yeah, it is downloaded folks. So, it is
+1:10:38
+downloaded to my local machine and I can see the data. So, how can we avoid this?
+1:10:44
+So, if we want to avoid this, what we have to do is
+1:10:49
+restrict even the VM. So, like how we are able to nicely come in the console
+1:10:56
+and click on SSH or you will do uh from the G-Cloud command this one.
+1:11:10
+If I do this, I'll get into the virtual machine, right?
+1:11:40
+Okay, I'm in the VM now. I can do the same thing again
+1:11:47
+and I can copy it. It is possible. It is going to work. It's going to work.
+1:12:01
+And from here I can copy it. Still there is a door open. So how can we restrict
+1:12:06
+it? Simple. I will make sure I will also
+1:12:11
+add VM also folks. So I will add VM as the list into the
+1:12:22
+list. So compute engine. Now when I do
+1:12:27
+this, what is going to happen? Save it. When I do this, what is going to
+1:12:33
+happen in the console? You cannot do this. You cannot get this link all the things in the
+1:12:41
+command line. Let me just exit. So if you do try doing this again,
+1:12:48
+it's going to be blocked, right? Let's see what is going to happen. Refresh it.
+1:12:59
+It still shows. However, the SSH will not work. This is showing want to show
+1:13:05
+something like this. So, you can read keep retrying. It is not going to work. But in the command line when you do it,
+1:13:10
+it gives you a little verbose information. There is a VPC service control in place. You cannot get
+1:13:16
+basically log. That's what it shows. So somebody tried to do something
+1:13:22
+uh little smart taking a long route but we have blocked that. So now from the
+1:13:30
+goo you you have to come from Google cloud console I have blocked it now it is what it shows you cannot see the VM
+1:13:37
+screen. So if you cannot see it you cannot SSH if you see this one also this
+1:13:43
+is not going to work. So we have blocked it. Now the thing is that we have blocked it which is good. Uh we are
+1:13:49
+taking more thing from uh we are trying to protect things but we are not allowing somebody to work on a project.
+1:13:56
+You allow me to work. There could be a real user who wants to work but putting this kind of a stuff is basically
+1:14:02
+blocking him or her from doing a work. Now how can we basically unblock it? So
+1:14:08
+we want to be making selective something like we are going to pretend as if like this is my corporate network because I
+1:14:16
+only two uh this thing cloud shell and my own laptop. So I'm going to pretend as if like this is my own corporate
+1:14:22
+network. If you're coming from this IP, I will allow you folks. If you're not
+1:14:27
+coming from this IP, I will not allow you. I'll also put a restriction. If you're coming from this IP and you are
+1:14:33
+from India, then only I'll allow you. So that kind of a restriction I can do it.
+1:14:38
+So let's see how we can put that. This conference will now be recorded.
+1:14:46
+Now we have achieved to a great extent where we have put a parimeter parimeter for two services virtual machine and
+1:14:52
+Google cloud storage bucket and we have done it. Uh the whole intent was to be
+1:14:57
+more protective but by being more protective we have hampered the work
+1:15:03
+meaning uh the person is not able to do the work. So what are the ways in which they can basically access it right? So
+1:15:12
+uh what is the thing which we can basically uh do it so if you see it
+1:15:19
+everywhere I am hampered. So I cannot connect from any place from my
+1:15:26
+laptop from the Google cloud
+1:15:32
+console. So from the Google cloud console I cannot access it. It is showing up and it will not
+1:15:40
+show up. So it basically toggles around this. So just because it is showing the UI does not mean you can connect it.
+1:15:46
+When you try to connect it, it is going to throw an error like this. So you cannot connect it. Uh so that is a
+1:15:52
+keypad. Similarly your cloud shell if you try to do it SSH into a VM you
+1:15:59
+cannot basically also do that right. So you will have issues here. So we have to
+1:16:06
+basically go ahead and try to solve this then only we will be able to do it. So
+1:16:12
+can we do something like this? So what I will do is
+1:16:19
+uh we have only two uh networks. One is my cloud
+1:16:25
+shell. So I'll treat this one if somebody is coming from this
+1:16:31
+IP. This is a external one. So I'll call this as
+1:16:38
+Starbucks a Starbucks Wi-Fi. Okay. So this is what it is there. Now if the
+1:16:45
+user is coming from this one, let's treat it as this is our corporate
+1:16:50
+network. So I'll make it as
+1:16:57
+corp network. Okay. So now I'll put a restriction like this. The restriction
+1:17:04
+is hey I will allow you to look in the Google cloud
+1:17:09
+console SSH but if I want to allow you that you
+1:17:15
+have to come to this network that's what I'm going to show
+1:17:20
+you okay so I'll after later sometimes I will connect from my Jio network uh
+1:17:26
+hotspot and I'll show you this will not work so meaning the intent is from cloud
+1:17:34
+shell which is for now a Starbucks network external network you should
+1:17:39
+never be able to connect. So whatever you do you should not be able to connect
+1:17:45
+this should remain as is but from the UI it should start working. So the
+1:17:52
+bucket should show the VM I should be able to SSH those things should
+1:18:00
+work those things should work so that's what we wanted to do now okay so that
+1:18:06
+the work is not hampered now once you are in the corporate network you'll get access which is good
+1:18:14
+second if you try to do the same thing meaning you are in the corporate network
+1:18:19
+from the bucket you try to copy data to the VM. From the VM, you try to download it to your local system, no problem. It
+1:18:28
+is going to be tracked because you are in the corporate network. Whatever you do, everything will be captured. So if
+1:18:34
+you try to copy to it, so you cannot be in a corporate network from your personal laptop. You have to be in an
+1:18:41
+office laptop uh to connect to your corporate network. Uh so whatever you
+1:18:46
+do, everything is captured. So nobody will try to even do think of doing an exfiltration because that's going to be
+1:18:52
+captured. So job done right you we just want to make sure you come from a corporate net that's it. So how do we
+1:19:00
+put that part? So to do that we have a functionality called as
+1:19:08
+uh access context manager. So this is where you can add one little
+1:19:14
+extra level of uh security. That's what you're going to basically do it right.
+1:19:20
+So what is that case? We have to use a static IP. You can use anything right. So I'm just using this. So this could be
+1:19:29
+a static IP address. So uh this is going to keep changing. Yes. If I change my
+1:19:35
+router, right? This is going to happen. So far now I'm going to give this range little broad 106
+1:19:43
+51.11 111.0/24 0/24 I'll give it so that the last 8 bit can change if it's a
+1:19:50
+corporate network I know so I don't have a corporate network I'm trying to mimic it so and I'm going to assume this is
+1:19:55
+going to be a range which is going to be fix it if it's not fixed not a problem I'll try to show you that you can it
+1:20:01
+that's not a problem if it's static you're not going to change this very often
+1:20:06
+simple so let's go ahead and create this one where I'm going to create an access
+1:20:13
+level now when When you create this access level, you have different options which you can leverage. So uh there are
+1:20:21
+some free versions and there are some premium versions. So first one which I want to do is a carp
+1:20:31
+ID corp uh corporate
+1:20:38
+network. So I'm going with a basic one. advanced one I cannot do it because you
+1:20:44
+have to purchase a premium one. Uh so Chrome enterprise premium offers. So
+1:20:50
+this is something which has to be done. Sometimes even in a big organizations they would not have purchased this. So
+1:20:57
+let's not much worry about it. So little advanced options are there. Let's go with the basic one. And you can see you
+1:21:04
+have to have a combination of uh stuffs. So all the rules which you are going to
+1:21:09
+put it's an and condition meaning IP should be coming from this
+1:21:15
+range. Sorry it should be coming from this
+1:21:23
+range I will not open it like one IP. I'm going to make it
+1:21:29
+like this
+1:21:35
+or the last 16 bit something like this. So this is my
+1:21:42
+first condition. So if your request is coming from this IP range I will allow you plus I wanted to show the importance
+1:21:50
+of and condition. if you are coming from a specific country. So I'll make it as
+1:22:00
+India. So I have two conditions folks. We'll come to the next one. Access level
+1:22:05
+later. So done. Save it. I can also do something with the device policy. So what is this
+1:22:12
+device policy? Are you coming from Windows laptop which is provided by your
+1:22:18
+company? So is that Windows machine patched the latest one? Are you using a
+1:22:24
+Chrome browser which is patched? Are you coming from an iOS? So those kind of device policies I can do it.
+1:22:35
+So if I go to the documentation because I cannot enable it because of the this
+1:22:41
+thing uh the premium version. So these are the supported computers Mac Windows
+1:22:49
+11. So you can put this kind of a restriction folks only if they are coming from this I'll allow you
+1:22:54
+otherwise I'll not allow you.
+1:23:01
+So so these are the two and conditions which I'm
+1:23:08
+using. Okay. So it should fulfill. Save it.
+1:23:19
+So I have a corporate network access control, access context manager. So this
+1:23:26
+is a additional level of security which I'm going to do it. Now you have created VPC service control. You have created
+1:23:33
+access context manager. But how do you tie it? That is very important. Right? So for this one we are going to edit our
+1:23:41
+settings. So you see we did not directly go and uh
+1:23:47
+do everything in one go. Step by step we are doing it. First we created a parimeter. It worked. Then we put our
+1:23:53
+network then it made it work. So uh we have the project. We then added the
+1:23:59
+network. Then we restricted couple of services. This one we are leveraging it.
+1:24:05
+The private Google access. Now let's go to the access level. So now this is
+1:24:11
+where I can configure it. So I'm going to add that access level. It's going to
+1:24:16
+read it from my access context manager. The one which you added is showing up.
+1:24:22
+Done. So now we are connecting the things the dots. So still ingress policy
+1:24:28
+and eress policy we are going to leave it as is. We have not yet come to that
+1:24:34
+stage. So now the changes is this one. So good. Now once this works, this is
+1:24:42
+applied what should happen is my laptop is now like a corporate
+1:24:48
+network. Uh so my UI should start working. The Google cloud console should work. So what they were mentioning it
+1:24:55
+here when you because the Google because the Google cloud console is only accessible over internet it is treated
+1:25:01
+as outside of service. When you apply a parameter, the Google Cloud console for the that can be protected may be
+1:25:08
+partially or fully inaccessible. For example, blah blah blah. To allow access
+1:25:15
+uh protected by the perimeter, you need a access level for a public IP that
+1:25:22
+includes the machine of the users who wants to use a Google cloud console with the protected ex. So for example add
+1:25:28
+your public IP address of the NAT gateway of your private network to
+1:25:34
+access it. That's what we are basically trying to do it. Okay. So
+1:25:41
+so VPC if I go
+1:25:47
+here there's an ask for to repeat the VPC
+1:25:52
+access civil services. So if I go
+1:25:58
+here this part will come back. We'll come back. What we are trying to do here is you can access it from a VM. Any
+1:26:06
+services which can be accessed using private Google access you can leverage
+1:26:12
+it. That is what we are trying to do. We have turned it on. So which service is going to use private Google access? VM.
+1:26:19
+So what you are indirectly saying is if you have turned on this by default VMs
+1:26:25
+in the network can access your Google cloud storage bucket. Once we finish the
+1:26:30
+demo we'll come back and put this no. When we put this no VMs cannot also access it even though they are in the
+1:26:37
+right authorized access all those things but since they are not allowed to access they're getting blocked. So that is
+1:26:44
+where this VPC accessible services things which you can access with private
+1:26:50
+Google access is what we are trying to leverage it here right. So since we have put the access
+1:26:58
+level we have also saved it already. So and we have waited for a couple of
+1:27:03
+minutes. So it should be propagated. So meaning if I go to the
+1:27:08
+Google cloud console which was showing like this. Let me just put a duplicate
+1:27:16
+screen. It should show me the UI hosts. Good. Now you may say I can go
+1:27:22
+ahead and download it. Download it. No problem. But you are in a corporate network. Whatever you do will be
+1:27:29
+captured. So all the things are tracked by your not by your Google, by your
+1:27:35
+onremise, by your corporate uh network, right? That is going to capture everything. So second can I go to the
+1:27:45
+comput
+1:27:52
+engine? Let me try to SSH which was not
+1:27:58
+working. Should work now.
+1:28:10
+working folks. So you can do all your regular stuffs like copying the data. It should
+1:28:17
+work. I'm in the network. So whatever I do is all tracked. So if something wrong
+1:28:22
+is done, I'll be caught holder. So the person who's trying to do the data excfiltration will be caught. So good.
+1:28:29
+So we have opened it for a corporate network. Good. How about a uh Starbucks
+1:28:35
+network? So let me try to do
+1:28:40
+this. It will not allow. Still it is the same. Right? Similarly if I try to
+1:28:48
+SSH that will be also not allowed just because you are coming from
+1:28:54
+a different network. Now I wanted to show you like what if I
+1:29:01
+change my access context manager the
+1:29:08
+condition. So I'm in India right? So
+1:29:13
+this is the one. So if I were to show something like uh my location what it
+1:29:20
+will show will it show? Okay it shows Bangalore Karnataka. It shows that
+1:29:25
+right. So I'm in India. So now I will purposely change this IP but I'm coming
+1:29:35
+from say for example
+1:29:42
+uh I'm coming from basically Spain. So this combination is not going
+1:29:49
+to be true. Right? So if the combination is not true again I will lose
+1:29:55
+access. So I've just updated my context manager. So now if I
+1:30:03
+go and refresh it. It may take a few minutes to
+1:30:08
+refresh. Let's go to the bucket and see
+1:30:18
+it back to square one. So it is it's going coming going it's getting applied
+1:30:23
+removed folks completely removed. So back to square one where we started with and similarly if I go to the buck VMs I
+1:30:31
+should also be not be able to SSH into it. Yeah I get this error where it does
+1:30:39
+not give any information. You have to get into the logs to see that part. An error occurred while fetching the
+1:30:45
+instance uh or project metadata. Please try it again. So we know how to see the
+1:30:50
+logs. Let's just spend a few minutes to see the logs so that it can help us. Okay, this logs okay you cannot see logs
+1:30:59
+meaning any VM details you cannot see it. So however logging is open right
+1:31:05
+other services are open only virtual machine and storage buckets are blocked. So I can go and look into Kubernetes
+1:31:12
+engine if I want or cloud run. Let me just show
+1:31:21
+you other services are still open folks. So because I have not put any kind of a
+1:31:27
+parimeter. So
+1:31:33
+serverless I can go to cloud run this is a very nice one right UI but
+1:31:40
+you have a restricted UI so you can create certain resources from anywhere if you have the
+1:31:47
+access but you can access certain resources only if you are from coming from the corporate network okay from the
+1:31:53
+corporate network. So I can create a service
+1:31:59
+folks. While creating the VPC policy, I did not put any restriction. Yes, it was
+1:32:04
+a simple placeholder. That's it. So this is a simple one just to show
+1:32:11
+that I can do everything with cloud run because there's no restriction
+1:32:20
+put. So done. and my cloud run service should be working. However, the other stuffs like
+1:32:29
+uh my VM and my buckets are not accessible because the combination is not correct. So, let me
+1:32:38
+just make the combination
+1:32:50
+correct now. I should be able to see it working soon. It should start
+1:32:56
+working. Now I'll try to put one more time a restriction.
+1:33:05
+Okay. Still not yet. Uh I did save it, right? Yeah. So where's that? Yeah. What
+1:33:13
+I'm going to do is after this I wanted to show one interesting stuff. Yeah. Now it is working. This message will go off
+1:33:19
+soon. So, it's working. And if I go to the
+1:33:31
+VM, I should be able to SSH. Uh should not have any issue. Now,
+1:33:38
+uh just wanted to extend it. Trying to show as much as possible with the limitations of not having a data center
+1:33:47
+kind of stuff. So, just wanted to show you one more thing. it's able to work. Now what I will do is
+1:33:53
+uh I'll try to add one more access level. So this is
+1:34:01
+uh cloud shell where I'm going to use the IP
+1:34:08
+restriction. So I will choose get my IP address.
+1:34:19
+And we know this is coming from um Singapore, right? I would like to show
+1:34:25
+you this one. So if it is coming from this and if I now you you don't want to put a
+1:34:32
+restriction, you leave it then it will work. But if I put a restriction like
+1:34:44
+this, if I put it like India, this combination will not work. Okay, this
+1:34:50
+combination will not work and it will
+1:34:57
+fail. Now I have two conditions. So I will go ahead and apply my VPC service
+1:35:03
+control update. So to one of the question during the
+1:35:09
+policy creation of the VPC no need to put any restriction right you can put it
+1:35:14
+but we did not put anything we just made a placeholder so no scope at the org
+1:35:21
+level policy we literally kept it empty no restriction at the project level
+1:35:26
+nothing at the uh for any principles we did not put anything okay so we can put
+1:35:33
+it if you want there is an option for So going back I will edit this
+1:35:43
+one edit. I go to my access level. I can add
+1:35:49
+one more. So this will not work still
+1:35:58
+because the condition is wrong. That IP is not going to be part of India. it is
+1:36:04
+going to be part of Singapore. So it will not work. So we have two sorry we have two
+1:36:12
+uh access levels. Let's go ahead and try to see this
+1:36:21
+one GCS bucket. It will not work. It will not
+1:36:27
+work. Uh we can wait for sometimes and try it. It will not still work.
+1:36:32
+So the reason why it won't work is the condition which we have mentioned
+1:36:39
+the combination is it's an and condition. So this is not going to be a correct choice. So I have to change this
+1:36:48
+to
+1:36:54
+Singapore. Before I apply it, let me just show you once.
+1:37:01
+It will not
+1:37:08
+work. Done. I have updated it. So
+1:37:14
+soon things should reflect and I should be able to see it. It's not yet propagated. So I can
+1:37:22
+put a watch command just to see it. Yes, folks, it is working.
+1:37:30
+So the combination is working that's it right. So and it is an
+1:37:38
+R condition meaning uh the access uh levels which we have mentioned either
+1:37:44
+corporate or uh cloud shell kind of a stuff we have opened it up it is making it work. So in the UI because I'm coming
+1:37:52
+to access the UI I'm using my uh IP address provided by my ISP provider. It
+1:37:58
+is working. And uh for cloud shell I have added one more additional
+1:38:07
+thing. I'm able to see it. This is making things work. So this is one level
+1:38:13
+one level which we have able to do it. So with the VPC service
+1:38:22
+control. So it should show two resources right.
+1:38:35
+So you have one project, one network and two services protected. Good. And with
+1:38:42
+two access levels. This is what we have done. Now I'll just do a small modification where I wanted to show the
+1:38:49
+VPC service control sorry web access impact. So to do that I will get into
+1:38:58
+this VM. Do I have that VM
+1:39:09
+already? We don't let me SSH into
+1:39:15
+that. This one right? This one should work from my local laptop because my IP
+1:39:21
+is now whitelisted. So this should work assuming it is my corporate laptop
+1:39:29
+and I'm connected to the corporate network and I'm doing this. It could be a local laptop but the laptop is owned
+1:39:36
+by the company. Whatever I keep people track it right it is possible. So I'm
+1:39:41
+able to do this part. So now what I want to show you is um I'll remove the cloud
+1:39:48
+shell piece. I just wanted to show that location is Singapore. Officially the
+1:39:53
+cloud shell is in Singapore. I wanted to prove you in this way. So what I will do
+1:40:02
+is or sorry I'll remove that uh access
+1:40:18
+level. So I don't want cloud shell.
+1:40:26
+It nicely shows which is really good right this kind of configurations it is good that if they
+1:40:31
+can apply this kind of stuff for everywhere uh which is done so soon
+1:40:38
+uh from my Starbucks network I'll not be able to connect it is and we know it takes a few
+1:40:45
+minutes and or seconds to propagate then it will start getting blocked yeah it is
+1:40:51
+blocked it just not even a minute is what I say um it guess that part. Good.
+1:40:58
+Now what I want to do is I wanted to do a little more exploration.
+1:41:03
+Um what I will do is I will first I will log to the
+1:41:18
+VM and log into the VM.
+1:41:25
+And we know from the VM it should work because it's a authorized
+1:41:31
+source. It was working or it is working because of one setting which is
+1:41:37
+default.
+1:41:47
+So I'm able to access things which is good.
+1:41:54
+Now
+1:42:01
+uh what I'm going to do is under this VPC accessible service
+1:42:08
+right specify the service that are accessible using private Google
+1:42:15
+access. So what is the one which can be accessed using private Google access? Google cloud storage bucket can be done.
+1:42:20
+We know that right. So the parimeter boundary is only enforced on resource belonging to the list of services
+1:42:27
+protected by the parimeter in the previous step. This one
+1:42:33
+right regardless of whether they are in the list of VPC accessible uh service.
+1:42:39
+So meaning the preference goes here what you want to protect it right that is what they are trying to convey. Even
+1:42:46
+though uh you have opened it here to all does not mean that you can go and access
+1:42:51
+everything. That is what they are trying to convey. Now for a minute I'm going to block this folks. No services none of
+1:42:59
+the services on the configured virtual IP are are accessible using private
+1:43:05
+Google access. I want to block this part just to show you how I can do it. Later
+1:43:10
+we can restrict some services. What is that service we want to do it? I guess
+1:43:15
+these two both will work similarly in our case. None of the service would be configured or only services in the
+1:43:22
+previous will be access. Oh sorry only this one. Both are different. Sorry my bad. So first let's go with
+1:43:30
+no. So I'm adding this
+1:43:42
+restriction. So know this thing. So let me see what
+1:43:51
+happens. Where's my Yeah,
+1:43:58
+here. H you get that uh message folks. Copying. You're trying to copy
+1:44:05
+uh but because of uh yeah this was about
+1:44:10
+to get applied. That's where it access denied then now it is completely
+1:44:18
+blocked right you are completely blocked uh so because we don't want to leverage
+1:44:24
+it using private Google access that's what you are trying to say so
+1:44:32
+good now uh there is one service let me just show
+1:44:39
+you this one is blocked
+1:44:45
+There's one more service called as BigQuery folks. So if there's any data set here,
+1:44:52
+it will show me that. So first of all, uh BigQuery
+1:44:59
+access my VPC service control is coming here. Uh first of all,
+1:45:05
+uh okay. Okay. What is this happening? First of all, I'll give the role folks.
+1:45:11
+It's already showing uh VPC service control, but I have not done anything on BigQuery. Uh first let me give the
+1:45:18
+service account the role to
+1:45:42
+access storage admin. I'll give it also a role called
+1:45:51
+as BigQuery admin. We'll talk about BigQuery later. IM things which we have already
+1:45:59
+mastered to some great extent. So I'm using that. Now if I go to my where's
+1:46:07
+my sorry [Music] uh yeah this is my other thing. So if I
+1:46:14
+try to do bitquery
+1:46:19
+ls. Okay. So it is basically saying again prohibited. Uh here the the reason
+1:46:27
+is uh we are trying to completely block it
+1:46:32
+with the help of uh VPC service control. So error in list is prohibited by the
+1:46:38
+VPC. This one even though we have not applied it. Uh this is looking little
+1:46:44
+weird. I guess this is because of this one. None of the services on the
+1:46:51
+configured virtual IP use uh on on the configured virtual IP are accessible
+1:46:57
+using private Google access. None completely blocked. So if I do this one
+1:47:05
+only the services restricted in the previous step will be accessible using private Google access. Let me just do
+1:47:11
+this part. A restricted
+1:47:18
+service. Let's give it a few minutes to
+1:47:25
+propagate. Let me just pin this.
+1:47:35
+I'll call it as VM cons
+1:47:43
+shell. So I'm in the VM shell. Uh so
+1:47:52
+BQLs is like this GS util or copy
+1:48:00
+option. This will work. This will work. So what you have put the restriction for
+1:48:05
+that it is going to work. Remaining things will not
+1:48:13
+work. So that is the meaning here. So big
+1:48:18
+queryless it will not work. Similarly G-Cloud
+1:48:26
+uh G-Cloud uh
+1:48:32
+Spanner instances list. Uh okay I have not enabled uh
+1:48:42
+spanner. Uh I have not enabled spanners that is one thing and does not have that
+1:48:48
+is one thing. It is also telling me the policy the VPC service control it show
+1:48:54
+is also not available. This is what it shows folks. So we I guess we have
+1:49:01
+created cloud SQL and all. So if you try to see other services cloud run
+1:49:07
+uh services list we have a cloud run
+1:49:14
+remember we have a cloud run uh this thing but because we have turned this on
+1:49:20
+you are not able to get in. So if you wanted to list your cloud run kind of a
+1:49:26
+stuff, one possible option which you can do is go to the restricted service add
+1:49:33
+cloud
+1:49:43
+run. So only restricted service right save it.
+1:49:55
+So previously it was not working. First of all it does not have
+1:50:01
+access. That is one thing. But I don't want it to show any VPC related access.
+1:50:06
+So is this a command correct? 1 minute
+1:50:15
+folks. Services list. Okay, this is fine.
+1:50:21
+Uh, is this the right command? G-Cloud run
+1:50:28
+services. Yeah, this is correct
+1:50:33
+command. Uh, I'm in this project. Yeah, cannot access uh this one and the
+1:50:40
+methods authenticator. Let me just close and open it one more time. It should show me VPC related error. VPC service
+1:50:48
+contributed error not something
+1:50:54
+different
+1:51:04
+authorized. Okay, it is little weird. This is authenticated as this
+1:51:11
+cannot access. Permission denied.
+1:51:22
+This is perfect. McQuary ls should not have any
+1:51:28
+issues because we have not even restricted it. It shows a couple of stuffs. Uh this
+1:51:37
+one okay let me just do this
+1:51:42
+uh division. Let me just do
+1:51:52
+this. This is perfect. This is perfect. uh
+1:51:58
+divisions does not have permission or it is showing that
+1:52:14
+what's hello or something. Hello
+1:52:28
+It shows for for some reason this change is denied. Okay, this looks like a good command. Let me give a try. Here it is
+1:52:35
+also telling about VPC service control, right?
+1:52:42
+So from the
+1:52:49
+VM, let me just give it a role.
+1:53:02
+So let me just give this role. So something like cloud run admin
+1:53:21
+role. It should list
+1:53:29
+everything. Oh, I have to mention the region. Uh it is US Central
+1:53:37
+134. Yeah, it is showing it folks. Uh
+1:53:42
+so
+1:53:51
+so if I use this, it shows me this.
+1:54:00
+It shows me the services. So it's all working because we have
+1:54:05
+the the restriction put and we are opening uh only to the restricted
+1:54:10
+service. Now next what I wanted to do is uh show the last option there only
+1:54:17
+selected services. So meaning I don't want uh
+1:54:22
+cloud run to be accessible from my bucket from my VM. I wanted
+1:54:27
+only Google cloud storage bucket further I'm just giving you
+1:54:33
+combinations where it if you have this kind of a requirement go for
+1:54:39
+it done so save it so accessible there the only service
+1:54:46
+is this thing not
+1:54:53
+everything so Meaning this should stop working now
+1:55:00
+soon because we put a restrict it should start showing me. Let me wait for it. Yes, it is right
+1:55:10
+with the service control whereas our bucket will show
+1:55:17
+up. So that's something on the BPC accessible services post we have gone
+1:55:24
+through this thing on that. So we have used all the
+1:55:32
+options we have used all the options in the VBC accessible things from all to
+1:55:38
+this is what we have. Uh this one is a uh what I would
+1:55:44
+say uh this is a very helpful one. We know for example right for example if I
+1:55:51
+just do this save it meaning from here I should be able to
+1:55:57
+access everything. So all Google APIs, all uh Google cloud APIs except few
+1:56:04
+exceptions we can do it right.
+1:56:16
+So, uh we the moment we have a um the moment we
+1:56:25
+have private Google access enabled, uh this is a good one to be very frank. Let
+1:56:31
+me give you a little more insight on this part. Right? So, could be
+1:56:37
+possibly a kind of a tricky question here. So at the VPC so something like
+1:56:43
+this sub network level you have turned on private Google access which is good.
+1:56:49
+Now uh if the requirement is by moving turning on this what you are going to do
+1:56:55
+folks from your VM you should be able to access all the Google cloud related
+1:57:01
+services right so something like this will work something
+1:57:08
+like bigquery will work if you have the access it just
+1:57:14
+relies on your access so curl
+1:57:23
+this will start working right so I'm opening it up to everything but what if
+1:57:28
+I don't want it's also possible right somebody is trying to misuse the virtual
+1:57:34
+machine for something else trying to access YouTube or something like that so what we can do is in that case we
+1:57:43
+can use this VPC accessible service not to make it all. So only do this no
+1:57:51
+service will be not a good choice u right because you cannot even access
+1:57:56
+buckets kind of a stuff this one would be a very good choice where you restrict only uh only
+1:58:03
+only services restricted in the previous step what is in the previous step I have only these things only those things I'll
+1:58:10
+allow remaining everything I'll not allow so meaning YouTube API also you cannot access it so this is a very
+1:58:16
+protective measure which you can do So let me apply it and show you this
+1:58:23
+part. So so it is applied.
+1:58:29
+So now if I do bigquery ls it will not
+1:58:36
+work. Uh let's wait for it to
+1:58:45
+propagate. Looks like it has propagated. So, YouTube does it show like
+1:58:53
+this? How do I show you that it's not accessing it?
+1:59:04
+uh you want to show that uh doesn't
+1:59:09
+work how this will work because we the uh
+1:59:15
+service we had the service this will work uh I
+1:59:21
+wanted to show that YouTube will not be accessible
+1:59:30
+How do I show you that? Uh without logging
+1:59:35
+in private Google access is there YouTube showing
+1:59:42
+um check what can I do here? Let me trying
+1:59:51
+to could be a weird one but let me
+1:59:59
+try I cannot download it I know so uh
+2:00:06
+basically let's take Sindur itself which is real things which is
+2:00:14
+happening. So let me try doing what it shows. Okay, it is able to download it.
+2:00:22
+Uh okay, it is able to download
+2:00:27
+it that to this thing. So I'm not able to restrict that one
+2:00:33
+which is an interesting one. uh it should have been
+2:00:41
+blocked only restricted in the previous step will be accessible using private Google access
+2:00:49
+uh which is not as is expected to work. So let me see what else. Okay, maybe
+2:00:54
+this is only for Google services. YouTube no YouTube you cannot restrict.
+2:01:00
+So this is Google service only Google cloud services. If you want to restrict
+2:01:05
+you can do it folks. So as what it indicates maybe my was little wrong. So
+2:01:11
+this one is only for uh this is only for Google cloud
+2:01:16
+services which you can restrict. There's a couple of more options where you can leverage which is like ingress
+2:01:24
+have ingress rules which you can put it. Um I have to explore this option. So I
+2:01:30
+have never used this option uh in a real project but all other options I have used it in a real project. Uh so when I
+2:01:39
+explore this part I'll make a small video out of it and update it. So these two parts I will keep it on hold. Okay.
+2:01:48
+And uh another option which can come in a
+2:01:53
+question uh in the exam
+2:02:02
+is you creating a bridge. This one uh the demo which I
+2:02:09
+have is breaking. So I'll try to get this part soon. But I wanted to show this because I asked a question on this
+2:02:15
+part. uh so I wanted to show you this demo uh maybe at a later point of time
+2:02:21
+so I have it in my to-do list I'll try to show you so where we'll try to create a bridge apart from this we have seen
+2:02:29
+the sources which we wanted to do it now uh
+2:02:34
+one last demo before we move on to the next concept is on the policy folks so
+2:02:41
+when I created a policy I did not put any kind of restriction I This I have to
+2:02:47
+show I do not put any policy here. Let me create one where I put a policy.
+2:02:52
+Okay. So create a policy. So custom
+2:03:03
+policy. So uh select which resource which resource
+2:03:08
+this delegation policy will apply to. You can add one or more folders or project. You can add all projects inside
+2:03:15
+this will be available in the scope. So if I add this for a minute I'll go with
+2:03:21
+different project okay service project A that's what I going to do it and I can
+2:03:28
+also you must also add at least one administrator. So meaning who has control to it. So I'm going to add
+2:03:36
+myself. So myself hope the suggestion shows. Yes. So this
+2:03:45
+one so I'm going to make myself access context manager admin. So this is a kind
+2:03:52
+of a customized one. So this should scope should come automatically. So what do you mean by
+2:03:58
+that? Let me show you that.
+2:04:09
+So I have two policies here. So when I choose custom VPC
+2:04:22
+policy, I'm going to put a parameter.
+2:04:28
+So demo
+2:04:34
+here right uh even if I don't put a pro it should basically be part of that the
+2:04:41
+project will be part of it so what I will do is I will restrict I not put this project so
+2:04:49
+before I put any restriction let me show
+2:04:59
+you it should be part of
+2:05:06
+scope. So I have this bucket. Let me see what is going to happen to this one. So
+2:05:13
+I'll not put a project. Uh I will basically go and put
+2:05:18
+a service restriction
+2:05:30
+storage done
+2:05:38
+folks. So I not put it because that was what it was mentioning.
+2:05:44
+The scope should be automatically applied. So if I just go back to
+2:05:55
+custom. So I have it it show zero project. However I had put that one
+2:06:02
+right. The scope is this project right. So when you create it, it was showing
+2:06:09
+that. So select which resource this delegation policy will apply to. You can
+2:06:14
+add one or more folders or projects when you add this thing. All projects inside that folder will be available in the
+2:06:20
+scope. It's not showing up. So let's see whether it is going to work. Uh I have
+2:06:27
+not leveraged this before. So since there was a question so I thought I will add this and show you. So we have added
+2:06:33
+it. Uh so since it's uh okay since it is basically uh we have
+2:06:42
+created one uh parameter and we are restricting this. You can see there's no project but
+2:06:49
+it should be part of the policy is my understanding. Let's check whether it is showing or blocked. So refresh
+2:06:59
+it. It is showing up.
+2:07:11
+What is this concept of this one? So, do I still have to put
+2:07:20
+it? Do I have to still put it? So, one minute. Let me just read that.
+2:07:30
+So select the to include select okay select which resource this delegation
+2:07:37
+policy will apply to. You can add this thing and all the projects inside that
+2:07:43
+folder will be available in the scope scope scope.
+2:07:54
+Uh okay it is not there. Okay, 1 minute works. I will check this
+2:08:01
+part. So if I create it, I guess my understanding is wrong here. So if
+2:08:09
+I for some reason this thing is not there because it's already part of one policy. Is that the reason? I'm not sure
+2:08:17
+of that. part
+2:08:22
+uh access policy the same okay I'll come back on this part
+2:08:29
+also folks I'll get back to you on this part so my understanding was slightly
+2:08:34
+different uh so here it is slightly different so let me just check once here
+2:08:41
+is it applied it is not applied Right, I'll
+2:08:47
+come back on this part. Okay, I'll come back on this part. So, a couple of demos
+2:08:53
+pending on VPC service control. We'll come back and I'll show you this part.
+2:09:00
+So, that's something on the VPC service control which I wanted to share where we
+2:09:06
+saw a good amount of uh u parameter control which we can do and we also
+2:09:13
+realize that there are three products which is not supported. This also could be a question in the exam. So, App
+2:09:19
+Engine, cloud shell and uh Google Cloud Console, right? So, this is something
+2:09:25
+which you can see as a possibility. Now,
+2:09:30
+uh you can also do some kind of a uh uh
+2:09:36
+further restriction. Say for example, think of this as a use case folks. You
+2:09:41
+have a web application, right? We saw everything which was good. So this was primarily for people do who is going to
+2:09:48
+access Google cloud engineers cloud engineers kind of stuff. So think of a scenario um where
+2:09:56
+um let me get let me get the this thing uh the
+2:10:05
+code base 1 minute. So let me tell you the scenario. Uh
+2:10:17
+so so all this time which we were trying to do was basically uh as cloud
+2:10:22
+engineers somebody who wants to access Google cloud via console cloud shell so
+2:10:27
+we are trying to see the parameter so now what we are going to do is I'm an uh
+2:10:34
+end user
+2:10:41
+End user who wants to
+2:10:49
+access app engine or any SSL or any
+2:10:59
+website HTTPS website which is HTTPS website. So for this there should be a
+2:11:06
+single sign on. So single sign on means AP is what we have already seen
+2:11:13
+this right. So with AP you turn it on what is going to happen? We have already done this part. So uh for HTTPS
+2:11:21
+resources. So this is something possible now and we have seen it works with app
+2:11:26
+engine. We have seen it but now I want to put further restriction.
+2:11:31
+you come access it only if you are coming
+2:11:38
+from a specific IP from a specific IP from a specific
+2:11:43
+device. So that access level concept which we saw uh the corporate IP the
+2:11:49
+device all those things you can also apply it with IAP. So VPC service
+2:11:55
+control plus AP kind of a stuff is what you can also do folks. So for this we
+2:12:01
+need to have a app engine. So maybe I'll do it in uh
+2:12:08
+project B right. So we need to have app engine or a HTTPS resource. Uh soon
+2:12:14
+we'll be looking into load balancer where we'll create for the first time a HTTPS load balancer. All the demos which
+2:12:21
+we have done so far we have done only HTTP. So HTTPS we are going to do it soon. But for now, I'm going to do
+2:12:28
+something on App Engine. Um, first let me enable App Engine
+2:12:34
+because App Engine gives you that option, right? So, if I just go and show you first let me show you this part. One
+2:12:42
+minute. Uh, but my account is blocked there. Let me see if I can do
+2:12:50
+it. Suddenly, it got blocked. I don't know what happened.
+2:12:59
+Uh I am
+2:13:08
+a let me see if it is resolved.
+2:13:31
+Just checking it works one minute on my other screen.
+2:13:42
+It's not working. It's okay. So, first let me uh deploy an app
+2:13:50
+engine. Uh we'll then use the um Google uh like uh the consent screen.
+2:13:57
+We'll configure it. Then we'll apply this access stuffs, right? So that is what we will be doing next. So app
+2:14:04
+engine uh something like this. That's going to be an ultimate one where you
+2:14:09
+wanted to restrict. Yes, we know if the user is having
+2:14:15
+u secure web app user role single sign on
+2:14:22
+works. Now along with that I will also put a restriction. You should be coming from a specific IP from a specific
+2:14:28
+country kind of a stuff or you should be coming from a device. Think of this as an employee folks. Think of this as an
+2:14:36
+employee who's trying to access your uh corporate application. So not everybody.
+2:14:42
+Yes, it is open to like it's publicly accessible. But when you're coming, you should come from your uh this will work
+2:14:49
+for publicly accessing websites also. You can put that right. You can also do it for corporate applications. So I have
+2:14:56
+an intern like I have a HR system, payroll system. Not everybody goes to
+2:15:01
+office, right? So if they are trying to connect from an outside world they can connect it but they should have some
+2:15:07
+device policies. So that kind of a restriction is what I wanted to do it. So with AP
+2:15:14
+plus the access level right that is something which we wanted to show. So uh
+2:15:20
+I had seen it once in a demonstration. Let me try to show you that first and
+2:15:26
+I'll try to see if we can apply it also. Okay. So that will be our next demo
+2:15:31
+course. This conference will now be recorded. So
+2:15:37
+this is a video where we would like to see some of the AP use cases. So this is
+2:15:43
+in um from this is from Google cloud itself. So uh currently the user is in
+2:15:50
+the AP screen. So we know when you are doing an AP screen uh it is going to
+2:15:56
+give you the option to add AP secure web user role. That piece is what they are
+2:16:02
+currently in. But I will try to pause at a specific period where you will see something additional. Let me play
+2:16:10
+this. You should be able to see the audio. Uh you should be able to listen to the
+2:16:19
+audio. So now
+2:16:24
+uh you'll see the member, you'll see the role, you see the condition. This is a
+2:16:30
+normal stuff which we know right? So they'll try to add it for a public
+2:16:36
+user meaning all
+2:16:46
+users. Now now is the important piece. We're
+2:16:51
+going to add secure web app user role. Right? The moment I do this, you see this one folks the
+2:16:59
+condition only when you do uh secure web app user it shows you the access
+2:17:07
+level. So corporate IP shell cloud shell those kind of a sub that is an change in
+2:17:13
+the interface which you get it. So before that it was an IM condition. So only for AP it shows you this option. So
+2:17:20
+this is something which we will uh try to do it.
+2:17:26
+Uh this could be for a premium customer. I'm not sure for the premium this thing.
+2:17:33
+So you see currently it will be showing conditions. The moment it
+2:17:42
+uh let me show you one more time. The moment he selects the ch role only when
+2:17:48
+there is an AP role the this thing changes to this
+2:17:54
+thing access levels the things which we know with the access level that's going to show. So this is something small
+2:18:02
+thing which we'll try to see it real quick and uh and leverage it. Okay. So,
+2:18:09
+I'll make sure I add this video in the playlist so that you can
+2:18:16
+see it if you wanted
+2:18:21
+to. Let me share the entire screen
+2:18:27
+back. So, so what we are going to do now is uh
+2:18:36
+we'll try to do this thing. So recently uh I guess the last session if I'm not
+2:18:41
+wrong we had seen uh when we were doing uh let's go with service project
+2:18:50
+B. So when we go to service project B and uh
+2:18:59
+AP when we look at AP it was showing that even uh for cloud run you have that
+2:19:06
+option. Maybe here it is not there for service project
+2:19:13
+A. We saw something. So I thought I'll use AP with cloud run. So we are done AP
+2:19:20
+with uh okay let me just enable it folks.
+2:19:25
+I'll go to service project
+2:19:35
+here. So then go to we need to have a secure application then only you can
+2:19:42
+sign in right. So that is what we are going to do it. So last time we saw there was a preview option available for
+2:19:49
+this one. We'll check it out. If that is not working we'll go with back with our uh app engine itself.
+2:19:56
+So, I am identity web
+2:20:02
+proxy. Uh, let me enable
+2:20:11
+this. If I go to this one, I will have a consent screen which I have to always
+2:20:18
+configure. So, one time job. Let's just configure it. We had done it once. We
+2:20:23
+will just do it one more time. Quick one. Get started. So app name
+2:20:29
+uh cloud run and app
+2:20:39
+engine support email uh my email ID I'll give it. So many it will show there
+2:20:44
+right. So external for testing purpose. If it's internal it's a little longer
+2:20:50
+process. You have to go with verification and all. Google will be involved. We cannot do it quickly. So
+2:20:55
+available for any test users with Google account. So this is something which we want to do for testing purpose. So email
+2:21:01
+address, I'll just put my email address. Meaning if there's any
+2:21:07
+issues, people can contact this
+2:21:14
+one. Then I agree. That's it. The consent screen is created.
+2:21:25
+So we are good here. Um let me go back to
+2:21:37
+AP the identity web proxy. Now
+2:21:43
+uh new service it's not even showing it. I saw there was a preview
+2:21:53
+option. Okay, it shows in some screens and not for some. Okay, no problem. So,
+2:21:59
+what we will have is we'll quickly have an app engine set up uh and we will have
+2:22:04
+that part ready and we'll try to operate this part. So, I'll go to app
+2:22:10
+engine. So, app engine second time we are doing the demonstration. So we'll enable the location. We know the
+2:22:17
+location is going to be fixed all those things.
+2:22:24
+So oh there is a new thing which they are trying to do. You see this cloud run offers the so this is a silent way of
+2:22:32
+migrating folks. Uh if you see it when you come to app engine
+2:22:37
+uh they are promoting to use cloud run offers the most uh modern fully managed
+2:22:45
+application experience with lower minimum uh build times and reports
+2:22:50
+supports GPUs on demand blah blah blah. It can be deployed any language all the
+2:22:55
+best practice with cloud run. We oursel were promoting cloud run over app engine
+2:23:01
+so Google also started it. So soon app engine may go down right unavailable or
+2:23:06
+it could be deprecated. This is the key thing but for now we wanted app engine because we can quickly create an https
+2:23:12
+URL and AP supported for that and uh I remember uh this one it was there I
+2:23:20
+which screen I'm not able to recollect it cloud run
+2:23:26
+preview they have done that uh
+2:23:31
+configure this is in a preview state yeah you see this one I didn't have a
+2:23:37
+proxy for cloud run. So it's in preview. So I saw it once which account I don't
+2:23:42
+recollect it. So soon this is going to make it easy for us. So but for now I'm going to create
+2:23:49
+app engine. Uh choose the region of the choice. Let's leave it as US central and
+2:23:56
+I'm going to use the default service account. So we'll just build a simple hello world kind of an app. That's
+2:24:03
+it. [Music]
+2:24:09
+While
+2:24:22
+[Music] okay. Let's do it in some other region. Mumbai.
+2:24:35
+Are they stopped it? I'm not
+2:24:46
+sure. Okay, let me try it in the other project. Or maybe I have to enable
+2:24:53
+something. Let me look at the APIs and services.
+2:25:12
+Okay. App Engine is not enabled. Uh reporting
+2:25:22
+service. Okay. App Engine is not enabled. Let me just enable
+2:25:47
+it. So let me create it. Hopefully it works.
+2:26:01
+Okay, one
+2:26:09
+minute. Okay, that service account is not there. That is the problem. So that
+2:26:14
+service account is not there. I'm going to use this service account for this creation.
+2:26:26
+Let us try once otherwise we'll do it once we have uh an SSL load balancer.
+2:26:33
+We'll come back and do it if this works good. No, let's not uh
+2:26:39
+worry about this app engine anyway getting duplicated. So this one uh we can do
+2:26:45
+it in the console. Go to cloud run deploy. Okay.
+2:26:51
+And under advanced section you can do it. Okay, looks like we can we can do it. Let me just do this one folks. This
+2:26:59
+way at least we can leverage it. So we have cloud
+2:27:05
+run. We have anyway this application. So currently it is open. All we need is an
+2:27:11
+https. It's already https. So you see this. So what we wanted to do
+2:27:20
+is uh they are saying a procedure edit go to advanced
+2:27:31
+section uh should be under security. What is the step? Uh service
+2:27:39
+edit revision select advanced.
+2:27:44
+Okay. Where do I see that?
+2:28:00
+1 minute. Is there a command here? Run authenticate. Oh. Oh, this this is so
+2:28:07
+easy. So, I just need to add this flag. Okay. Uh I'm not able to see it in the
+2:28:14
+UI. Maybe it's in preview. That's why I'm not able to see it. Edit deploy a
+2:28:19
+new service. This is an advanced thing. So it is not showing up.
+2:28:25
+So if I just
+2:28:34
+go deploy a service configure I don't see okay
+2:28:44
+to okay here it is there my bad okay so okay let's just do this I guess I saw
+2:28:50
+this here only my bad let me delete this and we will use our standard zone
+2:28:58
+printer stuff. Uh so I'll create a new
+2:29:09
+deployment. So let me get the image the zone printer one. So we get
+2:29:17
+the zone printer.
+2:29:24
+The standard one we'll call it as zone printer AP.
+2:29:30
+Uh I should open it to all. Yes. And
+2:29:36
+this one this is the new functionality. So authentication
+2:29:43
+with basically to every that's the order
+2:29:49
+to do it.
+2:30:09
+Uh this is
+2:30:16
+something use. So we should
+2:30:34
+have this I'm just trying to show you the access levels. That's the only
+2:30:40
+reason I'm trying to do it. It is saying does not exist is AP enabled.
+2:30:56
+VP is
+2:31:14
+enabled. Yeah, it is not bad.
+2:31:24
+Okay, this is an
+2:31:30
+agent. Okay, this is the one. Uh, so what is this? Enable for cloud. Okay,
+2:31:37
+they have added this one folks. This is all in the preview. So,
+2:31:51
+So what should I add? I should add invoker role. Okay, that's good. Let me
+2:31:56
+just add it. We know right. Whenever you have any
+2:32:03
+services you want to invoke, it means you should have that role. Let me just grant that role folks.
+2:32:11
+This is a service account and cloud run invoke the
+2:32:28
+role [Music]
+2:32:33
+run invoker role as per the documentation.
+2:32:44
+So go to cloud run is this
+2:32:53
+deployed. Let me reep it one more time.
+2:33:23
+This is the checkbox. Uh is there a policy? Okay. Okay. I can give to whom I
+2:33:31
+can I want to give this. So my should Yeah. And you can see this
+2:33:40
+one folks. That's the beauty which you can see it. So both the things are
+2:33:46
+coming up here right we will give it for corporate
+2:33:52
+done. So create it. So only Mah should be able to access it not
+2:34:00
+others with the APS. So let's wait for
+2:34:08
+this done. And if I go to AP page, hopefully it shows me
+2:34:18
+uh that entry that there's one application where we have configured AP.
+2:34:25
+It should show that it should show here. It is not showing that information.
+2:34:31
+Usually like when we have app engine and all it used to show, right? So, but since since in since since it's in
+2:34:37
+preview, maybe it is not showing up. Let me just check this part. W good. So, my AIP stuff is
+2:34:45
+working. So, access denied all those things are good. I just need to give the right role. I just need to see it.
+2:34:52
+Uh I have to configure this page is basically the
+2:34:57
+consent screen which is showing up. So, things are working.
+2:35:05
+Uh let me
+2:35:15
+edit. When I edit it, it does not show up the security piece.
+2:35:31
+AP secure tunnel user role. How do I give that role now? You know, it's not
+2:35:37
+showing up
+2:35:45
+here. No, let's just look at this one. It can give us a little hint.
+2:35:51
+I Okay, so this explains how to do this if you're running Cloud Run on uh
+2:35:57
+multiple the things. Uh if you're running cloud run in multiple region to
+2:36:03
+the same load bar as the back end follow the instruction on the back end this is fine.
+2:36:08
+AP back end proxy applications add principle. So
+2:36:15
+if I go here page select the project under
+2:36:24
+applications we were not seeing it.
+2:36:32
+under new application. It's not showing
+2:36:43
+uh under applications.
+2:36:50
+Okay. Under application, select the checkbox. Mix. Oh, still it's load balancer.
+2:36:59
+Still it is using load balancer only. Okay. Then we may Okay. Turning on
+2:37:08
+AP.
+2:37:13
+Okay. I guess without load balancer if we can do it. I thought I it would be
+2:37:18
+good. Uh load balance. Uh concern screen. We have done it.
+2:37:27
+Uh ah it worked folks. Actually I should have waited for it. So okay let me just
+2:37:33
+do this one more time. Uh I'll go in an incognito mode. Yeah it is working. So
+2:37:40
+it will redirect. Oh why it is okay. One minute folks. I have two incognitive
+2:37:46
+modes opened. So it just took time basically.
+2:37:51
+Let me repeat what I did.
+2:37:59
+Let me just close this things. So I'll go in an incognito
+2:38:04
+mode. When I do this, it should redirect me which is basically the concept of AP.
+2:38:11
+Now I will log in as
+2:38:17
+Mah. My authentication is going to be handled by Google itself. So I don't need to build any kind of single sign on
+2:38:24
+page. So if I put a dummy password like this, this is not my password. So when I
+2:38:31
+do this, it is going to say boss your password is wrong. So now if I put a right
+2:38:40
+password and connect, I should be able [Music]
+2:38:47
+to
+2:38:58
+Was that my password? One minute to learn. Oh,
+2:39:04
+sorry, sorry, sorry. It's a wrong username. Bye. So, it is tech.
+2:39:14
+is a
+2:39:22
+user. Now, once I'm successfully logged in, oh man, I have to do a
+2:39:28
+verification. Okay. Okay. One minute. I'll verify and come back.
+2:39:44
+Just waiting for the code to
+2:39:55
+come. Just waiting. Give me a few seconds.
+2:40:09
+Yeah, I have received
+2:40:25
+it. I'm there, folks. I'm there. If I go to
+2:40:32
+google.com, I'm signed in as uh basically Mahes.
+2:40:37
+Gisp. And because of which I'm able to access it. Now uh my connection
+2:40:56
+is this is my IP address right for a short moment I'm going to change my
+2:41:02
+connection uh or before I do the connection I'll change the I the access
+2:41:07
+level meaning this country is like different country then we will not get access to that is what I wanted to show
+2:41:14
+you. So meaning which the level of with a combination of AP and basically the
+2:41:21
+um the what is that u with the combination of AP and uh uh
+2:41:29
+access VPC access uh level we are going to basically have a small change. So if
+2:41:36
+I just go back, I go to my org
+2:41:42
+level and go to
+2:41:48
+security and under that you go and look into the context access context manager
+2:41:56
+where we have put that restriction right. So I'm going to change this one.
+2:42:01
+So the country should be not this rain but something like uh Kuwait randomly
+2:42:08
+I'm taking something. So this combination is not going to work. Uh basically I should not get access to
+2:42:14
+that's it right. And uh let's see how it is going to
+2:42:29
+work. So let me just uh by the time this gets deployed
+2:42:35
+uh let me deploy one more cloud run service
+2:42:41
+folks because in it's only showing while
+2:42:48
+uh oh wow beautiful is it uh because the parimeters is put okay very good okay so
+2:42:57
+now I cannot even access it looks like let me See this one folks. Uh I've applied it. Uh the
+2:43:03
+condition cloud. Did we had this thing for cloud run? Uh yes we had it. Now let
+2:43:11
+me see what happens here. Beautiful. Because I removed the
+2:43:17
+restrict. I changed the restriction right. I'm not able to see it. I cannot access it. So if I go back and
+2:43:26
+add as if like uh anybody right I don't want to put an IP restriction anybody
+2:43:33
+coming from India and there's a checkbox you can do
+2:43:38
+it multiple so anybody coming from India and Singapore because I can mimic Singapore from cloud shell it should
+2:43:45
+work oh what does that yeah save
+2:43:53
+it. So I not put IP restriction but I have put Okay, it did not work. One
+2:44:02
+minute. So if I'm coming from India and Singapore, this website should be
+2:44:07
+accessible. So these days uh many application does
+2:44:13
+that.
+2:44:26
+done. Please note I am putting this this is the access level is used in two ways.
+2:44:34
+One is at your uh VPC service control because I have put
+2:44:41
+the service restriction to cloud run also.
+2:45:00
+Even for cloud I have the restrictions. So that's the reason if I change it, it was showing like this. Now if I refresh
+2:45:06
+it in the console, it will show me. And if I go
+2:45:11
+back to this page, if I refresh it, it will work. Beautiful, right? So, uh if I say like
+2:45:21
+this, I'll remove this restriction here. Meaning in the u in the Google cloud
+2:45:26
+console, uh it should all all service restricted. Yeah, this should be all good. So, I'm
+2:45:33
+doing cloud run. Now, irrespective of what restriction you put in the UI in
+2:45:38
+the Google cloud console, I can see cloud run. But people who are part of
+2:45:45
+uh the uh access level uh meaning who are part of the what is
+2:45:53
+it uh what is it AP check your channel user role they only can login that is what I
+2:46:01
+wanted to show you next right we have already seen it just wanted to give a little more uh listen this thing to that
+2:46:07
+let me just add one more service Hello
+2:46:13
+world we will use it in uh this thing should be fine I will open it to the
+2:46:18
+whole world I will uh do this piece where I'll add the policy folks so here
+2:46:25
+so here you can see it uh access they are going to get behind the scene
+2:46:32
+uh uh what is that secure tunnel user so not secure web app user that's what they
+2:46:39
+going to get it so for now I'm going going to add simple.gcp user at the
+2:46:48
+rategmail.com. So we'll give this restriction. So we'll add one more
+2:46:54
+binding. So something like
+2:47:01
+mahish. So again this one and you have different options for different source.
+2:47:06
+If my come from cloud shell you should give back this kind of a. So if you want you can also add it to the whole
+2:47:17
+world. Is that shows up? No, I cannot. Oh, it should be all users. I'm
+2:47:24
+trying to add it. Oh, you cannot add it. It seems okay. You cannot add it. Okay, that's
+2:47:31
+right. So I have created this one does not come up when I edit it, folks. That is the problem. I'm deploying a new one.
+2:48:00
+waiting for it to get deployed and I'm not able to see the details of that part because it's in preview some of the
+2:48:07
+information is not shown even in AP is not showing up so soon it will come up
+2:48:13
+the whole intent which I wanted to show is how you can use the
+2:48:18
+uh uh how you can
+2:48:26
+use the access level that is what I wanted to show you okay so which was
+2:48:32
+part of basically your VPC service control I just wanted to show that part so the deployment should have been
+2:48:41
+completed still going on uh of late I have seen it is little slowing down
+2:48:47
+folks I'm not sure uh I done some few demos live uh during uh some of the
+2:48:54
+trainings I have seen it is little slow the last part routing the things become
+2:49:01
+slow maybe I'm not sure whether it's something to do with my account uh it is
+2:49:06
+little slow the deployment we have seen cloud run is little fast but this is off
+2:49:11
+late I'm seeing something like this small observation Let's wait for this to
+2:49:18
+happen. And if I go to the the VM, let me see this
+2:49:27
+permissions. Okay, I have this. I have
+2:49:36
+this in. If I go
+2:49:46
+I don't see anything on the AP secure uh secure web app user role that is not
+2:49:53
+there and this one is taking longer time. It's very
+2:50:01
+strange. Let's just wait. This one I'm not able to modify
+2:50:08
+it. That's just to show that if I wanted to add somebody uh it is not showing that
+2:50:17
+option that advanced option itself is not showing up. So do they show
+2:50:22
+that turning on okay this part is not correct because without this itself we
+2:50:29
+were able to do it without and it's not showing in the application if AP application section it is not showing
+2:50:36
+it. uh they will maybe fix that. It should show all the APS which has been
+2:50:42
+configured. Uh it is not showing up. It is only showing going to show app
+2:50:48
+engine HTTPS load balancer kind of a stuff but it's not showing cloud. It will show up soon is my
+2:50:54
+understanding. Let's see when the deployment is
+2:51:01
+finished. Oh, this is strange.
+2:51:10
+Let me use one more and we'll we'll just leave it and
+2:51:17
+we'll go to some other concept and come back uh uh new what this thing uh new
+2:51:32
+the view um only
+2:51:40
+I'll this uh this thing which we have GCP
+2:51:45
+rock stars at the rate the group which you
+2:51:51
+belong to I will give
+2:51:59
+access so that works So we have deployed two services. Uh
+2:52:05
+let's see it can basically come up. So either one of them. Okay. Hello world.
+2:52:11
+It took time folks. It came up. It came
+2:52:16
+up. Oh this one becomes automatically required authentication.
+2:52:22
+Okay. Okay. So now it is done. If I copy
+2:52:27
+this and share it with you people, you will not be able to log in. Uh but with
+2:52:33
+the other one, the zone printer this thing it zone printer new you should be
+2:52:40
+able to log in because you are part of the group use the same email ID which you use to login. So let me just do
+2:52:50
+this. I will close all my incognito modes. I'll open a new incognito
+2:52:58
+mode. Paste this one. It will get redirected. And once it gets redirected,
+2:53:04
+I'm going to use
+2:53:12
+simple.gcp. So, let me put the password. If I put a wrong password, it is going to fail because the authentication is
+2:53:19
+handled by Google. I don't need to do this part. My system is not doing this.
+2:53:32
+Maybe I'm not part of the group. That is the reason. Let me add a simple HP user
+2:53:38
+to that group real quick. Or it may be propagating. Okay,
+2:53:44
+there's a problem with this.
+2:53:50
+Let me use the other one the hello world because I had given explicitly simple GP
+2:53:55
+user access to that then it's not propagated folks. The
+2:54:03
+chairs are not yet propagated. We have to wait for it. We we had seen something very similar also. So it takes a little
+2:54:10
+time to
+2:54:15
+propagate. Let's wait for it. uh but the single sign on page
+2:54:20
+everything is showing up soon we should have the uh things running whereas our
+2:54:26
+other stuff which is our previous zone printer this thing it
+2:54:34
+works because I have already logged in and it has already propagated the changes and
+2:54:41
+we see it was little slow in propagating the changes I'm already logged in
+2:54:47
+already logged So we'll just wait for this to show
+2:54:55
+up. We'll just wait. I have given the access nowhere it is giving me that
+2:55:00
+information only because it's in preview. It's not giving me the people who have been granted access and it's
+2:55:05
+not giving me that information. So soon it may show up. The whole intent which I wanted to show you is if you are coming
+2:55:12
+from the right source it is going to be allowed. Simple. So one last
+2:55:21
+piece I just wanted to show it is working as Mah. I will go
+2:55:28
+ahead and put a
+2:55:37
+restriction. I will remove the country as India only. It is open to Singapore.
+2:55:44
+So I'll try to make it like this then I will not be able to access
+2:55:52
+it. Done. If I go over here let's wait for the changes to
+2:56:08
+propagate. We may have to give it yes it is blocked. Right. It is blocked. Let me
+2:56:15
+see the other one. It's taking
+2:56:23
+time. And you can see the some tokens all those things sent
+2:56:34
+folks. Not sure it is why it is taking this long. Uh okay. I understand. I
+2:56:40
+understand this one.
+2:56:47
+Uh okay, this is still showing the same thing and even this one will show the
+2:56:53
+same thing. I guess I may have to give
+2:57:01
+explicitly in this project simple GSP user that role because I was owner so it
+2:57:08
+worked. So now for simple GCP user who does not
+2:57:13
+have access to this project it's not working. So I have to
+2:57:19
+give him AP role AP secure web app user. So that
+2:57:27
+could be the thing.
+2:57:32
+So
+2:57:40
+done. I am logged in as simple GSP user. So let me try using the
+2:57:52
+hello. I have given all the necessary things. I just need to wait and see if it gets propagated. That was that
+2:57:58
+additional thing which I wanted to show how you can use the access levels
+2:58:05
+uh along with AP. So now we are able to completely control it. You have to come
+2:58:11
+from a specific device. Your IP should be this much this one and you should be in this country. Then only I will allow
+2:58:18
+you to single sign on into my internal application. Which makes sense. Which makes sense right? So
+2:58:25
+uh which is a good choice easily without doing much I can easily achieve this
+2:58:30
+kind of a stuff. So that's something on VPC service control a sample one which
+2:58:36
+we did. Uh so when I had taken the screenshot it was around 130 plus services. Now uh as of today it is like
+2:58:43
+194 services. You can see a huge thing. Similarly like how we did we mostly
+2:58:49
+played with the IP address. We played with the uh geographical
+2:58:56
+location device policy is only possible when you use
+2:59:04
+premium premium option. Uh you can also do further restriction with users also
+2:59:11
+folks or service account that is also possible. Let me just show you that
+2:59:17
+part before that any changes
+2:59:23
+here. This part I will get back to you. It's not dropping. We are given the
+2:59:28
+role. Uh nothing is working.
+2:59:36
+Uh it has the AP secure uh AP secure web app user role. And this
+2:59:44
+thing is also there but it is not getting in. We'll come back. I'll check this
+2:59:50
+part. Let me show the last piece in the AP sorry in the sec uh VPC service
+2:59:56
+control which is when you create the access level uh I
+3:00:02
+had shown uh the IP subn network basically putting the public IP address.
+3:00:07
+You can also put a private IP address if you want meaning internal kind of a stuff. If you want you can do that also.
+3:00:14
+Uh we had seen the geographical location also leveraged it. The last one
+3:00:21
+is the access depend access level dependencies. So not this
+3:00:27
+one. Uh the last level is uh using
+3:00:35
+um using user and service accounts. You can do this part. So there's a small
+3:00:42
+command which we have to use it. Uh let me show you that but I'll show you first.
+3:00:56
+only.
+3:01:02
+So in
+3:01:47
+manager. I can also do it with user levels. So I can create uh a specific
+3:01:54
+user access. So if I try to edit it, it does not show any option. The
+3:02:00
+reason is all things have been done in the command line. So this functionality is only in the command line to add it
+3:02:07
+and remove it. Um not sure why they have done it but currently that functionality is not there. So I have to recollect
+3:02:14
+that command. Let me see if it's there in the cheat
+3:02:21
+sheet. Cheat sheet.
+3:02:41
+just give me a minute. Uh I forgot the
+3:02:46
+command and I doubt whether it will be there
+3:02:52
+here. Just checking. Let me show you the important
+3:02:57
+the important commands is what I'm checking. Uh let me search for
+3:03:11
+VPC. I don't recolct putting this command.
+3:03:17
+So examination cheat
+3:03:26
+sheet it's not there. Um, sheet cheat
+3:03:50
+sheet. Okay, I'll create uh this thing and show you this one. I'll also add
+3:03:57
+this. So the command is going to be G-Cloud
+3:04:05
+uh access context
+3:04:14
+manager levels. So this has to be done in the command line.
+3:04:23
+So list all the access levels uh command
+3:04:31
+line. So you can do with IP address this way. Uh you can also do it with the
+3:04:38
+specific
+3:04:47
+users access
+3:04:56
+levels. This part can be there in the exam folks. That's the only reason showing this piece.
+3:05:04
+There's also a practice question related to this
+3:05:24
+one data excfiltration.
+3:05:36
+necessary. First, let's list all
+3:05:47
+the access context manager list.
+3:05:54
+So I have to mention the policy him.
+3:06:37
+policy there's a type one
+3:06:46
+create I have to get access level
+3:06:53
+policy this way of combining is good.
+3:07:00
+Uh they removed this functionality. 1 minute use
+3:07:10
+attempting basic here it is there right uh access policy custom access levels
+3:07:19
+device strength. Okay. First let me show the device part because we did not do a demo.
+3:07:25
+uh what kind of stuffs you can put it with the device at will you'll get an idea.
+3:07:40
+So not sure I can show you this one. Get
+3:07:49
+started. So basic setup. So this is something which you will see when it's a premium
+3:07:56
+version. So you leverage whether it's Android. So you have to do this follow
+3:08:02
+the steps to set it up for the device one
+3:08:08
+for access policy manage access policy basic user level is possible. I'm not
+3:08:16
+getting it service
+3:08:22
+account. I had done that part. I did not made a note of it.
+3:08:55
+a little little complicated command. Let me try it
+3:09:04
+here. Uh not parimeter, not service.
+3:09:09
+uh authorized or
+3:09:17
+levels. Yes. No, this is not the one.
+3:09:29
+uh authorized or policies, cloud
+3:09:48
+policies. Okay. Uh maybe I'll try to show this in the next class. So instead
+3:09:54
+of basically wasting the time um I'll get this command. So where once we do it
+3:10:01
+we should be able to get something like this. Uh where I can do it for a particular
+3:10:09
+user. So this is not even describing it here because of the UI constraint. Uh it
+3:10:15
+is going to show you that option. So this one would be a specific user kind of system.
+3:10:20
+Okay, I'll show this in the next class.
+

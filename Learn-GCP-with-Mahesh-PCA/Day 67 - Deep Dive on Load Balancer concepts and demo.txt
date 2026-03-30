@@ -1,0 +1,3076 @@
+ript
+
+
+0:03
+This conference will now be recorded. All right. So let's move on to the the
+0:10
+next component which is load balancer. We have done some few demonstrations. Uh
+0:16
+when we started with virtual machines where we had uh managed instance group
+0:23
+unmanaged instance group we had created load balancer to see the functionality
+0:28
+of autoscaling. Then when we went into uh Kubernetes concept we saw concepts
+0:35
+like ingress uh layer 4 load balancer which is uh the under the service we had three
+0:42
+types service cluster IP node port and load balancer. There we had seen layer 4
+0:50
+load balancer. Then we had issues with layer 4 load balancer because every
+0:55
+micros service we had to have one load balancer every and we know one IP
+1:00
+address is going to cost us $3.65. So it's it was not a very scalable solution. So then we explored ingress uh
+1:09
+which was a good one one single IP using anycast and it was able to uh serve
+1:16
+multiple microservices with a URL context meaning
+1:22
+/demo/zone printer/ where I am kind of a stuff we are able to do it and we also
+1:27
+saw uh the functionalities in ingress is frozen so uh the recommendation was to
+1:34
+use gateway API So we had explored that and behind the scene that was also layer
+1:40
+seven load balancer only but without you configuring it Google was configuring it with the YAML file. Then when we started
+1:47
+exploring on cloud run where we wanted to route uh to the nearest healthiest
+1:55
+cloud run service we went with uh again layer 7 load balancer. So meaning we
+2:01
+have explored layer 7 load balancer in three compute options virtual machines,
+2:06
+Kubernetes uh cluster and uh cloud run and most of the time not most of the
+2:12
+time every time we have done only HTTP load balancer. So uh in in this session
+2:19
+basically we will be seeing how to create HTTPS also. Uh we'll look deeper
+2:25
+into the load balancer concept. So all this time we just wanted to do what we wanted. But now we'll look into a little
+2:32
+more into the load balancer concept. So that's a small background on that part.
+2:40
+So so uh when it comes to load balancer right I would usually say a load
+2:46
+balancer is like a very good uh manager folks. So that would be a very good
+2:53
+analogy to uh say the reason is if we have a very good manager uh uh the
+3:01
+manager will take most of the stuffs uh perfectly for us. That's what I would say. So uh we will most of the time
+3:09
+connect uh a load balancer as a manager. So for example, think of this as a use
+3:16
+case. So a manager will a devops person as a reportee. Um maybe a testing person
+3:23
+as a reportee. Uh then a developer, a cloud architect. So multiple skill sets
+3:29
+people will be uh there as a reportee. Now the manager should choose this task
+3:35
+is going to be done by a DevOps person better. This task is going to be done by a cloud engineer better. So knowing the
+3:43
+right uh candidate or the right employee uh with the right skill set routing the
+3:48
+request to them is going to be a good choice right that is what the load balancer is going to do. So a manager
+3:54
+should do the similar thing. So and another thing the manager most of the time these
+4:00
+time uh in the current time period the manager will be uh having two teams an
+4:05
+onshore team and offshore team kind of a stuff. If a request comes say for example in India time for example let's
+4:12
+say offshore is India onshore is basically uh US if the request comes
+4:18
+from say for example uh morning time of India or afternoon time of India routing
+4:24
+the request to a team in India is going to be a good choice right similarly if a
+4:32
+request comes after 7:00 routing a request to an Indian team is not a good
+4:38
+choice because they would like to also log off. So, routing the request to the
+4:43
+uh US region would be a very good choice. So, routing the request to the
+4:49
+healthiest closest region based on the time. Similarly, the load balancer where
+4:55
+the request originated, it is going to understand the proximity meaning the request has come from US. So, let's try
+5:01
+to route the request to US. It will try to see it. If there's no backends available, it is going to route it to
+5:07
+basically a region which is available. So this one
+5:18
+manager and manager is of no use if there is no
+5:24
+employees. So backends are your employees. So then uh a good manager is
+5:30
+going to be a good load balancer and obviously the client you can treat this as your real client who could be an
+5:38
+internal client who could be also an external client meaning internal client is your own company and you may have an
+5:44
+application built for your own company that kind of a stuff and a external client which is your actual clients for
+5:51
+which who whom to whom you are working for a project right a small analogy that's it So
+5:59
+uh when it comes to load balancer right uh there are different backends to be
+6:05
+very frank without a back end the load balancer is of no use right
+6:11
+and if I were to make a little more statement right you can have an
+6:17
+application which just has back end somehow I can access it without a load
+6:22
+balancer still things will work so it is like you can have a team without a
+6:28
+manager also folks it will work. So that is something possible right? So
+6:34
+you have a team of uh uh little senior people like uh one person is like uh 10
+6:41
+years experience with a data engineering background another person is 12 years experience with cloud architect
+6:46
+background. So they are self- sustained they can continue working they don't need somebody to guide or something kind
+6:52
+of a stuff. So uh it is something like that or it could be like a freelancer
+6:58
+right you don't need a manager so you are selfdriven so like that I can have a
+7:04
+back end meaning I can deploy something in virtual machine we know you can
+7:10
+expose it with an external IP address it's going to work but it will not be very uh uh like robust kind of a stuff
+7:19
+for example if I take uh uh my example so I work as a freelancer. So um
+7:25
+everything which I do is myself. So I don't have a manager. So I'm the manager, I'm the employee kind of a
+7:31
+stuff which I basically do it. So sometimes uh there could be a burnout right? You may do multiple task training
+7:39
+then a consultation then some kind of a smaller consultation kind of a stuff. So if everything you are going to do you'll
+7:45
+be burnt out kind of a stuff. So if you have a team you can basically do it. So something of that sort but still a
+7:51
+virtual machine is sufficient is what I would say uh where it has a load without a
+7:57
+load balancer I can still work uh but routing and all will have to come only to that person that is the only thing so
+8:04
+that routing capability will not be there balancing it out so something like sending the request to the closest
+8:11
+region or something the analogy which I'm mentioning so morning like morning 9
+8:16
+to 6 India time send it to India team after 6:00 send it to US team. This kind
+8:22
+of a stuff you get only with a load balance. Right? Similarly, if I had
+8:29
+uh app engine, I can have an application running with app engine. Right? So, we
+8:35
+have seen it. It works. It gives you also HTTPS endpoint which works. We have
+8:42
+also seen where we have hosted a static website. So, with Google cloud service
+8:48
+it works. Cloud functions when you deploy something in cloud functions or cloud run functions it gives you an as
+8:54
+an end point similar with cloud run even in our last class we did create cloud
+9:00
+run and we used AP it worked it worked right so and Kubernetes engine uh to be
+9:08
+very frank uh the cluster IP and node port are standalone only when you create
+9:14
+the load balancer then it's still it's going to create a load balancer apart from that if you have a node port
+9:20
+meaning on the virtual machine assuming the virtual machine is a or it's a public kubernetes cluster you are going
+9:26
+to have a virtual machine with external IP address with the high port number 30,000 to 32,000 we can expose it so
+9:35
+meaning these backends can still sustain without a load balancer but if you have
+9:41
+a load balancer it is going to be much more scalable that is the most important
+9:47
+thing and it's going to be more resilient because if one back end is not working it will route to another back
+9:52
+end. So these kind of stuffs uh load balancer is going to do it. Now, not
+9:58
+only this, these are all Google Cloud backends, right? Computer Engine,
+10:03
+Kubernetes Engine, Cloud Run, Cloud Functions, um App Engine, and Google Cloud
+10:11
+Storage. These are all Google Cloud services. You can also have external
+10:16
+services, folks. That is also possible. So when
+10:22
+will I use this kind of an external ser uh external uh backends? So think of
+10:27
+this right um you have a backend something in like like like how we have
+10:33
+Google cloud storage bucket in AWS we have something called as Azure uh sorry
+10:39
+AWS S3 bucket in Azure it is called as Azure blob storage for a minute let me use my this thing so this thing so AWS
+10:49
+GCP aure
+10:58
+So if I search for storage cloud
+11:12
+storage this product folks this is the product which we know
+11:18
+uh to be very frank let me take a little privilege that this could be the favorite product for everybody because
+11:24
+it's so easy to use no need to worry about scalability all those things at least my favorite product is this one so
+11:30
+I hope it is the same with you also so the equivalent of this in AWS is called as S3 bucket or S3 storage so simple
+11:40
+storage service so there are three S that's the reason they call it as S3 in
+11:46
+Azure it is called as blob storage now I have mentioned many times the Azure names are really good Right? Azure names
+11:54
+are really really good because it's very clear what they wanted to intend they give that look at Google cloud cloud
+12:01
+storage yes somehow good but AWS names are like to be very frank pathetic you
+12:07
+cannot know what it is supposed to do right so nevertheless uh this is what
+12:13
+you can have it meaning what if you have a backend in S3 bucket meaning you have some videos
+12:21
+audios some images the static image which we have the static website which we tried to host it you can have
+12:27
+something like that and can I basically uh host that possible so meaning your
+12:36
+load balancer is a Google component whereas your backend is a AWS component
+12:43
+it is possible folks it is possible uh let me try to show you a small use case
+12:49
+and an architecture so this could be important from the exam perspective uh
+12:55
+having an external back end. So for this
+13:01
+uh GCP uh PCA we'll talk about the case studies
+13:10
+towards the end. Um, view exam
+13:25
+guide. There is one case study called as um helicopter racing. As I mentioned uh
+13:33
+we will talk about it uh later uh towards the end once we finish all the
+13:38
+Google cloud components and all we will go and do it. Uh but just to give you a small glimpse this case study is more
+13:45
+like a F1 car racing uh or more like IPL kind of a stuff u HRL helicopter racing
+13:53
+league. So what they do they have some race uh between multiple helicopters
+13:58
+they are going to live stream it and they are going to make money out of it. So since they are going to live stream
+14:04
+it um they don't say that they are using AWS they don't say they are using Azure
+14:09
+but they say they are using some other public cloud and they want to come to Google cloud that's a just that's a just
+14:15
+so and at some point of time they because they have lots of data meaning
+14:20
+they have taken a footage the video broadcasting they are broadcasting right so they may the data in S3 bucket or in
+14:28
+um Azure blob storage So you can still make it serve from Google Cloud with an
+14:37
+architecture like this uh GCP. Let me just get
+14:44
+that GCP uh or uh
+15:00
+CDN. Just a minute. I'm just trying to get that there's a nice architecture.
+15:06
+So,
+15:16
+uh, forgot to bookmark
+15:30
+it. Yeah, let me just skip that.
+15:48
+So external back end uh using network endpoint group we'll talk more on that
+15:53
+just wanted to give you that small picture.
+16:02
+Now if you see this there is uh a person
+16:08
+using a mobile phone in uh Tokyo. The moment basically uh the guy uses it's
+16:16
+going to be using his ISP provider. The next one is Tokyo point of presence
+16:22
+right that's where the Google presence comes into picture. So similar to our uh
+16:28
+network service tier concept which we looked into it. So once it hits it's
+16:33
+going to hit the load balancer. There's one more component called as CDN. We'll talk about it soon. So the load balancer
+16:40
+is there. Then the backbone meaning from the load balancer it has to basically
+16:45
+traverse on the Google back end uh which is the network. Then it can reach uh a
+16:52
+zonal network endpoint group a GCS bucket. It could be a VM as a instance
+16:58
+group. It can also basically send it
+17:04
+to Tokyo data center not Google's one. This is the onremise
+17:11
+one. So you can still serve content from a external source but your front end is
+17:19
+this one. So you may ask when could we use this kind of an option.
+17:24
+So this kind of a use case helicopter racing league where think of this right
+17:31
+they have been using AWS Azure kind of a other public cloud provider for like one
+17:37
+year two year kind of a stuff and they have definitely run some shows right some uh uh what I would say some uh some
+17:47
+championship and they say they hold world championship and several legal uh
+17:53
+uh regional legal multiple times in an year meaning they would have taken the footage the recording and they would
+18:00
+basically would have uploaded that into the Azure blob storage. Now if I migrate it now saying we migrate everything is
+18:08
+not a good choice because it's an old uh race right let it be in
+18:16
+uh S3 bucket or in Azure blob storage. So I'll make sure my load balancer if I
+18:23
+access something like uh
+18:30
+hrlracingleague.com/archchive something like that if it is the in the URL there is something like archive let me route
+18:36
+it to a external uh back end anything which is /live
+18:43
+something like that let it ser from Google cloud storage bucket because now we are migrated to we are in Google
+18:49
+cloud kind of stuff, right? So when you have that kind of a use case, this is going to be a very good choice. So meaning let
+18:57
+the old things run in the old system. We can route it. Anything which is new, let
+19:03
+it be coming from Google Cloud Storage or any Google cloud uh back end. Okay,
+19:08
+these are the possible backends folks. Whatever the type of load balancer you take, this will be the kind of load
+19:14
+balancer only. And u I have taken this image from the documentation very well
+19:20
+created documentation. It is the only back end. Uh if you think of can I have
+19:27
+uh cloud SQL as a backend, spanner as a back end. No. Right? These are the real
+19:34
+database backends but for the load balancer what you need is a compute
+19:39
+option a kind of a storage option which is only Google cloud storage. Okay. So
+19:44
+that is the explanation of this diagram. So we will little go a little deeper
+19:50
+into each and every uh component. This web client we don't need to do much because this is like the end user who
+19:57
+tries to access it. Uh when we look into internal load balancer we will talk about the internal
+20:05
+clients meaning uh what does it internal mean is the request is not coming from
+20:10
+an external load. So when we create a load balancer today, we'll at least create one or two load balancers today
+20:15
+in our class and I'll share the link with you people. So uh what is going to
+20:21
+happen is the request is coming from an external world. So it's an external load bal external uh client and because it's
+20:30
+going to be served from uh a load balancer it is going to be called as external load balancer. Similarly, if
+20:36
+the request is served for a internal client, meaning intranet portals which you have, then it is going to basically
+20:44
+be uh an internal client. So, and if it is served from uh a load balancer and
+20:52
+there are different types of load balancers like global load balancer, uh regional load balancer kind of a stuff.
+20:58
+We'll talk more about that. That's the whole focus actually. So,
+21:07
+the next diagram. So when it comes to load balancer, there are two ways in which we can categorize it. So the first
+21:13
+one is basically ALB. This is a little industry
+21:20
+term. So just wanted to make sure you are aware of this one. So what is this
+21:25
+A? It is application application load balancer.
+21:32
+Uh so this is going to be layer 7 load balancer. We also have one more
+21:40
+load balancer which is called as N
+21:46
+LB. This is going to be called as your network load balancer. This is going to be layer 4 load
+21:54
+balancer. Uh that's what you basically get it. Now if I just show you
+22:07
+this since we have done a good amount of uh demo on load balancer I wanted to give the theory part of it first then we
+22:14
+will jump into our our actual uh demos which we want first let us spend more on
+22:19
+the theory piece of it. So OSI
+22:26
+layer. So if I go to the OSI
+22:37
+layer, this layer, right? So we are talking at this one. All our application
+22:45
+load balancer is going to be this one where you're going to use HTTP, HTTPS
+22:50
+kind of a protocol. So this one is our transport layer. So layer four. So this is what we
+22:58
+will use our uh network layer load balancer. Now sometimes you may get little confused network layer is layer
+23:05
+three right. So uh but what Google provides you is a layer 4 load
+23:11
+balancer. So above that is what you're going to see where you are going to use TCP and UDP load balancer.
+23:19
+uh we have already created when we created our uh Kubernetes cluster type
+23:26
+equal to load balancer we created this type of load balancers only layer four load
+23:35
+balancer. Now under the application load balancer itself there are different categories. So let's take this part. So
+23:42
+we'll go through this diagram very clearly. So and we'll try to create load balancers of every type. That's the
+23:48
+whole intent. We'll create layer 7, layer 4 and in layer 7 the external load
+23:54
+balancer, internal load balancer. Uh then we'll create proxy load balancer in
+24:00
+uh network load balancer and pass through load balancers. All those things we are going to see it one by one. So
+24:05
+first let's look into the diagram. So when it is ALB external meaning the
+24:12
+request comes from an external source. Then when it is coming from an external
+24:17
+source you can have two types a global load balancer or a regional load
+24:23
+balancer. What is the difference? A global load balancer is what we have created most of the time. Meaning if the
+24:30
+request comes from if the request comes from Mumbai Bangalore the load balancer
+24:38
+is marked it is trying to it will try to route it to a back end. What are the possible backends?
+24:44
+The possible backends which we know are these right. It will route it to a possible back end uh which is in nearest
+24:53
+to Bangalore. Maybe if I have Mumbai region, it will route it. Similarly, the
+24:59
+same load balancer IP address accessed by a guy in uh Germany. It will try to
+25:07
+route the request to the closest healthiest region in Germany or maybe in
+25:12
+India. Maybe there's a service running in London, it is going to serve. So that
+25:17
+is called as global folks. you get very low latency when you are using a global
+25:22
+load balancer because it's going to route it to the closest uh region and
+25:28
+usually global load balancers will have multiple uh what I would say um global
+25:36
+load balancer will have multiple uh backends only then it is going to be
+25:41
+called as a global load balancer right so multiple backends in multiple regions
+25:47
+so meaning when I create a back end. So remember our MIG demo um
+25:56
+we had created in uh something like US London uh either in Singapore or in
+26:02
+Mumbai somewhere we created it right so multiple backends similarly when we created something with
+26:09
+uh uh multicluster ingress demo when we did it we had resources created in
+26:16
+Europe and uh basically in US central that kind of stuff and the recent one
+26:23
+when We created something in cloud run. We again had resources in three
+26:28
+different regions, right? So, so you need to have multiple
+26:34
+backends in multiple regions. Then only the global load balancer is going to be a good choice. So, because it is global
+26:43
+external and it's an application load balancer, the complete name for that is global external ALB. That's what it
+26:51
+indicates. On the other side, you can have a regional load balancer. What does
+26:57
+that mean? So, what does that mean? Is uh your request can originate from
+27:03
+anywhere. No problem. But the request will be only served from one
+27:09
+region. Think of this. I have only one back end which is in Mumbai. So if users
+27:16
+from Mumbai try to reach it from the outside world, they will get a little
+27:21
+faster response because same region. However, if there are users from
+27:28
+IMIA like Germany, Finland, uh London kind of a stuff they try to access it,
+27:34
+it is going to basically hit Mumbai only because you don't have multiple
+27:40
+backends. So the users in IMIA will feel a small latency. Users in US also will
+27:47
+feel some latency because there's only one back end which is in Mumbai. So so
+27:54
+since it is served from one single region, it is going to be called as a regional external load bal application
+28:01
+load balancer. Okay. So that's one category.
+28:11
+Now you will have uh another category of application load
+28:17
+balancer where it is going to be called as internal. So here also it is
+28:27
+HTTP. Here also it is going to be HTTP only.
+28:32
+But the request is served is going to be from the incoming request is coming from
+28:37
+an internal resource. That is the difference. So if the request is coming
+28:43
+from an internal resource, what has happened? Let me just take a small jump to a different slide. I'll just talk
+28:50
+about this one folks. So if you see this one, this is
+28:57
+one of the nice architecture diagram which I would say. So user from
+29:02
+California comes hits the external global external application
+29:11
+load balancer. So because it is external because it is
+29:17
+external the user from California is able to reach it. Now this is a global load balancer. So meaning it will try to
+29:25
+find which is the closest region. If I'm not wrong, based on my understanding,
+29:30
+uh, California should be basically, uh, west coast kind of a stuff if I'm
+29:37
+not wrong. So, it is going to, let me just zoom
+29:43
+this. So, user from California
+29:49
+hits then application load balancer, global external application load
+29:55
+balancer is going to be hit. then the load balance is very very smart. It understand to route the request to US
+30:03
+West one uh west coast if I'm not wrong. So then it's a virtual machine. It could
+30:10
+be any computer and it could be any back end. Right? So once it hits
+30:17
+it, it has hit this piece. So it has already come to a specific
+30:25
+region obviously correct. So now uh what you can do
+30:38
+is after you have hit one
+30:43
+minute after you have hit this so here it's a manage instance group right so
+30:50
+after you have hit the front end it has to basically go to the middle tier it's a three- tier architecture so there's
+30:56
+some business logic written So it has to go to a middleware that is also a virtual machine.
+31:03
+However, there could be like three instances. The middleware could be like six instances. So I have to route it to
+31:10
+a particular one. So how will I do? I will use an internal load balancer. Why internal? It is coming
+31:17
+from a VM folks which is in Google cloud. So that's the reason it is called as internal and the protocol is still
+31:23
+HTTP or HTTPS. So that's why it is called as internal load balance. So from here it is going to hit my middleware.
+31:30
+So the actual business logic
+31:35
+done. So once it reaches the middleware it is going to do some business logic some specific stuff. Now from the
+31:44
+middleware it has to hit the
+31:49
+database. So it has been processed here. So one minute
+32:00
+sorry okay so from the middleware okay it's playing
+32:08
+around from the middleware it has to reach my database could be a cloud SQL
+32:14
+instance spanner kind of a stuff now sometimes u I wanted to do some kind of
+32:19
+a data compliance so there uh what I will do is data written in uh
+32:27
+uh access from a specific country I want to write it into this thing. So for example anything which is basically
+32:32
+reaching US west one should be written in west one only. So then I may have a
+32:38
+databases maybe a multicluster database kind of a stuff. What I would like to do
+32:44
+is I wanted to use a internal again because when the moment I say internal
+32:49
+request is coming from an internal source which is your middleware right from the this thing it is going to reach
+32:56
+uh internal load balance. Now uh if it is two micros service they are going to
+33:02
+use HTTP as a protocol correct but if it's a micros service and a database how
+33:09
+it's going to use it's going to be a TCP protocol right so that's where you'll
+33:15
+use internal TCP UDP load balancer so meaning if it's a MySQL one how will you
+33:21
+basically access it so you're going to use the TCP port 3306 you're going to use if it's uh
+33:28
+posgress you are going to use the port which is like uh 5 4 3 2 so that is what
+33:34
+you are going to do it so a very nice diagram
+33:41
+where you will see literally three load balances global external application
+33:50
+load balancer that's the first one then from the front end to the middleware
+33:56
+it's going to be internal and to be very frank instead of saying just internal I
+34:01
+would say regional internal application load
+34:06
+balancer why regional from west one it will go only to west one only folks it
+34:12
+has no other options so that is the reason it's going to be called as regional internal uh application load
+34:19
+balancer from the middleware if it is going to basically a
+34:25
+database it's going to be regional internal TCP load balancer or uh
+34:31
+internal sorry regional internal uh network load
+34:37
+balancing that's what it's going to so you have a ALB and a NLB in the same
+34:43
+architecture so which is a good one so let me go
+34:48
+back here so now we understand the importance of internal right it can go
+34:56
+to a single region. Recently they have also brought in something called as a cross region.
+35:02
+Maybe one more region kind of a stuff you can do it. So that is something possible. So this kind of load balances
+35:08
+are going to be called as regional internal application load balancer. So
+35:14
+if I were to basically go back.
+35:25
+So this is my regional internal application load
+35:33
+balancer. Okay. So from a front end to a middleware. This is the
+35:40
+one. So that's on the application load balancer. So primarily the protocol is going to be HTTP.
+35:47
+So on the other side where we are going to use u network load balancer you will have
+35:55
+two types proxy load balancer and pass through load balancer. To be very frank
+36:01
+even your application load balancer is basically a proxy load balancer.
+36:08
+So these are going to be also proxy load balance. This is also going to be proxy
+36:13
+load balances only.
+36:20
+Now what do I mean by proxy? So if I were to give a very simple example of our college days, right? Uh so if your
+36:27
+friend has not come, um we would have given a proxy uh for the attendance,
+36:32
+right? Something very similar. Uh we will have a proxy load balance. So
+36:38
+what this is going to do is the request comes. So this
+36:44
+is a request comes here right. Let's assume the client's IP address is uh
+36:57
+10618.1.2. This is the client's IP address meaning from where you are trying to access it like uh uh how the
+37:04
+the IP address provided by your uh ISP provider. This is the client's IP address. Once the client hits it the
+37:12
+application load balancer uh the connection will be terminated then from there it is going
+37:19
+to send it to the next level the back ends. When it is reaching the back end
+37:24
+the actual back end the virtual machine cloud run cloud functions anything of
+37:29
+that sort right when you look at the IP address it will not be your IP address.
+37:34
+So meaning this IP address will not be there. it will be the VM's IP address. So it
+37:42
+will be an internal IP address. So meaning it has changed the IP address proxy kind of a stuff. So if you have a
+37:51
+pass through load balancer means what is your client IP address? The same thing
+37:56
+will be retained till the back end. So the client can see this IP address. So
+38:02
+there are some scenarios where I want to use the client IP address and do some further processing. In that kind of a
+38:08
+stuff pass through load balancer is going to be a good choice. It's going to be a good choice
+38:13
+and in most of the scenario it's going to be a proxy load balancer. So meaning the IP change the client IP is going to
+38:20
+be not reserved or preserved right. So when it reaches the back end that is the
+38:26
+proxy load balancer and if you want to retain it it's going to be passed through load balancer.
+38:33
+And the moment I basically go through this then I will have again a external
+38:39
+or internal. Then in that you again have a global load balancer where it is going
+38:45
+to similar to what we saw with the global. So it's going to route it to the closest healthiest region multiple
+38:51
+regions. So you'll have multiple backends. Whenever it is a global you're going to have multiple backends. On the
+38:57
+similar lines you can have regional and whenever it is internal it can be only regional or cross region only folks
+39:04
+that's very simple and when it comes to pass through load balancer we don't have a global one we just have a regional one
+39:10
+that's it okay so that's at a high level the various categories so meaning you
+39:17
+can create definitely a good number of combinations good number of combinations
+39:22
+of load balances is what you can create it so let me just to show a little more
+39:27
+pictorial view uh just to give you the difference between the application load
+39:33
+balancer and basically the uh is there one more slide which I have? Yes, I
+39:39
+have. Uh and these all images are taken from Google documentation and one good
+39:47
+part is they create nice architecture, nice pictorial representation. The bad part is they remove it sometimes which
+39:54
+is a bad part. So uh this is already there in the PDF document. You should be able to see it yourself. So let me go
+40:03
+through the pictorial view meaning the entire how the packet gets traversed. So
+40:08
+if you have an application load balancer ALB the client is going to come they are
+40:14
+going to use HTTP as a protocol. They will hit the load balancer right the load balancer IP
+40:21
+address is going to be hit. Now when it hits right the traffic terminates
+40:26
+here. So that's how the application load balancer works. The connection is stopped. Meaning if my IP address is
+40:36
+106 xy.z which is an external IP address
+40:41
+provided by my ISP provider. It is going to hit here
+40:47
+terminate the connection. Then a new connection is created from the load balancer to my back end and that will be
+40:55
+an internal IP address. So it is going to hit any of the possible back end. So
+41:00
+it could be virtual machine, it could be kubernetes, it could be cloud run, it
+41:06
+could be cloud run functions, it could be app engine. We see app engine will not be heavily used. It's oldish. It
+41:13
+could be a bucket if you have some static content or it could be a uh
+41:19
+external one. So please note you will use compute engine, kubernetes engine,
+41:24
+cloud run cloud functions if you have some dynamic content to be served. Meaning if Mahesh logs in show the
+41:31
+website with a different uh view if you log in it should be a different one
+41:36
+right that is a dynamic website meaning it's like a like say for example if I am logging into a uh a net banking account
+41:45
+right uh say for example uh HSBC bank because HSBC is basically a Google cloud
+41:51
+customer so HSBC bank has lots of uh this thing right now if there's a
+41:57
+customer who just owns a credit card from HSBC. When this person logs into the portal, it will only show the credit
+42:04
+card section, nothing else. But if there is a person who owns a loan account, um
+42:11
+a savings account, maybe a current account kind of a stuff, the view would
+42:16
+be different. So this has to be shown dynamically, right? So that is where it
+42:22
+has to be served from a virtual machine kubernetes cluster app engine cloud run
+42:27
+uh or yeah cloud run function will not be a good choice for website for single endpoints it's going to be good um but
+42:35
+if it's a static website meaning it's like someformational uh website then
+42:40
+whether you login or I login it shows the same content right so there it can
+42:46
+be served from a bucket folks okay that is anant important thing.
+42:52
+So the key part which I wanted to highlight is the connection gets terminated meaning uh if we go to be
+42:59
+very simple right you originate a request here now you go to the virtual
+43:05
+machine look into the logs you will see a different IP address okay you'll see a different IP
+43:13
+address that's going to be the health check probe uh for your load balancer that IP
+43:19
+address is what it's going to be so you will not be able to see the client's IP address. That is a key part which I
+43:25
+wanted to uh convey. Similarly, when we go to the proxy load balancer, the same thing is going to
+43:32
+happen. So, you have a client. So, like this, it's going to have a TLS offload.
+43:39
+Now, what is this TLS offload available? So,
+43:44
+uh sorry, not TLS, SSL uh offload. So when you use SSL, secure socket layer,
+43:52
+meaning there's an encryption, right? The that's why we use HTTPS right so we wanted to have a
+43:59
+connection encrypted. So there's no man-in-the-middle attack. Now meaning you're sending an encrypted
+44:06
+request. This encrypted request cannot be directly sent to your backend folks. They cannot understand it. Now somebody
+44:14
+should decrypt it. Who is going to decrypt it? the load balancer. So if the
+44:19
+load balancer is going to do it, that is one option or within load balancer
+44:26
+there's a dedicated environment or there are options where it can offload it. So
+44:32
+if the load balancer is going to do it, load balancer should do basically the load balancing between the back ends. It
+44:40
+should also do this means it could be an overhead. So if you get an SSL offload option,
+44:46
+there is going to be systems available which will do the decryption encryption
+44:52
+and when it is sending back the request it should be again encrypted. The browser is going to decrypt and read it.
+44:59
+So meaning you should do both encryption and decryption and and this if this
+45:05
+needs to be done basically byically by a dedicated system that is called as SSL
+45:11
+offload folks that is called as SSL off. If this is going to be SSL offload is
+45:17
+not available means there is a system the load balancer itself is going to do that for you. So if the load balancer
+45:23
+itself is going to do the SSL offload, it is going to be it's an additional burden for the load balancer. So with T
+45:32
+uh application sorry with network load balancer you get an
+45:37
+option to offload it. The encryption decryption is going to be offloaded. It's going to be handed by a dedicated
+45:44
+system not by your proxy network load balancer. And
+45:50
+again the connection is going to be terminated. A new connection is going to be originated. And one important thing
+45:57
+to note here, this is the most important thing when you're using network load balancer compared to the application
+46:04
+load balancer. Application load balancer has lots of backends. But network load balancer is
+46:10
+going to have limited backends. It's going to be compute engine, kubernetes engine or an external one. You don't
+46:17
+have cloud run. you don't have uh cloud functions app engine and GCS
+46:23
+bucket. Okay. So that is something which you need to keep in
+46:33
+mind. We have already seen this uh three tier stuff. I just wanted to show a
+46:39
+small comparison between application load balancer and basically uh the pass
+46:45
+through load balancer. So application load balancer we have already seen it. The end user is going to hit the load
+46:53
+balancer. The connection is going to be terminated. A new connection is going to be created from the load balancer. It
+46:58
+hits the back end. Straightforward. Whereas the other type of uh NLB pass
+47:04
+through load balancer if you see it there's a client it's going to use one of these uh protocol TCP UDP kind of a
+47:13
+stuff. Then it's going to hit the load balancer. Now the connection is not
+47:20
+terminated. So what was the IP?
+47:27
+10.6. The same IP is what it's going to reach the virtual machine or the Kubernetes cluster. The traffic
+47:34
+terminates here and the request will be sent
+47:39
+directly to the this thing. It will not be through the load balancer. Right. This is pass through load
+47:46
+balancer. So if you are from an electronics background, so I'm from that background. So there is a different
+47:51
+types of uh uh filters which they put uh bypass filter, pass through filter kind
+47:57
+of a stuff. This is a pass through kind of a stuff. And then what is the use of this? It's just balancing it out right
+48:03
+between multiple uh backends. That's the only thing. So
+48:08
+you may have a use case where you want to retain the client IP address. So in
+48:14
+that case a pass through load balancer is going to be a really good choice. We'll try to do demonstrations
+48:21
+on all of these things uh one by one. So
+48:26
+now uh if I were to basically uh what I would say a kind of summarize of what we
+48:33
+have seen uh you can have a global load balancer. When you have a global load
+48:38
+balancer, the traffic can be HTTP, SSL or TCP. All are proxy load balancer. If
+48:45
+it's a regional load balancer, it could be network load balancer. If it's regional internal, it could be TCP or
+48:52
+internal HTTPS. So all the combinations which we saw here, I have tried to fit in one.
+48:59
+and your possible backends. Your possible backends could be compute engine, kubernetes engine,
+49:06
+google cloud storage, cloud run, app
+49:12
+engine, external one. So that part I have not added it. So these are the combinations which you can
+49:21
+see. So u this slide is now outdated. I'm going
+49:26
+to remove the slide. Uh so because uh you can basically most of the time if
+49:33
+you see it you should be able to use uh uh the port the specific ports when
+49:39
+you're going to do it. Uh HTTP is going to be easily like uh port
+49:45
+8080 or secure means 443. Uh SSL any
+49:50
+port TCP any port you can do it. When you're doing the SSL proxy load
+49:56
+balancer, there's an offload meaning there's a dedicated system which does the encryption decryption for you. But
+50:02
+when you do a TCP proxy load balancer, it is without SSL upload. Meaning the
+50:09
+load balancer itself is going to do it. That is one key part to remember.
+50:14
+Similarly with your network uh this thing you get without a SSL offload. So
+50:20
+whenever uh you see a load balancer which preserves the IP address, these
+50:26
+are all going to be pass through load balances and obviously you have internal TCP and UDP. This one I will use it for
+50:34
+a database because it's going to use 3306
+50:40
+for MySQL 5 432 for Postgress kind of stuff and when you have one micros
+50:46
+service to another micros service to communicate it's going to be using internal load balancer so something like
+50:52
+uh this
+51:07
+If I go with this one. So this is going to be my global external application load
+51:14
+balancer. Then from my front end it goes to my recommendation service. So this
+51:20
+could be a internal HTTP load balancer. Regional internal HTTP load balancer
+51:25
+from my card to my radius instance. It's a database. It could be a regional
+51:31
+internal TCP UDP load balancer. So whenever two microser are
+51:37
+interacting, there could be a regional internal load balancer and these could
+51:43
+be HTTP load balancers.
+51:49
+The next few slides uh this one uh actually it it in the beginning days it
+51:55
+was like this. I had to remove the slide. Uh it is now any any ports are
+52:00
+supported folks. Any ports are supported.
+52:06
+This conference will now be
+52:11
+recorded. So let's look into the other two proxy load balances. So the HTTP one
+52:18
+which we saw basically the application load balancer. So we'll quickly look into the SSL proxy
+52:25
+load balancer and HTT uh TCP proxy load balancer. Then we'll get into the
+52:32
+demonstration. So when it comes to the SSL proxy load balancer concept remains the same. Users
+52:39
+from Iowa or Boston is going to hit the load balancer. What is the load balancer
+52:44
+IP address? 120.1.1 and they are going to use
+52:50
+443 secure socket layer and that is the reason you see a lock symbol here. The
+52:58
+traffic from your user to your load balancer. So this is called as the
+53:03
+connection one. This is encrypted.
+53:10
+So that's the reason when we access any of our banking website, this is what is going to be achieved. So that there's no
+53:17
+man-in-the-middle attack. Somebody tries to interfere in the middle between me and the load balancer. If they try to
+53:24
+sniff the data, they cannot do anything because it's encrypted, right? So
+53:30
+because it's a proxy load balancer, the connection should be terminated here. So if my IP is 10.6,
+53:39
+Six again we have seen it multiple times if it comes it is terminated here. So
+53:45
+from here it is gone further. So but if you have a
+53:51
+requirement if you have a requirement basically uh from uh from my I have to retain this
+54:00
+106.x.y Why do this thing? Use the header
+54:06
+folks the request header. So this is going to be more of programming. So you have to as the developer use the request
+54:13
+header retain it so that you can use it. Maybe you want to insert this information into database. Make sure you
+54:20
+forward the request header every layer or in every stage so that you can get it. So the connection is going to be
+54:27
+terminated and from there a new connection called as uh connection two is going to be established which is
+54:34
+going to go to the back end which is going to go to the back end and
+54:41
+u here it is going to route it to the specific back end because the load balancer know the proximity where it has
+54:48
+to route it's going to do that either to central or to east that's what it's going to do it now one important point
+54:54
+to note here is load load balancer. What is this? It's a Google cloud product,
+54:59
+right? Virtual machine. It is a Google cloud product. Now, two Google cloud
+55:05
+products, why should I communicate the uh connection? Not required, right? It is unencrypted. But
+55:13
+if you are seeing any RFP document, RFI document, any kind of uh proposal where
+55:20
+they say end toend encryption, you can also encrypt this
+55:25
+connection also. That's also possible. If they say we want to do end to end
+55:30
+encryption, do this piece also. Otherwise, this is going to be a good choice. Now, according to me, I may be
+55:38
+wrong, but according to me, I feel encryption is a overhead. Don't use it
+55:43
+too much. Wherever it is possible, use it. Wherever it is not required, leave it. This is required. From the outside
+55:50
+world to the uh load balancer, it has to be encrypted. From the load balancer to
+55:56
+the back end, I can leave it unencrypted. Overhead would be less, right? Uh but if you feel there's a
+56:03
+requirement, you can turn it on. Not a problem. Not a problem. So, this is uh
+56:08
+SSL proxy. The most important thing is it is
+56:16
+encrypted. The next one which you get and SSL offload is going to happen here. Meaning this is going to be encrypted.
+56:24
+This decryption process is also going to be done by a dedicated system not by the load balancer itself. If it is going to
+56:30
+be done by the load balancer, it's going to be an overhead for it.
+56:36
+When it comes to TCP proxy load balancer, the diagram looks exactly the same. The only change which is going to
+56:43
+do is the kind of traffic it is an it's an unencrypted
+56:50
+connection, right? It's unencrypted. So whereas uh the SSL was encrypted a
+56:58
+secure socket layer. So both the connections are not encrypted.
+57:07
+So if you want this type you can also leverage it. Uh but most of the time people prefer this one SSL proxy load
+57:14
+balancer over TCP proxy load balancer. TCP proxy load balancer could be used when it is middleware to a database.
+57:22
+Maybe at that time you can do it because middleware is a virtual machine. Database is a cloud SQL instance. I
+57:28
+don't need to encrypt it and create any kind of over here means I will just go with this option.
+57:36
+the next part. So these are all going to be the global and regional load balances which you can get prox to be very
+57:42
+specific proxy load balances. The next type which you are going to get is basically the NLB. So I'm just trying to
+57:50
+show you some different options so that you get an idea how you can achieve it. Right? So this is a pass through load
+57:57
+balancer. We already saw this. So one more example. So these are all screenshots which have taken it. So if
+58:04
+the request comes and these are regional one meaning
+58:09
+request comes from Singapore, request comes from uh uh what is that
+58:15
+um New York or from California. Each has their own load balances. This is a
+58:22
+network load balancer. This is another network load balance. This is another regional network load balancer. So it's
+58:27
+going to hit the network load balancer. from there it is going to hit a request which is there in basically
+58:35
+Asia, Europe or US. So you are going to have three load balancers because these
+58:42
+are regional one and because it's a pass through load balancer whatever is the
+58:48
+client IP address it will reach here. You don't need to do any kind of extra coding. It
+58:55
+will be just doing you just need to do request.get header. In that header, it will be there. Right? So and the
+59:03
+response will be sent directly to the the
+59:09
+client and a small combination which we have already seen it
+59:16
+uh where there's a global external load balancer plus a regional internal load
+59:23
+balancer two things in combination users from San Francisco US
+59:29
+central Singapore hit the load balancer So the load balancer IP address is
+59:38
+100.1.1.80. Then it's going to hit the middle tier. From the middle tier, it's going to hit the
+59:45
+uh internal load balancer. Now internal load balancer means what? The IP address
+59:52
+should be RFC 1 918 standard. It should be
+1:00:00
+following that. So look at this IP address folks 1010.10 class A that's what it shows. So
+1:00:07
+it hits that from there it's going to go to the basically the middle tier. It's a two-tier architecture basically. So
+1:00:15
+another example more diagrams like this you get a better picture. That's it. Right. And they are trying to divide it
+1:00:22
+between the regions. So here you can see this one very nicely done. So it is
+1:00:27
+going between the request is routed between two zones. When it is coming from Singapore,
+1:00:34
+it is going to one single zone. Why this design? Possibly the more request is
+1:00:40
+going to come from US. So they have uh multiple uh zones but from Asia it could
+1:00:48
+be very less. But they still don't want to it to be served from US only. So they want to serve it from
+1:00:55
+the Asian countries. So that's why they have one zone. Possibly this is one
+1:01:03
+reason. So now let's look into our uh
+1:01:08
+global HTTPS load balancer. Once we do this, we will basically go ahead
+1:01:14
+and do a demonstration. We have done a number of times or at least four to five
+1:01:20
+times demonstration on load balancer but we were focusing more on a specific
+1:01:26
+stuffs. So today we'll be focusing on SP like uh uh like u the more of the
+1:01:33
+internal stuffs right all the load balances which you see in Google cloud is fully managed right so if people if
+1:01:42
+you have worked in onremise world uh let's assume you are using some of the popular load balancers
+1:01:51
+are hardware based
+1:02:01
+So this is one popular load balancer
+1:02:08
+folks called as uh fy. If I can get some images. Huh? This is how it is going to
+1:02:15
+be folks. Just for your reference, right?
+1:02:22
+Uh FY, there is FY written. So hardware meaning I can touch and feel it.
+1:02:30
+Uh so cannot see the image. Okay. Uh that's
+1:02:36
+okay. So this is the one which I wanted to show you. FY hardwarebased load balancer. Now when it comes to this
+1:02:42
+hardware load balancer, what is going to happen is they will have one problem. First of all, it's hardware. So whereas
+1:02:50
+the Google's one is a software definfined one. So completely virtual software defined. So completely managed
+1:02:57
+also by Google. Um there's something called as warming up. So for example,
+1:03:03
+when you morning try to do some exercise, you first need to warm up and then directly uh then do some small
+1:03:09
+exercise, right? uh so you directly should not go and start doing an exercise or do a weightlift that's
+1:03:15
+basically the what we know right something very similar these load balancer they need a warm up so meaning
+1:03:24
+if there is a launch maybe in 2 hours in 3 hours a big launch of our application
+1:03:31
+and you're expecting a huge traffic you have to make sure you warm it up so that
+1:03:37
+it can handle that much of request pre-warming is what they call it as whereas our Google cloud load balancer
+1:03:45
+anything application or network load balancer they don't need any kind of pre-warming you send all of a sudden 1
+1:03:53
+million requests it can handle it the load balancer can handle it whether the
+1:03:59
+back end can handle it depends on how you have created the load b the back end only one back end if you create it will
+1:04:05
+throw an error uh or if you have multiple backends autoscaling it will scale up uh it can scale up to the max
+1:04:13
+of what is your kota limit. We have seen this in our MIG right? So that is what you are going to have. So the load
+1:04:19
+balancer can handle it and if there's any kind of an issue the load balancer is going to again it's completely managed. Google is
+1:04:26
+going to take care of it. You never go and need to fix the load balancer. You don't need to worry about
+1:04:32
+any tuning the load balancer for a specific machine type. not required
+1:04:37
+because it's a fully managed service. Coming back to the load balancer, the internal components of the
+1:04:44
+load balancer is going to be first the users are going to hit basically the
+1:04:50
+internet. From the internet they are going to basically use the next level is going to be a forwarding route which is
+1:04:57
+going to be a combination of your IP address and port. So, so far we know
+1:05:03
+there's a load balancer, there's a back end, but inside the load balancer itself, you will see a forwarding rule,
+1:05:10
+a proxy, a target proxy where you will have the URL maps meaning if it is /zone
+1:05:18
+printer, route it to zone printer slash where I am, send it to a different back
+1:05:23
+end. Uh, slash should be sent to a different back end. So, that is what you're going to configure in your target
+1:05:29
+proxy. The next one is a backend service. So
+1:05:36
+which is going to be what you are going to define uh what should be the capacity all those things. So a backend service
+1:05:42
+could be a MIG, it could be a Kubernetes cluster,
+1:05:48
+it could be a cloud run kind of a stuff. Now the actual back end which you have
+1:05:54
+like instance group relies on some network. Now please note uh the global
+1:06:00
+load balancer will never rely on uh the firewall
+1:06:05
+rule. You don't need to have at layer 7. You don't put a firewall rule. You will
+1:06:11
+put something called as web application firewall rule vf vf in or vf in short. Uh for that we
+1:06:20
+have a product called as cloud armor. We'll talk about it later. uh you put firewall rules only for your
+1:06:26
+virtual machines. Where will you use virtual machines? In um a comput engine, in a kubernetes
+1:06:33
+engine that's it cloud run does not need it. App engine does not need it. Google cloud storage bucket does not need it or
+1:06:40
+cloud run function does not need this because they don't rely on any network. App Engine standard does not rely on any
+1:06:46
+network. App Engine flexible if you want you can rely on a network. Right? So
+1:06:52
+this is the flow folks. You will have a forwarding rule. You will have a target proxy and the backend service. So these
+1:06:59
+are the uh components behind the scene. Now when we create a load balancer, you can also see all the
+1:07:06
+components. We always used to focus till this time we always used to focus on
+1:07:12
+uh what we used to focus on uh the IP address try to access it.
+1:07:18
+That's what we used to do it. So today we will see when you create a load balancer what and all you can have it
+1:07:24
+these components you will be able to see it. You can also query get me the forwarding rule uh get me the target
+1:07:31
+proxy get me the uh backend service everything we should be able to see it. So to do that one right so we will do it
+1:07:38
+with a cloud run service. Uh we'll do it with a cloud run service.
+1:07:45
+Uh here what we will do is uh we create a cloud run. Uh the standard one which
+1:07:53
+we always use the zone printer one. Then uh we will uh what I would say uh we'll
+1:08:01
+create uh the typical layer 7 load balancer and we'll see the components behind them folks. We'll see the
+1:08:08
+components behind them. We'll do it in two different style. The style which we do it normally I'll do it then I'll show
+1:08:15
+you in a different way. um like you create components individually meaning
+1:08:21
+in the UI when you do it it's going to create the component automatically all the components the global forwarding
+1:08:28
+rule the target proxy then basically your backend service uh one standard way
+1:08:36
+we do it the second way which we will do it either via command line or in the UI itself whatever is going to work out
+1:08:42
+very well we'll do that and we will see we'll create individual components forwarding rule. Then once the
+1:08:49
+forwarding rule is created, we'll create the target proxy. Then once the target proxy is created, we are going to use
+1:08:54
+the backend service. So like that we will go. So component by component we are going to do it. That way you get an
+1:09:00
+idea what how the flow goes right that's what we wanted to do it.
+1:09:08
+So, so for this one right uh maybe I can
+1:09:14
+one minute we'll go with first zone printer demo uh which shows the actual
+1:09:20
+flag once we have done it it's all working we see the internal components
+1:09:25
+once we understand the internal components we will use a different application right we'll use a different
+1:09:32
+application code we may use chart GPT Uh why I wanted to show you the connection
+1:09:38
+gets terminated. You send a request it's going to once the request reaches your
+1:09:44
+VM or your cloud run service the IP will be totally different. I want to show
+1:09:49
+that part. So for that I need to write a small Python code with some logging so that you can get that option. Uh if
+1:09:56
+possible we'll try to do a small code the retention meaning the IP retain can
+1:10:01
+we retain it that also we'll try to do it works. Okay, this is not something from the exam perspective. But if you if
+1:10:09
+somebody asks you how do I retain the IP address, you have a small idea. Forwarding port forward like uh uh so
+1:10:16
+not port forwarding my bad. Uh using the header you are going to retain the request that's what we are going to see
+1:10:21
+it. So first we will do our typical load balancer demonstration.
+1:10:31
+So, so I'm going to use service project A.
+1:10:39
+Uh, we know there's no network here. Uh, I guess we created some cloudr run
+1:10:45
+service. I'm going to delete it. The last class uh session which we had done for uh cloud run with AP. I'm going to
+1:10:54
+clean it up. I want to make it a little clean
+1:11:01
+slate. Then there is one component which may be
+1:11:07
+created and it will get again recreated. We will talk about it. So I'll just
+1:11:14
+delete it. I'll come back to this. What is this network endpoint groups mean
+1:11:19
+when we finish the demonstration.
+1:11:29
+then good. Yeah, I'm good. So,
+1:11:36
+uh and uh the same load balancer we will also try to extend it to have different
+1:11:43
+backends. So that is also something which we'll also try to do it. So we
+1:11:50
+will be using one term folks very often uh in the next few minutes called as
+1:11:56
+network endpoint groups. Now what are these? These are nothing but groups of
+1:12:02
+objects. Right? It's a collection of IPs that you can apply network functions
+1:12:07
+like load balancing firewall rule logging. If you're creating an HTTP load balancer with a backend container your
+1:12:14
+nex will be created automatically. So this is when you create a say for example a Kubernetes
+1:12:22
+cluster with an ingress a network endpoint group will be created. If you create a cloud run serverless network
+1:12:29
+endpoint group will be created. So similarly you it's basically groups of
+1:12:35
+endpoints. So if you have something with an external world you'll have internet network endpoint groups which is a
+1:12:42
+combination of IP address and port. That's it in very simple terms. So that
+1:12:48
+is something you'll see very often. And other type of back end is instance
+1:12:53
+group. That's what you will see it. So first let's
+1:13:01
+create the back end. So back end is always the first thing which you are going to create it. Uh then you
+1:13:08
+basically go with the load balancer. If I go with the manager employee analogy,
+1:13:13
+you'll not first hire a manager. First you'll have a team. Let the team be
+1:13:19
+created. Now we'll find out whether this team needs a manager or not. Right? So
+1:13:25
+that will be the approach. So first we'll create a back end. So these are the employees.
+1:13:34
+So let me get that zone printers uh this
+1:13:55
+thing. Put this and we know this step. We know this
+1:14:01
+step. So we are going to do is uh network endpoint group is applicable
+1:14:06
+for GKE for cloud run for app engine for cloudr run functions. It is applicable
+1:14:12
+for that and also if you have an internet uh or an external backend it's going to
+1:14:18
+be applicable for all except for virtual machine. It's going to be applicable for all other backends. So if I just go back
+1:14:29
+uh to the back
+1:14:34
+end. So neg is applicable for here here
+1:14:42
+here except Google cloud storage bucket and cloud functions neg is applicable
+1:14:47
+everywhere and they will have different neg. So
+1:14:52
+meaning this this this all are going to be part of one neck called as
+1:15:04
+serverless. Serverless neck. This one would be
+1:15:13
+zonal neg. You can also use this. This is
+1:15:21
+going to be internet network endpoint group. So that's where it is going to
+1:15:28
+be. You can also use virtual machines with neg if you want that is also possible. Uh then it comes out only that
+1:15:35
+only buckets don't have any kind of a neg. Okay. So going
+1:15:45
+back, let's go ahead and create this one. So I'll call it as uh
+1:15:53
+US
+1:15:58
+central service. So we will make it allow
+1:16:05
+unauthenticated invocation. So so that you can make it accessible. Um we can
+1:16:11
+also do this one. Uh that would be the next demo which I will try to do at some
+1:16:18
+point of time where we will not do this one folks. We will not do allow
+1:16:23
+unauthenticated invocation. Uh what we can do is we will make it like required
+1:16:30
+authentication. So but we have to make sure the load
+1:16:36
+balancer is or basically with the help of AP only we are going to leverage it where
+1:16:44
+uh we are going to authenticate it with cloud uh re cloud run invoker role we'll
+1:16:51
+be able to authenticate and then do it. So that is something possible. We'll do that at a later point of time. So we'll
+1:16:58
+go with allow unauthenticated invocation. So this part we have explored in the last class already.
+1:17:05
+Uh standard one just
+1:17:16
+created should show us flag. Good.
+1:17:23
+So if I
+1:17:38
+create London
+1:17:58
+And today it is little
+1:18:04
+fast. Show the London output.
+1:18:29
+Yeah. This is going to be in number.
+1:18:50
+But in cloudon currently we added uh VPC network. Okay that is only when you use
+1:18:56
+VPC serverless connect or directly things right. So
+1:19:02
+uh if I go to this one this is in the host project uh host project and we also
+1:19:11
+did it in the sorry we did also here in the this thing. So we have a we had
+1:19:16
+created serverless VPC access connect. Now we have removed it. That was when my
+1:19:22
+cloud run needs to access an internal resource like a database. Now this is completely a stateless application which
+1:19:29
+we are building. So from the outside world to the front end that's what we
+1:19:34
+are doing. So you don't need to rely on any network. Hope it is
+1:19:42
+clear. Okay. So now the question was do we need network not required for this
+1:19:48
+one because it's a front end right. So I have the three cloud run
+1:19:59
+services. Uh now we are going to create a load balancer. The regular way is what
+1:20:04
+I wanted to show you. Then I'll show you by doing this in the UI what and all the components is going to get created
+1:20:10
+behind the scene. So we'll go to our load balancing. Now
+1:20:16
+we know a little more on the load balancing thing. Uh where most of the
+1:20:21
+time I used to do next next next. This time we can little pause and
+1:20:26
+read it and then go. We have a little more idea. So now you can see application load
+1:20:33
+balancer. It connects with our diagram which we basically chose or network load
+1:20:38
+balancer. So choose an application load balancer when you need a flexible features of for your application with
+1:20:44
+HTTP HTTPS traffic. So choose a network load balancer when you need TL uh TLS
+1:20:50
+offloading at scale support for UDP. Why UDP is required? Sometimes when you do
+1:20:56
+gaming applications, UDP is going to be really helpful. Exposing the IP address. See exposing the IP addresses to your
+1:21:04
+application. What does that mean? Retaining the pass through load balancer. folks when you want to retain
+1:21:09
+the client's IP address easily right uh then in that kind of a case you can use
+1:21:15
+network load balancer so we'll come to that later we'll do the demo on network load balancer soon so the flow
+1:21:24
+internet sometimes VPC network is going to come into picture when it is an internal one if it's internal it's an
+1:21:30
+external one hits the application load balancer then to the actual workload
+1:21:38
+Now public facing or internal. So an internetf facing load balancer routes a
+1:21:43
+request from a client over the internet to the target. So from the external world it's going to hit my external glo
+1:21:50
+application load balancer. So here it's going to be internal application load
+1:21:58
+balancer global. Why? Because it can route to things in multiple regions.
+1:22:04
+Very nicely put. Right. So external client heading the load balancer. Then
+1:22:10
+depending on the proximity it is going to go to A or B
+1:22:16
+region. Now the final thing which we have come is a global external
+1:22:21
+application load balancer. This is what we have come up with and uh internally it is going to be
+1:22:29
+called as balancer with external manage load balancing schema. So if you click
+1:22:35
+on this it will show you the other schemas. So page not
+1:22:54
+loading that is working. Oh, sorry. They have something
+1:23:02
+wrong. There is something wrong. Uh, it should
+1:23:08
+be cloud dot. They have made a
+1:23:21
+mistake. Hopefully that goes. Okay, that is also not there. Okay, that's okay.
+1:23:26
+They somebody has built a UI little wrongly. So if I go
+1:23:56
+here these are all the same diagrams which I had taken.
+1:24:06
+this the one folks. So the the schema the one which
+1:24:12
+we are using is this one and it is going to use by default
+1:24:18
+premium uh network tier. Okay. So even if you
+1:24:23
+have made it as standard it is going to be premium. So you don't get this kind
+1:24:28
+of a functionality with a standard tier. Why it has to do global right? So the
+1:24:34
+moment it is global it has to route it to the closest region. So and it has to be not spending too much of time on the
+1:24:42
+this thing uh on public internet. It has to spend
+1:24:47
+more time on Google network. So that's why they make it as a premium tier by default. Regional one when we look into
+1:24:53
+it we'll see it. So you get either as premium or standard
+1:24:59
+tier. So that's what it indicates. It's a external managed. So
+1:25:05
+next, so this is the final thing which we are going to create public facing as a global load balancer. So if I click on
+1:25:19
+configure. So I'll go one by one. So usually the way we do it is we give a name to the
+1:25:26
+load balancer uh load
+1:25:34
+balancer. This is the name. Now uh I will put one more
+1:25:47
+tab. I'll go to my load balancer.
+1:25:52
+section. So you will see various sections back end, front
+1:25:59
+end, service policies kind of a sub everything is going to be empty. So this
+1:26:05
+is a new functionality uh network service
+1:26:11
+API. I'll enable it later. So this is one thing. This is a
+1:26:18
+highle view only. But the most important thing is
+1:26:24
+this page folks. So meaning let me just show you. You go to your network
+1:26:31
+services load balancing. Please don't click on this
+1:26:37
+upper tabs. They will not give you too much of information. You have to scroll down to the
+1:26:42
+bottom and use this advanced menu. This is where you'll see all the forwarding
+1:26:48
+rules. The target proxy which we saw which is a component of the load balancer. You'll see it directly going
+1:26:54
+to this main page. We were always doing this so far because we were in the learning stage. Now we are focusing on
+1:27:01
+load balancer. So you should always click on this advanced menu. So when I
+1:27:06
+click on advanced menu you will see everything forwarding rules target proxy. Now you can connect the dots with
+1:27:14
+what we had seen backend service backend
+1:27:19
+buckets. So backend service is when you have cloud run. So if I just go
+1:27:28
+back. So backend service is going to be virtual machines, app engine, cloud run
+1:27:34
+functions, cloud run, kubernetes. These are backend services. Backend bucket is
+1:27:40
+this one. back end uh bucket BB if I were to put
+1:27:46
+it. Okay. So that's one
+1:27:53
+thing and uh when we created this uh when we saw this diagram so internet
+1:28:00
+forwarding rule that's what you see first and they
+1:28:06
+kept it in the same order from the forwarding rule target proxy. So this is the one where the
+1:28:13
+connection gets like it's going to change the connection proxy target proxy then your backend
+1:28:22
+service or backend bucket certificate also we are going to create it uh
+1:28:29
+soon we'll do this how to do that I'll show you and the last one is target pool
+1:28:35
+I would not recommend to use target pool this is a old one so let's not much worry about this uh it's like a kind
+1:28:42
+which will be removed soon right let's not much focus on it so let's go
+1:28:48
+back to our load balancer for cloud
+1:28:55
+run so this is a nice wizard which makes
+1:29:02
+your life so simple where everything forwarding rule target proxy backend
+1:29:07
+service everything will be created in one go but when you do the same thing In command line you'll have to uh basically
+1:29:14
+uh what you'll see is you have to do it one by one and try to connect it that's
+1:29:19
+very important. So we'll do that as a next step. So first let's do our regular
+1:29:24
+one. So your front end so I will give a name so that we can
+1:29:31
+use this name uh when we get this resources created we'll come to know. So it is not really called as front end
+1:29:39
+right. uh in the back end the name is going to be different. What is that? I'll show you. So we'll call it as uh
+1:29:47
+front end front end uh what I would
+1:29:55
+say HTTP we'll do HTTPS soon http and
+1:30:01
+you can see this you cannot change it folks there's no option to change it even though it shows a text box I cannot
+1:30:07
+remove it this has to be premium and
+1:30:12
+uh this is going to create an external IP address whether you want it
+1:30:18
+as ephemeral or static your choice right so I'm going to leave it as ephemeral for now port is 80 so application load
+1:30:27
+balancer supports all TCP port so previously they were only supporting 80
+1:30:32
+8080 kind of a stuff they can now support any port whatever you want right
+1:30:37
+so this is the port what you wanted to listen on so IP address col 80 if you do it you
+1:30:43
+should be able to access it. So there are some few advanced options keep alive the timeout kind of a stuff. So um where
+1:30:51
+you want to keep the connection open. So usually in websocket kind of use cases this is
+1:30:58
+going to be really helpful. So I want to keep the connection
+1:31:03
+open. The next one is our backend service. So here I'm going to
+1:31:10
+create the different types of back end instance group we have already seen it
+1:31:16
+zonal network endpoint group so this is when you use GKE right even for virtual machines you
+1:31:22
+can leverage it then serverless network endpoint group that is what we are going to do it we have already done it once
+1:31:28
+you will also have a private sorry internet uh network endpoint group where
+1:31:34
+it's a external backend so something like an uh say for example uh EC2
+1:31:41
+instance or it could be basically a S3 bucket kind of a stuff I'm going to use
+1:31:46
+this option you have a couple of more uh one
+1:31:52
+is private service connect we have not even talked about that we are going to talk about it so very important one in
+1:31:58
+the current time period um not sure how much it's going to be helpful but in
+1:32:04
+implementations people use this very often So we had seen private service access,
+1:32:10
+private Google access. The one which is pending is private service connect. We'll talk about that at that point of
+1:32:16
+time. We can connect it uh a little more. Then you can also have a hybrid connectivity uh network endpoint group.
+1:32:24
+So meaning it could be onremise also kind of a stuff right. So it could be an
+1:32:31
+on-premise also or other cloud but via a private connectivity. So this is
+1:32:38
+external. This is using private connectivity. So that is the difference.
+1:32:44
+So different backends are there. Backend types are there. We choose serverless network endpoint.
+1:32:55
+So I'll call it as backend service.
+1:33:04
+going to create serverless network endpoint group three nex is what I'm going to create
+1:33:10
+and please note the neg name which I'm going to give uh us neg now when I do this one right
+1:33:19
+behind the scene what and all is going to happen we'll have a forwarding rule we'll have a target proxy uh we'll have
+1:33:25
+the backend service configured everything we will see it a bucket will not be certificate will not be there.
+1:33:31
+Along with this, you'll also
+1:33:40
+see under comput engine the network endpoint
+1:33:45
+groups the one which you configure will be shown here
+1:33:50
+folks. So meaning these are all the things which it's going to do behind the scene for us. Makes our life so easy,
+1:33:57
+right? So, but if you have to do it everything yourself, you have to create
+1:34:03
+a end uh you have to create a backend, then you have to create a network endpoint group, then you have to create
+1:34:09
+a forwarding rule, then a target proxy, then have it as a backend service. So,
+1:34:15
+lots of steps, but the UI makes it so easy for us to do it. So, this is where
+1:34:20
+the learning comes basically. So select US central and these are the only three
+1:34:26
+options for your serverless network endpoint group app engine will soon go
+1:34:31
+off is my
+1:34:39
+understanding created the first one
+1:34:47
+folks and to create all these things that's the reason it takes around 5 minutes. UK
+1:35:13
+egg. Yeah.
+1:35:32
+this is what we have it now depending on the back end right things will slightly
+1:35:38
+change so we'll talk about CDN later we have not talked about it we have a complete slide on that we'll talk about
+1:35:44
+it we also have something called as logging which if you enable you'll get more log information. Uh there's also
+1:35:52
+something called as uh the cloud armor that also we are not
+1:35:59
+going to configure it because we have a specific uh slides and concepts to learn at that point of time. We will not do
+1:36:05
+anything there and nothing much afterwards. It's
+1:36:10
+more of CDN related stuffs which is what we have it. uh if you want uh bypass
+1:36:16
+cache. No, this is not this is also going to be more of the code. Now you have one small thing which you can
+1:36:23
+leverage it. Affinity is going to be something that session affinity. So what
+1:36:29
+does this mean is
+1:36:42
+uh so you have VM1 this is your back
+1:37:10
+So, so these are all part of
+1:37:24
+manage instance group. Right? So this is what you're going to
+1:37:30
+attach it as a back end. So this is your backend service.
+1:37:43
+So when the load balancer
+1:37:49
+hits so the request so let's
+1:38:01
+assume user one
+1:38:13
+user two. So when user request comes, it hits the load balancer. Now depending on
+1:38:20
+that it is going to route the request to VM4. So it's like a transaction right.
+1:38:27
+So back and forth all those things transaction is going to happen. So till
+1:38:32
+this user locks off all the interaction is going to happen with user or VM1
+1:38:38
+only. If user u two locks
+1:38:43
+in I should maybe draw this line so that it's a connect right.
+1:38:56
+So if user one goes through the load balancer the connection gets terminated
+1:39:02
+new connection is going to be created it's going to hit basically this VM.
+1:39:07
+Similarly user two will be served from basically
+1:39:13
+VM2. If I want the entire session or the entire transaction to be basically uh
+1:39:18
+done by VM2 only for user. Similarly VM uh four for user one I will turn on
+1:39:26
+something called as affinity session affinity. So and there are different ways based on
+1:39:33
+the client IP address I can do it some cookie meaning as long as a cookie is there I know okay I have to send it to
+1:39:39
+the same listing there are different ways in which you can do it. So this could be sometimes important when you
+1:39:44
+are building some kind of an application where you expect this transaction should be completely turned on should be served
+1:39:51
+by completely by one VM kind of stuff. So
+1:39:59
+sorry oh I did not save anything. Uh okay my bad. I closed it like that. Let
+1:40:06
+me just create it one more time. Sorry. Serverless network endpoint group
+1:40:15
+service backend services or backend services
+1:40:24
+01. Okay, I have it which is
+1:40:31
+good. Let me just go here.
+1:40:38
+It's not there.
+1:40:44
+Okay. Then so I'm going to re leave the remaining stuffs as is. So this is the
+1:40:50
+first back end. You can add few more backends also. We'll do that part. Routing and uh rules. So I'm going to go
+1:40:57
+with basic one. So we'll see even this basic is going to create a target proxy
+1:41:04
+for us right we'll see that part and once we have more back end we'll expand this
+1:41:11
+also the final pieces basically it's going to say it's going
+1:41:17
+to be an FML IP is good it's going to create routing
+1:41:22
+rules and the standard stuffs the three back ends now because we are using uh uh
+1:41:29
+serverless network endpoint
+1:41:36
+group. If you see if you have an instance group which we have worked on, it needs a health
+1:41:46
+check. What's
+1:41:51
+that? Yeah, health check. If it's an instance group, it needs that. Similarly, if it's basically a zonal
+1:41:59
+network endpoint group, it needs that meaning for virtual
+1:42:04
+machines and Kubernetes cluster as your backend service, you are going to use a
+1:42:10
+health check. So, this makes very important when it is basically internet
+1:42:15
+network endpoint group, you don't need that.
+1:42:22
+Similarly, your serverless network endpoint group you don't need a health
+1:42:30
+check. And the final two things this one we are yet to explore it. So for this
+1:42:38
+one also you don't need a health check. Now obviously the last one should
+1:42:43
+also not need any kind of health check. Sorry it needs my bad. So health
+1:42:48
+check is required for three backend types only.
+1:42:54
+So good. If you see the code, so they give a rest equivalent of it. Unfortunately, uh they could have given
+1:43:01
+a command line equivalent of it, but we are going to do that soon. So it is going to show you all the things. So,
+1:43:09
+neg details, backend details,
+1:43:15
+uh then the URL map, the load balancer name which you
+1:43:20
+are going to give is nothing but the URL map. Then the target
+1:43:27
+proxy, the front end which we call is nothing but your uh forwarding
+1:43:34
+rule. That is the key part. Right. So this is how the things gets
+1:43:40
+created folks and it goes in this order. Next needs to be created. Then the backend
+1:43:46
+service needs to be created using the neg you are going to
+1:43:52
+reference it. Right? So you can see this neg is there. This neg uh where is that?
+1:43:59
+US neg is what I'm going to reference it here.
+1:44:07
+So for this I need to have the neg first. So once the neg is created the backend service is going to be created.
+1:44:14
+Once the backend service is created. So you can see this the name of the backend
+1:44:20
+service is backend service
+1:44:27
+01. Using that backend service I'm going to create a URL map. So going back to
+1:44:34
+the architecture or the flow you create it in the reverse way.
+1:44:40
+So you have the backend service then you're creating basically the URL
+1:44:49
+map. Once the U so the load balancer name which you give is nothing but your
+1:44:54
+actual URL map. Then uh is your target
+1:45:00
+proxy. So target proxy relies on the URL
+1:45:06
+map. Lastly, the forwarding rule. So you can see that very easily. Target after
+1:45:12
+backend service uh target proxy. Then your forwarding rule comes in where this
+1:45:19
+forwarding rule is going to rely on basically your target
+1:45:24
+proxy. So target proxy relies on my URL map. my URL map relies on backend
+1:45:31
+service. So that is a connection box. So lastly uh this is going to be my
+1:45:38
+uh what I would say uh my forwarding rule which I'm going to use it. So in very simple
+1:45:47
+terms when you create a load balancer next next
+1:46:00
+next this name which you're going to give the load balancer name that's what
+1:46:08
+it shows in the front end. So the load balancer name is nothing but your URL
+1:46:15
+map. Okay, that is the thing. So then you give a front end
+1:46:22
+IP. This thing you can create multiple uh with HTTP, HTTPS, IPv4, IPv6,
+1:46:30
+uh port 80, port 443, all those things. So these are nothing but your
+1:46:37
+uh rules forwarding rules. So you can
+1:46:43
+see this uh where is that front end HTTP I gave that right?
+1:46:48
+That was the name which I gave. So here I gave front end HTTP. So this is
+1:46:54
+nothing but my forwarding rule. How many uh front ends you have that many
+1:46:59
+forwarding rules are going to be created. So and obviously the backend service is backend service
+1:47:07
+only and when you're creating a backend service you're going to create a neg. So before the backend service is created
+1:47:14
+neck should be created. So this is what you see it very nicely put if they had a
+1:47:19
+command line that would be much easier but not a issue. We have seen the
+1:47:27
+flow. We are going to do the same thing in command line. Uh at some point of time once we master uh terapform we'll
+1:47:36
+also do it in terapform once. So the flow is
+1:47:41
+neg after you have created the neg backend
+1:47:47
+service. After you have created the backend service
+1:47:53
+URL maps, then you're going to create target
+1:48:03
+proxy. Then is going to be the global forwarding rules.
+1:48:14
+Now please note in the interface you never explicitly go ahead and create a
+1:48:19
+target proxy. What it uses is uh it
+1:48:24
+gives its own name. Whatever is your uh URL map hyphen target proxy that's
+1:48:33
+what it's going to add it. So if you see for all other services what you gave as a name it is going to take
+1:48:41
+it. So neg what you gave as a name it took
+1:48:46
+it the name where for your back end what was the name which we gave backend service01 it took that URL map basically
+1:48:55
+is our load balancer name that it took but target proxy it is going to add
+1:49:02
+your uh URL map hyphen a standard prefix
+1:49:07
+uh or suffix called as target proxy then is your front end. The front
+1:49:13
+end is nothing but our uh forwarding rule. The front end which they mentioned there, it's nothing but the forwarding
+1:49:19
+rule. The name for that is also going to be uh what you
+1:49:26
+define. Okay, just for your reference. So let's go ahead and do this
+1:49:32
+creation. Now when I create it, what and all should get created. So if I go to my
+1:49:37
+load balancing the advanced section this is the hidden gem the advanced section
+1:49:44
+you should see all the things then you should see neg then you should
+1:49:50
+see external IP
+1:49:56
+address you should see an external IP address let's go ahead and create it and
+1:50:02
+so many components now you will appreciate why it takes 5 minutes kind of a
+1:50:09
+stuff behind the scene. We never used to say we used to say whenever uh this takes it takes 5 minutes all those
+1:50:16
+things. Now you understand there are lots of components right there are lots of components to be created. So
+1:50:23
+obviously it's going to take some time. Let me just see what has been
+1:50:28
+created. First neg should be created right. Let me just refresh it.
+1:50:36
+make is created folks. So, and it is used by the backend service is what it shows. Let me refresh this
+1:50:48
+one. There's nothing but backend service should be created. You see this backend service is
+1:50:55
+created. Is target created? No. Is forwarding rule created?
+1:51:02
+No. So but backend service is created. So it is going in that order. Neg
+1:51:08
+backend. Now the URL map should be there. So let's wait for
+1:51:16
+it. And as you see it the load balancer is still creating
+1:51:22
+it. Now you understand the reason for
+1:51:27
+slowness. Our back end is there.
+1:51:38
+Now we have our uh URL map. URL map you
+1:51:43
+don't see it in the user interface. Uh the target proxy is created and finally
+1:51:49
+the forwarding rule. The forwarding rule is created. Now it shows the IP. Now it indicates things are working
+1:51:57
+fine and uh it is going to do behind the scene a check all the things everything
+1:52:02
+is working. So it will take little
+1:52:10
+time it will not work but soon basically it's going to work. So now we know the
+1:52:17
+reason for why it is so slow right?
+1:52:22
+uh neg is there it is connected to the backend
+1:52:31
+service that's what you see it so neg backend service the URL map uh
+1:52:39
+does not show up in the user interface folks so then comes the target
+1:52:47
+proxy then target proxy is going to be cross referenced by our forwarding
+1:52:54
+rule. That's what you see it all the details. That's it. So, let's
+1:53:03
+wait for it for it to get created. Not yet there. Let's give it uh
+1:53:09
+give it a few minutes for it to work. Then it should be all working. Then we'll do the same thing in command line.
+1:53:17
+This conference will now be recorded. Let's check whether the load balancer is up and running
+1:53:25
+now. Should be working. So based on the proximity it is sending the request to
+1:53:32
+basically uh Mumbai and giving the stuffs because I'm in Bangalore it takes me the to the
+1:53:39
+closest one right this is what is happens. So similarly we have done this
+1:53:45
+many times. So uh browser
+1:53:50
+based proxy.
+1:53:55
+So I can use this IP address and pretend as if like I'm
+1:54:01
+coming from Netherlands. It will show me Europe. Right? So something similar if
+1:54:06
+we want to do it for US, it is going to also come. So for example
+1:54:14
+uh I will try to create a VM in uh there's no other option. So I don't have
+1:54:21
+a proxy tool which can do that um some proxy tools.
+1:54:27
+So what I'm going to do for this one right quickly
+1:54:33
+uh have a sub network in Mexico and show you that the output it's
+1:54:40
+going to from Mexico the closest region is going to be US. So it should show that but since we are using a shared VPC
+1:54:48
+I cannot create subn network in
+1:54:54
+Mexico. So you can see how we are connecting the dots. So since we cannot create in service project A anywhere it
+1:55:02
+does not matter. You can create it in some other project also because it's an external load balance. If there is a VM
+1:55:08
+from Mexico I can do that as simple as that. Right? So
+1:55:17
+uh tunnel bear is basically blocked. I have done tunnel bear in my I have a
+1:55:22
+video itself in my channel. uh but thing is that tunnel bear is blocked uh uh at
+1:55:28
+some point of time Indian government actually blocked all uh proxy tools I'm
+1:55:34
+not sure whether it is back so that is the only reason so I myself have a demo on that but tunnelware is not possible
+1:55:40
+so that's the only reason in India it is blocked so all the proxy tools are
+1:55:45
+blocked in India the ISP providers and government of India has a kind of a
+1:55:51
+working thing which they block it So I have no other option to create a virtual
+1:55:57
+machine. So what I will do is uh I'll try to go to my so if I try to do
+1:56:03
+something in uh Mexico which is this one I will not have a subn
+1:56:13
+network there's nothing shared also it does not show me anything. So meaning dependency is
+1:56:21
+there. I have to go to my uh network engineering project where I'm
+1:56:27
+going to create a subn
+1:56:36
+network. So I'm going to create a sub network in Mexico.
+1:56:48
+Uh, add a sub
+1:56:59
+network Mexico. The region is going to
+1:57:06
+be I need to see the region, folks.
+1:57:26
+North America, South
+1:57:34
+one. Okay. Mexico.
+1:57:39
+Uh let me give an IP which does not overlap with anything else.
+1:57:52
+Private Google access we know we have to turn it on. Flow locks if you have any kind of debugging thing you can turn it
+1:57:58
+on otherwise not required things which we know these things. So create
+1:58:08
+it. It should get created. Uh do I have a firewall rule for
+1:58:14
+SSH? I will have a I have a firewall rule for IAP. That
+1:58:22
+is good. Now this VM which I'm going to create has to reach internet. But I have
+1:58:30
+a or policy not to have VMs with external IP address. Then you have to
+1:58:35
+create a NAT. Now you see how things becomes more complicated, right? So you
+1:58:40
+have to create a NAT if you are going to use all the best practices. So NAT is
+1:58:46
+also going to be required. I'll not create it but I'll show that it is required and then we'll create it. So
+1:58:52
+I'll go back to service project uh B. Now thing is that you see there's a
+1:58:59
+new subn network folks. There's a new subnet network. This is not at all shared. Let me be very clear. Uh if I go
+1:59:06
+to the shared VPC the only VPCs which we have
+1:59:13
+shared or sorry the only sub networks which we have shared is only these two things London and US center. However,
+1:59:21
+because I am a owner of all the three
+1:59:26
+projects, there is a small loophole in the system which is going to allow me to
+1:59:32
+create a BM in Mexico in the service project. Let me again say this is a
+1:59:39
+loophole or I would not say it's a loophole. It is in a reality one will not be owner for the
+1:59:46
+network engineering project meaning the shared VPC host project and for service project. If they are they will be able
+1:59:54
+to leverage this option. So if I try to create, I should be able to create in
+2:00:01
+Mexico.
+2:00:11
+Mexico. So if I go
+2:00:17
+here. Oh, okay. It is not okay. It is good. It is not showing up, folks. Good.
+2:00:23
+Good. I guess they have blocked. Is it blocked or it's not refreshed? It should
+2:00:29
+be if I'm not wrong even though it is only shared. Let me just
+2:00:35
+see. That's what I have seen it only two places London and this
+2:00:44
+thing. But can I create something in uh Taiwan?
+2:00:58
+Um, if it's not showing, which is
+2:01:09
+good. This is showing. It was not refreshed. So, it's only because I'm the
+2:01:15
+owner. Okay. So, Mexi, I'm the owner of all the three projects. It is showing
+2:01:21
+up. So, if I go to Mexico, even though the sub network is not shared, I will be able to test it
+2:01:27
+out. Just keep that in mind. So, Mexico shows up and I have a all
+2:01:36
+policy. I cannot have an external IP address. So, meaning sub networks are
+2:01:42
+sorry, NAT is going to be a regional resource. So I have to create it for this subn network the newly created subn
+2:01:49
+network. I can SSH but I cannot reach this
+2:01:59
+website. The VM is created.
+2:02:15
+We had done something very similar in our past but we used to create a VM with external IP address. Now we are
+2:02:20
+following all the best practices. So we cannot even if we think we cannot create a VM with external IP address because of
+2:02:26
+the orc policy. So then we have no other option just to go with. So if I use
+2:02:34
+curl this IP address it will not be able to
+2:02:39
+reach so it's an outgoing traffic so it cannot reach it so it is going to
+2:02:44
+basically time out right so it's not going to give it so what we have to do
+2:02:49
+it is we have to basically and just for a
+2:02:57
+reference you can also do a ping folks
+2:03:03
+Right? For any load balancer, the ping should also work because it's an outgoing traffic both will not work. So
+2:03:10
+curl will not give me the response also. Ping will also not give me the response. So solution for this one is NAT. Where
+2:03:17
+should you create it? In the shared VPC host project in which region? Mexico
+2:03:22
+region. So I'm in the network engineering project which is my shared VPC host. So
+2:03:29
+I will go to my
+2:03:38
+NAT so
+2:03:45
+public the private one I'm I'll get back to you folks. So I'm not able to get that part running. So,
+2:03:54
+Mexico create a
+2:04:03
+router. Mexico. Done. And I'm going to leave the rest of the stuff
+2:04:21
+default. Okay, this is done.
+2:04:29
+Now if I do ping, it will work. If I do curl, it will show me the
+2:04:37
+response and please because it's not uh it will not show graphically but you can
+2:04:42
+see it shows it is connected to Mumbai blah blah blah like this it shows right similarly for the UK it shows. So this
+2:04:50
+one it is going to show consil bluffs US central that's
+2:04:56
+what it shows. So this is very clearly showing the request is served from basically US. So the load balancing is
+2:05:04
+doing its job. Great. Awesome. Right. So now what we are going to do is uh we
+2:05:09
+have already seen the internal components. So click on load
+2:05:16
+balancing. Always click on this part. This is very important. Let me
+2:05:23
+highlight it. Components. If you want to see it, you can do it.
+2:05:30
+So many times people don't do this when they are getting issues. They only see this piece. This is this should have
+2:05:37
+been highlighted properly but for some reason they have not highlighted it. So only when you click on this you get all
+2:05:42
+the components the forwarding rule target proxy URL map is not shown folks
+2:05:49
+for some reason again uh backend service is there URL maps are not there. So but
+2:05:54
+in command line we should be able to get it. So that's is what that is what we are going to do it next right so before
+2:06:00
+we do that part I wanted to add one more back end
+2:06:05
+uh one more back end so this is going to be a backend bucket so what we will do
+2:06:11
+is so I'll delete this VM I don't need
+2:06:25
+Yeah. Uh I'm also going to delete the net. I don't need
+2:06:31
+that. This was just created it. Uh and I
+2:06:37
+told this up front because we know the stuff, right? uh not just creating the VM and then doing a curl command it's
+2:06:44
+not working then we did not figure it oh NAT was not there but we know we knew that NAT is not there we have to create
+2:06:51
+it so that is the thing between knowing and uh trying to guess oh for this it is
+2:06:56
+not working then we have to we knew the architecture we knew the architecture right so that's the key part so if I
+2:07:03
+basically go to my router I will also delete this router
+2:07:09
+Here this is free but this is not required and why we should remove this
+2:07:16
+is at some point of time this if the entire subn network the VPC is deleted
+2:07:21
+it will say there is one thing which is pending which is connected to the network which is router remove it that's
+2:07:27
+what it's going to ask so that's the reason I'm just cleaning it up so let me just do one more thing where we'll have
+2:07:33
+one more back end so uh for this
+2:07:40
+I will go to my service project B where we'll go to a
+2:07:52
+bucket. Okay, it does not show. Why it does not show VPC service control in
+2:07:57
+action. So that's the reason it does not show. Uh so let me
+2:08:04
+see the IP. I don't want to put the remove the restriction.
+2:08:15
+Uh so connecting all the things is the most important thing. If I go to
+2:08:27
+security VPC service control did we put any kind of a
+2:08:32
+restriction? We did not do any changes. Maybe possibly the IP is changed. Let me
+2:08:38
+check it out. My router was not also restarted.
+2:08:44
+What is the thing host this thing? Let me edit it
+2:08:51
+and see it. It's little easy to see. Uh resource is this project network is this
+2:08:59
+perfect. Uh this is good. Uh restrict all the restrict only
+2:09:05
+the thing in the previous. Okay. Access level corporate. Okay. Everything is
+2:09:11
+good. What is the corporate
+2:09:17
+IP? Oh, maybe I would have changed that. Oh, I changed it to Singapore. My request is coming from India. So, that's
+2:09:24
+the reason it's not working. So, I'm going to say the request should come
+2:09:30
+from India.
+2:09:39
+then I should be able to access the
+2:09:48
+objects. Okay, I'll try to show you something interesting soon. Uh I'm just
+2:09:53
+saying request should come from India. Okay,
+2:10:00
+so now uh I should not have deleted that VM. That's okay. I'll create VM one more
+2:10:06
+time. So this is the one which I have created. Now I should be able to access the stuff
+2:10:14
+VPC service control in action. Now what I'm going to do is uh I'm going to
+2:10:19
+create one bucket which will have some public
+2:10:25
+contents which will have some public content and we'll try to create that as
+2:10:32
+a backend bucket. [Music]
+2:10:37
+So load
+2:10:44
+balancer GCS. So ideally if you say uh it should
+2:10:52
+be three multi- regional buckets is what you should basically uh use it. uh like
+2:11:00
+one for US, one for Europe, one for Asia. Uh so that way users from this
+2:11:08
+location will route. So maybe your back end you have an application um your
+2:11:14
+application code it should be something like this. Let me just so if you have a back end right
+2:11:22
+like this. So you hit this. Now there could be a use
+2:11:31
+case. You may want to rely on some uh
+2:11:37
+um not required. My my bad not required. So 1 minute this is going to route that
+2:11:46
+automatically. It is going to route it automatically. Let's do this part. I'll
+2:11:52
+create three backend buckets also. Uh if I do slash image yeah I'll I'll follow
+2:11:58
+one pattern. That's it. It should work. So one in US. So let me just make it
+2:12:06
+like this. I'll call it as
+2:12:12
+US load balancer GCS multi-reion.
+2:12:18
+Uh standard should be good because we are going to very frequently access it. Uh I want to make it public. Okay, this
+2:12:27
+is all public information. I want to make it public. So good. If you want you
+2:12:33
+can create the soft delete or you can remove
+2:12:41
+it. I'm going to make the bucket public by adding all users.
+2:13:00
+storage object view
+2:13:10
+rule. Good. [Music]
+2:13:20
+So
+2:13:30
+Europe remove that external the enforcement to make it not public.
+2:13:37
+Enforcement I have to remove it. Uh this one I'm just removing it. So because I
+2:13:42
+don't want to do any kind of soft delete. If you want you can turn it
+2:13:54
+on. So I'll make it public.
+2:14:22
+One last bucket hooks which is in Asia.
+2:14:44
+This is how you really create a uh multi-reional bucket use case right
+2:14:50
+which is going to be used by a website to serve some static contents kind of
+2:15:04
+stuffs all good so let me make this public I have to upload some data I'll
+2:15:09
+try to make sure I upload some data which helps us to recognize that this is coming from India kind of a stuff. So
+2:15:16
+all users have to get some kind of images for
+2:15:23
+[Music]
+2:15:34
+that. All good. So
+2:15:44
+I have to upload some data. So, I'm going to just use my paint.
+2:15:53
+Uh, I just put a simple text,
+2:15:59
+folks.
+2:16:11
+So, one minute.
+2:16:42
+This is one image. So I have to call it as image. Okay. The trick is this one. The
+2:16:50
+file name should be same. That is a key part.
+2:16:55
+So same thing I'm going to upload everywhere. So but the content will be different but the name is going to
+2:17:02
+remain the same. So
+2:17:10
+Asia this is done. Okay. This is anyway now made public. So if I use
+2:17:18
+this it will show search from Asia. Good. So that's a small image.
+2:17:23
+So now can I do undo?
+2:17:31
+Okay. S from European
+2:17:36
+Union. I have overridden the image folks. I just saved it. It is with the same name. So I will
+2:17:48
+upload to Europe.
+2:18:22
+Okay, it is. Did I not save it?
+2:18:41
+So why it is not
+2:18:47
+showing? Okay, let it be blank. That's
+2:19:07
+okay. Make sure I save
+2:19:12
+it. That's it.
+2:19:32
+so it has been uploaded.
+2:19:46
+It is
+2:19:56
+uploaded. It is showing. Okay. So only the Europe one is having something. Uh
+2:20:03
+that's okay. It's a blank screen from Europe. So this is the three backends which we have it folks.
+2:20:11
+So where are the three backends? We are going to add this as three backend bucket. Now uh for a specific reason I'm
+2:20:20
+going to basically uh
+2:20:27
+disable the VPC service control. I'll tell you why I'm disabling it later.
+2:20:33
+First let me remove it.
+2:20:39
+Okay. Does not match the E tag. Okay. 1
+2:20:55
+minute. Can I remove
+2:21:01
+it? Once the fun functionality is working, I'll tell you why I'm removing
+2:21:07
+it. Why I removed
+2:21:19
+it. Okay. I don't have any kind of a protection. So, it's not applied for any
+2:21:26
+service. It's a dummy. uh VPC service control is what we have because there's no services. Now going back to our load
+2:21:35
+balancer in service project A. I'm going to create three
+2:21:42
+backends. Three back ends. Maybe I should have done it like this. One
+2:21:49
+minute. Okay, let me uh No, I should have created I'll just use this uh this
+2:21:55
+thing folks. 1 minute uh service proper kits uh usually when you're doing it serving
+2:22:02
+it right because you are going to use URL context so we wanted to make sure it
+2:22:08
+is inside a folder that will be a good one folks images are
+2:22:14
+static this is what I will create it as a folder let me see if I can move it
+2:22:20
+okay I can move it good can I not move
+2:22:28
+Okay, I'll do that part later. So, I'll create something like
+2:22:35
+this. I'll move all the images into a
+2:22:52
+folder. Done. So I'm just going to move that using a
+2:22:59
+command gs util move. I should be able to do that. Only reason is the context. I have
+2:23:06
+to put the ip /static / image uh png or
+2:23:11
+jpeg that to make it work I have to do this setup.
+2:23:24
+So, so what I'm going to do is gs util
+2:23:39
+move. It's a PNG to
+2:23:54
+Done folks. So the move is done. So I have to do the same thing
+2:24:00
+for
+2:24:23
+Europe. It's done.
+2:24:31
+Do one more for
+2:24:45
+Asia. Done folks. So I have the things done. Now I'm going to add uh the back
+2:24:51
+end. So I'm going to
+2:25:02
+edit. So my back end
+2:25:09
+bucket. So I'll call it as
+2:25:20
+bucket. We choose that
+2:25:26
+Asia. That's the one. Remaining things are all default. Let's leave
+2:25:32
+it. Done. So, we'll add one more. Sorry, two
+2:25:46
+more. Okay. 02. Sorry.
+2:25:53
+back end bucket 02. Let this be Europe.
+2:26:27
+this is Asia,
+2:26:33
+Europe, US. So, three backend services, three backend buckets. So, now I will
+2:26:39
+have options for routing, right? I'll put host like star.
+2:26:45
+It could be because we have not come to the domain yet. So I'm going to put star. So I'll put /st
+2:26:55
+static kind of a stuff. So if I put / static it is going to anything which is / static should be routed. This one I
+2:27:02
+doubt will it work. So I'm just trying to see if it
+2:27:07
+can do the proximity based on that. Can it do? So I have also not tried it. Something strike. I thought okay let me
+2:27:13
+show you this show the configuration test okay you can do a add a configuration that should be okay so I'm
+2:27:21
+adding this route so / static
+2:27:27
+threebuckets let me see if it works folks I have never tried this option I have always used this
+2:27:33
+option so let's update
+2:27:39
+it I guess it is throwing an No. So my understanding is uh if the
+2:27:46
+load balancer can understand the proximity I send it from India
+2:27:52
+uh /staticimage.png it should show search from India. So that kind of a stuff. So
+2:27:59
+that is what I'm planning to show you. Uh so that way we learn two things. You
+2:28:04
+can have multiple backends. You can send it to uh a Google cloud storage as the
+2:28:10
+back end also which we have already seen once. So trying to show you one more time. So with a slight variation using
+2:28:16
+multi-reional buckets kind of a stuff. Uh let's test it out. And to be very
+2:28:23
+frank with the load balancer you have to be little more patient to make it work. So it will take every time you modify it
+2:28:30
+takes time. So that is something which we have to wait. It is updated.
+2:28:36
+So it's good you go ahead and look at the components to get a better view. So
+2:28:44
+you will get a better view when you are looking at the components. The backend services this shows the backend
+2:28:52
+buckets should show us the things. Okay. So we have done it. So
+2:29:02
+now we have to use the load balancers IP
+2:29:07
+address and try to see what it shows. So this is something which it shows now
+2:29:13
+slash
+2:29:20
+static. Let me see what it shows. It is not even it's not even forwarding it
+2:29:26
+folks. So if I open it in incognito
+2:29:35
+mode, it's still it's all everything is getting redirected to the uh backend
+2:29:40
+service itself. Meaning the load balancer is still not configured. So you
+2:29:46
+have to wait for it. Either it should show an error or it cannot basically because we
+2:29:53
+know the this thing right it's been routed. So
+2:30:07
+uh it's been routed to all where basically unmatched anything which is if
+2:30:13
+it's static it should basically match this. So we are doing this way. So if
+2:30:19
+anything else it should go here but it is currently getting routed to this one only. So it is still not configured yet
+2:30:25
+is what I can say. So let's give it some time. Let's give
+2:30:30
+it some time. Now uh by the time this gets uh created the
+2:30:37
+reason why I removed the VPC service control
+2:30:43
+is because it's going to starts getting served. Maybe I will show you this demo
+2:30:48
+uh soon because if you put a VPC service control and we have put a restriction
+2:30:54
+that it should come from only India. So for India anywhere from India the
+2:31:00
+request will work but if we use a proxy tool and all if we try to access it the
+2:31:05
+request is going to come from a different country. So that will get blocked. That was the reason I basically
+2:31:10
+disabled for a short time.
+2:31:17
+So still not
+2:31:28
+serving. It's not even serving it. Uh let me just So a little patience is the
+2:31:34
+only thing which I have seen will make it work. Uh we have it everything. We'll just
+2:31:43
+come back. We'll come back to this one to see it. So Oh, this is the one. My bad. So I
+2:31:51
+have put this star. This is a overriding one. Let me remove this
+2:31:57
+piece. Unmatched. Let it be there. Uh so for example, let me cancel it.
+2:32:06
+So if I edit it. So what I'm saying is anything which
+2:32:12
+is star go to this one. So static is also going to come. So that is where it
+2:32:18
+is basically breaking. I'm going to remove this map. Anything unmatched send
+2:32:23
+it to this thing. But if it's static please send it to these buckets. That's what I'm trying to say. Let me just
+2:32:30
+update it.
+2:32:38
+So we'll wait for it to get
+2:32:43
+updated. Once it is updated, we'll give some time. By the time we give it, we'll
+2:32:49
+try to look into the back uh the command line equalence of it so that we can really appreciate what are the
+2:32:55
+components which gets created behind. See, so it is updated. So the route should be showing
+2:33:07
+properly. Yeah, this is perfect. M this is perfect. Uh
+2:33:13
+where it shows it. Oh, this gets added automatically.
+2:33:19
+Yeah, I did remove it,
+2:33:27
+right? Unmatched.
+2:33:32
+Yeah, this is Yeah, this is fine. So, let me see if it is
+2:33:46
+working. It's getting routed. Everything is going through this one. Unmatched
+2:33:52
+default. All unmatched to this one. So let's give it some time. Okay, by the
+2:34:00
+time it uh works out, I'm just going to use my cloud
+2:34:06
+shell show you all the components in the command line and we'll
+2:34:12
+try to get it get an idea. So the first one is G-Cloud
+2:34:20
+compute um network
+2:34:28
+networks network endp point serverless G-Cloud
+2:34:36
+compute [Music]
+2:34:43
+server network endpoint group a network endpoint
+2:34:51
+group endpoint groups list it shows that so we are going to
+2:34:58
+use the same command to create it so I'll do that part soon so once you have
+2:35:04
+the network endpoint group you need to have the back end so you have backend service backend
+2:35:11
+buckets so list it is going to show me this one now this
+2:35:18
+back end you can see the way it is showing up the multip multiple backends are
+2:35:24
+there. So the next one is backend
+2:35:32
+buckets three is what it so here it is one multiple backends. So here for each
+2:35:39
+we have multip different like for each we have a different bucket that's what
+2:35:44
+it indicates. So we saw the neg we saw the backend uh
+2:35:50
+service now URL map. So compute all
+2:35:55
+these things comes under compute only folks URL map list. So this one is
+2:36:03
+basically load balancer that's the name and it just shows the service to which
+2:36:08
+it is attached. Do we see this in the
+2:36:15
+UI back end?
+2:36:25
+Now we don't see the URL. Okay, we see the
+2:36:32
+target. Okay, you see uh when you when you to be very frank when you see the
+2:36:38
+load balancer this itself is your uh URL map,
+2:36:44
+right? This itself is your URL map. Uh where is
+2:36:55
+that my yeah this itself is your URL map. So you can also describe it then it
+2:37:01
+will can give you more
+2:37:08
+details more details it's going to give you what it is shown in the user interface every details it's going to
+2:37:14
+show you let me just try this one
+2:37:27
+folks okay Something is
+2:37:41
+wrong. Is the URL
+2:37:47
+correct? Okay, I'll come to this part first. Let me show you this stuffs in the command line. So, not good to juggle
+2:37:54
+between too many things. So we saw the URL map. The next one is target
+2:38:04
+proxy G-Cloud compute uh
+2:38:09
+target. So you have different proxies folks. Target HTTP proxy. So this is
+2:38:16
+where the command line becomes little more interesting. So it shows HTTP
+2:38:21
+proxy. Similarly, if you do the same thing in the
+2:38:32
+interface, you go to the component view target
+2:38:39
+proxy. This one folks, HTTP proxy, HTTPS proxy. It is going to show you that.
+2:38:45
+That's how it is going to show. So, you can see the details. So and the URL map for that that is also
+2:38:54
+something you're going to get it. So good. Then uh
+2:39:03
+uh forwarding rules.
+2:39:18
+It shows you the forwarding rule basically. So forwarding rule in the UI
+2:39:25
+is going to be called as front end. So the URL map itself is the load
+2:39:31
+balancer
+2:39:40
+name. This is going to be not shown in the interface. It's going to just do hyphen target proxy and do it. and neg
+2:39:47
+we know this. So these are the things which we see it. Let me try to see this issue.
+2:39:55
+Now I'll try to connect from cloud shell just to see if I can get any better response. No, I'm not getting any better
+2:40:02
+response. Let me see what has gone
+2:40:14
+wrong to troubleshoot it. uh thing which I can think of
+2:40:21
+static let me see what is going wrong static okay I guess I I'm wrong here so
+2:40:30
+I have to put static / star that is my understanding so let me rechange it
+2:40:38
+to static this would be a better path
+2:40:44
+because we have slash images Right.
+2:40:49
+So if I just go and try doing this one just put static we'll get an
+2:40:58
+idea. No okay let me just do I feel this is something which could be important. Uh
+2:41:06
+for now to test it out I will not have this back end.
+2:41:12
+Uh, this one is always going. Let me see if I can do
+2:41:28
+this or the worst scenario is I'll remove the backend service itself. I'll just have a backend bucket test it out
+2:41:34
+that part then I'll basically use this
+2:41:53
+So we'll wait for this folks. by the time we wait for it. I wanted to create a load balancer completely from the
+2:42:01
+command line because the same concept is what we are going to use when we do it in terapform. At some point of time when
+2:42:07
+we start learning terapform we will do that part. So at that time you'll really appreciate each and every section which
+2:42:13
+we are doing it. So to do that first we have to create
+2:42:20
+a neg okay I'll create a load balancer with one uh this thing uh one uh what is
+2:42:27
+that one service so what I will do is
+2:42:48
+view all products. Cloud run.
+2:43:03
+We will create one service. So let it be hello
+2:43:17
+world. Hello service in US standard stuffs. So we have the
+2:43:25
+service. So for this one we are going to create a
+2:43:41
+neg okay it is somehow coming the star made it
+2:43:46
+work. Okay star made it work but it's still not expect it's not serving what
+2:43:52
+we expected. Let's let's just check it out. So
+2:43:58
+uh the service is created. Hello world is created. We'll
+2:44:04
+come and create the all the load balancer components in the command line soon. This one is
+2:44:11
+coming. Uh the change which made it was the star. It is good that I made a
+2:44:17
+mistake. uh because the URL pattern it goes like static / images right so it
+2:44:26
+has to do anything as a wild card so that is what it should show so let me use it in the command line
+2:44:33
+just to see what is the
+2:44:40
+output save it let me see it
+2:44:46
+here browser is
+2:44:58
+proxy. Okay, it is all served from US. Okay, then the way I expected is not
+2:45:06
+that one. So it is all served from US. All the request is going to US
+2:45:12
+only. Let me just check it out.
+2:45:37
+Let me just check whether it is all going to US or something
+2:45:43
+else. Okay, let's check this out folks. Let me check it out.
+2:45:50
+This conference will now be recorded. Currently we see it is always served
+2:45:56
+from us. Uh so I looked in the documentation. So if you are having an
+2:46:02
+overlapping uh or a kind of similar path it will become difficult. So it will
+2:46:07
+just route it to the one. So what uh I saw is uh it's better we do something
+2:46:15
+like this. So this has to be something handled in the application. Uh the way
+2:46:20
+it has to be done is uh uh the backend bucket the backend
+2:46:28
+bucket one is
+2:46:33
+US Euro three is uh Asia. So the the way it has to be
+2:46:40
+done is uh it should be something like this first. If it is s from
+2:46:49
+static slash something like this you may have
+2:46:55
+to have a different uh URL uh or the path then it's going to make it work. So
+2:47:02
+this is like u us do it like this so that it can serve
+2:47:08
+it from there that that is the way which you can do it. So that's what I saw in the
+2:47:18
+documentation. So this how do I do this part? This has to be done by the application. So your front end can
+2:47:25
+connect. So once your front end is connected, it is served from a uh specific uh this thing, right? So
+2:47:32
+something like this your front end has hit. Now this
+2:47:37
+front end has to connect to some specific uh this is now served from us.
+2:47:43
+Assume this bucket may access sorry this VM may access some data from
+2:47:49
+uh bucket let that bucket be US. So that
+2:47:54
+is the logic which has to be done in the code level basically. So something like
+2:48:06
+this you can have something like this uh set so that it can get
+2:48:13
+ser this is the way you it will work this will work basically uh by the time
+2:48:19
+this gets updated we know it takes a little time so what I will do is uh I
+2:48:24
+will just rechange the path
+2:48:34
+the GST move which we
+2:48:44
+did. Going to move it from
+2:48:51
+static whatever is there.
+2:48:56
+Let's move it to static
+2:49:18
+Asia. You have
+2:49:49
+Something like this.
+2:50:21
+So if I go to the buckets quickly and check it out for one just to confirm
+2:50:29
+that the move has
+2:50:37
+Done. Yeah, this is good
+2:50:48
+now. Yeah, this works. And if it is uh
+2:50:56
+from Europe, it will show a blank screen because we did not upload the I did not
+2:51:02
+upload the image correctly from US. If I do it, it is going to show serve from
+2:51:08
+America. So this is one thing. So this has this path to which back end you or
+2:51:13
+to which uh this thing it has to be served. If it can be done programmatically that would be a good one.
+2:51:20
+Uh so now the the last few thing which I wanted to share. Now uh let me just add
+2:51:26
+back now I have made it public all the things right. Uh let me add back the
+2:51:31
+this thing and show you the VPC service control and show you what can
+2:51:44
+happen. The reason why I made it
+2:52:01
+off. If I go to restricted
+2:52:21
+service it's added and the access which we have
+2:52:26
+mentioned is uh anything coming from India India allow it kind of a
+2:52:33
+stuff is what we have mentioned. So all the requests which I'm going to make is going to be from India. But when I try
+2:52:40
+to do it from this proxy tool, that is where the problem can
+2:53:00
+come. We just show you that it is going to work in an incognito mode.
+2:53:09
+So it is from India. So this will not have any
+2:53:15
+issue. However, uh this one will have issue is my
+2:53:25
+understanding. This is what it is going to show. So it's not going to serve the request
+2:53:30
+uh from Netherlands. So similarly
+2:53:39
+Germany will not work. So what I will do is I will basically add
+2:53:45
+Germany as another
+2:54:02
+country India and Germany. So what I have it uh so if I go
+2:54:09
+back and as if like I come from Germany the changes have to reflect. So
+2:54:17
+this is the thing. So now you may ask then uh if we have VPC service control cannot we expose the bucket to the
+2:54:24
+outside world kind of a stuff. Uh in this case one option which I can think
+2:54:30
+is have a separate project kind of a stuff. uh uh if you wanted to expose the
+2:54:37
+objects if you wanted to expose the objects that was going to be a very good choice that's going to be a very good
+2:54:43
+choice to do this kind of a stuff uh uh apart from that if you have a VPC
+2:54:49
+service control because you cannot put VPC service control on a particular bucket you have to do that bucket so
+2:54:57
+then this will be an issue let me just give a try now yes You can see it folks, it is
+2:55:04
+working right. So because we had added German. So this is only going to come when you
+2:55:12
+are using the bucket and you're exposing the because nobody is going to access from the outside world a VM from the
+2:55:19
+application perspective. Bucket yes they are going to access the things behind the scene like this. So make sure you
+2:55:25
+use a VPC service control effectively. Or there's also an option which is going to be a little uh longer implementation
+2:55:33
+where you are going to see you can use signed URL with uh the
+2:55:40
+application. So then you don't need to make the bucket or the bucket objects public and you would have given it to a
+2:55:48
+service account. You give service account the access then it should be able to access it. So that kind of a stuff you should be able to implement
+2:55:54
+it. So that's something which I wanted to share on the load balancer firstly
+2:56:00
+doing it in the UI. Now how much time I'll try to do something in the command
+2:56:06
+line real quick.
+2:56:20
+first I need to create a compute uh network endpoint group.
+2:56:37
+So the one which you have to create. So if I just go to the UI, we have never created a network endpoint group in the
+2:56:44
+UI. Also, if I go to that, you'll get to know what are the
+2:56:50
+fields which we have to basically pass
+2:56:57
+in. Create a network endpoint group type is serverless neg. Uh region you have to
+2:57:03
+mention it. That's it. No sub network, no VPC. So it should be something like
+2:57:11
+this. Uh type is serverless. Uh sorry
+2:57:17
+for serverless one. You cannot create it in the UI. Very
+2:57:24
+strange. Let me do it in the command. The type is network endpoint types.
+2:57:36
+Sub talk.
+2:58:13
+I want to mention the endpoint as
+2:58:21
+service
+2:58:32
+cla that's what I have to uh do it. serverless neck. Uh then that's it. The
+2:58:40
+region so the region is going to be
+2:58:49
+US. Uh okay, it should be either uh serverless deployment must be set.
+2:58:58
+Oh, I have to set the this
+2:59:08
+thing cloud compute
+2:59:20
+network I'm trying to do without any charging of products. So I have to
+2:59:26
+mention the service name that is right. So let's do
+2:59:33
+that and the service name is hello that is what we created right so
+2:59:40
+this should create us the uh this thing let me bring up my notes and add
+2:59:46
+it so that I don't miss it and you will also be able to make it uh make a use of
+3:00:07
+create load balancer in
+3:00:14
+PLA. So the first command is
+3:00:31
+N is
+3:00:41
+created. Next one is uh we have to create a backend service.
+3:00:48
+So to create a backend service. So first let me see whether the net is created successfully from our command line. Yes,
+3:00:55
+you can see it and currently it is not in use. You have to create a backend
+3:01:01
+service and then attach this thing. That's it.
+3:01:10
+So it is going to be G-Cloud compute uh back end
+3:01:19
+service create. If you see the help, it'll show you what
+3:01:24
+are the various back end. Uh so you have to give a backend name. Then you have to
+3:01:32
+uh most of the things we may not need to do it here. Um we just need to make sure
+3:01:38
+the type load balancing
+3:01:47
+schema. Now you will appreciate the UI piece. So what else we have service
+3:01:56
+network let's see some of the examples it can help us most of the time the
+3:02:02
+examples will help you out so if you go to the end you will see that example
+3:02:25
+Lots of options. Lots of options
+3:02:36
+here. We have to use the right uh neck. Uh so I'm just looking for a parameter
+3:02:42
+for that. Uh if this is becoming difficult you can also see the help
+3:02:47
+guide in the web. So if CLI is little becoming difficult you can do it. Oh
+3:02:53
+there's no
+3:03:05
+example. We want to do something like this.
+3:03:13
+advanced option under there you have backend
+3:03:20
+services you have backend services so we have to and in the UI you cannot create
+3:03:26
+the back end you can do it in the the whole screen it will show but you don't see
+3:03:32
+any option directly to do it so this section is to view or delete the listing in order to create the or edit it use
+3:03:40
+the viewer section or the G-code command. That's what they basically mention it. So I have to create a
+3:03:49
+backend service which is of type global. Okay, let me just do
+3:03:54
+that. Uh CLI back end uh 01.
+3:04:06
+I just do this.
+3:04:14
+[Music]
+3:04:24
+This is the one which is going to create me a back end like these are individual
+3:04:29
+components. Then it's like Lego blocks. Then you attach it and it's going to create the entire running load
+3:04:50
+balance. The load balancer is sorry the back end is created. If you just go over
+3:04:57
+here you should be able to see it. Currently it's not in use. Currently, it's not in use.
+3:05:05
+So, let me copy this
+3:05:22
+one. So, we have to attach those things. We have not done it yet. Uh
+3:05:29
+[Music] so so we have the net we have the back
+3:05:34
+end. Now we are going to create the uh URL map. In the URL map we are going to
+3:05:41
+mention the details. So if I just go
+3:05:49
+here cloud URL
+3:05:55
+maps to create get
+3:06:05
+back to add the back end that was the mistake. So first you have to create it
+3:06:10
+then the add the back
+3:06:18
+end. Now you get that option folks which
+3:06:23
+back and I have to add a specific thing. So
+3:06:31
+network endpoint group serverless network endpoint group. Which group you wanted to add? Add backend service name,
+3:06:38
+instance group, instance region, network endpoint group, global network endpoint group. Uh ours is a global network
+3:06:45
+endpoint group. There.
+3:07:35
+The first thing which I have to add is
+3:07:42
+uh which I added was CLI
+3:07:50
+uh that's a link
+3:08:06
+I should
+3:08:16
+have develop back service. It's not fun. Okay.
+3:09:05
+I have to add that thing. It's not what is the
+3:09:10
+name. Sorry, I did not understand before.
+3:09:34
+Yes, I'm Bring it down.
+3:10:15
+Okay. services
+3:10:21
+globalist global.
+3:10:42
+So these should be regional. This US central
+3:10:48
+good. Yeah, I guess I made a mistake. Uh here this is good. Uh the back end
+3:10:55
+service should be global. So I'm trying to add this piece
+3:11:01
+first adding the this thing. That is what I'm trying to do it in the CLI. Uh
+3:11:06
+so that one backend service is
+3:11:15
+global. It's a backend service. This is okay. This one I have
+3:11:23
+to make it as
+3:11:30
+region. It should be something like this.
+3:11:56
+I'll check this out for folks. My bad. So the commands I'll get back in the
+3:12:02
+next
+
