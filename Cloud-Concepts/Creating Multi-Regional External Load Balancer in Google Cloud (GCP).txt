@@ -1,0 +1,961 @@
+
+Search in video
+0:00
+Hello guys, today we will see how we can
+0:02
+create a multi-reion load balancer
+0:05
+and how we can do request routing. So
+0:08
+what we'll we do in this uh video uh we
+0:11
+will create a load balancer that will
+0:13
+direct traffic based on the path in the
+0:16
+request URL and it will balance the
+0:18
+traffic across multiple regions. So we
+0:20
+are going to create four VMs total. So
+0:23
+we are going to use instance templates
+0:25
+and instance group and in which we are
+0:28
+going to create VMs in uh US central one
+0:30
+and in one in EU west one region and we
+0:35
+will create a load balancer that will
+0:37
+route traffic to these instance. So
+0:38
+these are the steps we are going to
+0:40
+cover in this video. We will configure a
+0:42
+network and subnets. Some steps I
+0:44
+already done. So our main focus here is
+0:47
+on application load balancer only. After
+0:49
+that we will work uh create firewall
+0:52
+rules. Then we will create instance.
+0:53
+Instance will be created via instance
+0:55
+template instance group. Then we will
+0:57
+reserve external IP address. Configure
+0:59
+load balancing and send traffic to our
+1:02
+instances. Once our load balances up,
+1:04
+then we will also check multi-reion
+1:06
+functionality whether that is working or
+1:07
+not. So this is the diagram which we are
+1:10
+going to create today on Google cloud
+1:13
+console. So we will use IPv6 and IPv4.
+1:18
+We will reserve two address. So user can
+1:20
+come from anywhere from IPv6 or IPv4.
+1:23
+After that once it will reach to our
+1:25
+load balancer IPv4 forwarding rule and
+1:28
+we have IPv6 forwarding rule also. After
+1:31
+that that they will hit target https
+1:33
+proxy then they will go to URL map. So
+1:36
+what will happen if they type / video
+1:39
+like in any URL they are using like
+1:42
+example.com/vide.
+1:43
+So their request will go to this back
+1:45
+end and if they type anything else so
+1:48
+this request will go to this backend
+1:50
+service as you can see. So in each back
+1:52
+end we have two instance group. So in
+1:55
+this back end I have two instance group
+1:57
+one in in US and one in uh in Europe.
+2:00
+Same for here I have two instance
+2:02
+groups. One in US and one in Europe. So
+2:04
+what will happen? So if anyone come from
+2:06
+via Europe traffic will will always hit
+2:09
+Europe uh instance group and US traffic
+2:12
+will hit US instance group. So which is
+2:14
+near to them like if from India if we
+2:16
+hit I think we will go to US uh first we
+2:20
+will check that after that we can also
+2:23
+check multi-reion functionality. So what
+2:25
+we can do like we will take down this
+2:28
+instance group and we will check whether
+2:30
+our traffic will ship to us or not. And
+2:34
+uh after that uh this all we have to do
+2:37
+and instead of do creating two VMs I
+2:40
+have created only one VMs as you know
+2:41
+that uh because of some quarter limit.
+2:44
+So I'm using only one VM for all of uh
+2:47
+these instance group. So let's start our
+2:50
+demo and we are going to first I have I
+2:52
+will show you how to configuring our
+2:54
+network and subnets.
+2:56
+So here I'm in my console. So I'm using
+2:58
+this network LB network. So let's go
+3:01
+inside this network and see what I have
+3:03
+configured. So as of now you can see I
+3:05
+have two subnets EU subnet and US
+3:08
+subnet. If you don't know how to create
+3:10
+all these, you can check out my previous
+3:12
+videos in which I have covered in very
+3:15
+depth how to create VPC and all the
+3:17
+functions we have. Also I am using uh
+3:21
+IPv6 range also. You can check my
+3:23
+previous video. I will put a link in
+3:25
+that description in which I have uh
+3:29
+covered all the details.
+3:31
+So that will be helpful for you. So I
+3:34
+have also IPv6 subnet. So for that IPv6
+3:37
+traffic to check I have created IPv6
+3:39
+subnet. When you enable IPv6 subnet we
+3:41
+got two option whether you want to
+3:43
+create external IP range or internal IP
+3:45
+range. You don't you cannot create both
+3:47
+for IPv6. So I here I have created IP
+3:50
+external IP range. So I will put a link
+3:52
+so you can get a much much better info
+3:55
+how to all these things works. So this
+3:57
+is my subnets EU subnet US subnet and
+4:00
+after that this this is for testing
+4:01
+subnet IPv6. So let's I will show you
+4:04
+now my second thing like instance
+4:06
+template I have created instance
+4:08
+template for all of these uh if you see
+4:12
+for this I have created all these
+4:14
+instance template. So if I go to
+4:17
+instance template like this video EU
+4:19
+template I can go inside that. So I have
+4:22
+taken a very basic configuration like
+4:25
+machine type E2 small you can also do
+4:27
+that. I have covered all these info how
+4:29
+to create instance template instance
+4:31
+group. You can check out my previous
+4:32
+videos. So I'm basically I'm focusing on
+4:35
+multi- regional load balancer on this
+4:38
+video. After that
+4:40
+I have created
+4:42
+I using this uh image DBM and this is my
+4:46
+network. This is my LB network and
+4:48
+subnet EU subnet and the main thing I
+4:51
+using I'm using a startup script as you
+4:53
+can see. So this is the script which
+4:55
+will run and it will uh serve the page
+4:58
+like page from page ser from when I hit
+5:00
+that uh my load balancer IP. So it will
+5:04
+give me the host name VM host name. And
+5:06
+if you go to my instance groups, you can
+5:10
+see that I have also created four
+5:12
+instance groups. If we go inside that
+5:15
+you can see that I am using only one
+5:17
+instance that's why it is uh giving this
+5:19
+uh warning type. And this is my simple
+5:22
+VM which I'm using. And if I go to VM
+5:26
+instances,
+5:28
+these are my four VMs you can which is a
+5:30
+part of instance group. As you can see
+5:33
+IG video for EU and US and IGW do for EU
+5:38
+and US. And this is my VMs for testing
+5:42
+purpose. We will enable it later on. So
+5:45
+let's create uh and the main thing is
+5:47
+firewall policy. In firewall rules, you
+5:49
+have to create some firewall rules for
+5:51
+this specific range. If you don't wait,
+5:53
+you will not pass the health checks and
+5:55
+it will your uh that LB will not come up
+5:59
+like it will show that your VMs or back
+6:01
+ends are unhealthy. So you have to make
+6:03
+sure that you create this
+6:06
+this firewall rule. It is a ingress
+6:08
+firewall rule and it will have action is
+6:11
+allowed. So what will happen that load
+6:12
+balancer will send traffic to your
+6:14
+backends to check whether they are
+6:16
+healthy or not. So load balancer will
+6:18
+send traffic from these two IP range.
+6:20
+Maybe it will change in future. As of
+6:21
+now, these are the two IP rings and will
+6:23
+stand on port 80. And I have enabled it
+6:27
+on all the instance in my project. Uh
+6:30
+but you can use network tax if you want
+6:32
+to use and you can attach that network
+6:33
+tag in your instance template
+6:36
+but I'm using it for all the VMs. So you
+6:38
+can see that these are applied to my all
+6:41
+the VMs like PO, ig you can see and all
+6:45
+that instance group it has been applied.
+6:48
+So now let's create a load balancer and
+6:51
+see what we what options we have. So
+6:53
+we'll click on load balancer that is a
+6:56
+uh application load balancer and we will
+6:58
+create from internet to my VMs. So we
+7:01
+will continue.
+7:05
+So we will give it a name like we can
+7:08
+give multi
+7:10
+regional VA.
+7:13
+After that uh let's configure the back
+7:16
+end first.
+7:18
+So we will go and create a backend
+7:20
+service.
+7:23
+So we can give an this name like ww dot
+7:28
+uh sorry
+7:30
+back end service
+7:33
+we can check the name from here also. So
+7:35
+for everything else we have to use www
+7:39
+and for that / video we have to use this
+7:41
+instance group. So let's go back. You
+7:44
+have to choose the instance group here
+7:46
+in the back end type. I have covered all
+7:48
+these in my previous videos. If you want
+7:50
+to see anything specific what these
+7:52
+options are, you can check that out my
+7:54
+previous videos. After that, we will
+7:56
+choose HTTPS.
+7:58
+We have a named port which I have
+7:59
+already added in my instance group.
+8:01
+After that, we have to select an
+8:03
+instance group. So, it is my WW. So, I
+8:06
+will use first US one.
+8:09
+It is work on port 80. Just click on
+8:12
+done. Then we will add one more back end
+8:15
+in the same uh backend service. So let's
+8:17
+click on and add backend and choose our
+8:20
+EU one which is in Europe and done. You
+8:25
+can see so for this specific back end
+8:28
+service we are using
+8:30
+two backends IG uh US and IG EU and for
+8:35
+protocol keep it at HTTP only as my back
+8:39
+ends are working on port 80.
+8:42
+So all is done. You can check out this
+8:45
+advanced configuration but it's not
+8:46
+needed for this demo. We can just click
+8:49
+on create.
+8:51
+Okay, we have forgot the health check.
+8:52
+So we can create a health check. I
+8:54
+already have a health check. If you
+8:55
+don't have you just click on create a
+8:56
+health check and give it a name and
+8:59
+protocol and all that on which your back
+9:01
+ends are working. So node blender can
+9:03
+check your back end uh like whether they
+9:07
+are healthy or not by sending the
+9:08
+traffic
+9:10
+and you can configure this health
+9:11
+criteria like how you want to the
+9:13
+interval time out healthy threshold and
+9:15
+unhealthy threshold like this you can do
+9:18
+all that so I've already created a
+9:20
+health set so I will use that only
+9:23
+after that we click on just create after
+9:25
+that we will create one more backend
+9:26
+service we will click on this and this
+9:29
+is my video
+9:32
+back end service
+9:35
+in this we also use instance group so
+9:37
+let's select uh video US and click on
+9:41
+done and we will ch create one more back
+9:44
+end here and give it a name like video
+9:48
+EU we will select this one which in our
+9:51
+Europe location
+9:53
+click done after that we will select the
+9:55
+health check the same health check we
+9:57
+have created previously you can select
+9:58
+that also
+10:00
+After that just click on create click at
+10:03
+okay that in the outing rules this is
+10:06
+our default service. So like in this the
+10:10
+uh ww back end service our default
+10:13
+service as we can see in the PP also any
+10:16
+traffic everything else will go to this
+10:18
+only so we will leave this as back end
+10:22
+uh our default service and for second
+10:25
+service you can give your host name also
+10:27
+or you can just give a star for like
+10:28
+anything if come to / video
+10:33
+or it comes
+10:36
+like something/
+10:38
+video/
+10:40
+anything. So it will go to video backend
+10:42
+service. You can like we have created a
+10:44
+path. So path what will happen like
+10:46
+example ww.example.com/video
+10:50
+then it will go to this back end service
+10:52
+or anything else which will come it will
+10:54
+go to this backend service. We will
+10:56
+configure our front end. So you can give
+10:59
+uh any name if you want to like we can
+11:02
+give IPv4
+11:04
+front end.
+11:06
+After that you have to select the
+11:08
+protocol. If you are having uh
+11:10
+certificate then you can choose HTTPS
+11:12
+otherwise you can go with HTTP also but
+11:14
+I have a certificate. So I'm going to
+11:16
+use HTTPS.
+11:19
+After that you can create a IP address.
+11:22
+If you don't have just click on create
+11:23
+IP address give it a name and it will
+11:25
+reserve IP address for you. So be sure
+11:27
+that you're using that IP address
+11:29
+otherwise Google charge
+11:31
+uh some amount higher than if you don't
+11:33
+use I have IP address I'm using that
+11:36
+after that you have to select a
+11:37
+certificate I have a certificate if you
+11:39
+don't have just click on create a new
+11:41
+certificate you can use Google manage
+11:43
+certificate or you can upload your
+11:45
+certificate also if you are using Google
+11:47
+manage certificate so then you have to
+11:48
+verify your domain name but uh I I
+11:52
+already have a certificate so I'm just
+11:54
+use my SSL certificate
+11:56
+And in advanc options we don't know much
+11:59
+things. So just click on done. We will
+12:01
+add another back end another front end.
+12:04
+This time it is IPv6.
+12:07
+Front end
+12:10
+the same I have the protocol using HTTPS
+12:12
+only and this is IPv6. You have to
+12:15
+select this version. After that you
+12:16
+option autoallocate create IP. I have
+12:19
+already allocated a IPv6 IP address. I
+12:22
+will use that port is 443 and again
+12:25
+certificate we have to use I have use my
+12:28
+same certificate. So if you are using
+12:30
+Google manage certificate so the IP
+12:32
+which you will get from Google like once
+12:34
+my VM has been created or before VM also
+12:37
+I know this is my IP which I'm going to
+12:39
+use like IPv6. So you have to create a
+12:42
+that's like in your domain where it is
+12:44
+like godaddy or vix or even in Google do
+12:47
+you have to create a a record and four
+12:50
+times a record for IPv6 and IP IPv4
+12:54
+then only your certificate certificate
+12:56
+will get uh get active otherwise it will
+12:58
+not get active and it will in
+12:59
+provisioning or fail state. So you have
+13:01
+to remember this just click on okay and
+13:05
+click on done. Everything looks fine for
+13:07
+me. We can review and finalize if we
+13:10
+want. So we have two front end. This is
+13:13
+my front end IP for IP4. This is for
+13:16
+IPv6.
+13:18
+So we have a routing rules. Any traffic
+13:21
+with / video/v video anything will go to
+13:24
+video back end and any other traffic
+13:27
+will go to back uh this this service is
+13:30
+my back ends. In video back end I have
+13:32
+uh two uh instance group uh video for US
+13:38
+and Europe and same from wwy
+13:41
+hyphen. I have two back ends. Let's uh
+13:44
+click on create and wait for it.
+13:47
+Node plans has been created. So let's go
+13:49
+inside and check what we have. So as you
+13:53
+can see like I have these are my two
+13:55
+front ends. These are my routing rules
+13:57
+which I have already shown you how we we
+13:59
+have configured and these is my these
+14:02
+are all my backends services in which we
+14:05
+have two instance group for uh video and
+14:08
+two instance group for our ww back
+14:10
+service. So let's go and so I have
+14:14
+already configured like uh this IP with
+14:17
+my domain name. So basically I will hit
+14:18
+my domain name only directly instead of
+14:20
+going with this IP. So if my this is my
+14:23
+domain name. So if I hit this domain
+14:25
+name you can see it is saying that page
+14:27
+is being set from us one. So if you see
+14:31
+this is from if if I go to my VM
+14:33
+instance and you can see this is the
+14:35
+page which is this is the VM which is
+14:37
+serving my request as of now also if I
+14:41
+go to / video as we have here / video or
+14:45
+SL it will go to video backend service.
+14:48
+So let's click on this. So you can see
+14:50
+it is going to V backend service which
+14:52
+is a part of seven this one it is going
+14:56
+to US. So from India it is going to US
+14:59
+only as we can see. So now what we can
+15:01
+see do like I have already have a VM
+15:05
+which is in Europe
+15:07
+as you can see the in that zone also and
+15:09
+this is have a IP v6 IP also and IP v4
+15:13
+IP also. So I will SSS into this VM and
+15:16
+I will show you if we hit from this uh
+15:19
+VM the traffic will hit our Europe VMs.
+15:23
+So I have already logged into this VM VM
+15:26
+which is in Europe location. So I will
+15:29
+hit this specimen
+15:31
+URL from this uh VM. So I will just call
+15:35
+K for not checking the certificate and
+15:37
+just click on this. As you can see now
+15:40
+this traffic is going to EU only. So 4
+15:43
+LGS it is my VM which is in my Europe
+15:47
+location you. So from this we can
+15:48
+understand that it is going to nearby
+15:50
+zone only nearby location only. So all
+15:53
+the traffic going to here. If I just
+15:54
+remove video understanding and the
+15:56
+traffic it is also going to EU only. So
+15:59
+what what we can do more like we can
+16:02
+make this uh VM down or we can make this
+16:06
+our US VM down to further testing. So
+16:09
+before further testing I will also want
+16:11
+to show you IPv61. So I have a one more
+16:13
+VM in which Europe VM1 and I will call
+16:17
+our uh IPv6 IP from here. So I will just
+16:21
+copy my IP IPv6 IP from here. So we can
+16:25
+test whether IPv6 is working or not.
+16:29
+So just copy this and go to here and
+16:32
+call
+16:33
+6. So now we are going to
+16:37
+and
+16:39
+httgps.
+16:42
+Okay, I have to provide hyphen k also so
+16:44
+it doesn't check the certificate.
+16:46
+So you can see it is serving the page
+16:48
+from EU and so our IPv6 is also working
+16:51
+fine. If you even provide / video
+16:57
+a second.
+17:00
+So it is also giving response over video
+17:03
+also. So we have tested that our all the
+17:07
+setup is working fine as we can see like
+17:10
+our traffic is going according to the
+17:12
+nearest zone or nearest region. So more
+17:15
+we can check now we can like uh make our
+17:19
+US EU zone down. Yeah. So from uh uh we
+17:24
+will just login into our US VM and make
+17:27
+that VM down. So let's do that.
+17:32
+So I have logged into my video USVM
+17:35
+which is a part of instance group. So as
+17:37
+of now we can see that it is going if I
+17:39
+going to wire browser it is going to
+17:41
+this specific VM only 7 GQ6 for video.
+17:45
+It is not going over EU as we can see
+17:47
+here also. So what we will do we will
+17:49
+just uh uh make our like web server
+17:53
+down. So we will run this command system
+17:55
+ctl stop of RGB2.
+17:59
+Now we will just refresh this page some
+18:01
+time. We will see it is just uh dropping
+18:04
+our traffic and it will sometime that
+18:06
+once the load balancer will come to know
+18:08
+that our VM is down it is not passing
+18:10
+health check. It will just forward the
+18:11
+traffic to EU1. So you'll see now it is
+18:15
+sending traffic to EU which is another
+18:17
+zone. So once our this specific instance
+18:21
+is down, this instance group is down. So
+18:23
+what will load balancer will do? Once
+18:25
+the health check getting feed, it will
+18:27
+send traffic to this specific
+18:30
+uh instance group which is also a part
+18:32
+of this uh backend service. So how so we
+18:36
+have al now we have checked this also
+18:37
+like it how to create like how to check
+18:40
+multi-ener functionality. So even if you
+18:43
+go to load balancer now we will come to
+18:46
+it will give a show us like here only.
+18:48
+So you can see that one back end service
+18:51
+is unhealthy even we can go inside that
+18:55
+and it will show which one is down. So
+18:57
+it is showing this one it is not passing
+18:59
+health check because our we have apache
+19:01
+which is a web server working port
+19:02
+active we have make make it down that's
+19:04
+why it is now check getting saved. So
+19:08
+once load balancer is uh that smart
+19:11
+enough that it will h check it came to
+19:13
+know that is down. So it will it is now
+19:16
+sending all the traffic to this service
+19:18
+this uh sorry instance group not
+19:19
+service.
+19:21
+So once we make this instance group uh
+19:23
+up so it again sending the traffic to
+19:26
+this one only. We can check that also.
+19:29
+So let's go back and restart our Apache
+19:32
+2
+19:35
+started. So let's see in how much time
+19:37
+it will uh it is still sending to EU
+19:40
+only. So one health checks will getting
+19:43
+pass it will sending against the okay it
+19:45
+will now sending to us only you can see
+19:48
+that how fast it is.
+19:51
+So this is the demo which I want to show
+19:53
+you like so we have covered multiple
+19:55
+things. So we have covered this multi-
+19:57
+region of functionality and if we also
+20:00
+covered like if one region goes down how
+20:04
+it will send the traffic and for which
+20:06
+user it will send the traffic to nearest
+20:09
+instance group. So this what we have
+20:11
+covered we have covered IPv6 also a
+20:13
+little bit and how to create these IPv6
+20:16
+and all that and also check IPv6 is
+20:18
+working fine or not. That's all from
+20:20
+this. If you have any issues or comment
+20:22
+or anything just comment I will try to
+20:24
+solve. Thank you.
+

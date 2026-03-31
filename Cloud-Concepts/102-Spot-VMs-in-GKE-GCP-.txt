@@ -1,0 +1,1277 @@
+
+Search in video
+0:00
+Welcome to the video. In this video, we
+0:01
+are going to talk about spot VMs in GKE.
+0:04
+Basically, we have already covered spot
+0:06
+VMs in compute engine. In my previous
+0:08
+videos, if you want to see that first,
+0:09
+you can go and check out. I will drop a
+0:11
+link in my description. And so, I'm just
+0:14
+covering a overview on this slide. After
+0:16
+that, we will see more about for GKE how
+0:18
+it work in GKE. So, spot VMs are the VMs
+0:21
+that use the spot provisioning model.
+0:23
+So, this provisioning model lets you
+0:25
+obtain resources at much lower prices
+0:28
+compared to standard VMs. So if you are
+0:30
+giving like using resources and standard
+0:33
+VMs and you will get up to like 91% of
+0:36
+discount sometimes it will depends upon
+0:38
+the requirement or how is that uh people
+0:42
+are using your spot VMs or you can say
+0:45
+demand and supply all all these things
+0:47
+depend on the pricing and comput engine
+0:50
+can preempt the spot VMs at any time to
+0:52
+reclaim resources and use spot VMs to
+0:54
+reduce cost for fault tolerant
+0:56
+workloads. So if your workloads are fall
+0:58
+tolerant it they can okay like if VM
+1:01
+goes shut down and you are okay with
+1:03
+that then you can use spot VMs and you
+1:06
+have to remember Google can print spot
+1:08
+VMs. Print means it can stop your VM or
+1:11
+terminate your VM or basically delete
+1:12
+your VM also any time and it will not
+1:16
+say that this time I will like print
+1:18
+your VM. It can be any time whenever
+1:20
+Google wants their resources back.
+1:22
+basically CPU and memory. Suppose Google
+1:24
+has given you CPU and memory at a very
+1:26
+lower rate because there's very low
+1:28
+demand in the specific zone or region.
+1:31
+But in the evening demand goes up and
+1:32
+clients want more CPU and memory. So
+1:35
+what will happen? Google say okay I want
+1:37
+my resources back and they will just
+1:40
+power off your VM and you will get about
+1:43
+30 seconds to do all the saving and all
+1:45
+that. And spot VMs are a available very
+1:48
+low prices as I've told you up to 91%
+1:51
+for many machine type like CPU and for
+1:54
+GPU TPU also in local SSD also during
+1:57
+the premium time computer engine either
+1:59
+stops or deletes your VM depending on
+2:01
+your specific termination action for
+2:03
+each spot VM. So when the pre-mission
+2:05
+will happen Google or computer engine
+2:07
+will stop that is the default option or
+2:09
+even you can choose the delete your VM
+2:11
+when the pre-mission happen but this
+2:12
+option is not available in GKE in that
+2:16
+you don't have to configure this it it
+2:18
+will taken care by automatically by GKE
+2:20
+but if you create a computer engine VM
+2:22
+it will you will find this option and
+2:25
+spot VMs are not covered under SLA you
+2:27
+have to remember this now let's see how
+2:29
+spot VMs work in GKE so when you create
+2:31
+a cluster or a node pool with spot VMs
+2:34
+GK creates underlying comput engine spot
+2:36
+VMs that behave like a MIG M like manage
+2:39
+instance group in which it has suppose
+2:41
+you have mentioned I want three nodes in
+2:44
+a node pool. So it will create a M in
+2:45
+which you have a three node. Suppose
+2:47
+Google reclaim say I want my resource
+2:50
+back for 1 VM. So it will be stopped or
+2:53
+deleted and your MIG will kept on trying
+2:56
+to create that VM back until the
+2:58
+capacity is back. So once capacity is
+3:00
+there it will recreate your VM until
+3:02
+capacity is not there it kept on trying.
+3:04
+So this is how your uh spot VMs work in
+3:08
+GKE not that you spot VM behave like
+3:11
+standard GK nodes but with no guarantee
+3:13
+or ability.
+3:15
+So basically I it is kind of standard
+3:17
+nodes only like the same option same CPU
+3:19
+same memory but without of no guarantee
+3:23
+and when the resources used by spot VMs
+3:25
+are required to run standard VMs compute
+3:27
+engine terminates those spot VMs to use
+3:30
+the resources elsewhere. So as I already
+3:32
+told you so when Google required uh to
+3:36
+run some standard VMs somewhere or some
+3:39
+client want those standard VMs and they
+3:41
+don't have capacity as of now. So what
+3:43
+they will do? they will terminate your
+3:45
+spot VMs so that those paid clients can
+3:47
+use standard VMs and after that we have
+3:50
+a termination flow so you will get a
+3:53
+termination notice to 30 seconds until
+3:55
+shutdown so by default graceful shutdown
+3:58
+like node shutdown is enabled so your
+4:00
+non-system ports will get 15 seconds to
+4:02
+terminate and system critical parts also
+4:04
+get 15 seconds to terminate like cube
+4:05
+DNS and the cubelet updates port status
+4:08
+with field with terminated action so if
+4:10
+you run cubectl get ports you will see
+4:12
+this field with terminated
+4:14
+PB terminated region and controllers
+4:16
+residual replacement ports if workloads
+4:18
+are managed. So if you have suppose
+4:21
+controller like deployment controller or
+4:23
+any controller or you can say D1
+4:25
+controller it will try to deploy your
+4:27
+ports or other nodes if those nodes are
+4:29
+available. If no nodes are available for
+4:31
+spot VMs or any standard nodes not
+4:33
+available so your ports will remain in
+4:35
+pending state.
+4:37
+So let's see how you can schedule
+4:39
+workloads on spot VM. So when you add
+4:41
+spot VMs to a cluster, GK automatically
+4:43
+labels them. So these are the two labels
+4:45
+which GK will put on your spot VMs and
+4:48
+optionally it can apply stains also and
+4:50
+you can control which parts run on these
+4:53
+by using node selectors. You can use
+4:54
+affinities, you can use to alteration.
+4:57
+So if you you can use poduling with node
+4:59
+selector. So you can put this node
+5:01
+selector this basically this only label
+5:03
+on your deployment specification or pod
+5:06
+specification in which you will say my
+5:09
+pod will run on this node only on which
+5:12
+this label is present that is GK spot
+5:14
+equals to true. Even you can use pod
+5:16
+shoulduling is node affinity. This is
+5:19
+more advanced of this node selector and
+5:21
+you can use node tense or toleration
+5:23
+also you can taint a node in which you
+5:25
+can put a no schedule so that no uh pod
+5:29
+can schedule on that specific node and
+5:32
+any toleration or taint which satisfy
+5:36
+that condition can be scheduled on those
+5:39
+nodes. I will show you how to do this
+5:41
+change and these all this I will not
+5:43
+cover affinity autoeration and we have
+5:46
+node spot VMs and node autoprovisioning
+5:48
+also basically nav dynamically creates
+5:51
+or unleash node pools to fit your
+5:53
+workload demands. So suppose if your
+5:55
+workloads request spot VMs via node
+5:58
+selector or node affinity node selector
+5:59
+you have defined I need this I need uh
+6:03
+spot VM. So what will happen? NAP create
+6:06
+a spot VM node pool and nodes in this
+6:09
+node pool are automatically tainted this
+6:11
+option keycloud google.com
+6:13
+gk equal to spot equals to true and
+6:15
+affect no schedule. So you have to
+6:17
+tolerate this t otherwise if you don't
+6:19
+tolerate you will not able to schedule
+6:20
+your ports. So port must include this
+6:22
+toleration to be scheduled there and
+6:24
+without the toleration ports remain
+6:26
+unsuitable. So we will see how to do
+6:28
+this also and how to like tolerate all
+6:31
+these and there are some best practices
+6:33
+you can see like spot VMs can be
+6:35
+reclaimed at any time. So you must
+6:38
+assume that zero availability guarantees
+6:40
+and workload must tolerate disruption
+6:42
+because it can go down any time. So your
+6:44
+workload can go also down and you must
+6:47
+use mixed node pools. Always use at
+6:49
+least one standard VM node pool for
+6:51
+critical workloads and system component
+6:53
+like cube DNS cube proxy all these and
+6:56
+deploy fault tolerant or batch workloads
+6:59
+on spot pools. Okay. And we can use for
+7:02
+that node selector or taints and
+7:04
+affinities
+7:06
+and for GPU you can use GPU spot node
+7:09
+pools also but you must also have at
+7:11
+least one nonGPU standard VM node pool.
+7:13
+So it is because it prevents system pods
+7:16
+from being scheduled on expensive or
+7:18
+unreliable GPUs port nodes. So otherwise
+7:21
+your system ports will take all the
+7:23
+space not all the but most of the space
+7:25
+and GPU is very expensive also. So you
+7:28
+have to take care of that and node names
+7:30
+are usually stable but internal and
+7:32
+external IP address may change when a
+7:34
+spot VN are recreated. So some suppose
+7:37
+something happens and your VM need to be
+7:39
+recreated. a host maintenance event in
+7:41
+which your VM need to be like migrated
+7:45
+to a different host but the spot VM
+7:46
+cannot be migrated Google will stop and
+7:48
+recreated and and you will check the
+7:51
+name are usually stable it will not
+7:53
+change the name but internal and
+7:54
+external IP address can be changed so
+7:57
+don't use node IP for system design
+7:59
+always use uh like services and all that
+8:02
+and use taints on spot pools plus
+8:06
+toleration only for workloads that can
+8:07
+tolerate disruption that we we have
+8:09
+already discussed and prevent critical
+8:12
+parts like control plane add-ons from
+8:14
+accidentally landing on spot nodes.
+8:16
+Don't run any critical operation on
+8:19
+sport nodes because it can go down
+8:21
+anytime and it can harm your workloads
+8:23
+or your applications and all data on
+8:26
+spot nodes is deleted when reclaimed and
+8:28
+local SSD attached to spot VMs are MML
+8:31
+and data does not persist. So if you are
+8:33
+running saving any data on spot nodes it
+8:35
+will be deleted and if you're using
+8:37
+local std also that is also not being
+8:39
+saved possible. So these are some best
+8:41
+practices and
+8:44
+like how spot VN works in GCP or GKE.
+8:48
+Let's go to console and let's see how to
+8:50
+create a spot uh VM cluster. So I'm in
+8:54
+my console. Let's go and create a
+8:56
+cluster first. So in my standard cluster
+8:58
+so as of now I will change this to junal
+9:00
+cluster because I don't want to waste
+9:02
+money as of now because it will create
+9:04
+in regional it will create so many in
+9:06
+all the zones. So now let's go to our
+9:10
+default pool in which you will find that
+9:12
+option here. If you come down you will
+9:14
+find spot VMs. As you can see the cost
+9:16
+is $176 for a month. If I use a spot VMs
+9:20
+it will be up come down to $132. it will
+9:23
+not 90% it will rate it is kept on
+9:25
+changing depend on the usage. So what we
+9:28
+can do I will create a standard node
+9:29
+pool first then we'll create one more
+9:31
+node poolool in which we have our spot
+9:32
+VMs because I don't want my system ports
+9:36
+run on spot VMs and in between the video
+9:38
+my like VM goes down because of the
+9:42
+capacity issue in Google and they will
+9:44
+stop my VMs and my cluster will go down
+9:46
+also. So let us have a standard uh node
+9:49
+pool first. So I will go here. I'm not
+9:52
+doing much just I will make it standard
+9:56
+persistent disk and 70 GB I want and in
+9:59
+the node pool I want only two nodes that
+10:01
+is enough for the video to test our uh
+10:05
+these options. Everything looks good.
+10:07
+Let's create a cluster now. So my
+10:10
+cluster has been created. I'm in my uh
+10:13
+inside my cluster like I have logged
+10:15
+into that cloud shell and if I run
+10:17
+cubectl
+10:19
+get uh nodes as of now I have a standard
+10:22
+nodes. So if I try to run anything on
+10:24
+that uh spot VMs it will not run. So
+10:27
+what we can do now as I've told you that
+10:30
+all the spot VM has some specific
+10:32
+labels. So what we can do I have a I do
+10:34
+ls cd spot ports. If I go there and I vi
+10:38
+do vi deploy.ml
+10:41
+and one thing I want to fix it here as
+10:43
+of now I want to remove this toleration
+10:46
+not using this toleration as of now I
+10:48
+will use it later but I'm going to use
+10:49
+this node selector and that is google
+10:51
+cloud uh cloud google.com gtkspot equals
+10:55
+to true and let's run this command now
+11:01
+cubectl apply f
+11:04
+and deploy
+11:05
+ML and if we run cubectl get ports now
+11:09
+it will be in pending state because we
+11:11
+have defined that we want to run these
+11:13
+parts on a node on which there's a label
+11:16
+called uh that is that is this gk spot
+11:22
+equals to true. So this label is only
+11:23
+present on the nodes which are basically
+11:25
+spot vms. So what we can do now let's go
+11:28
+back and let's let's see what is the
+11:31
+error it is giving. So let me describe
+11:33
+this cubectl
+11:36
+describe node.
+11:40
+Sorry no not node it is a pod.
+11:52
+So we can see there's error zero of two
+11:54
+nodes are available. Two node didn't
+11:56
+match pod node affinity or selector
+11:59
+that's why it is not able to run. So now
+12:01
+what we are going to do we will add a
+12:02
+new node pool. So if we go to nodes in
+12:05
+our cluster and we will find here create
+12:08
+user manage node pool and we will click
+12:11
+on this and after that we have to define
+12:14
+a pool name. So let's give it a spot VMs
+12:18
+and here we can define a number of
+12:20
+nodes. I'm okay with two two nodes and
+12:24
+here we will choose spot VM. So
+12:26
+basically we are going to create a spot
+12:28
+VMs node pool and let's go to nodes and
+12:31
+defined machine configuration is okay 2
+12:34
+GB and 2 CPU 4 GB all looks good and
+12:38
+let's click on create and let's wait for
+12:41
+it once it will be done we will see
+12:43
+whether our uh ports are scheduled on
+12:45
+this node or not. So looks like our node
+12:47
+poolool has been created. Now let's see
+12:49
+here we have node pool spot VMs
+12:52
+available for our this is our node pool
+12:54
+it has two uh nodes and if you go to our
+12:59
+compute engine also we will find these
+13:00
+here also. So this is our uh GK cluster
+13:04
+spot VM and if you go inside that at the
+13:07
+last you will find all these options
+13:09
+label you can find here like
+13:12
+uh here you will find see this one
+13:15
+cloud dot uh
+13:18
+google.com gk notepool this one not not
+13:22
+this one
+13:24
+this one like cloud google.com gk spot
+13:28
+equals to true these are the labels
+13:29
+which is already applied by Google only.
+13:32
+And here you can see this is a spot VM
+13:36
+max duration nothing P VM is on on VM
+13:39
+termination it will stop on host
+13:41
+maintenance it will terminate the VM
+13:43
+instance. So these are the all the
+13:44
+options present. Now what we can do and
+13:47
+we cannot edit this VM because it is
+13:49
+managed by instance group.
+13:53
+Now let us go back here and let's see
+13:56
+whether our ports are running or not. So
+13:58
+if I run cubectl get ports. So we can
+14:01
+see we our both parts are now running.
+14:04
+So basically it is running because of we
+14:06
+have created a node pool
+14:09
+spot VMs. But there is one more issue
+14:11
+like but there is a possibility like
+14:13
+other parts can also be scheduled on
+14:15
+these nodes. Let's I will show you how
+14:18
+that is possible. So if I go back here
+14:21
+and I have one more file. So if I do cat
+14:24
+second deployment dot this is my one
+14:27
+more deployment file available. So here
+14:30
+we can see we have the option to run all
+14:32
+these things and here we are requesting
+14:34
+200 m of CPU 7050 of all that. So let me
+14:38
+create this deployment also and let me
+14:42
+say cubectl
+14:45
+second
+14:48
+and if I run cubectl
+14:51
+get ports
+14:53
+we can see they are running fine as of
+14:55
+now
+14:57
+and if I do get cat- oite so it will
+15:00
+show me the nodes on which it has been
+15:02
+scheduled. So I can see these are been
+15:05
+scheduled on even this second pool
+15:08
+deployment. You can see second pool
+15:09
+deployment has been scheduled on this GK
+15:11
+cluster spot VM. So suppose this is our
+15:13
+very critical application and you don't
+15:15
+want that this application must be
+15:17
+scheduled on your spot VMs. As we can
+15:18
+see our second pool deployment has been
+15:20
+scheduled on this as this VM can be go
+15:23
+down anytime when Google say give my uh
+15:26
+capacity back. I want to give those
+15:29
+resources to some other user. So for
+15:32
+that you have some options. You can
+15:33
+create a taint. So basically what will
+15:35
+happen you when you create a taint it
+15:38
+will not allow any other parts to be
+15:41
+scheduled on this until they will
+15:43
+satisfy that toleration. So let's do
+15:45
+that. So this is the command I'm going
+15:46
+to use cubectl uh taint nodes l labels.
+15:50
+So it will check any node which have a
+15:53
+label of this gkspot equals to true and
+15:57
+it will make a label on this G like
+16:01
+cloud google.com gk spot equals to true
+16:04
+not schedule. So let me run this. So it
+16:05
+will create a taint. So so if any your
+16:08
+pod have this specific t then then only
+16:10
+it can schedule parts on that. So as of
+16:13
+now it will not delete any old pod. So
+16:15
+if I run cubectl get pods it will run
+16:18
+fine. So you can see it is running fine
+16:21
+and first of all I will try to show you
+16:23
+I will delete this pod and you will see
+16:25
+this new pod will not able to create
+16:27
+because of this tint. So if I delete
+16:30
+this cubectl
+16:31
+delete pod and I will just paste this
+16:34
+name here and pod has been deleted. Now
+16:36
+if I run cubectl get pods you will see
+16:38
+this pod is in pending state
+16:41
+and see this is in pending state and it
+16:43
+cannot create because it it is not able
+16:45
+to run because of this no schedule one.
+16:47
+So basically we are saying if any pot
+16:50
+need to run on this specific nodes both
+16:53
+both on these spot v nodes they must
+16:54
+have this toleration available in their
+16:57
+configuration or port specifications to
+16:59
+do that what we can do now if I do uh if
+17:03
+I go back to my spot pods and do cat
+17:06
+deploy
+17:08
+you can see there's an option for that
+17:11
+which we have previously commented out
+17:12
+so this is the toleration we can do in
+17:15
+that we will say the key is cloud cloud
+17:17
+google.com gkspot. So this is the key
+17:20
+cloud google.com gkspot
+17:23
+and value operator equals to true and
+17:27
+effect is no schedule. Once we enable
+17:28
+this then only we are able to schedule
+17:30
+the port. So we will go here vi
+17:32
+deploy.ml. So I have fixed it. Now
+17:35
+redeploy this cubectl apply if f
+17:39
+deploy.ml
+17:42
+and we can see cubectl get ports
+17:47
+we can see it has been completed this
+17:48
+one has been removed automatically
+17:50
+because we have redeployed that our uh
+17:53
+yl file and this is now working fine two
+17:56
+new parts are running and you can see
+17:57
+the age also it is a rolling update kind
+17:59
+of and if we delete this one as we know
+18:02
+like previously we see one pod is
+18:05
+So let's see again which pod is that
+18:06
+running here and we can see this is one
+18:10
+this pod is still running on our spot
+18:12
+VM. Let's delete it. And after that once
+18:14
+we delete it will go back to our
+18:16
+standard VM nodes.
+18:19
+So it has been deleted. Now if we run
+18:21
+the same command again we can see uh it
+18:24
+is now the new container or we can say
+18:27
+pod has been created is in the uh our
+18:30
+default pool that is a standard one. So
+18:32
+like this you can do many things uh with
+18:35
+the spot VMs and as we know like if
+18:39
+there's a host maintenance event what
+18:40
+will happen Google will in this
+18:43
+basically in computer engine it will
+18:44
+stop your VM but here it will recreate
+18:47
+your VM. It will try recreating until
+18:49
+the capacity is there. So we will
+18:51
+simulate a host maintenance event so
+18:53
+that I can show you what will happen
+18:55
+really. So now what I'm going to do I am
+18:57
+going to create a host maintenance
+18:58
+event. And it is just simulating our
+19:00
+host in event for this our spot VM. This
+19:03
+one spot VM. So and we will see what
+19:05
+will happen. Now I will click on enter.
+19:07
+And I have defined a zone also a cluster
+19:10
+name also. It is running and it is done.
+19:13
+I will do the same for another node
+19:15
+also. So I will show you. Let me run
+19:18
+this command also. So it will give 30
+19:21
+seconds to our node to and after 30
+19:24
+seconds it will be deleted or we can say
+19:27
+recreated.
+19:28
+We can see it is working and it is done.
+19:31
+Now if I uh run cubectl get nodes
+19:38
+in sometime our you can see both are the
+19:41
+our spot VMs are not ready and basically
+19:45
+if we are simulating so this is what
+19:48
+happen when something happens at the
+19:50
+background and if you run two cubectl
+19:52
+get ports your ports will be in pending
+19:54
+state. So you can see this is in pending
+19:57
+this is in pending these are all
+19:58
+completed one you can ignore but these
+19:59
+are the new one this is the pending one
+20:02
+this is the pending one. So now if you
+20:04
+go back to our comput engine also and if
+20:06
+refresh this page you can see it is
+20:09
+basically instance is running but it
+20:11
+will create a new instance. If you see
+20:12
+the IP here it will also change. As of
+20:14
+now it is 26 and 243. It will change in
+20:18
+some time. And if you come to operations
+20:20
+also
+20:22
+and if you go to operations
+20:24
+if you see the time 335 and click on
+20:27
+this simulate maintenance event that is
+20:29
+has been run by me admin and after that
+20:32
+let's see what happened and we can see
+20:35
+it has recreate an instance Google is
+20:37
+doing this it is repairing the or we can
+20:40
+say
+20:42
+repair recreate instance reason instance
+20:45
+eligible for repair instance should be
+20:46
+running but it is stopping because
+20:48
+because we have done the maintenance
+20:51
+after that it will say instance premed
+20:54
+and recreate the instance so that is
+20:56
+done I think now if you go back
+21:00
+okay
+21:01
+it is doing for another VM also now and
+21:05
+let's go back here
+21:09
+and I think IP has been changed I think
+21:11
+it is 26 or I think 243 something like
+21:15
+this yet it has been changed now if we
+21:17
+go back to our VM here and let's run
+21:20
+cubectl get ports. I think it will be
+21:22
+running. So we can see it is now running
+21:24
+and if we run our cubectl get nodes also
+21:26
+we will see there will be new nodes. You
+21:29
+can see it is has been 30 seconds ago
+21:32
+and name will be same but IP IP will be
+21:34
+changed. So you have to make sure don't
+21:36
+use IP anywhere for the spot VM or any
+21:38
+VM in standard one also use services if
+21:41
+you want a stable IP.
+21:44
+And let's run again this command. I
+21:45
+think another node will also be created.
+21:47
+We can say this is also being created 14
+21:50
+second ago. And like this you can do
+21:54
+what we say uh you can see how nodes
+21:57
+like your spot VMs works and how it
+22:00
+affects your policies and your uh like
+22:03
+applications it can go down any time and
+22:05
+this your application can also go down
+22:07
+any time you have 30 seconds. So you can
+22:09
+define a logic also when you get a
+22:11
+signal you can define a logic port will
+22:14
+say the work somewhere or do anything or
+22:17
+run fault tolerant so that you can don't
+22:20
+waste your time all that one more thing
+22:22
+I want to show you so let's go and
+22:24
+delete this our uh where it is gone u
+22:28
+spot VM uh note now I want this notepool
+22:31
+to be created by Google only once I
+22:33
+defined I want to run something let's
+22:35
+click on delete and just provide the
+22:38
+name spot VMs let's wait until it has
+22:40
+been deleted then we will move forward
+22:42
+pool has been deleted now what we are
+22:44
+going to do I would want to show if I do
+22:47
+cubectl get ports it will be in stack
+22:49
+state only as we have deleted the node
+22:51
+pool that's okay I don't need this
+22:53
+anymore so I will delete the deployment
+22:56
+also deploy
+23:05
+and I will delete this one also I don't
+23:07
+need this one as of now
+23:12
+and now let's go to our uh cluster and
+23:16
+we will do nap that is node auto
+23:19
+provisioner so we come here you will
+23:21
+find somewhere here in the automation
+23:23
+part here it is node autoprovisioning
+23:26
+click on here and we will enable node
+23:28
+autoprovisioning here you have to define
+23:29
+the maximum and minimum so I want say it
+23:32
+is for the total cluster not for this
+23:34
+our node pool so I want I am okay
+23:37
+minimum two in my whole cluster and I
+23:40
+want at least 10 maximum 10 can go and
+23:43
+same for the memory so I'm not covering
+23:45
+this autoprovisioning this is a
+23:46
+different topic I'm just show what all
+23:48
+the options we have and just click on
+23:50
+save changes so basically it is a note
+23:52
+autoprovisioner so that it can create
+23:54
+node pools for us so don't so that we
+23:56
+don't need to create any uh node pool by
+24:00
+ourselves for spot VMs or any VM take a
+24:02
+time let's wait for a minute so our
+24:05
+cluster has been updated with the net so
+24:07
+If I run uh ls and do cat deploy. So in
+24:11
+this we have a
+24:14
+uh file which we have already tried
+24:16
+previously. Now
+24:18
+now this time what is there it it has a
+24:20
+tolerations which we already seen like
+24:23
+no schedule and true and equals to all
+24:25
+that and it has also have a node
+24:27
+selector also. Now if you try to run
+24:28
+this file what will happen? Let's see.
+24:30
+QCTL apply f deploy. ML
+24:37
+and we can see it has been created. Now
+24:39
+if we go to and check whether ports has
+24:41
+been created or not, it will not got it
+24:43
+is in pending state because we don't
+24:44
+have any spot VMs available. So we can
+24:47
+see it is in pending state. But now what
+24:49
+will happen? NAP that is not
+24:50
+autoprovisioner will automatically
+24:52
+create uh a spot VM node poolool for us.
+24:55
+So you can see it is already creating a
+24:57
+node poolool that is NAB E2 high CPU. If
+25:00
+we go to our nodes also uh we can see it
+25:04
+is creating a new node pool and as of
+25:07
+now there is no nodes because it is
+25:08
+creating once it has been created we
+25:10
+find some nodes also on which our
+25:13
+application will start running. So you
+25:15
+can see it has uh like increasing from
+25:18
+zero to one count and it is kind of
+25:19
+updating. Let's wait for a minute so
+25:21
+that update will be completed. So our
+25:24
+spot VM has been created and now let's
+25:27
+go and check this VM. If I run cubect,
+25:30
+I'll get nodes first and let's see.
+25:37
+We can see there's a spot uh VM node
+25:40
+available. Now if I run ports and it
+25:42
+will show as running only because we
+25:44
+have a node now available to run our uh
+25:46
+application. We can see it is running.
+25:49
+So like this you can use spot VMC. There
+25:51
+are multiple ways you can cause save
+25:52
+your money also. And if you delete your
+25:55
+uh these parts what will happen after
+25:57
+some time node auto provisioner will
+25:59
+delete this node pool also because it is
+26:01
+no more in use. That's how you can uh
+26:04
+configure nap. But it is a separate
+26:05
+topic. I will cover later on. I'm just
+26:07
+showing how it works. So that's all from
+26:10
+this video. Uh if you have any
+26:12
+questions, any suggestion just comment
+26:14
+it down or I will drop my email ID. If
+26:16
+you have anything you want to connect,
+26:18
+we can connect and if you have any issue
+26:20
+just drop me an email. I will try to
+26:22
+help you if I know how I can help. Thank
+26:25
+you very much.
+

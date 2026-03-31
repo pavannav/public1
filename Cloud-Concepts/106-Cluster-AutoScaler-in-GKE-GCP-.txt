@@ -1,0 +1,623 @@
+
+Search in video
+0:00
+Hi everyone, welcome to the video. In this video, we are going to talk about GK cluster autoscaler. How it works,
+0:05
+what are the options we have. So basically GK GK cluster autoscaler automatically resize the number of nodes
+0:11
+in a given node pool based on the demands of your workload. So it works basically in each node pool. You have to
+0:17
+like configure it for the every node pool if you want to use it and when the demand is low it will scale back down to
+0:24
+a minimum size that you designate. So when you create a autoscaler you have to define what is the minimum number of
+0:30
+nodes required and the maximum number of nodes. So when demand is low it will go back to the minimum number of nodes and
+0:36
+it will also increase the availability of your workloads. So when you need it it also help in controlling the cost. So
+0:42
+if you don't need your nodes in night so it will scale back to the minimum size and you don't need to add manually add
+0:49
+or remove nodes or overprovision your node pools. Instead you can define a maximum and minimum number for the node
+0:55
+poolool and rest will be automatic and if the resources are deleted or moved when autoscaling your cluster your
+1:01
+workload might experience something like transient disruption. So you have to make sure that your
+1:08
+workloads can handle those disruption because when autoscaling occurs it is
+1:13
+possible that your ports will move to one from from one node to different node because if it is scaling back. So if
+1:20
+some space is available on another node so it will move your part from one node
+1:26
+to another node and delete that specific nodes. And to increase your workload tolerance to interruption, you can
+1:33
+deploy your workloads using a controller with multiple replicas such that you can use a deployment or you can use
+1:38
+something like replica set so that your workload can tolerate the interruption.
+1:45
+Now let's see how basically cluster autoscaler works. So when you create a autoscaler uh like enable the autoscaler
+1:53
+you need to enable per node pool and not the clust whole cluster at once. So each
+1:59
+node poolool has a minimum size. So your like node pool cannot go below this
+2:04
+number of nodes and maximum size it cannot go above this number of nodes. So when scaling up happens it will
+2:10
+basically add new nodes. So cluster scaler check if the pods that cannot be
+2:16
+scheduled because there are there aren't enough resources. Suppose there is no CPU or memory available to schedule the
+2:22
+new pod. So based on that it will add the new nodes and decisions are based basically upon resource request only not
+2:30
+limit request like request CPU or request dot memory so not actual utilization and it's for the scaling
+2:36
+down that is the removing nodes if some nodes are under utilized so your cluster autoscaler check if all parts can still
+2:43
+fit on fewer nodes if that is possible so it will scale back so it auto like
+2:48
+autoscaler drains the node then basically move parts from to another nodes and remove
+2:53
+And let's see criteria operating criteria for custo. So as I've told you
+2:59
+pods may be disrupted. So replicated pods can be rescheduled on to other nodes when a node is deleted. And this
+3:07
+can also cause brief downtime if workloads are in replicated or disruption tolerant. So make sure you
+3:13
+are use some controllers and your workloads are at least disruption tolerant and no manual node management.
+3:21
+So your cluster autoscaler assume that it controls a node pool and if you add manually add or remove any node so it
+3:27
+can override your changes again and it has uniform node label. So like all the nodes basically in a node pool have the
+3:34
+same set of labels and the CA use these labels while creating new nodes. But if
+3:40
+you add anything manually so CA won't track them. So you have to make sure this point also and cost aware scaling.
+3:46
+So cluster autoscaler try to scale the least expensive pool first. So node pool
+3:52
+suppose for spot VM. So it will first try to scale this least expensive one
+3:57
+like spot VMs. If that capacity is not available then it will go with uh standard node pools
+4:04
+and there are some like node pool size constraints. So suppose your current
+4:09
+node pool size is below minimum. So what will happen? Autoscaler will scale up because no scale down is allowed. So it
+4:16
+always makes sure that you have a at least minimum number of nodes available and like a pool never shrinks below
+4:23
+minimum nodes and if you are in between with like within the min or max so it
+4:28
+will scale based up or down based on the demand and pool stay within limits and if somehow it is above the max so it
+4:35
+will scale down to remove the nodes and no scale up is allowed and your pool will never exceed the maximum number of
+4:41
+nodes and on the standard cluster as we know Auto scaler never automatically
+4:46
+scale down to zero because your system ports must be run but on the autopilot it can be possible and if you manually
+4:53
+reduce nodes to zero so CA will can scale up scale back up from zero. So you
+4:59
+have to make sure what you're doing and there's something called per zone versus total zone limits. So by default when
+5:05
+you create a quest like autoscaler you define minimum node and maximum nodes per zone. So suppose I have defined
+5:12
+minimum node I want one and maximum node I want four across three zones. So what it will do it will create minimum three
+5:18
+nodes that is one per zone and maximum it can create 12 nodes that is four per
+5:24
+zone. So as I've defined one and four so but from the new version of GK like 1.24
+5:32
+plus you can even define the cluster wide total limits you you can even use total minimum nodes and total maximum
+5:38
+node. It is a difference between per zone and total node limits. So it will give a global controller across zones
+5:45
+instead of per zone enforcement. So suppose if you take this example you have defined number of nodes two and you
+5:51
+the defined three locations and then you enable the autoscaling minimum node three and maximum nodes 12. So what will
+5:58
+it will do? It will create initial size will be six node two per zone as per this two nodes and and like three is
+6:05
+this uh three zones are available. But now after that part can scale between 3 to
+6:11
+12 nodes total like maximum 12 nodes are allowed regardless of zone balance. So it can create your like nodes in any
+6:19
+zone. It will not follow any zone thing and if any capacity is available in one zone, it can create all the nodes in
+6:25
+that specific zone. capacity is available in another. So it will not balance anything and it will not good if
+6:31
+you're running some application that node goes like zone goes down your application can be disrupted. So it is
+6:38
+more flexible but if balancing is critical don't use this but if you need
+6:43
+a proper balance go with per zone or balance thing we will see in console how to do this. Now let's go with
+6:49
+autoscaling profiles. So profile controls how aggressively CA remove nodes when underutilized. So there are
+6:56
+two profiles available as of now. Balance and optimize utilization. You have to enable it on cluster level and
+7:03
+it will be applied to all the node pools. So it will keep extra buffer capacity always available. So when you
+7:09
+use this profile, it will not delete the nodes as soon as that demand is gone. It
+7:15
+will take about 15 to 20 minutes. So for this faster port startup so whenever you
+7:20
+need a new node it will add that node very fast in a minute or two and it is very safe for latency sensitive
+7:26
+workloads and it is only available in standard cluster. It is more a aggressive scale down so it will save
+7:33
+higher cost and this scheduleuler try to pack parts onto nodes so it will not
+7:38
+create much nodes. It will main focus on the cost only and it can may cause the
+7:44
+new pause to wait longer for resources if node ski need to scale up. In this
+7:50
+node is available immediately in a minute or two in this it can take some time and it is basically good for any
+7:56
+bad jobs or cost sensitive workloads running in your cluster. So according to that you can define or choose the
+8:02
+profile which best suit your uh like organization needs. So if some some
+8:08
+cluster you are running bad jobs go with optimize utilization. If you are running some critical go with balance one. This
+8:14
+is the decision matrix which can help you to take the decision. So if you are running any sensitive workloads so go
+8:21
+with the scaling method that is per zone. So it will create zones in every so it will create node in every zone and
+8:28
+choose the autoscaling profile balance so that it doesn't remove the nodes very fast. So and it also ensure the HA by
+8:35
+keeping nodes across zones and also keep some buffer capacity for new pods so
+8:40
+that they can start quickly and if you have a HA systems like your replicated
+8:46
+database message Q go with per zone and balance. If you are running some bad jobs go with total so like total minimum
+8:53
+nodes and total maximum nodes. So you don't need to worry about add which zone nodes are getting created even if all
+8:59
+the your nodes are created in a single zone that is even okay and go with
+9:05
+optimize utilization so you can save some cost also. Same for data processing help like pipelines go with total and
+9:12
+optimize utilization. If you are running any GPU or sc resource workloads you can
+9:17
+go with scaling method total and autoscaling profile. It depends how you want to use it. And if you're running
+9:23
+some mixed workloads post services and batch so you can go with per zone for
+9:30
+services that is important and for batch jobs you can go with total for node
+9:35
+pools and you can use balanced for services and optimize utilization for batch to save some cost and you you can
+9:42
+use multiple node pools for different scaling settings to match your workload need. So you can use autoscaling profile
+9:49
+like this per zone for like for one node pool you can use per zone and another
+9:54
+node pool you can go with total one. So like this you can define multiple things
+9:59
+and there are some key rules which you have to make sure while using it. So your cluster autoscaler won't delete a
+10:06
+node if any pod on it cannot be safely removed. So there's some example suppose
+10:11
+there is some pod affinity or anti- affinity preventing rescheduling or pod is not managed by a controller that is
+10:18
+replica set deployment stateful set or something like job pod has some local storage pod have some annotation like
+10:25
+cf2 it goes to false or deleting the node will violate a pod disruption
+10:30
+budget also. So if something like this happen your uh cluster autoscaler will not scale back and your node will not be
+10:37
+deleted. So you have to make sure what you are doing otherwise it will just node will be there and you are just
+10:42
+paying for the node even it is using very less resources and for the spot VMs like cluster autoscaler prefer spot uh
+10:50
+VMs but it will also depends upon the availability and the preemption risk that is the most important thing and as
+10:57
+we know ports on the spot VM can be preempted in a very short termination window that is about 15 seconds and you
+11:05
+can use custom compute classes where I will cover in future videos about this.
+11:11
+So that's all for the theory part. Let's go to the our console and let's do some
+11:16
+testing. So I'm in my console. Now let's click on create a Kubernetes cluster and we will cover most of the examples which
+11:22
+I have seen in the slide. I will switch to standard cluster and I will go to my cluster. I'm going with
+11:30
+a regional cluster. And if I go to default pool I will choose number of nodes that is one per node as of now per
+11:37
+zone and I will enable the clust autoscaler from here. So once I enable I
+11:42
+have the location policy what I want balanced all any for the balance one it will spread your nodes equally among all
+11:48
+the zones. So if you want six nodes so it will create uh like two nodes in
+11:54
+every zone and if you go with any it will it depends upon the use reservations if you're using or any
+12:01
+current resource availability constraint. Suppose there's some capacity is not available in a zone or
+12:06
+more capacity available in a zone. So it can spread unequally like three nodes in one zone, two in one and one in one. So
+12:14
+like this. So you can go with if you want a balance like HA1 like all the nodes are equally spread go with balance
+12:21
+one otherwise you can choose any also then we can also choose size limit types which you have seen the slide also you
+12:28
+can define per zone limits or total limits. So we are going to first with the balance and per zone and we will see
+12:34
+what will happen. So in the in this I can define minimum number of nodes I need per zone equals to two and maximum
+12:41
+I need two so that it is also a standbox. So I have a limited uh kota
+12:48
+available to run that uh nodes. So I'm going with like I want minimum one node
+12:53
+and if I have to scale up I can go with two and after that I will go to nodes
+12:59
+and I can using like two CPU 4 GB of memory and I will go to standard
+13:06
+persistent disk because balance is somehow costly and I
+13:12
+will make a 70 GB. So this looks good to me. So let let's see once more. So
+13:20
+it will start with at least three number of nodes. So one for each zone and we have also defined the same for minimum
+13:26
+number of nodes also. You can define another limit also and maximum it can go with two per zone. So it can go up to
+13:33
+six nodes but it cannot scale up beyond that and it cannot scale down beyond this limit. So now let's create our
+13:42
+cluster. So it will take some time. Let's wait
+13:48
+for that. So the cluster has been created. Now let's go to into the cluster and see the details. And if you
+13:55
+click on details option, we can find like
+14:00
+number of as of now total three nodes we are using. If you click on nodes and you
+14:06
+can see number of nodes per zone three and machine type and autoscaling one to two nodes per zone. And we can go inside
+14:13
+the node pool also and we can see more things here. like number of nodes no the zones which
+14:21
+are this is running location policy it is balance we have choose that and uh
+14:28
+these are the uh nodes which are running like in each zone one node is running
+14:34
+and we can see center 1 a f and b and autoscaling it is configured here
+14:40
+now let's go into my cluster and let's login it and we are going to test something so this is my CLI and just
+14:48
+login it. So I have a deployment file available. If I do CAD deploy, basically
+14:55
+this is going to create one engine deployment. It is going to run two replicas and it is going to request 100
+15:01
+CPU and memory 300 mi. So I'm going to apply this cubectl apply f uh deploy.
+15:10
+So it has been done. If I go get cubectl get deploy so we can see as of now it is two. So
+15:17
+let's uh scale it uh let me scale it up so that we can add more nodes. As of now
+15:24
+three nodes are available. So let me scale it scale
+15:30
+deployment gen replicas up to let's go
+15:35
+with 10 first. So if I now run the cubectl get ports. Let me see whether 10 ports can be uh
+15:42
+like fit on or scheduled on these three nodes. So as I can see all the 10 nodes
+15:47
+ports are running. And if I go here and just refresh it and let's see any space
+15:53
+is available or not in my so I can see it is already requesting 886. It is 848
+15:59
+and it is 856. So each uh pod is asking for 100 m CPU. So I don't think any new
+16:06
+pod can be scheduled now on these three nodes. So if you want to schedule any new pod, it will request a new node
+16:13
+also. So what I will do now I will scale it up to 17 replicas so that it can add
+16:20
+multiple nodes. Let's click on replicas up to 70 and let's click on ports. So we
+16:26
+will see most are in pending. You can see 0 1 0 0. And if I click now run
+16:31
+cubicle get nodes. So we will see it will start adding new nodes in a minute or two. And if you come back here, let
+16:39
+me refresh it. And if we come down, you can see it is already showing instance two, instance
+16:46
+two. So it is added one node in every zone. It is not doing something like this. Added three nodes in this and one
+16:53
+one here. It is not doing it is properly following the balancing. So it will make sure that every zone have equal number
+16:58
+of nodes. So as of now it needs two no new nodes to run these ports. So it has
+17:05
+added. You can see two here. It is take some time to select in the console also. And here also
+17:11
+so we have to wait a minute or two so that we can get
+17:17
+so it is still pending. Let's wait a minute. So we can see it has been added like 10 second ago and 7 second ago. And
+17:24
+if you come back here also it will show I think the same nodes available here
+17:29
+also. Yeah we can see nodes has been added. And if you run QCl get ports
+17:34
+also. So we will see our pods are running also now. So like this cluster autoscaler can scale based on the
+17:41
+demands of your workloads. So you can define and now what we are going to do we are going to scale it back. So we can
+17:47
+see how it uh like we will scale our ports back and let me make the replicas again 10 so that we can see how it will
+17:55
+delete those specific nodes which are not required anymore. So I have run this command and if I run cubicql get ports
+18:02
+we can see now only 10 ports are available and if I run oi so we can see
+18:08
+on which node these parts are scheduled. So we can see it is using multiple
+18:13
+nodes. Let me run cubectl nodes also. So as of now these are the nodes and it
+18:20
+is running on I think based on this I think on every node the
+18:27
+pod is running let's see okay on this node pod is not running to
+18:33
+the ks which is added recently so I think this node will be going to be removed in a in 15 to 20 minutes at
+18:40
+least it will take that much of time and if you go back here also you can find out from here also what is going to
+18:47
+happen. So if we see this node is already full. It is using so much of CPU
+18:52
+and this node is kind of empty. This is already full. This is already full. So
+18:57
+what will happen? I think one of the node one of the part from this one going to schedule on this because it has some
+19:04
+space available. And after that out of this two nodes will be deleted. So as I've told you this is a let me go back
+19:12
+to my cluster and in that cluster and if you go to details and if
+19:20
+we come down here and you can see the autoscaling profile is balanced and if
+19:26
+you click edit here you can define optimize utilization also. So it has defined the decision of when to remove a
+19:33
+node is trade-off between optimizing for utilization or the availability of resources. Removing under utiliz nodes
+19:40
+improve cluster utilization but newer workloads have to wait for resources to be provisioned again before then they
+19:46
+can run. If we go with optimized utilization as of now we are using balance. So it will take about 15 to 20
+19:52
+minutes. In the next example what once this has been deleted we will try again this but we will change the autoscale
+19:59
+profile. So we can check how fast our nodes will be deleted. So let's wait for
+20:05
+about 15 minutes and let's after that we will see these nodes are getting deleted
+20:10
+then we will restart this uh action again. So after waiting about 15 minutes
+20:16
+I can see one node has been already removed and you can see only four nodes are pending now. And if I run qc get
+20:23
+pods also I can see new pods are getting created. You can see this pod is running on a new node. Now before you can see
+20:31
+the time also 48 seconds. And if we come back here and go to our nodes and it
+20:36
+will scale back to three as not is showing four. And
+20:46
+now let's refresh it. Let's come down. Maybe it will scale back soon. As of now, it is showing four only. It will
+20:53
+take some time. It will basically going to be three only because there's no traffic on another node. Even we can
+21:00
+see here also this node is fully empty. It is not running any pod also. If I run
+21:05
+cubectl get pods also hyphen oy. Let's see.
+21:11
+And we can see out of which this node is uh 6 RX8. So here we can see RX8 is not
+21:21
+running any part. So it is also going to be scaled down in a minute or two.
+21:26
+So like this cluster autoscaler works. It add nodes and delete nodes according to the demand. Okay. We can see now it
+21:32
+is updating also instance group is transforming. So now it is going to one. We can see it will going to remove this
+21:38
+also another node also in a minute or two. As of now it is showing four but from here we can see it has started and
+21:45
+now all the my like instance group which is running in the every zone has only one instance running. So now the
+21:53
+situation is unknown and if we see what is showing here also I think it is showing non ready. No new pod can be
+22:00
+scheduled on this node now and let it be done. Once it will be removed,
+22:06
+we will do more testing on this uh uh node or this cluster also. So now it is
+22:12
+showing three nodes. You can see it has taken good time to remove this node about 20 minutes. So it can like there's
+22:19
+no traffic but it is still we are paying for 20 minutes. So if you don't need that we can do one thing. If we come
+22:24
+back to our details on the cluster thing and you have to go under this autoscaling profile and we are going to
+22:30
+choose optimize utilization and click on save changes. So I think it is a cluster wise uh configuration we cannot do on
+22:37
+the uh on that uh node poolool level because this option is not available on the node
+22:43
+poolool level. If you go with autoscaling here it is only show this thing.
+22:48
+So it will take about 10 to 15 minutes to complete this uh update also. So let's wait for it has been completed. If
+22:56
+go back to details we can see it is optimize utilization. Now let's go back and I'm going to autoscale it like scale
+23:03
+my deployment back to 17 number of replicas so that we can see how things
+23:10
+will be different here with the optimize utilization. So I scaled now let's get
+23:17
+with nodes. It is going to add nodes again in amina.2 two. And if you go back to nodes and as of now it is showing
+23:25
+three but it will you can see it is updating 1 to two and again one to two.
+23:31
+So it will be add about two nodes and about all the ports will start running.
+23:36
+You can and let me run this. As of now, all are pending. And it is
+23:43
+showing none none for these. And
+23:48
+yeah, let's wait for a minute or two. Let's allow them to add new nodes in to our
+23:55
+node pool. So, new node has been added. Now, let's see parts also. It must be running in the running state only. We
+24:01
+can see all are running. Now, let's scale back. So we will see how fast uh
+24:07
+it will delete our nodes once that capacity or the capacity is not no more required. So I am doing again 10
+24:14
+replicas and if I run cubectl get ports I can see only 10 ports are running. So
+24:21
+now it doesn't require so much of nodes because the capacity is scaled back. We
+24:26
+can see that we don't need so much of capacity. So in a minute or two we can not in a minute or two it will take
+24:32
+about 5 minutes to remove the nodes also. So let me do cubect get nodes and
+24:38
+we will see it will remove the two nodes which so this time my pod has been rescheduled already to another node. You
+24:45
+can see 85 second ago and nodes I think going to deleted in a minute or two as
+24:50
+of now. Let's come back and refresh this page also. So it is going to be done very fast because it it is I can see it
+24:59
+is already updating. Oh it has added a new node. I don't know why it has added a new node.
+25:10
+So after waiting for about four five minutes I can see it is started removing the nodes also. As of now it is in non
+25:16
+ready state and it is done in 6 minutes. Last time it take about like 15 to 18
+25:22
+minutes. Now it is in like removing nodes in 6 minutes because of this uh
+25:27
+optimize utilization and it will remove all the nodes in a minute or two. So like this this is very fast if you want
+25:34
+to use like save cost you go with optimal utilization but if you want uh like capacity available it don't want to
+25:41
+remove the nodes so fast application is like scale very fast up and down. So you can go with balance so that some
+25:47
+capacity is available but your application is doesn't spike it is constant you or you want to save the
+25:53
+cost also you go with optimize utilization as of now it has removed the node it
+25:58
+will remove the another node also in a minute or two in this also somehow it has added one extra node I don't know why it has added one extra node and like
+26:07
+before it is using five it added one more node six node and then it is started removing that node also that's
+26:13
+why I don't know why it happened I have not scaled up also but it has added maybe something happened at that in
+26:19
+their processing end that's why it is this node is showing so much new 4
+26:24
+minute 15 second ago one but it is old one 6 minute 26 second you can maybe you
+26:29
+will find the difference that I'm just telling what happens at the back end so it is removing this node also like this
+26:36
+it this all things works now I'm going to delete this node pool because
+26:41
+I'm going to create a new node pool in which I'm going to use any and this total nodes one option. So let's click
+26:48
+on this delete the node pool. Let's see whether it is completed or not. Okay, it is going on. Let's click on default
+26:54
+pool. Click on delete. I don't know whether it will delete or not because one operation is already running on.
+27:01
+Let's wait if it deletes. That's good. Then we will create a new node pool. Our node poolool has been deleted. Now let's
+27:06
+create a new user manage node pool. Now default one we have deleted. So let it
+27:12
+name anything like pool one also with work and we will define same thing only
+27:17
+just enable the clust autoscaler this time and go with any and go with total limits. So I want minimum number of
+27:24
+nodes three maximum it can go to six and I don't worry in which zone it uh spread
+27:30
+the nodes I want just nodes and I want the nodes available as soon as possible
+27:37
+and it can be in any zone. So it depends I if you define per zone so it will like
+27:43
+we have seen in the previous example it gets created in every zone like same
+27:48
+zone like two nodes in one zone then two in one zone and two in one zone it will not do like three in one two in one and
+27:55
+one in one but in this it can be possible like it can create uh three nodes in one zone two nodes in one
+28:01
+another zone and one node in one zone so that's why you have to understand what
+28:06
+you are choosing here. So in the nodes let me change some here also. Yeah, we
+28:13
+have go to standard and just click on 70 and just click on create. So let it create the new our node pool. Then we
+28:19
+will log into notepool and see what will happen. Note wall has been added. Now
+28:25
+let's go inside it that is pool one and we can see all the same things here.
+28:30
+Nothing much and in the instance group we can see it has created three instance group. Basically it will start with
+28:38
+three zones only because we have defined three. If even we have choosed any while creating the our
+28:46
+node pool but it will still start with uh one node in every zone so that it can create a node like instance group in
+28:53
+every zone that's why after that it will like behave differently. Now let's go to
+28:58
+our cluster. So let me run cubectl get nodes. So before I run this I want to
+29:05
+like scale my replicas. I want to tell you it is not possible that every time our nodes will spread in unevenly like
+29:13
+sometime it can be possible that all the zones get the same number of nodes but we are going to test it but I don't know
+29:19
+whether this time it will happen or not but if you have more number of nodes high number of nodes it will happen basically. So let me scale my replicas.
+29:28
+Let's see what will happen. And if we go back here and just refresh it. Maybe it
+29:33
+can happen or it is not. It all depends. Let's see. So as of now it is updating one here and one here. And in each
+29:41
+instance group, let me make it 21. Let's see if I make it 21 will it add a new
+29:48
+node also? And
+29:54
+let's see.
+30:00
+Let's get the ports. Let's see if all the ports are been scheduled or in anywhere in pending state. You can see
+30:06
+some is still pending. It is creating. You can see five nodes are ready and
+30:13
+ports are getting created and most are running. I don't see any pending one.
+30:20
+Let's see if any pending no ports are there.
+30:28
+So all are running. Let me update to 23 ports so that some will be some in
+30:33
+pending so that we can test whether it will create any issue or not. Uh I don't
+30:39
+this is a pending state. Let's see whether it is how now it will go whether it will add a new node in a
+30:47
+in only or not. It is not doing this. I don't know why but sometime it happens sometime it doesn't. It depends upon the
+30:54
+capacity also. As of now it is just updating in the same zone only. You can see like like evenly it is distributing
+31:01
+even we have like choosing this limit like location policy is any and three to
+31:08
+six node in total but it depends upon the configuration or on the number of nodes. The last time I have tried this
+31:14
+it happens. So it has created three nodes in this two in this and one in this. So this is not this time it is not
+31:21
+happening but I just want to show you how what it what how it happens. So I don't need this number of parts. I'm
+31:27
+just going to delete it. And one more thing I want to show you like I have this low priority ML. So if I do low
+31:35
+priority ML you can see it has a priority class minus 100. So if I create
+31:41
+any pod or any deployment using this priority class, it will not scale my uh this pod nodes if there's no capacity
+31:49
+available. So if I do get ls low deploy so here I am calling this very low
+31:55
+priority class priority class name. So if I there's no capacity in my cluster and if I try to try to create this this
+32:03
+deployment it will not going to scale my cluster because of this low priority and even if you're using some TDB like pod
+32:09
+disception budgets. So if any node any like any uh deployment or any parts
+32:16
+running with that pod disception budget and it cannot move those ports to to another node. So it again that node will
+32:22
+not scale back and if you're using anything like any pod or any deployment with safe to a vector to false so that
+32:29
+node also cannot be scaled back like this is multiple things that can be happen so make sure what you are doing
+32:35
+just we have covered basic uh node autoscaler and yeah that's all for this
+32:40
+video and I will cover more things in later videos from this video thank you very much I'm I'm not able to show you
+32:46
+this thing properly but this is also a issue because we have a limited
+32:52
+resources available and I cannot go beyond that otherwise my kota will be hit but you can try but I think you
+32:58
+understand that uh what I'm trying to say if you have any questions or suggestions I drop an email I drop an email id or you you can even comment
+33:05
+also I will try to help you thank you very much bye
+

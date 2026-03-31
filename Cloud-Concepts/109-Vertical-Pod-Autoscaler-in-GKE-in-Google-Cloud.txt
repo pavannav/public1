@@ -1,0 +1,1245 @@
+
+Search in video
+0:00
+Hi all, welcome to the video. In this
+0:02
+video, we are going to talk about
+0:03
+virtual pod autoscaler in GKE. How it
+0:06
+works, what are the options we have. So
+0:08
+basically virtual pod autoscaler at the
+0:11
+CPU and memory request for individual
+0:13
+parts based on the actual workload
+0:15
+behavior. So instead of adding more pod
+0:18
+replicas, it perform vertical scaling by
+0:20
+increasing or decreasing the resources
+0:22
+for a single pod. So it will not like
+0:24
+add multiple replicas. Basically, it
+0:26
+will add more CPU and memory inside the
+0:28
+same pod. While in HPA like we have seen
+0:30
+in the previous video, it will add more
+0:32
+replicas but it will just perform
+0:35
+vertical scaling by increasing or
+0:36
+decreasing resources and it continuously
+0:39
+analyze both real time and historical
+0:41
+historical uses metrics to determine the
+0:43
+optimal resource allocation and based on
+0:45
+that it takes the decisions and when a
+0:47
+pod is underprovisioned the VPA
+0:50
+recommend higher resources request to
+0:51
+avoid performance issues and when the
+0:54
+pod is overprovisioning VPA suggest
+0:56
+lowering resource request to improve
+0:58
+efficiency. and reduce the cost. So like
+1:00
+this PPA works and there's some core
+1:03
+components of GPA. First one is
+1:05
+recommended. It will collect historical
+1:08
+resource usage metrics and then analyze
+1:10
+like such events like OM kills and based
+1:12
+on that it calculates optimal CPU memory
+1:15
+request based on the observed patterns.
+1:17
+After that there's one other component
+1:19
+is updated. It monitors the BPI
+1:22
+recommendations and it evicts running
+1:25
+ports when required so that they can be
+1:27
+recreated with the updated request
+1:29
+resource request. So suppose
+1:32
+there's a recommendation that a pod must
+1:35
+have like more CPU and RAM. So updator
+1:39
+can evict the pod if it cannot do in
+1:41
+place up to gradation and it will evict
+1:44
+and recreate the pod with the updated
+1:46
+resource request. And this admission
+1:47
+controller also it intercepts pod
+1:50
+creation request and modifies the pod
+1:52
+specification to inject recommended CPU
+1:54
+and memory request before the pod is
+1:57
+scheduled. So these all three works
+1:59
+together. These are the core components
+2:01
+of VPA. But in GCP we don't need to
+2:04
+install the VPA. They just we have to
+2:05
+enable it and it will automatically
+2:08
+installed on your cluster. But if you
+2:10
+are running any on-pre cluster or
+2:11
+something like that then you maybe need
+2:13
+to install the VPA. So there are some
+2:15
+VPA modes which you can choose when you
+2:18
+create your VPA in GKE. So first one is
+2:22
+off. It will status will be active and
+2:25
+it will just generate the
+2:26
+recommendations only. It will not apply
+2:28
+to any parts. So there's no part
+2:30
+required like restart required and just
+2:32
+save observation and analysis. So you
+2:34
+want to see some recommendations. So
+2:37
+suppose you want to see only the
+2:39
+recommendation part and don't want to
+2:40
+apply those to the ports and maybe you
+2:42
+need to take those decision later on
+2:44
+with why maybe some critical application
+2:46
+is running and you want to do when
+2:49
+downtime is there. So you can put update
+2:51
+mode of off after that is initial. So it
+2:55
+applied recommended resource request
+2:58
+only at pod recreation like or no
+3:00
+updates afterward. And so suppose if
+3:04
+what will happen suppose at any time
+3:06
+your pod will restart or or you have
+3:09
+done a new deployment in which or new
+3:11
+parts will be created that time it will
+3:13
+just uh create the new pod with the
+3:16
+apply right recommendation resources. So
+3:18
+maybe at that time it will increase or
+3:20
+decrease the resource like CPU memory
+3:23
+and pod restart required is not required
+3:25
+and it is for stable workload and it
+3:27
+will avoid disruption. Then we have
+3:30
+recreate option. It will aid the pod and
+3:32
+recreate it with the updated resource
+3:34
+request. It will just delete the pod and
+3:37
+recreate it. So in this pod restart is
+3:40
+required and where start is acceptable
+3:42
+or in place resize is not supported then
+3:44
+you can use this create one. There's one
+3:47
+more new option in place or create new
+3:50
+versions it is available as of now in
+3:52
+beta
+3:54
+and it will attempt in place a source
+3:55
+update. So it will not restart the pod
+3:57
+or anything and falls back to the
+3:59
+viction if not possible. If in place
+4:01
+will not work. So then it will fall back
+4:03
+to viction that it it will recreate the
+4:06
+pod and sometime pod require like
+4:08
+restart required not always and it will
+4:11
+for production workloads that require
+4:13
+minimal disruption. Then we have auto
+4:15
+that is deprecated. Auto recreate is
+4:17
+kind of same now it will be known as
+4:19
+recreate. [snorts] Strictly it will
+4:22
+behave like recreate only automatic
+4:23
+eviction. to apply changes. It is for
+4:26
+legacy configuration but is still many
+4:28
+people use it. So there is an example.
+4:30
+So when you enable the VPA so it will
+4:33
+provide an recommendation like you can
+4:35
+see recommendation provided and the
+4:37
+recommendation part it will give
+4:38
+something like this lower bound target
+4:41
+uncapp target and upper bound. So let's
+4:43
+see what are these option lower bound
+4:44
+means minimum request to ensure
+4:46
+stability. So this is the minimum you
+4:48
+want to need to run your pod. This is
+4:50
+the target one idle request within
+4:52
+policy bounds. So target will in which
+4:56
+your pod will move or according to your
+4:59
+VPA mode. So if you do initial retrade
+5:02
+this is a target which will VP try to
+5:04
+achieve this is uncap target
+5:06
+accommodation without constituting min
+5:08
+or max limits. It will just give an
+5:11
+uncap target without any min or max
+5:13
+limits. You can even define minimum and
+5:15
+max limits also like how much your pod
+5:18
+can take like minimum 100 of mcpu and
+5:21
+maximum 800 m of CPU. You can define
+5:23
+that those limits also and then we have
+5:25
+upper bound. So it is a maximum request
+5:27
+allowed by VPA policy. So we will see
+5:29
+all these things in our demo. Now if you
+5:34
+come to HP and VPA comparison. So as we
+5:37
+see in the previous video also. So first
+5:39
+of all is scaling approach. So it will
+5:41
+increase or decrease the number of port
+5:43
+like that is horizontal scaling. That's
+5:45
+why it's horizontal port autoscaler and
+5:47
+it will just adjust the CPU memory
+5:49
+request for individual ports. It will
+5:51
+not like add or delete the number of
+5:55
+ports. Pods will be same just it will
+5:56
+adjust the CPU and memory request.
+5:59
+Primary purpose will be handles traffic
+6:01
+spikes like by distributing load across
+6:03
+multiple pods and it is for optimize
+6:06
+resource allocation per port to improve
+6:08
+efficiency and stability. Matrix support
+6:11
+like it supports CPU and memory by
+6:13
+default and we can use custom and
+6:14
+external matrix also but it is only
+6:16
+support CPU and memory matrix. It
+6:18
+doesn't support custom or cellular
+6:20
+matrix impact on ports. We can see it
+6:22
+can create or terminate ports based on
+6:24
+the demand. It can may update resource
+6:27
+in place or recreate port depending on
+6:29
+the update mod which you have chosen.
+6:31
+There's some limitation like do not does
+6:33
+not adjust individual pod resource size.
+6:36
+It may increase infrastructure cost
+6:38
+during the scale out because it add more
+6:40
+number of pods during a scale out. It
+6:43
+can cause pod restart depending on the
+6:45
+mode you have chosen and does not scale
+6:47
+rapic account. It will just add more
+6:50
+resources inside a single pod. There are
+6:53
+some limitations also for VPA. First of
+6:56
+all is pod restart effect. So as we know
+6:58
+that VPA may apply updated resource
+7:00
+request by restarting the pods and which
+7:03
+can result in brief service
+7:04
+interruptions depending on the updates
+7:07
+mode you have chosen and HPA
+7:10
+interruption risk. So if you are running
+7:13
+both HP and VP on the same resource
+7:15
+matrix like on CPU and memory they can
+7:18
+create conflicting skill decisions and
+7:21
+lead to instability. So don't use both
+7:23
+on a single thing like like for
+7:28
+so basically don't use XP and VPA
+7:30
+together you can get issues and there
+7:32
+are some admission constraint in VPA. So
+7:34
+if VP recommended source values that
+7:36
+exceed available node capacity. So the
+7:39
+admission controller may reset the port
+7:41
+preventing it from being scheduled. So
+7:43
+suppose your VP recommends like it needs
+7:46
+two GB of memory but uh that same memory
+7:49
+is not available on your node. So the ad
+7:52
+mission controller may reset the port
+7:54
+and it will be in pending state only. So
+7:57
+it created some issues with the
+7:59
+admission constraints and controller
+8:01
+dependency like VP manage only ports
+8:04
+controlled by high level controllers
+8:05
+such a deployment and stateful sets
+8:07
+standalone ports are not automatically
+8:09
+adjusted like if you're running a single
+8:11
+pod it will not work use VPA with
+8:14
+deployments or stateful set and some OM
+8:17
+mitigation limitation. So when VPA we
+8:20
+know that it can increase the memory
+8:22
+request to reduce out of memory
+8:23
+termination but it cannot predict like
+8:26
+rear or sudden memory spikes for that
+8:28
+you can use HPA but this is not good
+8:31
+good for like sudden memory spikes and
+8:34
+there's some scalability consideration
+8:35
+also like VPA may not work very good in
+8:38
+a very large cluster and it may require
+8:40
+valid extra validation and proper
+8:42
+testing is recommended before using VP
+8:45
+in large scale production deployments
+8:47
+and cluster capacity limits like if it
+8:50
+recommends some resources that exceed
+8:51
+the cluster capacity. So parts may
+8:53
+remain in pending state and sufficient
+8:56
+resources become available until you add
+8:57
+like new nodes or new node pools it will
+9:00
+remain in pending state and if you are
+9:03
+like using multiple VPA policy so if you
+9:05
+apply more than one VP object to the
+9:07
+same workload and it can result in
+9:09
+overlapping commodations and scheduling
+9:11
+conflicts. So these are some limitations
+9:13
+which you have to take care while using
+9:15
+VPA. And let's go to console and see.
+9:19
+I'm not expert in like VPA. It is a new
+9:22
+concept for me also. I have not used
+9:24
+much in GKE. So let's see how we can use
+9:26
+it. So I'm in my console and I have a
+9:29
+cluster running. So if I go into my
+9:31
+cluster. So for using NPV VPA like
+9:35
+virtual pod autoscaling we have to
+9:36
+enable the VPA in the cluster level
+9:39
+also. So if you come under automation
+9:41
+you will find here like vertical port
+9:43
+autoscaling. You have to enable it at
+9:45
+the cluster level.
+9:46
+And you can see it is also saying
+9:48
+vertical port autoscreen automatically
+9:50
+analyze and adjust your container CP
+9:52
+request and memory request.
+9:58
+So let's enable it. It will take about
+10:00
+10 to 15 minutes to enable it on the
+10:02
+cluster level because it will done all
+10:04
+the configuration and install all the
+10:06
+important parts in the cluster. So let's
+10:08
+wait for 10 15 minutes and then we will
+10:10
+start our demo. Also you can enable it
+10:12
+while creating the cluster also. So we
+10:15
+have enabled that vertical for
+10:17
+autoscaling. Now let's go to my cluster
+10:19
+and do ls and I have some files. So I
+10:22
+will go to this folder. This file VPA
+10:25
+CPU dot VPA testing CPU. Mml. Let me do
+10:29
+this.
+10:32
+So basically in this I'm running a
+10:33
+deployment in which I have two replicas
+10:35
+and I have a image code cloud. I'm using
+10:39
+a code cloud image because we have some
+10:40
+good example to use VPA. And after that
+10:43
+I running a service on this service I'm
+10:46
+using some target port and node port. So
+10:49
+let me deploy this
+10:53
+this is a very simple thing like
+10:59
+so I have created my deployment and if I
+11:01
+run cubectl get ports
+11:05
+and we can see container creating and
+11:07
+cubectl get service. This is a node port
+11:10
+service and just using and this is my
+11:13
+cluster IP and let me see the ports once
+11:16
+again. Yeah, ports are now running.
+11:18
+Let's go to cluster and if you come to
+11:19
+workloads we will find that our
+11:21
+application is running here and let's go
+11:25
+into flask app 4
+11:28
+and from here also you can enable the
+11:30
+clust like vertical port autoscaling.
+11:32
+You can click on this vertical port auto
+11:34
+scaling as of not is not configured and
+11:38
+as of now it will show three modes off
+11:40
+is not shown here but if you like apply
+11:43
+some EML file it will show off also. So
+11:45
+we have auto initial and in place and
+11:48
+you can even add resource policies like
+11:50
+how much CPU or memory uh like uh VPA
+11:55
+can use. So before we enable from here,
+11:57
+let's go to our cons. So see like here
+12:01
+and I will show you one file CPU. Mml.
+12:04
+So this is a vertical port autoscaler
+12:08
+and it is going to use my deployment as
+12:10
+a target. And in this we have update
+12:13
+policy as off. So it will just give up
+12:15
+recommendation. It will not do anything.
+12:18
+And after that I am defining some
+12:20
+container policies that minimum allowed
+12:22
+like minimum 100 CPU must be there and
+12:24
+maximum it can use 100 of 1,000 m of CPU
+12:28
+and control resources CPU. So it will
+12:30
+work only on CPU. We are not touching
+12:31
+memory. So just click on ubectl apply -f
+12:38
+like VPA CPU. ML and it will apply this
+12:44
+file. And if we come back here and just
+12:45
+refresh it,
+12:48
+we can see here also like we have uh
+12:50
+vertical port autoscale. Autoscale is
+12:52
+currently paused. Let's click on this
+12:54
+and let's see why.
+12:56
+So because now it will showing off also
+12:58
+like it will do not assign new values
+13:00
+but controller object can still be cured
+13:03
+for suggestion. It will only give some
+13:04
+suggestions to us. And if you come to
+13:06
+policy, we can see we have a policy that
+13:09
+is for CPU. And you can choose for any
+13:11
+like default policy for any container or
+13:14
+you can choose the container name also
+13:15
+like we running on a single container.
+13:17
+So we have choose like a like star. So
+13:20
+it will involve all the containers in a
+13:22
+pod. And we have CPU like minimum 100
+13:25
+and thousand and maximum,000.
+13:28
+And if you run cubectl get VPA here
+13:33
+we can see it is in off mode CPU it is
+13:36
+showing us 100 m. And like if we now
+13:40
+let's some send some traffic on this to
+13:43
+test it. Before I do that, let me do
+13:46
+cubectl top pod. So we can see how much
+13:49
+CPU memory it is consuming as of now. So
+13:51
+it is we can see 1 m of CPU and 19 mi of
+13:54
+memory. Now now I'm writing a load zen
+13:57
+uh like pod so that from this I can send
+14:00
+traffic to my this running uh
+14:03
+deployment. So in this I'm just going to
+14:06
+create a file load. sh and which I'm
+14:09
+going to run it.
+14:11
+So this is let me save it first. And if
+14:14
+I do get loadsh so this is some like it
+14:17
+will send some load. So it will run for
+14:20
+1,00 seconds and it will run 10 workers
+14:23
+and it will send some traffic on this my
+14:25
+node because I'm using a node pool as
+14:27
+you remember here I have shown you also
+14:29
+like here I using a node port. So I'm
+14:32
+going to send some traffic on my node
+14:33
+node on this node and it will just run
+14:37
+this. So
+14:43
+now let's run this load.sh
+14:46
+when meanwhile it is running let's open
+14:48
+a new terminal and from there we will
+14:51
+monitor our resources. So if I run
+14:53
+cubectl get bp w so so that we can watch
+14:57
+what is going on. As of now it is
+14:59
+showing 100 m of CPU only enabled one
+15:02
+more terminal in this I'm running
+15:04
+cubectl top pod you can see now before
+15:07
+it is asking for 1 m CPU now it is on
+15:09
+100 m of CPU and it will kept on
+15:13
+increasing I think as per the loads
+15:15
+increase
+15:16
+now you can see it is 117109 soon VPA
+15:20
+will also update it recommendation it
+15:22
+will say that the target CPU must be
+15:24
+desended based on that traffic which is
+15:26
+being increased but it will not change
+15:28
+anything in our ports because it is in
+15:30
+off mode. It will just give some
+15:32
+recommendations.
+15:35
+So you can see we just get a new uh like
+15:38
+update. It is asking for 130 mm of CPU.
+15:41
+Let me stop it. And if I do hyphen OML
+15:44
+because I running a simple VP like as
+15:47
+I'm running a single VPA so it will just
+15:49
+I can just do hyphen OML also otherwise
+15:51
+you can provide a name also. So if you
+15:54
+come down we can see lower bound is 100
+15:56
+m of CPU that is okay and it is
+15:58
+targeting 130 m. So it is saying at
+16:00
+least you must have a pod with 130 m of
+16:03
+CPU and cap target uh like it is max it
+16:07
+can go it is asking and upper bound as
+16:10
+you see in the slides also it is asking
+16:12
+for one CPU. So it is upper bound. We
+16:14
+can ignore it. Upper bound also it is
+16:17
+showing because we have defined in our
+16:18
+configuration also. You can see
+16:20
+autoscale as concurrently pause. It will
+16:22
+not going to do anything. And as per
+16:24
+this uh like
+16:29
+and v and if I do cubectl get vp hyperl
+16:33
+now it is showing 135 and if I run this
+16:36
+also get vpa. Now what we can do if you
+16:39
+want to like we are okay with this
+16:41
+updates. So I I will go to vi V CPU.
+16:46
+Mml. So we have multiple modes. Now
+16:48
+let's go to auto mode this time. And
+16:51
+once we done this it will update our
+16:54
+ports also. Before let me show you
+16:57
+ubectl get ports al as of now both ports
+17:00
+are running as of age is terminate. Now
+17:03
+let me apply this.
+17:10
+So now in auto mode it will recreate our
+17:12
+ports. So auto is recreate only as per
+17:14
+the slide which we have seen. So we can
+17:18
+see the update auto mode is deprecated
+17:19
+and will be removed in future API
+17:21
+version. You can use recreate initial or
+17:23
+in place mode. As I've told you that it
+17:25
+is auto deprecated. Now if I run cubectl
+17:29
+get ports.
+17:31
+Maybe it will create a new pod in a
+17:33
+minute. 2 according to the load.
+17:37
+Meanwhile it is doing. Let's come here
+17:38
+and let's refresh this page also. And we
+17:41
+can see now it is showing configured. It
+17:43
+is not showing anything any pausing. And
+17:46
+we can see we have now auto mode is in
+17:48
+place. And let's cancel it and see
+17:52
+whether it is creating or not. New pod.
+17:55
+So we can see now it has just created a
+17:56
+new pod container creating and it is
+17:58
+just terminating this pod. And if we go
+18:01
+here and just do cubectl describe
+18:05
+pod and give the pod name and let's see
+18:09
+and if we go to CPU we can see it is
+18:12
+using 145 m of CPU we can see our second
+18:15
+pod is also been terminated and new pod
+18:17
+has been created and if see the load
+18:19
+load will be still running and it is
+18:22
+using if you run in cubectl get vp also
+18:24
+let's see what is it is recommended as
+18:26
+of now it is showing 158 and So let's
+18:29
+hyphen OML
+18:32
+and from here it is now showing 150 m.
+18:34
+It is just kept on increasing our load.
+18:35
+As of now it is running with cubectl get
+18:37
+ports
+18:40
+and if we see the latest one how much it
+18:43
+is using.
+18:51
+So it is using 150 m of CPU. So this one
+18:53
+is using new one and previous one is
+18:55
+using 145 m CPU. So like this it will
+18:58
+just recreate the ports if the uh like
+19:02
+your VP recommendation will get updated
+19:04
+and it will take some time and if you
+19:07
+remove the load also it will not just
+19:08
+roll like scale back our load will go
+19:10
+away like if we stop this it will not
+19:13
+just lo like scale back the resources it
+19:16
+will take some time good time to move
+19:18
+back as of now it will not doing
+19:21
+anything
+19:25
+so now let's stop this uh program that
+19:28
+is running and now what we are going to
+19:30
+do let me delete this so that we can see
+19:32
+the other option also
+19:35
+because otherwise if you wait it will
+19:37
+take so much of time so let me get my
+19:39
+deployment and let's see remaining two
+19:41
+part also let me
+19:46
+uh let me delete the VPA only delete VPA
+19:51
+let me delete both VPA and
+19:56
+We will again deploy it but this time we
+19:58
+will choose initial option and after
+20:00
+that we will choose in place
+20:03
+uh upgrade also
+20:06
+that is the new one and let's go to
+20:08
+flask cap we updated this also and
+20:13
+let me delete my
+20:19
+service also.
+20:25
+So now I don't have running any ports
+20:27
+and anything and what we are going to do
+20:29
+now I'm going to run again same
+20:32
+configuration. So qctl apply -f vpa
+20:37
+testing cpu.mtl.
+20:40
+So this has been created. Now let's go
+20:43
+to our workloads and we will enable VPA
+20:46
+from here only. And if I go to my flask
+20:49
+app and you can come here also downwards
+20:52
+and click on configure and here I will
+20:56
+choose initial. So it will all like
+20:58
+updates are only applied when pod is new
+21:00
+pod is created and let's create a policy
+21:04
+and policy which I have used before
+21:05
+default only for CPU and add rule
+21:08
+minimum 100 of CPU and and maximum is
+21:12
+1,000 m of CPU and just click on done
+21:16
+and just click on save
+21:19
+and it is done. Now if we run cubectl
+21:22
+like cube ctl get vpa we will find our
+21:26
+vpa here and it is you can see the mode
+21:29
+is now initial and soon it will provide
+21:32
+the
+21:33
+uh updates when it will gets from that
+21:35
+uh recommendator like how much it needs
+21:38
+so it cannot be determined as of now
+21:40
+because we have just created we have to
+21:41
+wait some time now let's go back and
+21:45
+again run this load loadsh
+21:49
+And if you come here and run cubectl not
+21:53
+nodes let's get top pod
+21:56
+as of now we will see it is all using 1
+21:59
+mm of CPU it will just kept on
+22:01
+increasing as we have more load will
+22:03
+come so we can see now load has been
+22:05
+came 87 mm 130 m and if we come here and
+22:08
+let's run cubectl let me clear this and
+22:11
+run qc get vpa and we can see it is now
+22:14
+showing 150 m of CPU and if we run like
+22:18
+hyphen OML also
+22:22
+and we can see it is asking for target
+22:24
+of 150 m of CPU but it will not do
+22:26
+anything until the pod will be recreated
+22:29
+or the initial pod like we have defined
+22:31
+here. Initial thing let me refresh this
+22:34
+maybe it will show like it is working
+22:35
+fine now we can see it is configured and
+22:38
+initial we have configured here updates
+22:41
+are only applied when a pod is created.
+22:43
+So what we can do now? Let's come here.
+22:47
+Let me do cubectl get pods.
+22:51
+And if I let me delete this pod and it
+22:55
+will recreate this pod. Delete
+22:58
+pod.
+23:02
+So it is deleting a pod. The new pod
+23:04
+that has been created will be created.
+23:05
+Actually it must have then updated uh
+23:09
+our target cap. Oh it has came back to
+23:11
+100 mcp. I think it will not create now.
+23:16
+Now let's run cubectl get ports
+23:21
+and this is the new port that has been
+23:23
+created. Let's see whether it will have
+23:24
+the updated
+23:34
+showing 100 m of CPU because our uh BPA
+23:38
+came down to somehow to back to 100
+23:41
+only. Let's see now what it is showing.
+23:43
+Let me retry it. Maybe it will work. Now
+23:45
+it is showing 160 m of CPU. Let's retry
+23:47
+it once again.
+23:50
+QCTL get pods. Maybe this time it will
+23:53
+work.
+23:55
+And let's delete the new one only. QCTL
+23:58
+delete pod.
+24:02
+Just maybe this time it will not not go
+24:05
+back to 100 only. It is now showing 255
+24:08
+because only single pod is running now.
+24:11
+Maybe
+24:12
+in a minute or two our new pod will be
+24:14
+created and from in that we will check
+24:17
+our resources because it will only
+24:19
+applied at the initial level not at that
+24:22
+running level. Now it has been deleted.
+24:25
+Now let's do cubectl get ports.
+24:28
+So this is our new pod and if I go here
+24:31
+and like just describe this pod
+24:39
+and if we come here we can see now it is
+24:42
+using request 255 of MCPU that is being
+24:44
+shown here 255 like this this is the
+24:47
+initial level which you can use VPA. Now
+24:50
+one more thing we can do.
+24:53
+Now let's go here and just update it to
+24:56
+from initial to let's update to in place
+24:58
+or recreate. So this is in preview. So
+25:00
+it can update in in in place also like
+25:04
+without restarting the pod. But if that
+25:05
+is not possible it will do the pod
+25:07
+recreation. So now let's click on save
+25:11
+and now let's go back here. As of now
+25:14
+let's see what VP is showing. It is
+25:16
+still showing 255 and you can see it is
+25:18
+update to in place or recreate. Maybe it
+25:20
+will update our pod also. QCTL
+25:23
+get pods and this is
+25:28
+okay. It is just terminated our pod in
+25:32
+it is not recreated in not done at in
+25:34
+place level. It is just recreating the
+25:36
+pod. You can see 30 second ago. So it
+25:40
+will in place or recreate it can do
+25:41
+anything. We cannot um comment like what
+25:45
+will happen. It all depends upon the
+25:48
+like VPI level only. First last time
+25:51
+I've tried it will done the in place
+25:52
+also. Maybe this time it is not doing
+25:54
+somehow. So like this you can use all
+25:57
+these option in place or recreate also
+25:59
+like for like in place doesn't happen
+26:02
+but it then the recreate option recreate
+26:04
+thing but in the that testing which I
+26:07
+have done my previously on that part in
+26:10
+place also happens. So but I cannot show
+26:12
+you because it depends upon that VPN on
+26:14
+the pod also and sometime it happens and
+26:18
+sometime in place resizing is not
+26:19
+possible that pod recreation will occur
+26:22
+that will happen in our demo. So this is
+26:26
+all for VPA. This is not prop like a
+26:28
+video on proper VP just showing how to
+26:30
+use VPN in GKE and what are the options
+26:33
+we have. If you have any suggestions or
+26:34
+something just comment it down. I will
+26:36
+try to help you and work on it. And you
+26:38
+can also try to drop an email. I will
+26:41
+drop my email ID. And if you have any
+26:42
+question, suggestion just drop an email.
+26:45
+I will try to help you. If I know how
+26:46
+can I help you. Thank you very much. by
+
