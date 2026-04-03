@@ -53,6 +53,7 @@ Assume you are an expert technical writer and Trainer. Your objective is to conv
 &nbsp;   - \*\*Tables\*\*: Use for comparisons (e.g., HTTP Methods, Protocol Versions, etc.).
 
 &nbsp;   - \*\*Lab Demos\*\*: Explicitly include all steps and code for any lab demos mentioned.
+         - Do not miss any step in lab demo's, commands and code snippets.
 
 4\.  \*\*Summary Section\*\* (At the end):
 
