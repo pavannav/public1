@@ -1,0 +1,2 @@
+- Filename: 77  Core Java & Full Stack Java @ 9 00 AM IST on 10th May Mr Hari Krishna.txt
+- No major transcription errors (e.g., "http" appearing correctly as "http"; no instances of "htp" or "cubectl" to correct). Minor transcript timing notes corrected implicitly where obvious context misalignment occurred.
