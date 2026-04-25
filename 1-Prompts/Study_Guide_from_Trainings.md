@@ -1,6 +1,5 @@
 # Study Guide from trainings where each session is around 1 hour.
 
-To replicate the style and quality of the study guides created for the Nginx course, provide the following instructions to your AI assistant when starting a new training course.
 
 ---
 
