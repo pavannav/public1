@@ -1,0 +1,134 @@
+﻿In this session, we are going to make some changes to our existing workflow,
+add a few jobs, and see how you can make use of the needs keyword.
+So in our existing workflow, I would like to make some changes. So first, I would like to,
+you know, change the names of the jobs. So first, I'll just name this as, we're just building a
+file. So I'm just going to say build file, then we are testing a file, right, I'm just going to say
+test file. And for the deploy job, let's say we want to deploy to the, you know, AWS EC2,
+you know, virtual machine. So I'm just going to rename the job names. And also within the build
+job, I would like to remove the sleep command. And in the test, even in the test, I would like
+to remove the sleep command. Okay, so so far, we have three jobs, build, test and deploy.
+But before deploying, so what we would like to do is I want to make use of Docker,
+create some Docker images, test the Docker image and push the Docker image to Docker Hub,
+and then deploy the Docker image to Amazon EC2 instance. So for doing that, you can add
+multiple Docker jobs. So I just copy-paste the jobs and explain what I've done here.
+So I've added three new jobs. So these, the names of the jobs are Docker build,
+Docker testing, and Docker push. So let me explain what I've written over here.
+So in the Docker build job, of course, it's going to make use of the stage called as
+Docker. I mean, all the three jobs which are there in Docker are going to use the stage Docker.
+And since I've not defined the Docker within the stages part, it's going to give you a warning at
+the top. So I would like to execute the Docker jobs after the test. So I'm just going to use
+Docker after the test in a stage. Okay, so in the first Docker build, so we are not going to
+really build anything. For the time being, we will be doing that in the later sessions. So for the
+time being, I'm just going to use some echo commands just to run the jobs and explain the
+needs keyword. So we are going to use Docker build to build an image. I'm going to use a sleep command
+to sleep this job for 15 seconds. Then I have a Docker testing job, which uses the same Docker
+stage. It's also going to run an echo command, but it's also going to fail the job. I'm explicitly
+using exit one code, which is going to fail the job. And then we have the Docker push
+in a stage, which is going to again use the Docker stage. And it's going to use a couple of
+echo commands for logging to Docker and pushing to Docker. So within the test job or the Docker
+test job, let me also add a sleep command for 10 seconds. Okay. So this is how I have defined
+three new jobs. And if you want to visualize this, you can click on the visualize, it's going to show
+you a new Docker stage going to run three jobs. And by default, if you have multiple jobs within
+a stage, all the jobs will be running in parallel. They don't run in sequence. So first, let's see
+the default behavior, and then, you know, modify the behavior as per our requirement.
+So let me quickly go back and commit. So let's commit this.
+Let's go to Pipeline and see them in action.
+So we have various jobs, as you can see here. So we have the build test in Docker, we have
+three jobs, and we have deployed. So total, we have around six jobs, and all the six jobs can
+also be, you know, viewed here. Okay. So currently, it is there in the build phase. So I'll just pause
+the video till it comes to the Docker stage. As you can see here, currently, it has come to the
+Docker stage. And if you see all the three jobs are currently in a running state. So all the three
+jobs will be running in parallel in three different virtual machines. So let's see which one gets
+executed first and how the execution order is going to work. So the ideal execution order is that,
+you know, you need to complete the build first, then the testing and the push. But as you can see
+here, as of now, the push job has been completed first, which is illogical, because even, you know,
+without building a Docker image, you can't push the image, it should ideally give you an error
+in real-time scenarios. So here it is successful, because we are simply using some echo commands.
+And moreover, if you see here, the Docker test job has also failed, which should imply that the push
+job should never be executed. Okay. And since the testing job has failed, the deploy job was skipped
+automatically. So if you remember the order of execution in the default thing, as I've told that
+it happens in parallel. So in our case, the push was executed first, followed by, you know, testing
+and then the build. So the ideal execution order, as I've mentioned earlier, is building the Docker
+image, testing the Docker image and then pushing it. So how do we maintain that order? So that
+order can be maintained by using the needs keyword. So there is a needs keyword. So let's try to
+check out the documentation. So the needs keyword executes jobs out of the order. And if you have
+multiple jobs within the same stage, so those jobs can be executed in sequence. So not only that,
+the needs keyword can also be used to ignore the stage ordering and run the jobs, you know,
+without waiting for others to complete. So let's check both the scenarios. So first, let's go and
+add some needs keyword. But before that, I'll also explain about the DAG. So when you're using
+the needs keyword, you can also visualize how the jobs are dependent on each other. So you can visualize
+them as a DAG. So a DAG is a directed acyclic graph. So let me just quickly open this. So there
+is complete documentation dedicated to this. So I highly recommend you guys should look at this.
+So a DAG can be used in the context of a pipeline to build, you know, relations between, you know,
+various jobs and how the jobs can be performed as quickly as possible. Right. And if I scroll down,
+it also, you know, it's going to give you this beautiful, you know, visualization, you know,
+which makes it easy for us to understand how the jobs are, you know, dependent on each other and
+what is the relationship between them. Okay, so let's try to use the needs keyword. So the needs
+keyword can be used by simply, you know, mentioning the name of the job, which it has to, you know,
+depend on. So let me go back to the workflow. So here, the test job should be dependent on the
+build job. So here before the script, I can just select needs, and I need to give the name of the
+job on which it has to depend. So let me just, you know, copy the Docker build. And then in the
+push job, it should wait for the Docker test job to complete before executing the Docker push.
+So that is how you can mention the needs, you can give multiple jobs as well. Okay, so let me
+quickly visualize this. And here, you can see that there is a loop over here or a small curve.
+So this says that, you know, these two jobs are dependent. So the testing job depends on the build
+job. And whereas the push job depends on the test and the test on the build, right. So let's try to
+commit this and see how this works.
+Let's commit the changes.
+Let's go back to the pipeline. A new pipeline should be triggered for us.
+And here, again, you should be seeing the same set of stages in jobs, but we have a new option.
+So we have group by stages, or you can also see how the jobs are dependent. So I can click on the
+job dependencies, I can say show dependencies. And it's going to show me that there is a
+dependency, you know, between the Docker build, test, and the push jobs, right. So that is how
+the dependency is shown in the UI. And not only that, you can also, you know, click on the needs
+keyword, which is going to give you a visual representation about how the jobs are dependent
+on each other. So here, if you just hover the mouse, it's going to show you that first the
+Docker build is going to be completed, then the Docker testing job will be started. And for the
+Docker push job, in order to start executing it, the Docker testing job has to be completed
+successfully, right. So this is how the visualization helps you to understand the relationship between
+multiple jobs. So if I go back to the pipeline, if I go to stages,
+so let me I guess I need to refresh, it's taking some time to load.
+Let's go back to the pipeline. So now if you see, it is running the build job,
+and the remaining two jobs are not yet started, because the build job should successfully complete
+in order to start the testing job. And after the testing job successfully completes,
+it starts the push job. So that's how the order of execution is now controlled using, you know,
+the needs keyword. So now since the Docker build job has successfully completed, it has started
+executing the Docker testing. And if you see the Docker push job has not yet started, because it
+still waits for the testing job to complete. But if you remember, the testing job will fail,
+because we used explicit exit 1 command if you go to the Docker testing job, right. So if the
+Docker testing job fails, the Docker push job should be skipped automatically, right. So that's
+how ideally it should work in real-time scenarios. So let's go back. So if you see here, the Docker
+testing job has failed with exit code 1, because that's the code which we have used.
+And if I go back to the pipeline, you can see that the Docker push job is skipped,
+because the testing job has failed. And also the deploy job is skipped, because one of the
+previous jobs has failed, right. So this is how you can make use of the needs keyword.
+But now let's check out the other scenario. So if you go back to the documentation,
+within the needs keyword, it also says that you know, you can ignore stage ordering and run some
+jobs without waiting for others to complete. So jobs in multiple stages can also run concurrently.
+So how do we do that? So in our example, if I go back to our example, right, so currently,
+we are just using the needs keyword to, you know, execute multiple jobs within the same job
+in sequence. But let's say the Docker build job, let's say you know, it should start as soon as
+the build file job is successfully completed. So what I can do here is I can use the needs keyword,
+I can just mention the name of the job build file. I guess that's the name of the job build
+file, right. So now in this scenario, it should automatically start the build job as soon as
+the build phase is completed. Right. Let's check out the visualization. So as you can see here,
+now you also have a visualization for the Docker build, I mean Docker build job. So it should start
+as soon as the build file job completes, right. So it will not wait for the test stage, it will
+directly start the Docker build if the build file job is successfully completed.
+So let's quickly test the scenario as well.
+Okay, so I'll just add this commit message and commit it.
+So let's go to the pipelines and see the new pipeline.
+Okay, so again, we have the same set of jobs. So let me go to the job dependencies.
+So here, if you see the job dependencies is a bit changed because the Docker build job will
+now start as soon as the build file job completes successfully. So you can also see this visually,
+if I go to needs. So this is how it's visually, you know, displayed as well.
+So let's go back to the pipeline. So we should be seeing that, you know, both the test stage
+and the Docker stage will now run concurrently because the build job is now, you know, dependent
+on the successful execution of the build file. So as you can see here, both the stages are getting
+executed concurrently, both these jobs, the test file and the Docker build, because we are making
+use of the needs command. So the Docker build job, you know, just waits for the build
+file, if it is successful, it just starts executing. Right. So the needs command can be used,
+you know, within the same stage, or you can also use this to run, you know, multiple jobs
+concurrently from multiple different stages as well. Right. So that's how you can use the needs
+keywords. So I'll just, you know, cancel the pipeline, because we have seen this multiple
+times. So let me just cancel this. So that's all for now, guys. Thank you.

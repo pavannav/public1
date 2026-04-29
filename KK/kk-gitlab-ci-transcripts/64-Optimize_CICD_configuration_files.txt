@@ -1,0 +1,105 @@
+﻿Okay, so let's go ahead and reuse the configuration using the Extends keyword.
+So as per the Optimizing GitLab CI/CD Configuration documentation page,
+we have three options to optimize the complexity and the duplicated configurations within the
+GitLab CI/CD configurations. We can use the Extends keyword, we can use the reference tag,
+and we can also make use of the YAML specific features like anchors, aliases, and map merging.
+In this session, we're going to talk about Extends and how to reuse the configuration.
+So in order to use Extends, you need to make use of the hidden jobs, as discussed in one of the
+earlier sessions. A hidden job is something which starts with a dot, right? So this job is considered
+a hidden job, and it is not included in the pipeline directly. So in order to refer to this
+hidden job, you need to use the Extends keyword from another job, and you can refer the hidden
+jobs and all the configuration will be reused in this job as well. Okay, and again, there are a
+couple of different scenarios when you're using Extends, you can use or the Extends supports
+multi-level inheritance, you can use as many as 11 inheritance, but GitLab recommends you to not
+to use more than three levels due to the added complexity. And again, you have different options
+where you can use Extends and Includes together. We didn't discuss about Include yet, we'll be
+doing that in the future. But yes, you can use both Include and Extends within your pipelines.
+And if you're using more than one hidden job within the Extents, it also comes up with something
+like merging the values from both the jobs. So if you want to have more information about it,
+what is merged, what is not merged, you can also check out the merge details.
+So for now, let's go back to our pipeline. So, so far, we created I think around 10 jobs,
+we defined variables, stages, and workflows. So this is how our pipeline currently looks like,
+this is how the visualization looks like and how the stages and the jobs run.
+So what I want to do today is I would like to work on the test stage. So if you see the test stage,
+I have a unit testing and a code coverage job. So both of them are NodeJS based jobs.
+So let's see if there is anything common between both this job and we'll see if we can reuse any
+configuration using the Extends keyword. And since we are only testing or working on the test
+stage, I would like to comment out the remaining stages so that you know our pipelines are
+completed quicker and I can also save in a few compute minutes. So the first thing I would like
+to do is let me just comment out the remaining jobs. So I'll just select all the jobs till the
+Docker build and I'll do Control forward slash so that it comments all the remaining jobs.
+So after I comment all the remaining jobs, if I go to the visualize, I should only see the test
+stage with the unit testing and the code coverage jobs. So let's go back to edit. So let me expand
+the unit testing and the code coverage and you can see it has a lot of configuration.
+So around 89 lines. So if you see we are at 89. So if you see the configuration
+of the code coverage and the unit testing, we have many things similar like the image is same,
+the services are same, the variables also are same following with caching and the before script.
+So all these things, so if you compare from line 58 to 77, we are using the same configuration
+in the unit testing as well. So if I go to unit testing, you can see that from line 25 to 44,
+we are using the same configuration. It's like we are setting up an environment where we are
+using some Docker images for the job and for the database, we are using some variables,
+we are caching the dependencies and we are installing the dependencies. So once you are
+setting up the environment, you are running the npm test command for running the test cases,
+you are storing the artifact and in code coverage, you are running the code coverage command.
+So here we can reuse the configuration starting from line 58 till 77, the images, services,
+variables, cache and before script. So how do we reuse them? So what I can do here is,
+so let me quickly copy all this and I'll be creating a hidden job. So how do I create a
+hidden job? So I can use a dot and I can give any name to a hidden job. So since this is like,
+you know, preparing an environment to run the NodeJS commands, I'm just going to name this
+job as prepare NodeJS environment. Okay. And this is a hidden job. But again,
+this should contain image should not be a blank one. Since it is blank, it is showing you this,
+you know, exception or warning saying that it can't be blank. So I will just paste, you know,
+the content like the images, services, variables, cache and the before script which I copied.
+So now our hidden job is ready. So how do you see this hidden job? Does it display in the
+visualization? If I go to visualize, the hidden jobs are not displayed. The reason is only defining
+the hidden job, you know, it will not be, you know, used, you know, while the pipeline is
+getting executed. So you need to refer to the hidden job using either extends or anchors.
+So in this session, we will, you know, refer to this hidden job using the extends keyword. So
+how do we do that? So in the unit testing job, let me remove everything, you know, starting from
+images till the before script. And here I will be using extends and I need to use the name of the
+job which I just created. Right. So the hidden job basically, so I need to just copy and refer to it.
+That's it. So that is how you can extend the hidden jobs which has a configuration which you
+can reuse in multiple other jobs. So let me just copy this extends and add it in the code coverage
+job as well. Okay. So if you see, I think the number of lines have also decreased earlier,
+it was around 90. Now it is 73. Since we have only two jobs with the common configuration,
+you might see just a difference of 10 lines, but it also has a couple of advantages. So if
+you want to make a change, you know, you can just make a change in the hidden job and any other
+jobs which are referring to this hidden job, you know, will be applied, the changes will be applied
+to those jobs as well. Right. So you can avoid misconfigurations in multiple different jobs.
+Okay. So this is how you can reuse the configuration. And still, after even,
+you know, using the extends keyword, you don't see the hidden job, but that configuration
+will be used in both unit testing and the code coverage jobs. So if you want to see
+how the unit testing configuration looks like after the extends keyword works, you can click
+on the full configuration or you can also check the validate option, it should not give you any
+errors. Right. And you can also see that, you know, the before script is being added for both
+the jobs. And if you want to see the full configuration, like how it looks like after
+the extends command, you know, merges the content, you can click on full config. And here,
+it's going to show you the full YAML file. And if you see in the unit testing
+job, it's going to show you the image, the services, variables, cache before script. Right.
+So it is going to show you the merged content within the full configuration, it's going to show
+you the merged content after applying the extends keyword. Okay. The same thing can also be seen
+in the code coverage. Right. So this is how you can, you know, analyze after you
+extend a hidden job and see if it is getting, you know, displayed or not.
+Okay. So if I go to edit, so in edit, you don't see the entire configuration,
+you just see the extends keyword. Right. So let me quickly commit the changes and see this in action.
+I'll just add a commit message saying exploring extends keyword and, you know,
+committed to the feature branch. Okay. A new pipeline should be triggered for us.
+So let's go to the pipeline. As you can see here, both the jobs are in execution state,
+and both will be running in parallel. So just pause the video and this gets completed.
+Okay. As you can see here, both the jobs have been completed. The pipeline is also
+completed. But since the code coverage job fails, we are allowing it to fail,
+it's going to show you a warning symbol, but that's fine. Right. So if I go to the unit testing job,
+you know, it should contain all the steps. So let me quickly minimize all the steps quickly.
+Right. So if you see, it is going to make use of the service image, which we added,
+it's going to make use of, you know, the job image, and it's going to also, you know,
+restore the cache. And then, you know, it's going to use the before script for installing
+the dependencies. And then it's going to, you know, run the test command. So this explains that,
+you know, whatever configuration we added in the hidden job is being, you know, merged and referred
+and referred in the unit testing job, as well as in the code coverage job for, you know,
+executing or reusing the configuration. Right. So this is how you can make use of the extends
+keyword. Again, it has a couple of other options, like you can use this with the includes tag.
+And also, if you're merging, you know, more than one hidden job within a job,
+there might be some common parameters between these two jobs. So how they're going to be
+merged, you can just check out the documentation, which has a good example. And you should be good
+to, you know, use more than one hidden job, you know, within the extends keyword.
+That's all for now. Thank you.

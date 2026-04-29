@@ -1,0 +1,98 @@
+﻿Let's go ahead and deploy the manifest files to the dev namespace.
+Before I go to the GitLab CI pipeline, so if I go to my local terminal and if I try to,
+you know, fetch the details from the development namespace,
+you know, we see that, you know, there are no resources available in the development namespace
+because we have yet to, you know, deploy something or apply something within the,
+you know, development namespace. So let's go back to our pipeline. So here we have, you know,
+installed the kubectl CLI, we have added the kubeconfig file, we got the Ingress URL,
+replaced all the placeholders. So the next step is, ideally speaking, you can just, you know,
+pipe the output of this environment substitution to a kubectl apply, you know, command. So I can
+simply use kubectl apply, hyphen f and hyphen. So this is going to, you know, deploy or, you know,
+create the manifests on the Kubernetes cluster. But will this work? No, it won't work.
+And the reason is, if you go back, and if you, you know, check out the deployment manifest file,
+you can see that this manifest file or this image also requires a secret. So if you see,
+it is going to, you know, fetch some environment values from a secret file. So we did not create
+the secret. So what is the secret? So this secret is named MongoDB credentials.
+So this secret should contain the MongoDB, you know, URI, username and password, so that, you know,
+the application which is running within the image can connect to the MongoDB to fetch the data or to,
+you know, do the reading of the data, right. So this is not yet created. And hence the pipeline
+deployment will fail. So how do we create that? So you can quickly create a secret.
+So I'll be creating a secret here before I apply the job. So I'll just copy paste the command. So the command
+is kubectl. I'm trying to create the secret within the development namespace. So the namespace is a
+dynamic value. It's going to say create secret generic, I'm going to give the same name, which
+I used in the deployment YAML file. And then I'll be passing the Mongo URI, Mongo username,
+and the Mongo password from the global variables, right. So if I scroll up,
+so I already defined these variables here. So I'll be making use of the same variables. So let me
+uncomment them. Okay. And I think I'll just push them. Right. So I'll be making use of, you know,
+the same variables. Okay. So in this example, I'm making use of variables which are defined at the
+GitLab level. But in real-time scenarios, you can also, you know, refer to these sensitive values from
+an external secret vault like HashiCorp Vault or some other solution. So GitLab totally supports
+external secret vaults as well. And you can configure them and fetch these values from the
+external vaults as well. Okay. So here, I'm just, you know, creating the secret, I'm, you know,
+getting the YAML content. And again, I'm piping the YAML content, you know, to the kubectl apply
+command. So this is how, you know, the secret is also going to be created. And then the deployments
+should happen successfully. So once the deployments are successful, I also want to, you know, get the
+details. So I'm just going to say kubectl within the development namespace. You know, I would like
+to, you know, get all, I would like to read the secrets and also the Ingress as well. Right.
+So all this will be created. But before I do that, I also need to do a few more steps. So now that we
+are, you know, really deploying the application to Kubernetes, you need to have the Docker image.
+So we need to go ahead and uncomment the Docker jobs. So let me go and uncomment all this,
+you know, Docker build, Docker test and the Docker push jobs. Okay, so let's see that we don't have
+any errors. So now we have the Docker build, Docker test, Docker push, and publish to GitLab
+Container Registry as well. Okay. So this Docker build and push are important because we have to
+build the image and push it to Docker Hub so that the image can be used within the Kubernetes
+dev deploy job. Right. And honestly speaking, we will not be using the images which are pushed
+to the GitLab Container Registry. I just added this job to show you how it can be done. So I'll
+just comment this job back again, because I don't want to waste my compute minutes if I'm not using
+the image. So let me quickly comment this out. Okay. So that's the configuration, which I have.
+Okay, I guess the configuration looks good. If I go to visualize, I should be seeing two stages,
+the Docker containerization stage and the dev deploy stage and everything looks fine so far.
+Okay. So let's go ahead and commit these changes. I'll just say deploying to
+K8s dev namespace and publish this or commit this to the feature branch.
+Right. So a new pipeline should be triggered. So let's go to the pipeline.
+Right. So it has four jobs now. So I'll just pause the video till all the jobs have completed.
+Right. Okay. So as you can see, all the four jobs have been successfully completed and the
+pipeline is also in the pass state. So let's go to the dev deploy job. So it has a lot of
+logs. So let me minimize a few of them and I'm within the job script. So we have seen some of
+the steps earlier. So I'll just skip to the part where we are creating the Kubernetes secret.
+It can see, you can see that, you know, it created the MongoDB credential secret
+and it's also, you know, the deployment has been created.
+The Ingress URL has been created and the service is also created. So this is being done
+after you're replacing the placeholder values using the environment substitution program. Okay.
+And once it's done, I just used kubectl, you know, within the development namespace to get,
+you know, all the details, secrets and ingress. So here, since, you know, this command just ran
+a few seconds after the deployment is created, you will be seeing that the pods are, you know,
+within the container creating status, but this should be deployed after I, you know, complete
+explaining the stuff. So you can see, you have two pods, you have two replicas because we defined
+replicas is equal to two within the CI/CD variables. So you have two pods, you have the
+service, you have the ingress and also the secret created. So let's try to check them out in our
+local terminal. So in the local terminal, if I do kubectl within the development namespace, get all,
+you can see that I have a single deployment named solar system, which has two pods because
+it has two replicas and both the pods are up and running successfully. It created a service
+of type node port. Ideally speaking, even cluster IP would have worked because we are trying to
+access the application or the service through the ingress controller. So I can do a quick kubectl
+get ingress, and you can see the IP address of the host of the, you know, ingress. Let me just
+copy it. So it has the name, the namespace, the ingress controller's load balancer IP address and
+dot nip.io. Okay. So let's go to the browser and see if we can access the application.
+Of course, it's making use of our self-signed certificate. So it's going to ask you
+to, you know, really proceed or not. So let me proceed. And you can see that the application
+is up and running successfully. It's giving me the homepage. You can also explore this and see
+if the database connection is fine or not. So before going there, you can also see the port
+name, right? So it's going to show you the name of the port where the application is running.
+So if I go back to the, you know, terminal, you can see that, you know, it's running on
+these two ports. So it's going to load balance, you know, across these two ports. Okay.
+So currently it's running or, you know, displaying the data from the port, which is having this name.
+Okay. So I can simply search for a planet by entering the number of the planet. If I do three,
+it's going to show me the details of Earth. If I do six, it's going to show me the details
+of the planet Saturn, right? So these details are basically coming from the MongoDB database.
+So this also proves that the application has been successfully deployed and it is also,
+you know, able to connect with the database and fetch the details. Okay. So we have tested this
+visually. We deployed and tested it visually, but in the pipeline, it would be better if you can run
+a couple of integration tests to make sure that the application got really deployed and, you know,
+it can be, you know, merged to the main branch or you can do some other stuff.
+So for integration testing, as you remember, we also have a couple of different endpoints,
+the /live endpoint, which basically gives you the status as live. And you also have the
+/slash ready endpoint, which gives you the status as ready with 200 OK as the status code. So in
+the next session, we are going to set up a couple of integration tests so that, you know, we can,
+really test if the application is up and running within the pipeline itself.
+Okay. So that's all for now. Thank you.

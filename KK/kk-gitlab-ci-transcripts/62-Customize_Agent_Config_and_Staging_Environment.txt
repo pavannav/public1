@@ -1,0 +1,178 @@
+﻿Okay, so now let's go ahead and manually deploy the application to the staging environment
+using the GitLab agent. And when I say environment, we'll be making use of the Kubernetes namespace.
+So if I go back to my local terminal, and if I try to get the, you know, details from the staging
+namespace, we don't see any resources because nothing is yet deployed over there.
+So same thing can be seen in the GitLab environments page. So if you see within
+the staging environment, we have no deployments, we are yet to do a deployment.
+So how do you do the deployment? So you can follow the same in a job which we have used
+for deploying it to the, you know, the dev environment. So if I scroll down,
+so we see that we have a Kubernetes dev deployment, where we made use of kubectl,
+we used kubectl and we deployed it. But I don't want to follow the same steps,
+I would like to deploy to the staging namespace or the staging environment using the GitLab agent,
+which we have configured. So I would like to make use of this agent, which is currently,
+you know, connected with my Kubernetes cluster. And this, you know, status is also, you know,
+connected, right? So how do we do that? So to understand how to do this, we can again rely
+on the documentation. So in the previous session, we authorized the agent to access the projects
+within the group. So by using the CI access within the config.yaml, so what this configuration is
+going to do is all the projects which belong to the group or the subgroup are now authorized
+to access the agent. And this means that all the jobs now include a kubeconfig file,
+which has the context of all the agent connections. And this kubeconfig path is
+also available as an environment variable within the $KUBECONFIG. So while we use the kubectl
+commands, we need to choose the context, set the context and then, you know, use the context to,
+you know, start deploying applications or manifests to the Kubernetes cluster.
+And it also gives you an example here. So it says like, you know, how to update the,
+you know, GitLab CI YAML file. Here we have a job called deploy, they are using a kubectl image
+in order to, you know, get the kubectl CLI. So the first step is they are getting the git context
+command using the kubectl config. So as each and every job has the kubeconfig environment variable.
+So this kubectl command internally is going to make use of the GitLab agent's kubeconfig file
+for getting the context. And in the next command, we can use again kubectl config use context,
+and you know, set the GitLab agent context. So how do we do that? So you need to give the path
+to your project and basically the project where you are trying to deploy and you need to give
+the agent name. So that is going to be the context. And after you set the context, you can use the
+kubectl CLI to deploy the applications using, you know, the agent's kubeconfig file. Okay,
+so let's see how to do this. So I can go back to the pipeline. And let me do one thing. So what
+I'll do is, I'll just copy the entire dev deploy job. And let me paste it here. So of course,
+I need to make some changes. Because if you see, it's going to give me an error,
+because the name should be unique. So let me make some changes here. So the first thing I
+would like to change here is, let me name this as k8s stage deploy. Okay. And I also want to
+use a different stage name. So I want to use stage deploy as the name. So if you see, as soon as I
+change this, it's giving me an error saying that this stage does not exist. So I need to, you know,
+quickly go up and define this after the dev deploy, you know, stage. Okay, so I'm just
+creating another stage for the staging environment. So after I do that, so what are the other changes
+which I need to do? So the first thing is, if you see here, in the dev deployment, we made use
+of our own kubeconfig file in order to connect with the Kubernetes cluster and deploy. Again,
+this is kind of a like, you know, security issue, because you should not be exposing
+your kubeconfig files on third-party servers. So using the GitLab agent, this step can be avoided,
+because now it has its own kubeconfig file. So how do we make use of the GitLab kubeconfig file
+or GitLab agent's kubeconfig file? So if you remember, you need to, I mean, if you remember,
+the documentation says that the kubeconfig file is part of the environment variable.
+First, let me read the variable and see what it contains. Then I'm going to use the context
+and then deploy the application. So let's see how to do that. So for the first step,
+I'm just going to remove the first two commands, which are the export KUBECONFIG and the kubectl
+version. So they will be working as it is. So here, the first step is first, I would like to
+print the environment. And when I say print environment, I would like to print
+the KUBECONFIG environment variable. Okay, so let me just say print env kube
+config, all caps. And this is going to give me a path which contains the KUBECONFIG file. So I
+want to read the file. So in order to read the file, to make things simple, I'm just going to
+execute this and store the response in a variable. So let me create a variable called as
+temp underscore KUBECONFIG file.
+Right, so whatever path which is going to be printed using this print env command,
+it's going to be stored in the temp Kubeconfig file variable. So in the next command, just to
+see what we have in this Kubeconfig file, I'm going to read it out using the cat command.
+And I'll just, you know, copy this name, use dollar and read it. Okay, so this is how I'm
+just going to print the kubeconfig file of the agent and read it. So after reading it, I can,
+you know, just use the kubeconfig get-context command to see the context details. And I would
+like to, you know, use the context. So how do I use this context? So if you remember the steps,
+so let me just copy this command. So you need to use kubectl config use-context,
+and then you need to give the path of the project. So this is nothing but your group
+name and the project name. So I'm just copying it from the URL above, I need to paste it here.
+And you also need to give the agent name: the agent name. So the agent name is,
+you know, K8s GitLab agent. So let me just paste it here. Okay, so that is how you make use of the
+context. So once you make use of the context, you can interact, you know, with the Kubernetes
+cluster. Okay. And I'm just going to use kubectl get pods just to display all the pods, you know,
+which we have in the cluster. Right. So I think these are the only changes which I need to do.
+So I'm just making use of the GitLab agent's kubeconfig file to connect with the cluster
+and you know, to create and communicate with the cluster basically. So the rest of the steps like
+exporting the Ingress IP, creating the secret within the namespace remains the same. And if
+you remember, we have to associate this job with the staging environment. So let me replace the
+environment with staging. If you remember, in the last session, we also created a couple of
+environment variables within the CI/CD settings. And those variables are associated with the
+staging environment, especially the namespace and the replicas. So whatever values which I gave here,
+those will be used in the pipeline of this job because this is referring to the staging
+environment. So it's going to, you know, create the secret within the staging namespace. And at
+the same time, it's going to use the replicas which I defined within the staging environment
+variable. So it's going to create the secret, it's going to update the manifest files and replace
+the placeholder values. So I'm making use of the same manifest files, which I have at this path.
+And finally, I'm just outputting, you know, all the objects from this specific namespace,
+basically all the resources and getting the Ingress URL and the same URL, I am using it
+in the environment URL as well. So these are the changes which I have done. And since we are doing
+this, let me also do the changes for the integration testing as well. So I would like to
+add even that here. So here it's going to be Kubernetes stage integration testing,
+the stage is going to be stage deploy, and it requires the Kubernetes stage deploy job to be
+completed before it gets triggered, because we need the Ingress URL in order to do the integration
+testing. Okay, so these are the changes, you know, which I have done. So I have added two new jobs
+for deploying the manifest to the staging environment as well as, you know, doing the
+integration testing as well. Okay, so once you do this, I think the rest of the things can be
+left as it is. So let us quickly visualize. A new stage has been added, we also have the
+containerization stage. So since this is the last demo of this module four or section four,
+let me uncomment all other jobs as well. Okay, so let's run all the jobs once and see how the
+pipeline looks. So let me just uncomment everything. Okay, so we have the unit testing,
+code coverage, Docker build, Docker test, Docker push, publishing to GitLab container registry,
+dev deploy, dev integration testing, stage deploy, and stage integration testing. Okay,
+so we have I think 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, we have 10 jobs defined so far. So if I want to
+check this visually, so this is how the pipeline visually looks like if you run all the 10, you
+know, jobs. So I guess I didn't make any mistakes. So let me quickly check this out and we'll deploy.
+Okay, so I guess I missed one more keyword. So what I want to do here is, if you remember,
+you know, I wanted this job to be deployed manually or promoted manually to the staging
+environment. So you can also manually trigger the jobs. So if you see here, you can also configure
+that a job doesn't run unless a user starts it. And this is basically called a manual job.
+In order to define this manual job, you can use when is equal to manual keyword, which will,
+you know, wait for a user input in order to start the job. Okay, so let us quickly configure this
+for the staging environment. So this is basically used for jobs where you're deploying something to
+a production environment. But I want to use this for the staging environment itself.
+So if I go back to my pipeline, for the Kubernetes stage deploy, I'm just going to use
+simple when condition. And for the value, I just want to use manual.
+Okay, so now this job started manually to, you know, trigger it. Okay, so let's say
+configured stage deploy and testing. Okay, so let me quickly check if there are no syntax errors,
+visually everything looks fine. So let's go and commit this to the feature branch.
+Okay, that's great. A new pipeline should be created. So let's go to the pipelines.
+Yep, as you can see, a new pipeline got triggered. And this pipeline has all the four stages with 10
+different jobs, it's going to take a lot of time to complete all of them. Okay, so as you can see
+here, most of the jobs have been completed in the test, containerization, and the dev deploy.
+But here, if you see the stage deploy jobs have not started. So let's see what is happening over
+here. So I think I need to scroll to the right a bit. So if you see here, this job is currently
+showing a skipped the integration job, because this depends on the Kubernetes stage deploy.
+And this is not triggered, but we have a play option. And the reason is, this is a manual
+action. So a user has to manually trigger this job to start it. So that is why we see a play
+option defined over here. Okay, so you can also click on the job, it's going to show you the same
+information saying that this job requires a manual action. And if you want, you can also pass in
+some custom variables as well, which can be used by this job. Okay, so let me quickly go back to
+the pipeline and trigger this as well. Let me just zoom out a bit so that you can see everything in
+a single frame. So let me click on play. So once I click on play, it's going to trigger the job.
+And once this job is completed, the integration job will also start. Okay, so as you can see here,
+all the jobs have been successfully completed, even the stage deploy stage, you know, both the
+jobs have been completed. And if you see here, I think all the 10 jobs took around six and a half
+compute minutes for the total pipeline. So let us quickly go and check the Kubernetes
+stage deploy logs. It has a lot of logs. So let me just go and come from the top.
+So the first thing what we wanted to do here is to, you know, print the kubeconfig file.
+And let me just zoom this a bit so that it's visible, right. So we wanted to print the
+environment of the kubeconfig file. And we are saving this in a variable. And we are just reading
+out that variable. And you can see that there is indeed a kubeconfig file. And if you see the
+details, it has, you know, user called agentK and the ID of the agent. It has a token as well,
+which is masked for security purposes. It has a cluster. And the cluster, if you see it is using
+kas.gitlab.com slash Kubernetes proxy. So all the calls the agent is going to make it to this proxy.
+And this is going to internally route the calls to the Kubernetes cluster in order to,
+you know, write or read the data. Okay. And it has a context which contains both the cluster
+and the user. So the GitLab agent is going to make use of this context for connecting and doing
+or executing the kubectl commands. Okay. So the next command was to, you know, get the context.
+So it's going to show you the name of the context, which is nothing but, you know, the group ID
+slash the project name, colon name of the agent. And you can use the kubectl config use context
+with the name of the context in order to, you know, start using that. Okay. So once you do that,
+if I do a quick kubectl get pods, you can see that it is able to,
+you know, fetch all the pods from the Kubernetes cluster. Okay. And mind you,
+these are the pods before you started the, I mean, stage deployment. So you only see that
+you have the development pods of the solar system application. You don't have
+the staging environment resources. And the other steps have been done as it is. And you can see
+that we have four pods here within the staging namespace because we gave replicas as four. So
+we'll also, you know, check this out in the local terminal and the other steps we have seen them
+in the previous job itself. Okay. And the dev and the stage integration testing has also passed
+because it was able to get the URL from the previous job and both the URLs are working
+fine as per the requirement. Okay. So that's how the applications have been deployed to the
+Kubernetes cluster using the GitLab agent. If I go back to the environment, so let me refresh this
+environment. So in the staging environment, you can see that we have one deployment, which we just
+did six minutes ago. And in this project, this is the third deployment. And if you see
+the ID is equal to three. Okay. And talking about the overview. Okay. So if you see here,
+so now it has seven services earlier, it was six, and it has 20 pods. So you should be also seeing
+the staging namespace service as well. And the cluster IP is also a bit different here,
+maybe it's running on a different node. Okay. So let's go and check out the application.
+So if I go here, it also gives me the URL, if you remember. So it's going to ask me to
+accept the self-signed certificate. And the application is running within the staging
+namespace. If you see the URL, it is solar-system-hyphen-staging. Right. So this is running in the
+staging environment. And talking about the pods. So this application is running on four pods
+because the replicas are four. So you can also quickly check that out. So earlier when we
+tried to get the resources from the staging environment, we found no resources. But now
+if you run the same command, you should be seeing four pods are running in this staging namespace.
+Okay. So I hope you got a fair idea on how the GitLab agent works, how to configure the agent,
+how to install the agent within your Kubernetes cluster, how to add custom configurations,
+and how to use the context for, you know, quickly managing your Kubernetes cluster or
+deploying manifest files. So that's all for now. Thank you.

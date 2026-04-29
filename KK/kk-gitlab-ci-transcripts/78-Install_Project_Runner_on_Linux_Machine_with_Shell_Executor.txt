@@ -1,0 +1,158 @@
+﻿Let's go ahead and configure jobs to run on the self-managed GitLab runners. So, we have this job.
+So, how do we configure this to run on the self-hosted or self-managed runner?
+So, in one of the earlier sessions, we talked about tags. So, tags can be used to select a specific
+runner from the list of all runners which are available for the project. So, you just have
+to give the tags which are provided during the runner installation. So, let's go and add some
+tags. So, I don't remember the tags which I provided for our runner. So, let me quickly
+check them out. So, if I go to runners, so I would like to run this on this project runner,
+which has these tags, Linux, local, NodeJS. So, for this job, I can simply define tags. I can say
+NodeJS, local, run Linux. I think these are the same tags. So, all the tags should be matched.
+So, if I go back, so NodeJS, local and Linux, that's it. So, this is the only change which you have
+to do. And you can basically, you know, commit the changes to the main branch. So, a new pipeline
+is triggered. So, let's go to this. And if you see the job started and as soon as it got started,
+it just got failed in two seconds. So, before, you know, we analyze the failure. So, let's try
+to understand what happened here. So, the first thing is, if you see line 1, it is saying running
+with GitLab runner, it's going to show you the version of the GitLab runner, which we installed
+in the previous session. It's going to give you the name of the runner. So, this is the name which
+we gave our runner when we installed it on the virtual machine. It's also going to show you the
+initial strings of the token. And then it's saying it's preparing the Shell Executor because this
+runner, it's installed or it's configured to use the Shell Executor. So, it's using the shell
+executor. And within the shell executor, it's using the bash prompt. So, the next thing is,
+it's saying preparing environment running on IAC server. The reason why it's saying is IAC server
+is the virtual machine which I'm currently using. So, this is part of Terraform virtual machine. So,
+it's saying IAC infrastructure as code. So, the name of this machine is IAC. So,
+that's about it. And if I go back to the virtual machine, so let me minimize the /etc. If I
+go to the runner, so I don't have anything over here. So, the reason is currently this failed.
+And it is saying that the job failed in the prepare environment with exit status 1. So,
+in order to resolve this, you can get more information in this documentation. So,
+let's go and check why this is failing. So, let's see the documentation. So,
+this is going to fail for certain executors which are like shell-based executors. And as you can see,
+it says that if a job fails on the prepare environment stage, it is likely that something
+in the shell profile is causing the failure. And a common failure is if there is a bash
+logout file, it tries to clear the console. So, what we can do here is if we have
+this file, and if you have this if condition with this context within the file, we have to
+comment it out and then restart the pipeline. So, that is going to resolve our issue. And to
+do this, let's check if we have this bash logout within our GitLab directory. If I go back to the
+virtual machine, and if I go to home, where is this home. So, this is the runner system ID which
+also gets generated. And this is within the /etc/gitlab-runner, the runner system ID, even this
+ID is visible within the logs, you can see the system ID is visible here. Okay, so just for
+reference purposes, I'm highlighting it out. So, I'm just searching for the bash logout. So,
+where can I find it? So, if I go to know what can I have to scroll a lot. So, if I go to home,
+we have a GitLab runner. And here I have a bash logout. And if you see, I do have this if condition.
+So, let me just comment it out, save this file. And then I can restart the job. So, to restart the
+job, I can simply click on this retry button, that's going to rerun the job using the same
+pipeline configuration. And let's just give it a few seconds, it should be quicker. And as you can
+see here, so let me minimize all the steps and try to explain to you. So, this time, it took three
+seconds, but it again failed. So, let's try to understand what happened. So, again, the job is
+running on my local NodeJS runner. And it is the same system ID, it is using the Shell Executor,
+it is preparing the environment, it's running on the IAC server. So, this is the name of my
+virtual machine. And it is trying to get the source from the Git repository, it's going to,
+you know, do the checkout. If there are any caches, it's going to download the cache,
+but there are no caches available. So, instead of a local version cache, it will be extracted.
+But as of now, there are no caches available, because we have not yet run this. And then
+what is this next step. So, the next step is it's going to try and install the NPM dependencies
+using the NPM install command, but NPM is not installed. So, ideally speaking, we can also
+install NPM in the job itself. But we don't want to do that. So, one advantage of the Shell Executor
+is whatever software is installed on this virtual machine, that will be available to the
+runner, right. So, we'll try to install NodeJS over here, and then test it out. Okay, so since
+NodeJS is not there on my local virtual machine, it's not able to use this NPM command.
+Okay, so before I install Node.js, I would like to show you something, you know, which, you know,
+gets created in the virtual machine. So, if you see here, line 7, it is getting the source from
+the Git repository. So, where does the cloning happen? So, it's going to clone this on your
+machine. So, if you see the path, it is /home/GitLab-runner, and it's going to create a
+new folder build, it's going to have a folder with the, you know, initial characters of the,
+you know, token, it's going to use /0. And this is where it is going to download the Git
+repository or clone the Git repository. So, this is the group name, followed by the project name.
+So, the same thing can be visualized here as well. So, if you see in the home GitLab Runner,
+I have builds. And under builds, so I have this runner demo, which is the name of the project. So,
+let me try to just expand this. So, you have the same directory, which we see in the logs.
+And here you have the complete clone of your Git repository. So, this is how the,
+you know, repositories will be cloned to the runner, and then the jobs will be executed. So,
+here it is trying to, you know, execute this unit testing job. Okay, but it's not able to,
+you know, run, because we don't have Node.js on the machine. So, if I try to do Node version,
+I don't have the command and npm also, it's not found. So, let's quickly install Node.js
+on this machine. So, I'm just going to make use of this NodeSource documentation where it has
+some commands to install Node.js and npm. So, let me just copy all the commands, go to the runner
+and install them. It's going to take a couple of seconds.
+So, once installed, you can rerun the job and it should run successfully. So, let's give it
+one more second. Yeah, so it's completed, it took around 14 seconds. Okay, so let me try to do
+Node -v, I can see the version and also have npm -v. Okay, so all this are working fine. So,
+now if I go back to my job, and if I if you see both the previous jobs failed,
+so now if I run the same job, it should execute successfully. So, let me just give it a couple
+of seconds. Right, as you can see here, so it has successfully or it has started the npm install,
+command and it added all the dependencies and it's running the npm test command so that it
+can do a quick round of testing and the job succeeded. So, all the steps have been completed
+and the pipeline is marked as successful. Okay, so again, all the steps are as it is. So,
+I'm only interested in the job script where the npm install is successful, because the virtual
+machine does have the Node.js packages installed and then the test is also successful. Okay,
+it gave some warnings, but that should be fine. So, the job is succeeded. So, once the job is
+succeeded, if you see, it is also saving the cache. So, now that it installed the dependencies,
+it's also going to store the cache because we are using the cache feature within the pipeline job.
+So, where is it stored? So, since we have not provided any URL, the cache will not be
+uploaded. So, you can also upload the cache to any cloud server or if you want, you can use,
+you know, Minio S3 for storing the cache or storing anything with respect to GitLab.
+So, now, since we didn't give any URL, the cache will be stored on the local machine. So,
+where is it stored? So, to see where the cache got stored, again, I can go back
+here and if I try to refresh the runner. So, let me refresh the runner. So, now, there is a new
+folder called cache. So, if I open this cache, it is going to, you know, contain the zip file
+or, you know, it's going to contain, you know, the, what we said the name of the cache key,
+which is starting with node_modules hyphen the hash of the package.log json file.
+So, if you remember, if this is the cache policy and if you see, the key is using the prefix as
+node_modules and, you know, the hash of the package-lock.json. So, that is, you know,
+how the key is formed and within this key, we have this cache.zip. So, if you open this cache.zip,
+it contains the node_modules. So, you can also, you know, quickly check this out if you are
+interested to see what gets cached here. So, since we have access to the virtual machine,
+I can quickly do /home/gitlab-runner. I can get the relative path instead of
+trying to search it over here. So, if I go here, so it has a cache.unzip.
+So, let me try to unzip this. I can use the unzip command, I can just say cache zip.
+And if you see all the files which are available in the node directory are unzipped here. So,
+if I do ls, I should see a cached zip and the node modules. So, this is the folder which we
+wanted to cache. So, if you see the path, so everything in this path is cached successfully.
+So, the next time when we try to run this job, it is going to make use of the cache.
+So, now if you see restoring cache, so it is saying that it is using the local version of
+the cache. So, if you see here, this took around 13 seconds to complete the execution script stage
+and it was up to date the dependencies. So, now it should not say adding, it should say up to date.
+So, let me restart this job. This should complete quicker now because it is going
+to make use of the cache which is available. So, you can see here the npm command,
+it is just saying up to date and the reason is it made use of the cache which was cached in the
+previous execution. So, that is how the caching is going to work and it is going to be saved in the
+default cache folder. So, if you want to cache this in a different folder, you have to make
+changes to the config.toml file which is available within the /etc/GitLab directory.
+So, if you want, you can again go check out the configuration. So, you can also mention
+a cache directory in order to move the cache to a different directory.
+So, if you want to do this locally, so I can just simply copy this cache directory,
+I can go back to this folder. So, I will just add this. Let me quickly add this over here. So,
+let me say cache directory and let me just check this out.
+So, let me go to the next option. So, I mean you can define cache, you can disable cache. So,
+it basically depends on the different executors. So, I think I will just use
+cache directory equals. So, let me just go back. I am sorry this one and I would like to add this
+to /home/GitLab/runner and I want to store the cache in the builds itself. So, within
+the let me minimize this. So, within the builds directory, I would like to store the cache itself.
+So, let us try to see if this works. So, you can use any other directory as well, but just for
+demo purposes, I am going to use /home/GitLab-runner/builds. So, I guess that is
+the only change you have to do. So, let me save this. Let me see if I need to restart anything
+quickly. So, GitLab runner has various commands. So, I can also restart the servers, reset token,
+I guess you do not need to stop and start again. So, let us see if these changes are going to work.
+So, I can simply say rerun the job and after the job completes, the cache should be stored
+in a different location. So, it is going to get the cache. Let us give it a couple of seconds.
+So, it is saying permission denied. So, I guess it was not able to save the cache.
+So, let me see. It found the NodeJS modules, but it was not able to
+save the cache. So, let me quickly check this out.
+So, I guess I found out the issue like why this was not working. And the reason is, I guess we
+have to restart the GitLab Runner whenever we make changes to the config.toml file.
+So, since we added this cache directory, we have to manually restart the GitLab Runner.
+So, I can just say GitLab Runner. So, there is a restart command. So, it is going to restart. So,
+once it is restarted, so now when I run the job, it should create a new folder under the build
+and it should have the cache over here. So, let us try to run the same job again. So, there is
+a cache. So, let me just retry it again.
+So, let me retry this job instead of doing that again.
+Okay. So, let us just wait a couple of minutes.
+This time it should save the cache successfully. As you can see here,
+the cache will be stored on the local machine. So, there is no error as of now after you restarted
+the GitLab Runner. If I go back to the virtual machine in the builds, so let me try to open the
+builds. So, yep. So, as you can see here, now we have a new folder demos group and this contains
+the cache now. So, now we change the directory. So, that is how useful this config.toml file is.
+So, any configuration changes you want to do, this file has to be updated and these are just
+some of the default values. So, you can add many more configurations based on a requirement.
+The advanced configuration page, the documentation page would be your savior to understand
+the different options and how to configure them. So, that is all for now. Thank you.

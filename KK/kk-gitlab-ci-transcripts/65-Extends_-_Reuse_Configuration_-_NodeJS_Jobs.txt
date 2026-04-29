@@ -1,0 +1,126 @@
+﻿Let's go ahead and see how the anchor keyword can be used for reusing the configuration.
+So, if we come back to the same optimized GitLab CI/CD configuration documentation,
+we also have anchors. So, this is a feature from YAML specification which can be used to
+duplicate content across your YAML documentation. So, you can use anchors to duplicate or inherit
+properties. And within GitLab, you can use anchors with hidden jobs to provide templates
+for other jobs which are referencing it. So, how do you use this anchors keyword?
+So, if you take this example, anchor can be added for a complete job and it can be referred to in other
+jobs. So, you can use the ampersand symbol to create or define an anchor and you can
+give it a unique name. So, this is given at the hidden job level. And once you add an anchor,
+you can refer to it at any job by adding the contents of the alias. So, you can use this less than
+symbol. And in order to include the anchor, you need to use hash string. So, this double less
+than symbol is basically used for merging the given hash into this specific job and to include
+the name of the anchor, you need to use the hash string. So, as I have told you,
+these anchors can be added at the complete hidden job level or you can also refer to individual keywords
+as well. So, if you want to refer to individual keywords, if you see this example, in the first
+hidden job, you are defining an anchor at the job name level and at the second hidden job,
+you are defining an anchor at the service level. So, in this way, you can refer to both
+the job template as well as the service in a single job. So, if you take this example,
+the test Postgres, it is going to refer to the complete job configuration using this double
+less than equals symbol and hash string the job alias. It is going to refer to the complete
+configuration defined under the job template. And then for the services, you can only use the
+hash string and the alias which you provided here. So, this is going to refer to the service
+configuration from this hidden job. So, these are the couple of different options you have.
+So, let us try to use these anchors in our pipeline. So, if I go back to our pipeline,
+in the earlier session, we made use of a hidden job and we referred to it in the unit testing and
+the code coverage jobs using the exchange keyword. So, now I would like to work on the
+Kubernetes deployment job. So, for the Kubernetes deployment job, we require the Docker build,
+Docker test, and the Docker push jobs as well as the Kubernetes job. So, let me uncomment
+all the jobs. So, now we have all the jobs. So, let me quickly minimize.
+All the jobs quickly.
+So, we have disabled all the jobs and if you see visually, this is how our pipeline looks like.
+So, I would like to make some small changes. So, if you remember for the Kubernetes deployment,
+both the dev and the staging deployment, we need the Docker build to build a Docker image and
+we need to test it and we need to push it to Docker Hub. So, once the push is successful,
+we can work with the deployments and we also added a job where we are also pushing the image to the
+GitLab container registry, but this is like an optional step because we are making use of the
+Docker image within both the dev and the staging deployment. So, this is like an optional thing.
+So, what I would like to do is as soon as the Docker push stage is successfully completed,
+I would like to start the dev deploy job and you can do that with the help of the needs keyword.
+So, first I'll add the needs keyword and then we will reuse the configuration across the dev deploy
+job and the stage deploy job. Okay. So, let's see what is the common configuration across both
+these deployment jobs and we'll try to reuse them using the anchor. So, let's go to edit
+and let me quickly, I'll just comment out the code coverage and the unit testing job because
+we will not use them in this session, but I will keep the Docker build, Docker test, Docker push
+and the GitLab and the remaining jobs, I'll just keep them. Only in the dev deploy job, I'm going
+to add a needs keyword and I would like to start this job as soon as the Docker push job is
+successful. So, let me just add Docker push. So, let me go to visualize. So, now if you see,
+there is a needs or a visualization has changed. So, this dev deploy stage will not wait for the
+containerization stage to complete, it will start the deploy job as soon as the push has been
+successful. Okay. So, that is how you can see this visualization like how it's going to work.
+And you don't see the unit testing code coverage because I have commented out,
+but I have not commented out the dot prepare NodeJS environment. So, this is a hidden job,
+even if you don't comment it out, this will not be executed unless it is referred using an extend
+keyword. Okay. So, let me just minimize that. So, now let's see the reusable code within the
+deploy jobs. So, in the deploy job, in the dev deploy job, if you see, we are using image
+dependencies and the before script. So, from line 139 to 147. So, this is the same, what was the
+keywords or the configuration, we are reusing the same thing in the Kubernetes stage deployment as
+well. If I go to Kubernetes stage deployment, if you see the image dependencies and the before
+scripts line 182 to 190, it is the same thing. So, let's try to reuse this configuration using
+anchors. So, how do we do that? Again, you can define the anchor or the hidden job anywhere in
+the pipeline, but I prefer defining it at the root level. So, let me just say prepare deployment
+environment. Okay. And I'll just paste the code. Okay. So, I'll just paste the configuration. So,
+I just pasted the image dependencies and the before script. But how do I use anchors?
+So, if you remember, in order to use anchors, you need to define the anchor or the alias.
+So, you can define it using ampersand and the name, you need to give it a unique name.
+So, let me just name this as Kubernetes deploy job. Okay. So, once you give it, so now this is
+an anchor and if you hover your mouse on top of it, it's going to say that unused anchor,
+we have not yet used it anywhere. So, let me copy the anchor. So, let me go down
+back to the dev deploy stage. So, how do I use the entire thing? So, let me remove this image
+dependencies and the before script. And in order to use this, I would like to use double less than
+equal to in order to merge the content colon. And in order to refer to it, I need to use a hashtag
+and give the name of the anchor. As you can see, there are no more errors. So, if I go back at the
+top, so if I hover the mouse here, it will no longer show you that it's not being referred
+anywhere. So, we are referring to this in the dev deploy job. So, we'll use the same thing in the
+dev or in the stage deployment. So, let me just copy the same configuration, you know, go to the
+Kubernetes stage deploy and paste it here. But here, I would like to remove the image
+dependencies and the before script. Okay. So, if you, you know, make these changes,
+you should not see any errors if you see the pipeline syntax is correct. So, let's see if it's
+being referred to correctly or not. You can go to the full configuration. And here, if I scroll down
+to, let me just go to the Kubernetes dev deploy, you should be seeing that it is referring to the
+image dependencies and the before script as we have defined it in the anchor above.
+The same thing should also be referred to in the Kubernetes stage deploy as well. You should see
+the image dependencies and the before script. And if you see the total lines of, you know,
+the full configuration, it should be more than the actual version, because here it is merging
+the content. So, here, if you see, it's around 209 lines. If I go back, okay, we have around
+216. And the reason is here we have commented out the code coverage and the unit testing job.
+So, let me just show you the lines. Okay. So, I'll just uncomment this. So, if you see,
+I have around 216 lines in the edit. But if I go to full configuration with all the jobs,
+like unit testing and the code coverage, it should be around 278 lines. Okay. So, since,
+you know, we are using extends and set. So, since we are using extends and, you know,
+these anchors, the number of lines will be less in the actual GitLab YAML file. But in the full
+configuration, since it's going to merge the contents, it will be a, you know, a huge file
+with more lines. Okay. So, let me quickly commit the changes. Let me visualize. So, there are no
+errors. Let me visualize this. Okay. Everything looks fine. And before I commit it, you can also,
+you know, make sure that your environments are, you know, up and running. These are not in stopped
+stage. So, both the environments dev and staging are up and running. And you can also make sure
+that your GitLab agent is also connected because we are making use of this in the staging environment.
+Okay. So, let's commit it. Exploring. I will just say
+anchors keyword. Okay. So, let me quickly commit it to the feature branch.
+A new pipeline should be triggered. I will go to the pipelines. So, we have three different stages
+and we have eight different jobs. And the stage deployment is a manual job. So, we have to
+manually, you know, trigger this. But before I, you know, pause the video, I'll also show you the
+needs. So, if you go to the needs, if you see the pipeline, it's a bit different. And the reason is
+we are using needs to also, you know, run or trigger the Kubernetes deploy job as soon as
+the Docker push is completed. So, it looks a bit, you know, different at this point.
+Okay. So, you can also visually see, you know, how the pipelines or how the jobs are connected
+with each other, you know, by quickly using the visualization tab as well. Okay. Or you can also
+click on job dependencies. And here also, you know, it's going to, you know, show you how the jobs are,
+you know, linked with each other. Okay. So, let me just pause the video till all the jobs get
+completed. Okay. So, as you can see here, the Kubernetes dev deploy job has successfully passed.
+But the pipeline is waiting for me to manually trigger the stage deploy job, because this is
+where we have the when manual condition. So, let me just click on play so that it happens behind
+the scenes. And let me just go to this dev deploy job and quickly show you the logs that, you know,
+it's going to make use of the configuration which we defined as part of a hidden job and referring
+it using anchors. So, if you see here, it's using the Alpine image as requested or as provided in
+the anchor configuration. And if I come to the step script, or the job script, it's also, you
+know, installing the kubectl CLI, and it's installing the gettext program and also showing
+me the version of the, you know, environment substitute program. Right. So, these are all,
+you know, provided as part of the before script. And, you know, they are being, you know, referred
+by the dev deploy job. And since it's worked in the dev deploy job, the same thing should also work
+in the stage deploy as well. So, if I go to the stage deploy, even if you see even this job is
+successfully completed. So, both the jobs are now, you know, making use of the same, you know,
+configuration defined as a hidden job using anchors. So, if I go back to the pipeline.
+So, if you see all the stages or all the jobs have been successfully completed. So, this is how,
+you know, you can make use of anchors. In the next session, we'll talk about the reference tags.
+Thank you.

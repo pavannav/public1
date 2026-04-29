@@ -1,0 +1,89 @@
+﻿Let's go ahead and configure GitLab CI for the solar system project and also add unit testing
+job. So, if you see in this project, we don't have any CI/CD setup over here. So, let's go
+set up a new CI/CD. So, let's configure one and let me paste in code to save some time
+and I'll explain like what's happening over here. So, I have defined three global level
+keywords like workflow, stages and unit testing job. So, in workflow, I just named the workflow
+as solar system NodeJS pipeline and I've defined a couple of rules. So, the first rule,
+it talks about when to trigger this pipeline. So, this pipeline will always be triggered if
+the commit branch is either main or if the commit branch starts with the word feature.
+So, here I'm using a regex pattern to identify the name or the starting word of the branch. So,
+based on that, it's going to trigger the pipeline always for these two branches.
+Apart from that, I have another rule which has a couple of conditions. So, the first rule has
+an or condition and the second rule has an and condition. So, in the second rule,
+the pipeline will be triggered only if it is of type merge request event and if the merge request
+source branch name starts with the feature branch. So, if you're trying to create a merge request
+for a different branch other than one which starts with a feature word, it's not going to trigger
+the pipeline. So, these are the two conditions which I've added here and talking about stages,
+I just added one test stage and I defined a unit testing job. So, the name of the job is
+unit testing. This job is associated with the test stage and I'm using job container image of
+type NodeJS because we are working with a NodeJS based application. So, it would be better to use
+the NodeJS Docker image compared to the Ruby image, the default Ruby image and then I'm using
+before script to install the dependencies using the npm install command and in the script part,
+I'm just going to run the npm test command to execute the test cases and if you see here,
+I'm not installing NodeJS in the before scripts because we are directly making use of the NodeJS
+job image. So, let's try to commit this. I would like to commit this to a new branch. I don't want
+to work on the main branch directly. So, ideally speaking, we create a feature branch because we
+are setting up CI/CD. So, let's create a branch which starts with feature slash, I'll just say,
+setting up GitLab CI/CD. It's a very unusual name, but let's just go with this name as the branch
+name and I don't want to start any merge request for the time being. So, I would like to test a few
+things and then start a merge request. So, let's commit these changes to the feature branch.
+Right. If you see, currently we are in the feature branch. So, let's go to the pipelines.
+A new pipeline should be triggered because we are committing the changes to a branch which is
+starting with the word feature. So, the first rule comes into the picture. So, since the rule
+is matching, it's going to execute or trigger the pipeline and in the pipeline.
+So, if you see, the job failed. So, let's see why the job failed.
+So, a lot of things are logged over here. So, let's come from the top.
+So, first thing first, it's making use of a Linux small machine as the runner and it's making use of
+the Node.js image which I provided in the job and it's going to clone or get the source code
+repository and it's going to run the step script. So, in the step script, it's first installing the
+dependencies using npm install and as you can see here, it added around 364 packages and the install
+phase was successful. But where did it fail? It failed in the npm test command and as you can see
+the error message. So, it's of type Mongoose error and it's saying that it's not able to find
+the URL parameter. So, since it's not able to find the URL parameter, it cannot create a connection
+to the MongoDB and hence it's giving you an exit code. So, that is the reason the pipeline failed.
+So, if you remember our application, if I go to the main source code of app.js,
+it connects to the MongoDB with the help of credentials like username, password and the
+MongoDB URI. These are the things which are missing in our pipeline. Since these are missing,
+it's not able to connect to the database. So, how do we provide the status? So, these details
+can be provided as part of variables. So, let me just quickly add variables to our job. So,
+in this job, as discussed earlier, the variables can be added at the job level or at a global
+level. So, we'll be adding it at a global level because after unit testing, we'll also do code
+coverage and deploying to Kubernetes cluster which might require the same credentials. So,
+let's add it at the global level. So, I just added variables and I added three variables,
+Mongo URI, Mongo_username and Mongo_password. So, for the URI and username,
+you can directly hard-code them in the Git repository if required. But in some cases,
+even these are considered sensitive. So, you might consider adding them to the CI/CD variables
+to master. But for the time being, I'm just going to use them directly in the pipeline file.
+And for the password, yes, you can still hard-code the password like super password, but I don't want
+to do that. So, I would like to get the password from the CI/CD variables. I'm going to mask it
+for security purposes. So, how am I going to create that? I'll be creating CI/CD variable
+with the name as m_underscore_db_underscore_password. So, this is going to be the variable key
+which I will be creating in a minute. And in order to reference that variable,
+I'm using the dollar symbol. So, how do we define the variable at the CI/CD level?
+So, you can go to settings, CI/CD, I'll open this in a new tab.
+So, let me just copy the same key. I'll go to variables,
+expand them. As of now, we don't have any CI/CD variables. So, let's add a variable.
+So, I'm going to go with type as variable, environment as all, and I just want to mask the
+variable. So, for the key, I'm going to use m_underscore_db_underscore_password. And for the
+value, I'm just going to use super password. Okay. And let me add the variable. So, now the
+variable's added here, it's even masked over here. So, let's go back to our pipeline editor,
+and we can just commit these changes to the feature branch. So, we can just say,
+added MongoDB variables, and we'll commit the changes. So, we are committing the changes to
+the feature branch. Okay. So, we are not making any changes to the main branch. So, if you go to
+the main branch, you won't see any pipeline editor, because we don't have any .gitlab-ci file
+in the main branch. So, let's go back to the feature branch. A new pipeline should be triggered.
+So, let's go back and check if there is any new pipeline. So, a new pipeline is created. So,
+let's go here. So, if you see now, the test or the job has been successfully passed. So,
+let's go ahead and see if there are any logs. Right. So, if you see the commit ID is also
+displayed here, added MongoDB variables as a commit ID, and it all again made use of the
+Node.js Docker image. It installed the dependencies using the npm install, and also the npm test
+command was successfully completed. So, initially, you know, it's just going to log a message saying
+that server successfully running on port 3000. So, it's going to start the server, and then it's
+going to, you know, run the test cases using this Mocha command. And here, it simply says that,
+you know, there were no errors found during the testing of the test cases. But ideally speaking,
+it would be better if you could, you know, see what test cases were executed, and you know,
+which were successful or which failed in case of failures. Right. So, currently, it's not being
+displayed in the logs. So, if you remember from the previous sessions, so after the test
+completes, it's going to create a test artifact or a test file, which could be used for checking
+out the details. So, in the next session, we'll try to make use of the artifacts keyword and,
+you know, store or upload the test report for further analysis. That's all for now. Thank you.

@@ -1,0 +1,199 @@
+﻿Okay, so let's go ahead, make some changes, create a new feature branch and raise a merge request
+to see how the Auto DevOps works. So in the previous session, when we enabled the Auto
+DevOps feature, it created a pipeline on the main branch. And in the main branch,
+you know, it was trying to, you know, run these four stages, which are build,
+test, production and performance. So now let's see what happens when you, you know,
+trigger a pipeline for a feature branch or for a merge request. Okay, so let me close this.
+So back in my repository, I will go to my app.js, which contains my business logic.
+Let me quickly edit this file. I'm just going to uncomment this console.log at line number 23
+within the mongoose.connect, you know, what is a function. So let me just say
+feature slash, I'll just use Auto DevOps. Okay, so I'm going to create a feature branch.
+And I also want to start a new Merge Request as well. So as soon as I commit this,
+a new pipeline should be triggered. So if I go to build pipelines, a pipeline should be triggered,
+but I'll still cancel this pipeline as well. Okay. And by just visually looking at here,
+you can see that there is one additional stage within the pipeline. But we'll see,
+we'll see like what is the additional stage and why it got triggered in the feature branch. Okay.
+But now, I would like to create a Merge Request and then see the Pipeline. Okay. So let me just
+say updated NodeJS, app.js. Okay. I'll just go with the same thing for testing
+Auto DevOps. Okay. I'll just copy the same description. And this is from the feature
+branch to the main branch. And yeah, let me just assign this to myself.
+Reviewer is also myself. And then let me just create the Merge Request.
+As soon as the Merge Request is created, so the previous pipeline was canceled. So it will,
+I think it will remain in the canceled state itself. Okay. So let me rerun this pipeline,
+re-try all the failed or the canceled jobs. Okay. So let me just run this again.
+This is creating a new pipeline. Yes. If you see here, a new pipeline is triggered again.
+So let me go back. So in the same one, it's going to restart the pipeline.
+So in the same one, it's going to restart the same thing again. So as you can see here,
+in the feature branch, as you can see, this is related to the feature branch. It has a build
+stage, test stage. But here we have, you know, an additional stage, it's called a review stage.
+And then we have the performance and cleanup. So these are something new, the review and the
+cleanup. So earlier we had the production stage. Okay. So we'll talk about the review stage and
+what is cleanup when we come to that specific stage. But for the time being, let us focus on
+the build and the test. So the Auto DevOps, it's first going to build a Docker image, right? So
+that is going to be happening in the build stage. And then parallelly, it's also going to run the
+test stage where we have, you know, multiple, you know, test jobs. So these are like Code Quality,
+Container Scanning, NodeJS scan, Secret Detection, Semgrep, and test. So if you see the
+first five jobs are the template jobs, which we have already used, you know, manually within our
+earlier sessions. But now even this, you know, jobs are automatically added. And these are
+automatically, you know, tested by the Auto DevOps. And currently, the test job is failing.
+So we'll see why this got failed. And this is the only job which is going to run based on the,
+you know, test cases, you know, which are there in your repository. Okay, so let me
+refresh this pipeline. Okay, the remaining jobs are still running. But I'll just pause the video
+till all the jobs get completed. And then I'll, you know, talk about each of them, you know,
+by checking out the logs. Okay, so as you can see here, some of the jobs have been completed. So
+first, let's, you know, start with the build job. So in order to understand the build job,
+you need to talk about the stages of Auto DevOps. And the first one is Auto Build.
+So this auto build is going to create a build of the application using an existing Dockerfile.
+Or if you don't have a Dockerfile defined in the project, it's going to make use of the
+Heroku buildpacks. And since we don't have a Dockerfile available within the project,
+it's going to use the cloud native buildpacks. Right. So these cloud native buildpacks are going
+to detect the programming language and they're going to build the application into a Docker
+image. Okay. And again, it makes use of the pack commands and the default builder. So if you're
+aware of Heroku and the cloud native buildpacks, you should be able to, you know, correlate the
+stuff about this. Okay, so let's go ahead and check the logs of the build job. So if I go to
+the build job, you should be seeing there are around 400 logs. So let me quickly scroll up.
+Let me minimize all of them to check them out. Okay, so it is making use of the shared runners,
+and it is making use of a Docker machine. In the Docker machine, again, it's making use of
+some services like the Docker, you know, Docker in Docker, and talking about the job script. Okay.
+So the first thing which it's trying to do is, you know, it is, you know, logging into the GitLab
+container registry using the CI credentials. And it's also logging into the GitLab dependency proxy
+with the CI credentials. So this is happening automatically. And then it is, you know,
+downloading the, you know, cloud-native buildpacks, you know, using the Docker pull command.
+So it is pulling from Heroku slash buildpacks of version 20. So it's going to build the, or,
+you know, pull and run the buildpack. So if you scroll down, you know, it has a lot of steps
+within that. And once it is done, it's going to, you know, start analyzing and detecting.
+So it's going to, you know, detect the programming language which is being used. And I guess,
+if you see the detector started over here, and I think it found out that, you know, the application
+is based on NodeJS. Okay. And if you see here, it is using the Heroku NodeJS engine buildpack
+for building it. Okay, so it detected the programming language. And then it's going to,
+you know, also install NodeJS of a specific version 20.11. And it's going to, you know,
+install the dependencies using the npm command. And then it's going to run if there are any build
+scripts, and it's going to use the default npm start command. So once it identifies, detects,
+and you know, sets this up, the next step is it's going to start, you know, creating the Docker
+image. As you can see here, you know, it's creating the Docker build image, it has various steps.
+And if I scroll down, the Docker image is created. Once the image is created,
+it's going to push the Docker image to the GitLab CI repository. So here it's getting
+deployed to the GitLab registry, the name is going to be the group name followed by the project name,
+followed by the branch, and it's going to use the SHA of the commit as the tag.
+So if you scroll down, so that is how you know, it's going to be pushed. So you can also,
+you know, check this out. If you go to deploy, there is this container registry.
+If I go here, if you see, you know, I have this pushed, okay, so these two images were pushed,
+you know, just like four minutes ago. Okay, so that's how the build stage works. So let me go
+back to the pipeline. So the complete pipeline is, you know, marked as failed here, because the test
+stage failed. And since the test stage failed, you know, the test job, the remaining jobs are skipped.
+So before I talk about why the test failed, so let me also quickly go through the remaining jobs.
+So these are the jobs which we saw earlier. So this is a code quality job, it took around
+three minutes to complete this. Okay. And again, it's also going to upload the reports for you,
+you can check out the reports as we saw them earlier. And then we have the container scanning,
+it's going to scan the container image, which, you know, was generated in the build job.
+And even it's going to find a lot of, you know, vulnerabilities, you can check out the
+vulnerabilities. And you can also download the reports as we saw in the earlier sessions.
+And then it's going to run the, you know, static analysis security testing (SAST) for the NodeJS
+since it is a NodeJS based application, it's just going to run this SAST using the NodeJS
+scan analyzer. And I'm not going in depth of this, because we have already seen this
+in the previous session. So I'm just, you know, checking or showing you the logs.
+Then there is a secret detection job, which is going to, you know, find out any leaks within
+the current commit. So in the current commit, you know, we did not add any vulnerable files,
+so it did not find anything. But if you want to do a historical scan, you can set up a variable.
+So we will do that in the next, you know, demo. So that's about it. And finally, I think it's also
+going to run the Semgrep SAST test. And it's going to, you know, upload the reports as well.
+So all this are success. But what about this test job, which failed? So this test job is going to
+run the test cases, which are available in the repository. So we have, you know,
+defined the app-test.js with the test cases. So here again, it's going to, you know, make use of,
+you know, Heroku buildpack. It identified or detected the Node.js application. It's going to
+create the runtime environment for you, right? It's going to install the required binaries like
+the Node.js and the npm binaries. It's going to install the dependencies like the node modules,
+as you can see here. It's going to build if there are any build scripts available. It's going to
+cache the dependencies. And, you know, it's going to, you know, build the application. Basically,
+it's going to run the application. So here, it's not able to connect with MongoDB. And the reason
+is, it's not able to find the URL parameter. If I go back to my source code, so if I go back,
+if I go to changes, I have this app.js, right? So in the app.js, if I try to expand this,
+so it is failing at this specific function. It's not able to connect with MongoDB because it
+requires this Mongo URI, Mongo username, Mongo password environment variables. So these are the
+variables which I'm not passing. And since I'm not passing them, it's not able to connect with
+the database. And that's the reason it's not able to complete the testing job. So since failing over
+here with exit code one, the pipeline was stopped here itself and the remaining jobs were canceled.
+So how do I, you know, pass the environment variables? So the environment variables can
+be passed again using the CI/CD variable setting. So I can simply go to settings, CI/CD variable,
+variables. So we already defined five of them. So let me define one more or a few more things.
+So the first one is going to be Mongo_URI. And the value is going to be your URI,
+basically. I'm just going to paste it. Then I need to give Mongo_password. You can
+also mask this, but I'm not going to mask it for the time being or I'll just mask it. And the
+password is superpassword. So let me add this also. And then let me add the username.
+So let me just add mongo_username and the value is super user. And apart from this,
+I also want to enable the historic scan for Secret Detection. So let me add this variable.
+So I have added three MongoDB variables. So apart from this, let me add another variable,
+which is the secret detection historic scan for the secret detection part. And let me just,
+give this as true. So let me reveal the values. So I think all this should be working. So once
+you change this, the only thing which you need to do is I can go back to the pipeline. Instead
+of triggering the entire pipeline, I just want to rerun the secret detection job and the test job.
+So once you rerun them, since these are not yet failed, the other jobs will also be enabled. So
+if these are successful, the next job or the next stage will be triggered. So the secret
+detection job completed. So let's check this out first. And as you can see here, it gave a warning,
+it's saying that it found two leaks as of now. So since I gave that historic scan as true,
+it is going to scan all the previous commits as well. So it scanned around 35 commits and it found
+two leaks. And again, if you want to find out what these leaks are, you can go to artifacts
+and check out what these leaks are. So I'm not going to do that now, but you can check it out
+by checking the JSON file. And then let's go to the test job, which is currently running.
+So I guess it's going to take some time. So let me just pause the video. So as you can see here,
+even the test job is successfully completed now. So if you talk about the job script,
+if I scroll down, so it was able to successfully connect with the MongoDB. So if you see the
+MongoDB connection is successful, and it was able to run the test cases successfully. And since there
+are no errors, the job succeeded. So let me go back to the pipeline. So now since all the jobs
+in the test stage have successfully completed, it's going to run the review stage. So what is
+this review? Okay, so let me go to the documentation. So if you go to this stages part, so
+after the test stages, you have the review apps. And again, this is an optional step. So if you
+have a Kubernetes cluster, the review apps are going to deploy a temporary application to your
+Kubernetes cluster. And it is done so that the developers, QA, or the product managers can
+actually review, see, and interact with the code changes as part of the review process.
+So it's going to create a dynamic environment, it's going to use that environment to deploy the
+source code changes to your Kubernetes cluster. So as a reviewer, you can visually check the
+changes, and you can either approve or reject the merge requests. And while using the review apps,
+it's also going to use the Auto DevOps base domain, it's going to expose the application
+using the Ingress URL. So we will talk about that. So that's the use of the review apps. So if
+I go back to the pipeline, so if you see that review stage is currently running.
+Again, it's going to take a lot of time for this. So let me quickly try to show you a few of the
+logs. Okay, let me minimize all these things. So here, first thing is it's going to use the auto
+deploy stage or the auto deploy stage option where it's going to use a Helm chart for deploying your
+application. So it is going to connect, you know, using the
+kube context, which we provided in the variables. Okay. And if you see here, it is using the kube
+context, demo group, solar system DevOps, and the agent name, it switches the context, it's going to
+ensure if the namespace is available. So by default, it's going to use the default namespace
+in the review stage. And if the namespace does not exist, it's going to create the namespace for you.
+And here it's, you know, using Helm 3. Okay, so it's using Helm, it's going to create a couple of
+Helm secrets in the default namespace. And it's going to use the, you know, deploy command. So
+here it's going to try and deploy the application, but this does not work. So I'll explain why it
+does not work. Okay. So before I go to the Kubernetes part, let me show you the environment.
+So if I go to operate and environments,
+okay, if you see a new environment is created for us, right. So for different feature branches,
+you know, an environment will be created. Currently, you know, we are working in the
+feature Auto DevOps. So it's going to automatically create this, you know, review environment for you.
+And it's going to, you know, log everything with respect to the deployments in this, you know,
+feature branch or in this, you know, review environment. Okay. So let's see why this is,
+you know, stuck here. Okay. So if I go back to my cluster, if I try to get all from the default
+namespace, so I indeed see that there is a deployment called as review feature with
+some unique tokens and there is a pod and the pod is in a crash loop back off. It's not able to,
+you know, come to the ready state. So let's see why it's not able to come to the ready state.
+Okay. So let me copy this. I'll do a quick kubectl describe and I'll just give the pod.
+Okay. I think I need to give describe as pod.
+And here you can see that it is trying to pull the image. So it was able to, you know,
+pull the image from my, you know, GitLab container registry and it failed. Okay. Failed
+restarting container. So let's try to check the logs. I can do kubectl get logs. It's failing
+to start the container. So in the logs, you can see that there are some errors. So in the logs,
+it is trying to, you know, start the NodeJS application using the npm start command.
+So here it is again throwing a Mongoose error. It's not able to again connect with the MongoDB
+or the Mongo database. And the reason is, again, we have not provided the Mongo URI username,
+password for the pod. So we provided this, you know, username and the MongoDB variables
+at the CI/CD variables. And this will be only available for the jobs which are running in GitLab.
+Right. So the test job was run in the GitLab Runner, which has access to these variables.
+But these variables, the Mongo variables are not accessible to the Kubernetes pods. Right. Since
+the variables are not accessible here, you know, it can't connect with the database. Since it can't
+connect with the database, the pod never comes to the ready state. If the pod doesn't come to the
+ready state, you know, it will be automatically stopped. If you see the review job is deleted,
+the review, you know, pods. So if I go back to my pipeline, so if you see, it is going to give you
+an error saying that the job failed with exit code one. You won't be able to find many details here.
+So you have to, you know, troubleshoot your Kubernetes pods to understand why it failed.
+So since the review job failed, if I go back to the Pipeline,
+you know, it's going to automatically delete whatever, you know, we created as part of this job.
+Okay. So in the next session, we'll try to understand how to pass the environment variables
+to the pods running in Kubernetes using this Auto DevOps feature. So that's all for now. Thank you.

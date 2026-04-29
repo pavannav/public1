@@ -1,0 +1,175 @@
+﻿Let's go ahead and understand how you can run the jobs within a specific Docker image.
+So if I go back to my workflow, I would like to make some changes.
+So let's assume I would like to deploy a NodeJS based application.
+But before deploying the NodeJS application, I just want to check out what is the Node version I have.
+So I can use Node.js. And at the same time, Node.js also uses a package manager for installing the dependencies.
+And it is called npm, Node Package Manager.
+So I would like to check out the versions of both this before I deploy the NodeJS application.
+And I just want to remove or comment out the timeout thing.
+Okay, so let's try to get the versions of these two commands using the default image.
+Okay, so let me quickly commit this.
+I can go to the pipeline.
+So a job will be triggered.
+And I'll just pause the video till the job gets completed.
+Okay, so now the job is completed, but you can see the job failed.
+So let's understand why the job failed.
+So let me just minimize all the steps.
+So if you go with the default job image, if you remember, it uses Ruby as the default Docker image.
+So all your job script commands will be running within this Ruby container.
+And hence, this is the Ruby container.
+It does not have any NodeJS program installed on it.
+So it cannot give you the version of NodeJS or it cannot access the NodeJS or npm CLI commands.
+And hence, it's going to say command not found.
+So what do we do in such cases?
+So one option is to manually install NodeJS on the Ruby container.
+So what you can do is, you can create a before script.
+Right.
+And, you know, you can just have all the commands to install the NodeJS.
+So what you can do here is, you can go to the NodeSource website or you can use any other website,
+where it gives you the steps for installing NodeJS of the version 20.x.
+So here it's going to, it's going to use, you know, sudo apt-get update.
+It's going to install some certificates, download the NodeJS software.
+And, you know, it's going to finally install NodeJS.
+Right.
+So let's copy these commands and let's try to install it and see how it works.
+So if I come here, I can just paste this.
+But again, this is going to give you an error because this is like multi-line commands.
+So for each line, you have to properly use YAML syntax and do the proper formatting.
+So instead of, you know, formatting each line individually.
+So what we can do is, you can use a long command.
+So there is a YAML syntax, which can be used for running multi-line commands.
+So if you go to the GitHub or GitLab documentation,
+so it also has a section where it explains how you can split long commands.
+Right.
+So it makes use of the YAML multi-line block scalar indicator.
+You can use a literal in order to define, you know, multi-line command.
+So you simply have to use a literal over here.
+Okay.
+So let us use this here, literal.
+And I guess, you know, you just have to format this.
+That's it. Right.
+So if you see, there are no more errors.
+So each line will be treated as a command and executed separately.
+Okay.
+So let's quickly commit the changes and see how this works.
+So a new pipeline will be triggered.
+So let's go back to the pipelines.
+A new job is running.
+So I will be pausing the video till the job completes.
+Okay.
+The job failed again, but with a different error.
+So I think it's saying that it cannot find the sudo command.
+So I guess I have to get rid of all the sudo within the before script,
+which I just copy pasted.
+So I think I have around six sudo commands or six sudo words.
+So let me quickly remove all of them.
+Okay.
+So I guess I got rid of all the sudo commands.
+Let me quickly commit this again.
+So a new pipeline is again triggered.
+Let's go to that pipeline.
+I'll be again pausing the video till the job gets completed.
+Okay.
+So now if you see the job is successfully completed.
+So let me just minimize the steps and go through them.
+So it is still making use of the Ruby Docker container image.
+It's running the container.
+It's executing the before script where it is downloading all the certificates,
+downloading NodeJS and installing it.
+And once NodeJS is installed,
+if you see it was able to execute the Node and the npm commands,
+and it was able to give out the versions.
+But this is a bit hacky, right?
+So because we are trying to install and run NodeJS within the Ruby container,
+right?
+And it took almost around 30 seconds to do this stuff because you're manually
+installing stuff and using it.
+And this might be a very simple installation,
+which took just 30 seconds.
+But in some other scenarios,
+if you want to manually install software and then use it,
+it might take a lot of time, right?
+So how do we avoid this?
+So one way is, you know,
+instead of using a Ruby image,
+which comes by default,
+can we use any other image which will help us to improve the performance and
+also, you know,
+decrease the duration.
+Since we are making use of a NodeJS program or a NodeJS based application,
+it would be better to run the jobs using NodeJS image instead of Ruby.
+So how do we do that?
+So within the jobs,
+you can make use of the images keyword.
+Again,
+you can find the documentation within the YAML syntax reference.
+So you can use the image keyword to specify a Docker image that runs the
+job, right?
+So again,
+this can be given at the job level or it can be also given in the default
+section.
+If you give it in the default section,
+all the jobs use the same image for running the scripts.
+And if you mention it only at a specific job,
+only that job makes use of it.
+And of course you have various options.
+So you can give the Docker image name.
+In some cases,
+you can give the entry point of the image or the container.
+You can mention the pull policy,
+right?
+So you have, you know,
+different options available.
+So which image do I want to use?
+So I want to use a NodeJS based image,
+which is available in Docker Hub.
+So if I come to Docker Hub and if I search for NodeJS,
+it has a lot of image tags.
+So I would like to make use of, you know,
+this 20 alpine 3.18 tag.
+So what and how can I use this tag?
+So all I need to do is I need to go back to my pipeline,
+remove the before script because, you know,
+I don't need the script because now I will be using a NodeJS
+based image.
+So you can just use the image tag and provide the Docker image
+name.
+So let me just give node:20-alpine 3.18,
+right?
+So that's the only change which I have to do.
+Let me commit the changes.
+Let's go to the pipeline.
+Okay, this is still pending.
+So I guess the previous job is not yet completed because if you
+remember, I'm still using, I'm not sure why it's pending.
+Okay.
+Let me just check it out.
+Okay.
+It's still pending and it's waiting for a runner to be picked
+it up.
+So let's wait for a minute because we are using the GitLab
+shared runner.
+So it might take some time, you know,
+in order to select a runner if all the runners are busy.
+But now if you see after a few seconds,
+the job was picked up by a Runner and it also got executed
+successfully.
+So this time it just took 13 seconds because we are not
+installing anything.
+We are directly using an image, right?
+So let's minimize the steps and see what happened differently
+this time.
+So let's start with the first one preparing the Docker machine
+executor.
+And here you see that it is making use of the Node.js image,
+which I mentioned within the, you know,
+job specification.
+So this image is going to be used to create a container and the
+job will be running within this container.
+So since we have a NodeJS container,
+you don't need to separately install NodeJS and these commands
+will be directly available, you know, within this container.
+And that is how you can use images so that you can run your
+jobs within that specific container.
+That's all for now.
+Thank you.

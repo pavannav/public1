@@ -1,0 +1,70 @@
+﻿Let's talk about GitLab CI/CD image and service options.
+When creating a pipeline, we are given the choice to select a runner for each job.
+Often, we opt for GitLab hosted runners to execute our workflows.
+For instance, here the runner's tag has a value of Ubuntu latest.
+It is going to select a runner with Ubuntu operating system,
+and these runners come with pre-installed software containing the language runtimes,
+package management tools, command-line utilities, web browsers, test-suite docker images,
+and much more. And within a job, we can directly
+leverage these pre-installed software components to carry out our steps.
+So let's take an example. When we opt for this GitLab hosted Linux-based
+SAST runner, it defaults to the Ruby 3.1 container. This provides a pre-configured environment for
+Ruby projects out of the box. This reduces complexity for teams primarily working with
+Ruby. It's going to simplify managing the runner configurations and focuses on writing code.
+But what about non-Ruby applications or projects? Accidentally triggering a pipeline in this default
+container might lead to confusion and unexpected errors due to the presence of Ruby-specific tools.
+Sometimes, there are instances when we need a different version of a runtime
+or a package that isn't readily available in the pre-installed environment.
+In such cases, we can compose additional steps in our workflow
+to install the required runtime versions and packages.
+So in this given example, we are installing NodeJS Runtime version 20 using a before script
+for our unit testing job. When we trigger the pipeline, it's going to provision a GitLab
+hosted runner running the Linux operating system. It will first prepare and start a Ruby container
+and all the steps are executed within this container. It is worth noting that in certain
+situations, the time it takes to install specific runtimes and packages can significantly increase
+the GitLab CI/CD billing cost. To mitigate this, one effective strategy is to use the image containers.
+In GitLab CI/CD, image containers play a crucial role in defining the environment your job runs in.
+Image containers are like pre-built sandboxes for your code to run in.
+Each job gets its own isolated container with the specific tools and environment it needs.
+For example, it could be like for Python libraries for a web application or NodeJS
+for a backend service. So these containers provide isolation with tools or conflicting
+dependencies between jobs. It's going to help you with reproducibility where jobs always run
+the same way regardless of the runner machine and you can also control on choosing the exact
+tools and versions for each job for optimal efficiency and security. To utilize an image
+container, you must specify the Docker image to be used within the job by configuring the images
+keyword. Additionally, you also have the flexibility to define other configurations
+including pull policies, entry point and others. For instance, this job uses the image keyword to
+execute a container that includes NodeJS runtime version 20. By utilizing this container,
+the need to install the NodeJS runtime separately is eliminated. During the execution
+of the workflow, GitLab is going to provision a hosted runner with the Linux operating system.
+Within this operating system, it's going to create and run the NodeJS Docker container
+and executing all the defined steps within that container. So let's assume that in this particular
+job, unit tests are executed while connected to the production database. This practice is not
+advisable as it can potentially impact the production database performance. So for tasks
+like unit testing or code coverage analysis, it is recommended to use a dedicated testing
+database or services. GitLab CI/CD offers another solution to address this issue as well. Much like
+the job image containers, service containers within GitLab CI/CD are Docker containers that
+provide a simple and portable way for you to host services. They provide specific resources
+and capabilities that your job might need during execution. So we can think of them as specialized
+tools on your workbench, such as providing resources for testing purposes. A service can
+spin up a temporary MySQL instance for your job. You can also boost your job capabilities by using
+a Docker-in-Docker service. You can increase the flexibility by creating custom services,
+allowing you to tailor them for your specific needs. And finally, like job containers,
+services run in their own environment, which prevents interference with your main jobs.
+So service images are specified using the service keyword. This additional image is
+used to create another container, which is available to the first container. So the two
+containers have access to one another and can communicate when running the job. This pipeline
+configuration specifies a job that runs all the steps within a NodeJS based image container.
+It utilizes the Linux GitLab hosted runner as the Docker host for this container.
+Additionally, the job is configured with a service container with a custom MongoDB Docker image
+and an alias Mongo. When the pipeline is executed, it will run two containers. One is the
+MongoDB service container, which runs MongoDB and populates the test data. And within the job
+container, it carries out the following steps. It checks out the repository of the runner,
+installs the dependencies, executes a unit test by connecting to the MongoDB service container.
+But how does the unit testing step execute the job container connect with MongoDB in
+the service container? So given that the job and the service Docker containers
+run within the same user-defined bridge network, all ports are exposed to each other. You will
+have seamless access to the service container via the default MongoDB port, which is 27017.
+So the host name of the MongoDB service corresponds to the alias configured in the
+service YAML, which is in this case, Mongo. So now that we have an idea about
+job and service containers, let's go ahead and implement them within our pipeline. Thank you.

@@ -1,0 +1,151 @@
+﻿In this session, we're going to make use of a job to upload some reports to an S3 bucket.
+So, this S3 bucket could be an AWS-based S3 repository or it could be, you know,
+any third-party S3 bucket as well. So, if I go back to my Solar System repository,
+if you remember, we have various jobs and in some of the jobs like unit testing and code coverage,
+it also generates some reports. So, this is the report which I would like to upload to the S3
+bucket for further analysis of, you know, just preserving the reports. Okay. So, let's understand
+how you can do that. So, to do this, you can use any S3 bucket. I don't have access to AWS.
+So, I'm going to make use of MinIO. So, MinIO is a high-performance object storage released under
+the open-source license and this is fully AWS S3 compatible. Okay. So, I have already, you know,
+installed MinIO and this is the UI of the MinIO. So, the username is MinIO-admin and the password
+is also MinIO-admin. Okay. So, let me quickly log in. So, here, as you can see, you have two work
+buckets. So, let me zoom this a bit. So, let's create a new bucket. So, I would like to name
+this bucket as Solar System reports bucket. Okay. So, this would be the name of my bucket.
+So, let's create the bucket. So, I just created the bucket, but it does not have anything. So,
+let's try to upload our reports from GitLab jobs to this bucket. So, how do we do that? So,
+for doing that, I'm going to make use of a new job. So, I can directly define the job over here,
+but I would like to create a local template and use this template in this, you know, GitLab CI
+YAML file. So, in the previous sessions, we saw how to make use of components and templates,
+which were, you know, pre-built by, you know, GitLab, but you can also create your own templates
+and you can, you know, use them in different projects or different pipelines. So, let's try
+to do that. So, I would like to go back to the repository and let me quickly edit using the
+web IDE because I would like to create a couple of files. So, the first file, which I want to
+create is going to be within the templates folder. So, I'm going to create a template
+folder within the main branch or not in the main branch. I'm going to switch to the feature branch.
+So, in my feature branch, I hope this is visible. Okay. So, let me create a new folder. Let me name
+this as templates. So, the name of the folder is /templates or let me just say template.
+Okay. So, I guess there is a typo here. Let me fix this. It's template. Okay. So, within this,
+I would like to create a new file called as AWS-reports.yaml file. So, you can name this
+anything. I'm just using the specific and this is the place where I would like to, you know,
+define the job and this job I can, you know, reuse in different pipelines. So, let me quickly copy
+the job and explain what I've done. So, I've used the same concepts, which we have used in the
+previous sessions, but let me quickly explain. So, the first thing is I defined a job. The name
+of the job is reporting and the default stage, which I mentioned here is it should be running
+in the reporting stage, but you can modify this, you know, within the job, which is referencing
+this pipeline. And apart from that, you can also mention, you know, when they should be running
+depending on the name of the job. I'm just hard coding the name here. You can also replace this
+when you are running the job. So, it's going to wait for the unit testing job so that, you know,
+it can grab the reports, which are generated here, the artifacts, and it can be used for,
+you know, uploading them to the S3 bucket. So, how do you upload to the S3 bucket? So,
+I'm going to make use of a Docker image called as AWS-CLI. So, I'm going to make use of this
+AWS-CLI to connect to the S3 bucket and push these reports to the S3 bucket. So,
+you can also install AWS-CLI using the before script, but I'm directly using the Docker image
+and I will be running this job within the Docker executor runner, which I just, you know, installed,
+you know, on my machine in one of our previous sessions. So, we have this, you know, Docker
+executor. So, it will be running on the self-managed runner. And apart from that, if I go
+back, now I'm using a before script. So, the before script basically, you know, shows you all
+the files which are available. It's going to create a new directory named as reports-hyphen
+the pipeline ID. It's going to move the test results. So, if you remember the unit testing
+job gives you a test result.xml. So, I'm just moving this into this directory, which I created.
+I'm just listing the directory again, just to confirm that the file is available. So, I'm
+hard-coding a lot of things over here, but in real-time scenarios, you can dynamically replace
+them, you know, when and where required. And what about the script part? So, in the script part,
+since I am using AWS CLI and I'm trying to push this, you know, to the MinIO console or the MinIO
+server, which is S3 compatible. So, I need to, you know, make some changes. So, MinIO can be
+configured by using the AWS CLI. So, AWS CLI is a unified tool to manage all AWS services. And,
+you know, it works with any S3 compatible cloud storage service. And MinIO is an S3 compatible
+service, right? So, I'm going to use AWS CLI. But before you use them, there are some prerequisites.
+The one thing is the AWS-CLI needs some, you know, access ID key and the secret key in order
+to authenticate with the S3 server. And then, you know, to, you know, push the reports to the S3
+bucket. So, that has to be provided. And you also have to enable an AWS Signature Version 4 for the
+MinIO server. So, this is basically the MinIO documentation, which explains how to use the
+AWS-CLI. So, this has to be configured within the script part. And then, you can use the command.
+In the command, you can use AWS. And you have to provide the MinIO server endpoint using the
+endpoint URL. The reason is, if you don't provide this --endpoint URL, it's going to,
+by default, connect with the AWS services. But now, we are using the CLI to push the changes
+to MinIO server. So, that's the reason you have to provide this additional argument and provide
+the MinIO's server endpoint or the API endpoint. And then, you can use the regular,
+arguments like S3 ls, S3 ls, the bucket name. You can, you know, copy the files,
+remove files and, you know, remove the bucket as well. So, the rest of the things remains the same.
+The only thing is you have to use the endpoint URL and also, you know, enable the AWS signature.
+So, these steps, I have done it in the script level. So, the first command, you know,
+it is configuring the signature part. And then, you know, it is going to list the bucket.
+It's going to copy the reports from the local repository to the AWS S3 bucket.
+And it's going to list the bucket. And if you see here, I'm using a lot of variables
+instead of hardcoding them. So, all the variables are defined at the top.
+So, you have the bucket name, which I created, which is solar system reports bucket.
+The AWS access key ID and the secret access key in this case are MinIO admin, the same.
+If you have custom values, you can give the custom values here. And the next important thing
+is the URL. So, the URL has to be the server URL, right? So, let me quickly copy-paste the URL.
+So, this URL is the console URL. It's not the server URL. The server URL runs on a different
+port number. So, for the time being, let me just copy this. And I will be replacing this
+with the server port or the API port. So, the API port is a bit different.
+So, let me get the API port. So, it is 30717. So, let me quickly replace this here.
+Okay. So, this is how you can quickly replace them. And I guess that should be fine. Okay.
+So, how do we use this job? So, once the job is ready, how do I use this? So, for defining this
+and for using this, I will go to the GitLab CI YAML. And the first thing is I want to include
+that template. So, I will uncomment the include. And I will say. So, since this YAML template is
+available in the local repository within the same workflow, so I can simply use the tag local.
+Okay. And then I know I can make use of the relative path. So, let me copy the relative
+path and paste it. So, this should be template slash AWS reports dot YAML. So, let me just
+place this in a single string or single quotes. And then this will be running in a separate
+stage called reporting, if you remember. So, let me add the stage as
+reporting. And I would like to run this job using special tags. So, what I want to do here is,
+so if I come here. So, I will just create a new job reporting. And I just want to associate this
+with the reporting stage. And I would like to give the tags. So, I want to run this on my
+self-managed runner. So, I am going to give Docker, Linux, and I think AWS. So, these are the three,
+what we say, tags which I have used. So, let me just confirm the tags, if they are available.
+I am not sure if they are available. Okay. I can also confirm this at the group level
+runner. So, if I go to group level, if I go to build, if I go to runners, right, it is going to
+show me this Docker executor with AWS runner and the tags are Docker, Linux, and AWS. Okay. So,
+I guess that is it. We have mentioned all the required steps over here. So, let me quickly
+commit the changes. I will just say configured reporting and commit the changes. So, a new
+pipeline should be triggered if I go back to my pipelines. Okay. So, this is in pending state. So,
+let us see why this is in pending state. So, this is stuck because it is not able to
+find a specific runner. So, let me just check this out.
+Okay. So, as you can see here, earlier, both the jobs were in pending state and the unit
+testing job did not start and it was in a stuck state. The reason was, if you remember,
+while I defined the reporting job, I mentioned that this job should be running on the self-managed
+runner by using the tags, but the same tags, I have not provided for the unit testing job.
+Since I did not provide the tags and at the same time, if you remember, I have disabled the shared
+runners. If I go back to CI/CD settings and if I go to runners, I have disabled the shared runner.
+Since there were no shared runners and there were no tags for the unit testing job, the job could
+not be associated or triggered or executed on any specific runner and hence it was stuck.
+But what I did is I went back to the group runner. So, this is the group runner, which we created
+a few minutes ago. So, within the settings, I just enabled run untagged jobs so that even
+if the Unit Testing job does not have any tags, it is going to simply pick up the job
+and the runner will be able to pick up this Unit Testing job and complete it.
+You can also check this out. So, if I go back and if there is this Unit Testing thing
+and if I scroll up, you can see that. So, let me try to minimize all this cluttered logs. So,
+let me come inside. So, if you see here, it is using the GitLab Runner and it is using AWS
+Docker Runner, which is our Self-Managed Runner name and it is making use of the Docker Executor.
+In this executor, it is using the NodeJS image, which she provided, it is starting the service
+and so I think it took around 40 seconds for starting all the services and then within that,
+what do you say, the Docker executor, it executed our unit testing job, which was successful.
+Then it started running the reporting job. So, in the reporting job, again,
+even this is successful. If I scroll up, even this is getting executed on the AWS
+Docker self-managed runner and this is using the Docker executor. It is using the AWS CLI image,
+which we provided in the job configurations. It downloaded the artifact from the unit testing job,
+the test result and in the script part, you can see that the test result.xml file is accessible
+in this job and it is going to go and create the reports directory and it is going to make use of
+the AWS CLI to upload the artifact. If you see, the name of the folder is reports-pipeline-id
+slash the test results and this has been uploaded to the solar system reports bucket.
+So, let us quickly check this out. Even when I list it, it was able to show me the directory.
+So, let us see this in the UI. If I go to this Minio console, if I try to click on object browser
+on the left side, it is going to show me one object in this solar system reports bucket.
+If I try to open this, I see that I have a new folder created, reports-pipeline and it contains
+then the XML file, which I just uploaded using the job. So, this is how you can make use of
+reporting tools or reporting to upload your artifacts to cloud-based services. I just used
+Minio, but you could use AWS S3, GCP or Azure or any other cloud-based services and here,
+you know, I made use of a self-managed runner running at the group level.
+So, if you see at the group level, this is the runner. So, this group level runner should also
+be accessible to all the projects within this group. So, if you want to check this runner at
+the project level, you can always go to the, you know, project level CI/CD settings.
+You can go to runners. So, it is going to show you the project-level runners at this point.
+It is going to show you the shared runners at this point and if you scroll down,
+there are the group runners. So, whatever runners which are available at the group level
+are displayed here. So, you have to scroll down to check this out and you can also disable this.
+If you do not want this project to use the group level runners, you can disable them as well.
+So, that is all about how you can, you know, use the self-managed runners and how you can also do,
+you know, reporting by creating some local templates and, you know, using them,
+you know, within any job within different pipelines. That is all for now. Thank you.

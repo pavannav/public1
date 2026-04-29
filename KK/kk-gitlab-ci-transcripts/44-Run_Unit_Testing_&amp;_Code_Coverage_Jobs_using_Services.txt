@@ -1,0 +1,78 @@
+﻿So far, we created a couple of jobs within the pipeline, which are the unit testing and the
+code coverage jobs. So once these jobs are completed, we would like to build a Docker
+image and push the image to a container registry. So as part of that process, in this session,
+we're going to talk about how to build Docker images using the GitLab CI/CD pipeline.
+So let us create a new job and I will be associating the job with a new stage. So
+first let me name the stage. So I'm going to name the stage as containerization. So
+let me just name this containerization. Okay. And here, I just want to create a new job named
+as Docker build. And here, let me just add a stage. The stage is going to be containerization.
+And apart from the stage, I also want to make use of an image. So currently, since I want to build
+Docker images, I would like to make use of the Docker image itself. So I'll just use Docker
+24.0.5 version. And I also want to define the script. So let me define a script and let me
+paste in the commands. So I just created a job. I associated the job with a stage. I want this
+job to run with an image named Docker. And within the script, I'm using two Docker commands. One is
+the Docker build command. I'm giving it a tag name. It's going to get a Docker username slash
+solar system colon the version. So for the version, again, I'm going to make use of a
+variable to get the value. So let me first define these two variables. So again, I'll make use of
+these variables here. So let me just create a new variable Docker username. So this is my Docker
+hub username. And for the image version, so I'm going to dynamically use the pipeline ID. So I'm
+going to use a predefined variable CI_PIPELINE_ID. Okay, so these are the two values
+which will be referred here. But now the job is not yet completed. The reason is, I'm trying to
+run Docker commands within the Docker container, which is not possible by default. So here you
+need to associate this job with a service. So what do we use as the service container. So I will be
+making use of Docker in Docker, which is also known as DinD. Okay, so I think I need to use
+services. Okay, yeah. So what is Docker in Docker. So this refers to running a Docker container that
+itself includes a Docker daemon. So in the context of GitLab CI services, Docker in Docker is a
+special service that sets up this nested Docker environment within your pipeline job. And Docker
+in Docker also allows your GitLab jobs to run Docker commands regardless of the runners configuration
+or privileges. So this is particularly useful for tasks like you know, building Docker images within
+your pipeline, you can directly you know, run the build and the push image commands using the Docker
+CLI. And it's going to you know, build and push the images. Apart from that, the Docker in Docker
+is also useful in testing applications that rely on Docker. Okay, so that's the reason you know,
+we are using the service Docker in Docker. And apart from that, I just want to add another keyword.
+So as far as the Docker build is concerned, this build doesn't really require any artifacts from
+the previous jobs like the unit testing or the code coverage jobs. So you can specifically define
+that this job does not require any artifacts. So that can be defined using dependencies. So what
+are dependencies? So if you go to the CI/CD YAML syntax reference, and search for dependencies,
+it has its own documentation. So this keyword, you know, defines the list of specific jobs from where
+the artifacts have to be downloaded or fetched. Or it can also be used to configure the job to not
+download any artifacts at all. So if you don't want to download any artifacts, you simply have to
+you know, give an empty array, like, you know, I've just defined it over here. Okay, so that's how
+you know, you can build Docker images. So let us build the images and check out all the images
+available on this runner. So I'll just say configured Docker build job. Let me delete all
+those things and commit the changes. And I think even this job can be run. So I would like to,
+you know, do the build job after the code coverage. So let me just check this out.
+But before committing the job, you can also visually check this over here. So first,
+it's going to run the test stage and then followed by the containerization stage. Okay,
+so let's go and commit the changes to the feature branch,
+a new pipeline should be triggered. Let's go to the pipeline.
+And it has two jobs, right? So I mean, not two jobs, it has two stages and three jobs. Okay,
+as you can see here, all the three jobs have been completed. So we are not going to, you know,
+talk about the unit testing and the code coverage jobs because we have seen this multiple times in
+the previous sessions. So let's just talk about the Docker build job. So if I go to this job,
+so this job is also successfully completed. So let me minimize all the steps and come one by one.
+So the first one is it is preparing the Docker machine, it's going to first start the Docker
+in Docker service. Once it is started, it's also going to start the image job, which is again
+using the Docker image itself, right? And then it's going to start executing the step script,
+where my first command is to use the Docker build command to build an image from the source
+Dockerfile. So where did we define the Dockerfile? I did not define the Dockerfile specifically,
+you know, in the command, the Dockerfile is available at the root of the repository.
+So if I go to code repositories, right, so it does have a Dockerfile, which has a few commands
+where, you know, it's going to use the base image as the Node.js 18 alpine, it's going to set up a
+working directory, it's going to copy the packages to that directory, it's going to run the, you know,
+npm install dependencies command, copy the dependencies, and it's going to set up,
+you know, some default, you know, environment variables for the URI username and password,
+which will be replaced using secrets in Kubernetes, it's going to expose the port,
+and also it's going to provide a command, the starting command, basically, right. So it's
+going to make use of the Dockerfile to build the image. And here, if you see, it's going to,
+you know, run all those steps. So first, it's downloading the base image. And then, you know,
+okay, this is one by five, it's going to, you know, set up the working directory,
+copy the packages, run npm install, where it's going to show the log messages, you know, copy
+all the stuff. And it's also going to, I mean, that's the final step, basically, right. And then,
+you know, it's just going to create the Docker image, the name is docker.io slash the username
+slash solar system, colon, the pipeline ID, right. So I'm using a dynamic predefined variable.
+And the last command was to just, you know, display the Docker image, which we just created.
+So it just displays the name, the tag, the image ID when it was created and the size,
+right. So that is how you can build the Docker images using, you know, a service like Docker in
+Docker within the GitLab CI. That's all for now. In the next session, we'll quickly create another
+job to test this Docker image before pushing it to the Docker Hub container registry. Thank you.

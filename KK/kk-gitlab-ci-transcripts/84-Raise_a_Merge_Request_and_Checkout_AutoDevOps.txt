@@ -1,0 +1,201 @@
+﻿Let's go ahead, fix the issues and deploy the application to the review environment.
+So, in the last session, you know, the review stage was failing because the pod could not
+access the MongoDB environment variables. So, how do you define the variables?
+So, if you go to the CI/CD, you know, options or the CI/CD variables under the Auto DevOps
+customized tab. So, you can find that there are some variables which can be configured as
+application secret variables. And, you know, in order to do that, you need to create CI/CD variables
+with a prefix of K8s underscore secret underscore the name of the variable. And these variables
+then will be, you know, made available to the pod, which is running as environment variables.
+So, basically, the Auto DevOps job is going to create a Kubernetes secret based on the variables
+which you provide. And those variables will be injected to the pod as, you know, environment
+variables. Right. So, that is the documentation which explains it over here. So, I have already
+defined them. So, if I go back to my CI/CD variables, you see that I have defined Mongo
+URI and Mongo username. The only thing is I prefixed them with k8s underscore secret underscore
+the keyword. OK. So, I did not add the password thing. So, let me quickly add, you know, k8s
+underscore secret underscore Mongo underscore password. And the value is going to be super
+password. OK. So, that is how I am going to define. Right. So, it is saying it has. OK.
+That is how I am, you know, defining the variables. So, once the variables are defined,
+so you can go ahead and, you know, restart only the review job because we have already seen this.
+But before you, you know, restart the review job, you need to make sure that you have
+cleaned the, you know, default namespace. OK. So, if I do kubectl within the default namespace,
+you should not be seeing any previous deployment, pod, service, or replica set.
+And at the same time, you should not be, you know, seeing any secrets. But the secrets are
+not deleted automatically. You can see that, you know, there is this review secret still available
+in the default branch. So, you have to manually delete this. If you do not delete this,
+the review job will be failing again. OK. So, let me delete this secret as well. So, within
+the default namespace, let me delete the secret, review secret. OK. So, now within the,
+you know, default namespace, we have nothing related to the review feature, you know, job.
+You can also do a quick helm ls and, you know, you should not see anything related to the,
+you know, review job. So, let me clear this. So, now I will go back and I will trigger the
+review job again. So, it is going to start the job again and it is going to go through the
+same steps again. So, let us pause the video till this gets, you know, completed.
+OK. So, as you can see here, again, all the steps have been run here and again,
+it is still pending something. So, let us go check what is happening in the Kubernetes cluster. If I
+do kubectl get all, I should be seeing a new pod is again running state, but the ready is not yet
+ready. So, if I do logs quickly for the review job. So, the application is running on port 3000.
+On port 3000. So, let me do a quick describe pod review. But here you can see that the readiness
+probe is getting failed. So, let us understand why this is getting failed. So, before that,
+let me show you the logs. So, if you see the kubectl logs for the review pod,
+the server successfully started running on port 3000 because this is the port number which we
+defined at the application level. It was also able to connect with MongoDB now successfully,
+because if you see, if I do kubectl get secrets, there is a secret which got created.
+sh helm releases. So, if I try to, you know, get this secret, sh helm releases hyphen o yaml.
+It has, I think there is nothing much over there. So, let me get the review secret
+to review hyphen o yaml. So, if you see within the review feature secret, it has the MongoDB password,
+MongoDB URI and the MongoDB username as well. So, whatever variables which we have,
+you know, added as a prefix with k8s underscore secret. So, those are created as a secret and
+this secret is being used by the pod. So, if you go up since the secrets are available
+in the logs, you can see that the pod was able to connect with the MongoDB.
+But even after connecting with MongoDB, if you do the kubectl describe pods,
+it is going to say that, you know, the liveness probe has failed and the readiness probe has
+failed. Since these probes are failing, you know, the review job should also fail.
+So, it is not yet failed. So, let me refresh this.
+Okay, it is still taking time, but the job will fail again as, you know, we have seen earlier. So,
+let me explain why the, you know, readiness probe and the liveness probe are failing.
+So, if I try to do a quick kubectl describe pod again. So, this, you know, probes are failing
+because it is trying to, you know, check the application readiness and liveliness
+liveness by hitting it on port 5000. So, why is it using port 5000? It should be using port
+3000 because our application, you know, runs and listens on port 3000. So, if you, you know,
+check the app.js file of our application, you can see that, you know, it is listening,
+app is listening on 3000 port number. So, the reason is by default, if you are using
+the Auto DevOps and if it is using the auto deploy option. So, within the helm charts,
+it's going to use the default port number as 5000. So, that is the reason even after deploying the
+application or the pod, if you see the settings over here, it's going to use port 5000 by default.
+And since it is not 5000, the application listens on 3000, the readiness and the liveness
+probes are failing. So, how do you change this? So, do you need to hard code all your
+applications to listen on port 5000? Maybe, that may be one of the solutions. But the other solution
+is you can, you know, replace or configure custom port numbers as well based on your application's
+requirement. And as you can see here, you can also see that the environment variables are being
+fetched, you know, from this secret, which contains the MongoDB variables, by the way.
+So, let me go down. So, let me try to do kubectl get on. So, the pod is still, you know, not yet
+ready, because both liveness and readiness are failing. So, let me go back to the job. So,
+the job is going to wait for some more time till it reaches the, you know, the wait timer,
+and it's going to fail. So, let me refresh this once again. And yeah, the job failed. So, if you
+see the job failed again. Okay. And as you can see here, it's going to give you some error message,
+but it won't, you know, say that, you know, it's because of the port mismatch, you know,
+within the logs. But how did I figure this out? Well, you know, exploring this, you know, you
+see the error message is, let me just scroll down, you should be seeing a different error message.
+Let me see the release failed uninstalled due to atomic, you know, being set client rate limiting.
+And let me try to see if there are any other specific logs.
+Okay. So, I don't see anything specific here. So, let me go to the second one.
+Okay. So, I think these are the same ones.
+So, you can also use the troubleshooting option. So, if you go back to Auto DevOps,
+and there is a troubleshooting option. So, if you face any specific, you know, issues during
+using the Auto DevOps, you can come to this troubleshooting page where it talks about the most,
+you know, widely faced issues while working with Auto DevOps. And one of them is the one which
+you're facing currently. So, this is a failed timeout waiting for the condition.
+Failed timeout waiting for the condition. Okay. So, this happens if, you know,
+the liveness or the readiness probes are failing, you know, during the deployment time. And the
+reason is, if you see here, it's going to run against the root page of the deployed application
+on port 5000. And if the application, you know, is not configured to run on 5000, this is going to
+fail. So, what do we do now? So, in this case, right, so, we already saw this. So, you can
+customize the values by using the Helm chart. And it also gives you the steps. So, you can create,
+you know, auto deploy values to a YAML file at the root directory. And you can give some
+custom ports, both for internal port, as well as the external port as well. Right. So, this is
+for the service. But what about for other changes? So, you can check out what are the
+all values available. So, you can just click on these custom values to Helm chart. It's going to
+take you to the customize, you know, documentation page. It's going to, you know, talk about how you
+can overwrite the default values. And, you know, you can also, you know, quickly, you know, see
+what are the different values available. So, I think this is the default Helm chart. So, let me
+go there. And if you scroll down, so, if you see, you know, these are the different variables which
+are available, which you can overwrite based on your application requirement. So, out of this many,
+you know, different variables, I'm just going to, you know, upgrade, you know, the service variables
+or the values. So, how do I do that? I need to create this file within the root directory of my
+repository. So, let me go back to my repository. So, in the, I think I'll do this in the feature
+branch, because I'm working on the feature branch. So, in the feature branch, let me try to
+add a new file. Okay. So, I'm just going to copy paste .gitlab/auto_deploy
+values.yaml. And the same thing, I would like to just copy paste, you know, this specific YAML,
+because I just want to update the service values. So, my application listens on port 3000. So,
+I'm just going to use the value 3000 for both internal and the external ports.
+So, let me commit the changes. I'll just say added new service ports.
+Okay. And I'll just, you know, commit the changes to the same feature Auto DevOps branch. So,
+it should again trigger a new pipeline. So, this pipeline should be completed. So,
+let's go back to pipelines. Right. So, a new pipeline has been triggered. So, let's go check
+this out. It has the same jobs, which will be running again. So, I don't want to again run
+all the Code Quality, Continuous Scanning, and basically the SAST jobs, because we have already
+seen this a couple of times. So, let me just cancel them to complete the pipeline a bit quicker.
+Okay. So, I'm only interested in building the Docker image, pushing it to the GitLab
+container registry, you know, doing the, you know, unit testing of the test cases
+and the review job. Okay. So, I'll just pause the video till this gets completed.
+Okay. So, as you can see here, the build job, the test job, and even the review job has been
+successfully completed. So, if you go to the review job, you can see that, you know, the
+application was successfully deployed using Helm. It also gives you an endpoint to test the
+application. And the endpoint is nothing but it should be a combination of a random string
+hyphen, the environment review hyphen, the branch and the, you know, Kubernetes
+ingress domain. Okay. So, the same thing, you can check it out on your Kubernetes cluster,
+you can do kubectl get pod, you see the pod is up and running. And at the same time,
+it also creates an ingress. And this is the ingress, you know, URL, which you are, you know,
+seeing in the logs. Okay. So, you can, you know, quickly test this out, or I'll do that in a
+minute. So, you can, you know, test this out over here, let me, or let me go to the review environment.
+So, the review environment holds all the details. So, if you see this is successful,
+the previous deployment, there is also this view deployment. If you click on this,
+I'm using a self-signed certificate. So, you have to agree to this, and it should be showing,
+you know, your application deployed, like whatever changes you have done, that can be reviewed using
+the review environment. And that is the intended use case of the review environment. And if I go
+back, after this job, it's also going to run a few other jobs. So, the logs and the artifacts are
+available to, you know, to be viewed later on, but I'm not interested in them for the time being.
+So, let me go back to the pipeline. So, we have a couple of other jobs as well. So, which are the,
+you know, browser performance and the stop review as well. So, what is this, you know,
+browser performance? Okay. So, again, you can rely on the documentation. So, if you go to
+the stages of Auto DevOps, so after the auto review apps job, basically, there is another job
+called as the auto DAST, dynamic application security testing, but this is not enabled for us,
+because it is only enabled in the ultimate tier and we are using the free tier. Okay. So, this job
+is not enabled, but the next job, which is the auto browser, you know, performance testing,
+this is enabled. So, here, it's going to measure the browser performance of a web application
+using the site speed, you know, tool, and it's going to create a JSON report and it will be
+available for us to review the performance score of each page. And it also, you know,
+it's going to be uploaded so that you can, you know, review it as a report as well. Okay. And
+by default, it's going to test the root page of your application. If you want to test additional
+URLs, you can again create a file at the root of your repository and provide the endpoints which
+need to be, you know, tested. Okay. So, if I go back to the pipeline, right, so even this job
+has been successfully completed. If you see this has passed, it also shows you the artifacts. So,
+you can quickly browse the artifacts. So, let me see what artifact has been generated.
+So, there is something called a site speed result. And oh, it has a lot of HTML pages. So,
+let me try to open one of the pages. Okay. It's going to redirect me to a different page.
+So, this is the sitespeed.io. These are the reports which got auto-generated for my
+application on the root tag. And to be honest, I have never used the sitespeed for the performance
+analysis of my web pages. But if you are aware of it, like how this works, you know, you can check
+out the reports and, you know, make sense out of it. Okay. So, there are different reports available.
+You can just check the values. And maybe you have to improve the performance, you know, based on
+this report, that would be, you know, a good solution. So, that's about the browser performance.
+So, if I go back, I think there should be one last job in the pipeline. And that is the stop
+review. So, once, you know, you have reviewed it, you can also clean, you know, whatever parts which
+were created in this pipeline by clicking on the stop review option. This is a manual action. If
+you see, you have to manually, you know, start this. But before you start this, you know, you
+have to, you know, also check this out. You can manually check the merge request as well. So,
+if I go to the merge request. So, I have created one merge request. So, within the merge request,
+it's going to give you a lot of details. So, it's going to say that the previous pipeline has passed
+with warnings. It's going to say that, you know, it has been deployed to the review environment,
+you know, what we say environment. And you can also view the app here. So, the reviewers,
+they will be able to, you know, view the changes visually by going to the application and seeing
+the changes. So, that is, you know, provided using the review apps. And once you click on the stop
+review, everything will be deleted and no one will be able to access the, you know, review application.
+Okay. So, I mean, all the details will be provided in the Merge Request, as you can see here.
+And it also provides a few other details. So, if you expand this, let me see if there are any
+other details. Okay. I don't see much over here. So, let me, yeah, I mean, if you have also,
+you know, run the other test cases like the Code Quality, NodeJS scanning, Secret Detection,
+right. So, those reports will also be available in the Merge Request if you have run them.
+But since I have, you know, cancelled them, those are not being displayed here. Okay. So,
+that's about, you know, how you can, you know, manually update the port numbers or the values
+in the Helm chart. And, you know, deploying the application to the, you know, review environment,
+you can review it. And once you're done with the review part, you can simply, you know,
+click on the stop review job, you have to manually run the job. So, it's going to clean up
+whatever ports which were, you know, deployed as part of this pipeline. So, let me just complete
+this and then we can close the session. So, I'll just go back to my cluster. If I do kubectl get
+all, you know, I should be seeing, you know, the pods in terminating state because I started
+the cleanup job. So, it is going to, you know, delete the deployment. And once the deployment
+is deleted, any running pods will also be terminated. So, let me check the secrets.
+If I go to secrets, even the secrets have been deleted. Let me check the Ingress.
+Even the Ingress has been deleted, right. So, everything which we created as part of this
+review environment will be deleted. So, even the port should be deleted. If I do kubectl get all,
+you should not see anything related to the review port. So, that's how this is going to
+work. So, even the review job has been successfully completed, the job succeeded.
+So, if I go back to the pipeline, yep, so all the jobs have been successfully completed.
+And the same thing can also be seen, I guess, in the environment as well. So,
+let me just check the environment quickly.
+Environments. So, in the review, if you see there, there is no feature Auto DevOps environment. So,
+even the environment has been stopped. If you go to the stopped environments,
+so you should see that the Auto DevOps environment was stopped. And, you know,
+if you want to review like what was done in this, you know, environment, you can click on it and
+it is going to show you all the deployments which were done for review purposes. So, that is about
+the feature branch and the review environment. Thank you.

@@ -1,0 +1,84 @@
+﻿In some cases, as soon as you build the Docker image, you don't push it to the
+container registry. You also have an additional step where you test the Docker image which was
+created and see if it is working fine before you push it to a registry. So how do we do that
+testing in the GitLab CI? So if you go back here, we can create another job and we can,
+you know, test the image which was created in the Docker build job. So what I'll do is I'll just
+copy the same commands over here or the same steps. Let me name the job as Docker test and
+I'll remove this dependencies thing over here and it also requires some script.
+So what should be done here? Ideally speaking, whatever image you have created here has to be
+tested in the new job. But if you remember, whatever artifacts which are created in a job
+cannot be used in another job by default because both these jobs will be running on
+two different runners or two different virtual machines. So what needs to be done? So before you
+can use the image which was generated in the build job and in the test job, you need to upload
+that image as an artifact so that it can be accessed in the test job as well. So let's do that.
+So in the build job, I'm going to first create a new directory called as image and within this
+directory, I would like to use the Docker save command, which can be used to save the Docker
+image as a tar file. Okay. So I'll just use Docker save. I'll just copy the same thing
+which I mentioned here. Okay. And I would like to push this to the image directory,
+which I just created. But I would like to give this a unique name. So I'll just name this as
+solar system image. And I'll just use whatever image version which I used here. Okay.
+And I'm going to append .tar. Okay. So I'm just using Docker save. I'm using the same image which I
+created above. And I'm just saving this to the image directory. And the name of the
+saved tar is solar_system_image-hyphen the image version .tar. So once this file is created,
+you need to make use of artifacts as we discussed earlier. So this artifact again, just want to
+use a path function or a path keyword to just upload the image. Okay, so whatever we have within
+the image directory will be uploaded as an artifact. So how do I use this in the, you know,
+Docker test job. So I need to make use of the needs keyword. Okay. And here I need to name or
+use the Docker build job, the name of the Docker build job, so that, you know, it can
+wait and download the artifact. Okay. So that's how you define it. And what about the script
+within the Docker test? So how do you, you know, get the image? How do you load it? And how do you
+test it? So for that, again, I have a bunch of commands. So let me quickly paste it and explain
+what I'm doing over here. So here, the first step is I'm loading the image. So once the artifact is
+downloaded, when this runner gets started, I'm just going to use the Docker load command.
+And I'm going to give the image which was, you know, just pulled. Okay, so I'll just use the same
+Docker image version or the tag .tar file. So this will be loaded as an image within the Docker test,
+you know, run a machine. And then I'm running the Docker image. So I'm using Docker run,
+I'm giving the container a unique name. I'm running this in the detached mode -d,
+I'm exposing the port 3000 to the host and mapping it to the 3000 on the container. And I am,
+you know, running the Docker image, which I just loaded. So once the image is, you know,
+created or the container is created, I need the IP address in order to test it. So to get the IP
+address of the container, I'm using an export IP command. And I'm dynamically fetching the IP
+address of the container by using the Docker inspect command and filtering out and getting
+the IP address. And in order to get the IP address of this specific container, I'm giving the name of
+the container which I specified while running the command. So I'm using an echo command to echo the
+IP address. And then in order to run this using a curl command or a wget, I'm just using a Docker
+run, I'm creating an alpine image. And within this, I'm just using the wget command to make a call to
+the IP address on the port 3000 and checking out an endpoint called as /live. And it's going
+to respond back with either live or failed. So I'm just grepping if it is live, it means that,
+you know, the image was created successfully, and it's also able to access the application.
+So where did I define this live endpoint? So this is defined within the NodeJS app.js.
+Right. So if I go to app.js, you know, apart from making calls to the MongoDB and fetching
+the planets data, it also has a slash and a different endpoints like the slash OS endpoint,
+which gives the details about the operating system. And it has a slash live endpoint to check
+if the application is up and running. So it's going to just give me status live. And it also
+has a slash ready endpoint. So basically, you can use this as the liveness and the readiness probes,
+which we use in Kubernetes, right. So I'm just making use of the slash live command,
+and gripping the response to see if it contains live or not. So that is how you know,
+we are going to test if the Docker image which was created in the previous job
+was successfully created or not. Okay, so let me commit this configured Docker test job. So it has
+all the required details like the stage, image, needs, services, and the script as well. Okay,
+so let me quickly visualize this. So as you can see here, the test job needs the artifact from
+the Docker build. So I'm using the needs, you know, keyword. So let's commit the changes.
+A new pipeline should be triggered. Let's go to the pipeline.
+So it's in pending state. So it's waiting for an available runner.
+So I'll just pause the video till all the jobs get completed.
+Okay, as you can see here, all the four jobs have been successfully completed,
+apart from the code coverage stuff. And you can also see the dependencies, right. So these two
+jobs are dependent on each other. And if I go to stages, so let me first go to the Docker build
+stage or the job. And you know, after the image was created, it created a directory
+image. And it also saved the Docker image as a tar file in this directory. And then since I'm
+using artifacts, it's also uploading the artifacts. Okay, so that's how the artifacts are uploaded.
+So let me go back to the Docker test job. So in the Docker test job, let me minimize the steps
+quickly. Okay, so the first thing is, it's going to download the artifacts. Okay, so it's downloading
+the artifacts from the Docker build job. And it has successfully downloaded the artifact, you can
+see 200 OK status code. And then it's, you know, going to execute the command. So the first thing
+is, it's going to load the image from the image folder. And it's saying loaded image, and it is
+the name of the image and the tag. And then I'm using the Docker run command to run the image,
+which was loaded on a specific port number. So this is the container ID. So I'm again,
+exporting the IP address of the container using the Docker inspect command. And this is the IP
+address. And finally, I'm making use of the Docker run Alpine image in order to use the
+curl command to, you know, test the IP address port number and the endpoint. And as you can see
+here, it does give me the response as status live where the grep command is successfully evaluated.
+And hence, it proves that the image, which was built in the Docker build job, contains all the
+steps defined in the NodeJS app.js. And it's ready to be pushed to the container registry.
+And that's what we will be doing in the next session. Thank you.

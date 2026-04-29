@@ -1,0 +1,171 @@
+﻿Let's go ahead and see how GitLab CI helps us to do static application security testing.
+So there is a complete documentation dedicated to SAST,
+and these are basically used to check if your source code has any vulnerabilities,
+and it could be run for a wide range of programming languages,
+and also to check Kubernetes or Helm manifest files as well.
+And the best part about this is you can run the SAST analyzers in any GitLab tier,
+but there are some restrictions, and at the end of the day,
+these analyzers are going to output the reports in JSON format.
+So if you have the GitLab Ultimate tier plan,
+then you can also view the results in security dashboards,
+in Merge Request views, and in various different formats.
+But if you are within the free tier, like I'm doing it in this session,
+we will be relying on the JSON files to read out the vulnerabilities.
+And I mean, there is a lot to this security, I mean, static application security testing.
+You have a lot of different documentation available here.
+It's also going to show you what are the supported languages and frameworks, right?
+So we are only interested in JavaScript-based program or language, which is NodeJS.
+So it's going to use Semgrep analyzer,
+or it also has a NodeJS-based scanner in order to do the scanning.
+And we also have a couple of Kubernetes manifest files.
+So we'll also make use of the kube-scan in order to find any vulnerabilities
+within our Kubernetes manifest files.
+And if you want to know about each of them individually, you can simply click on them.
+It's going to take you to a different repository talking about the analyzer
+and what is being used internally.
+If you talk about the NodeJS scan,
+it internally makes use of the NGS scan tool to check for NodeJS code and the vulnerabilities, right?
+So if you talk about K8s,
+again, it's going to take you to a different documentation explaining,
+which analyzer is used and how the reports will be sent.
+So that's about the analyzers and the languages.
+And if you want to configure this within your CI/CD pipelines,
+so I think you can just go ahead and configure it, right?
+So you can simply add them using a template.
+So we'll be making use of a template today.
+So you can simply use jobs and you can use the saht.gitlab-ci-yml.
+So this yml contains a lot of jobs with respect to the language of the source code.
+So it identifies the language and uses a few of the jobs defined within this job section.
+And apart from this, we also want to analyze the Kubernetes or the Kubernetes manifest file.
+So we'll see how to add that as well.
+But for the time being, let's go ahead and configure this.
+So we are just going to use includes template.
+So as we talked about this in the PPT slides,
+so templates or any external YAML files can be added to our workflow CI/CD configuration files using the includes keyword.
+This basically splits a long GitLab CI file into multiple files to increase readability
+or to reduce duplication of the same configuration in multiple places.
+So again, for includes, you can include a file which is there in the local repository.
+You can include a YAML file from a different project on the same GitLab instance
+or you can get it from a remote URL or you can get it from a template as well.
+So we are using the template option today.
+If I come back here in my workflow, I can simply copy-paste the template.
+So you can also browse templates.
+So there is a browse templates option.
+If you click on it, it's going to take you to the template's official documentation page
+where you have all the out-of-the-box available templates.
+You can simply go through them and use them within your workflows.
+And we are currently referring to one from the jobs directory.
+And if I scroll down, so if you see there are a lot of pre-built templates,
+we are making use of the SAST.gitlab-ci.yaml.
+And if you see here, this is a very huge template with multiple jobs.
+So let's see which jobs have been added to our pipeline.
+So if I go back to the pipeline, you don't need to mention the entire,
+what we say, the Ingress URL path because we are making use of the official template.
+So you can simply refer to these templates using the jobs-SAT and the name of the job basically.
+So what are added?
+So by default, all these templates, the jobs are added to the test in a stage.
+So if you go to visualize, you can see that within the test stage,
+you have a lot of jobs added and we have our own Unit Testing as well.
+So these are the different jobs available in SAST,
+but we won't use all of them based on your source code programming language.
+It's going to use only a few of them.
+So in my case, since it is a NodeJS based application,
+it's going to use the NodeJS scan-sast and also I guess the semgrep-sast.
+And if you want to enable others, like if you want to enable the Kubernetes SAST,
+you can enable it by making use of some variables.
+So if I go back to the documentation of SAST,
+and if I search for enabling kubesec analyzer,
+it says that you need to set this variable in order to make use of it.
+So let me just copy this variable, scan Kubernetes manifest and enable it.
+So if I go back to my workflow under variables,
+I'm just going to create a new variable and set it as true.
+And moreover, it's saying it's an invalid configuration.
+So let me see.
+It is true. I think I need to use double quotes.
+I can't give a Boolean over here.
+So this is how you need to define.
+So it's also going to make use of the Kubernetes SAST as well.
+And I would like to run all this as part of the pre stage.
+So what I would like to do here is,
+so if you go to full config, you should be seeing Code Quality.
+And if you scroll down, you should also see SAST.
+So all the SAST jobs are defined under the job name SAST.
+And if you scroll down, your pipeline should be having well over 500 lines.
+So I would like to configure SAST to a different stage.
+So I can simply use SAST.
+I can say stage dot pre.
+So now if I go to visualize, all the SAST jobs will be running under the dot pre stage.
+So I guess these are the only changes which I want to do.
+And I will just comment out the Code Quality job.
+I don't want to run this as of now because we have already tested it.
+So let me just comment out the Code Quality job.
+And also the Code Quality component.
+So as of now, I only want to run the SAST jobs followed by the Unit Testing job.
+So let's see how many jobs will be executed in the pre-stage.
+So let me go ahead and let's say exploring SAST template.
+So let me quickly commit the changes.
+Let's go to Pipeline and your Pipeline should be triggered.
+Okay.
+As you can see here, within the pre-stage, only three jobs have been selected.
+Because my project is related to NodeJS, so it's only going to use the NodeJS based SAST tools.
+And since I've also enabled KubeSec using a variable, so it's also going to run the KubeSec SAST job as well.
+So since this job is already completed, so let's go and see what happened here.
+So we did not configure anything. We are just making use of the prebuilt templates.
+Okay.
+So if you see the configuration or the logs, it's going to say that it has run the /analyze run command.
+And it is trying to use the GitLab KubeSec analyzer of this version.
+It's trying to detect a project.
+It found a project and the files which are available in this path.
+It is going to analyze them.
+So I think we can also change the path.
+I have not checked it.
+Maybe it's there in the documentation.
+It's going to run the analyzer and it's going to search for Kubernetes manifest files at this path.
+And it's creating a report.
+So the reports can be viewed.
+I think it can be viewed in the artifacts.
+So let me go to artifacts in a different tab.
+It's going to show me the artifacts of the KubeSect, NodeJS and the Semgrep.
+So I think all those jobs have been completed.
+So let me first check the report of the KubeSec SAST.
+It's going to show me that there is one JSON report.
+So let me quickly download it.
+Okay.
+It is downloaded.
+So let me directly open this in my browser.
+So I have a JSON viewer in my browser.
+So I am able to view the JSON in a different theme.
+So as I can see here, the vulnerabilities section is empty.
+If it finds any vulnerabilities, it's also going to show you the dependent files.
+It's going to give you additional details like which scanner was used, the link of the scanner, the version and a few other details like when it was started and when it ended.
+So that is the information available in the KubeSec scanner report.
+Let us try to open the NodeJS scan SAST report.
+Okay.
+So again, this is a JSON file.
+Let me download this.
+A new file has been downloaded.
+Let me open this.
+And again, if you see here, this has found some vulnerabilities.
+If you see within the vulnerabilities section, it found a vulnerability of type NodeJS NoSQL Injection.
+I think there is an injection vulnerability available within my code.
+It's saying in the description, untrusted user input at this method or function can result in NoSQL injection.
+It's also going to give you the severity, the name of the CVE and the scanner used, the location,
+like at which file, what line the vulnerability was found.
+It gives you the identifiers like which identifier was used to identify this issue.
+It's going to give you the CWE ID so that you can check for additional details.
+And it's again going to give you the details about which scanner was used, at what time, how much time it took.
+So this is how it's going to scan your code and give you the vulnerabilities.
+So based on this, you can either decline the Merge Request or make sure that you bypass this by modifying your code as well.
+So that's the use of the SAST analyzers or scanners.
+So if I go back to the pipeline, all these scanners, they allow the job to fail.
+So even if the job has found vulnerabilities, it's going to just create a report and continue executing the next job.
+So if I go to the NodeJS scanned SAST, you should see the same logs.
+So it's also going to log a message saying that there was some syntax error, but I did run the analyzer.
+It gives you the version of the analyzer.
+It creates the report and you have to check out the report to find the vulnerabilities.
+If you have the ultimate plan, you can also check the vulnerabilities within the security dashboard.
+So you have various dashboards which can be used for checking out the reports in a visual way as well.
+So that's how the SAST works.
+And similarly, it's also going to run the Semgrep SAST and you can also find the reports in a similar fashion.
+So that's about SAST jobs.
+Thank you.

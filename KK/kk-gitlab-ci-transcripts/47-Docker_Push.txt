@@ -1,0 +1,147 @@
+﻿In the previous session, we pushed the image to Docker Hub Container Registry.
+Apart from that, you can have another job to push the image to Google Container Registry or GitHub Container Registry.
+Or in fact, GitLab also has its own container registry which can be used for storing container images for each GitLab project.
+But how do you authenticate with this container registry and how do you build and push images?
+We can rely on the documentation. You can check out the authentication part.
+It talks about how you can authenticate with the container registry, what are the different options you have.
+You can either use a personal access token, deploy token, project or group access tokens.
+It also gives you a couple of commands like if you want to authenticate using GitLab CI/CD,
+you can make use of the predefined variables which are already available out of the box to quickly log in.
+You can use the Docker login, you have the CI registry, CI registry user and also the CI registry password.
+All these variables are predefined and available. We'll explore them. We'll also see what the values of them are.
+Once you authenticate, the next step is building and pushing the images.
+Again, these are similar to the previously done jobs. You have to use the Docker build command.
+But here, in order to push to the GitLab container registry, the registry name should be registry.gitlab.com
+or whatever is the host of your GitLab server slash the group in which the project is currently available.
+The project name and whatever image name you want to give. This tag has to be maintained.
+This is how you build. Once it is built, you can quickly push it as well.
+That's how you can authenticate, build and push to the GitLab container registry.
+Let's try to check this out using the workflow.
+In the workflow, we have five jobs. Let me create another job. I'll just paste it and explain the steps just to save some time.
+Let me minimize the script part. I created a new job called publish to GitLab container registry.
+It's going to run in the same containerization stage and it depends on the same jobs which are dependent in the Docker push job as well.
+This job again depends on the Docker build to get the image which was built in that job.
+Also, this has to be pushed only after the testing has been done within the Docker test job.
+It uses the same image and the service in a container.
+But what about the script part? What changes in the script part?
+In the script part, the first command is, of course, you need to load the image.
+Whatever artifact which gets downloaded from the Docker build job, that has to be loaded.
+I'm also adding an echo command just to show you what are the outputs of the CI registry, CI registry user, CI registry password, and the CI registry image.
+These values are predefined as I've told you.
+You can also check out this description within the predefined CI/CD variable reference page.
+You can just search for registry and it gives you the description of all these variables with some examples as well.
+Let us check the echo command and see what would be the output of these variables.
+Let me go back to the pipeline.
+After the echo command, I have the Docker login command.
+Here, I am logging in to the CI registry by providing the CI registry username and I'm providing the password using the standard input.
+The password is also a predefined CI registry password variable.
+This is how I'm going to authenticate to the GitLab container registry.
+Once authenticated, the next step is building an image, which we have already done.
+We are going to rename the image.
+I'm using the Docker tag command to rename the image, which we just pulled or downloaded.
+I'm going to rename this by the CI registry image, which contains the container registry's domain slash the group slash project name slash.
+I'm going to use the image name as ss-image and the version of the tag would be the image version, which is referring to the CI pipeline ID.
+That's how I'm tagging the image.
+I'm just outputting all the images, which I have on this random machine.
+You can use the Docker push command to push the image using the same CI registry image variable, the image name and the image version.
+Let's check this out.
+Before I commit this, I'll just say configured GitLab container registry push job.
+Where does this push the image to?
+The container is accessible within the project.
+If you go to deploy, again, you have various options over here.
+One of the options is container registry.
+Let me open this in a different tab.
+Currently, the container registry is empty.
+It does not contain any container images.
+After we successfully complete this job, it should host one of the container images.
+Before that, before I commit this, let me quickly visualize this.
+Now, even this job depends on the build and the test Docker jobs.
+Let's quickly commit this.
+Let's go to pipelines.
+A new pipeline is triggered, which has around six jobs.
+If you want to see the dependencies, you can just check the dependencies.
+Both the Docker push and the publish to GitLab Container Registry jobs will be running in parallel.
+But this will be started only after the Docker test job completes successfully.
+You can also see the visualization of this using the needs tab.
+You can see the publish GitLab container job also depends on the Docker test and the Docker build jobs.
+That's how this is going to work.
+I'm just going to pause the video till it comes to the Docker push job stage.
+As you can see here, both the Docker push and the publish to GitLab Container Registry jobs are running in parallel.
+These two jobs are started executing right after the Docker test job has completed successfully.
+I'll just pause the video once more till both the jobs get completed.
+As you can see here, the publish to GitLab container registry job has failed.
+Let me go ahead and see why this failed.
+I guess it's not able to log into the registry.
+It's saying there is a syntax error.
+I think the error is with respect to this password standard input.
+Let me just simplify this.
+Let me just go back in the Docker login.
+I'll just use -p instead of the standard input.
+I'm just going to pass the password directly in the command itself.
+I'm just going to use Docker login.
+Just say registry.
+The user is ci-registry-user.
+For the password, it is ci-registry-password.
+Let me commit the changes again.
+I guess this should resolve the issue.
+Let me go back to the pipelines.
+A new pipeline got triggered.
+I will be pausing the video till all the jobs get completed.
+As you can see here, after making that small change within the login,
+the publish to GitLab container registry job has also been successfully completed.
+Let's go ahead and check the logs.
+Let me minimize all the steps.
+I'm only interested within the steps script stage.
+Here, the first thing is,
+it's going to download the artifact from the Docker build job.
+It's going to load the image.
+It's going to echo various CI registry predefined commands.
+Here, if you see the CI registry variable,
+it's going to echo the registry domain,
+which is registry.gitlab.com.
+Talking about the CI registry username,
+it's making use of the GitLab CI token.
+The CI registry password is a must because of security reasons.
+The CI registry image.
+This is going to be the CI-registry domain
+followed by the group and the name of the project.
+My project name is Solar System,
+which is currently in the demos group.
+This is required to publish the image to this project's container registry.
+It's completely available within the CI/CD registry image predefined variable.
+This is the group name.
+If you see the URL in my browser,
+it's demos group slash the project name, which is Solar System.
+That is available as part of the variable.
+Then it's going to use the Docker login command
+to log into the CI registry,
+which is the registry.gitlab domain
+using the username and the password of the registry.
+If you see the login is successful.
+Apart from that,
+I'm also tagging the image to the CI registry image slash SS image
+as a new image name.
+You can see that I have two images.
+That's 67 Solar System
+and also registry.gitlab.com slash demo group slash Solar System
+slash SS-hyphen image.
+That is the image name.
+Of course, the tag or the version is nothing but the Pipeline ID.
+Then it begins the CI/CD push command.
+It's going to push this to the GitLab container registry.
+Even that is successful.
+Let me quickly go to the container registry.
+Currently, it has nothing.
+Let's refresh this page.
+You can see that it has the Solar System S.S. hyphen image container image,
+which has only one tag because we only pushed it once.
+This is nothing but the IP.
+I'm not the IP address, the pipeline ID.
+For additional details, you can click on toggle details.
+It's going to show you like it is published to which group,
+which project name and the image name,
+at what time it was published.
+It's also going to show you the size,
+the manifest digest and the configuration digest as well.
+This is how you can also publish container images to GitLab Container Registry.
+That's all for now. Thank you.

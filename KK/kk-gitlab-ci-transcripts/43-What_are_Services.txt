@@ -1,0 +1,95 @@
+﻿Let's go ahead and configure services within a workflow.
+Before that, let me just recap some details about services.
+As mentioned earlier, services are Docker containers which provide a simple and portable
+way for you to host services that might need to test or operate your applications in a Pipeline.
+You know, for an example, your pipeline might need to run unit tests that require access to
+a database or some memory cache, right? So you're not only limited to using database services,
+any image found at Docker Hub or your private container registry can be used as a service.
+But before using them, I also want to highlight what services are not used for.
+So as mentioned earlier, this feature is designed to provide network accessible services
+and a database is the simplest example of such a service. And if you try to, you know,
+add any programming languages like PHP, NodeJS, Golang within the services, your script cannot
+access the commands of these specific programming languages. So in order to access the CLI or the
+commands of the specific languages, you need to define them as the job image, not within the
+services. Okay, so that is a major distinction between the job images and the service images.
+And talking about services, so how do you define them? So you can simply use the services tag and you
+can define the image which you want to use. And you can start using that service, you know,
+within the script. So how do you connect with the service? So you can connect to the service by,
+you know, just hitting the hostname. So let's take this example. So let's assume you defined
+a service to term / WordPress:latest. So how do you, how does your script connect with
+this service? So by default, GitLab is going to create two, you know, hostnames for us.
+So the first thing is, it's going to replace the slash by two or double underscores.
+Or in the second host name, it's going to replace the slash by a single dash. And whatever,
+you know, it's after the colon, it is completely ignored. And by the way, using the underscores
+is not a valid RFC. And it may cause some problems when you try to connect it with some third-party
+applications. So it's always recommended to connect to services using aliases. So what are
+the different options which you can define in a service? So you can go and check the available
+settings for services. So the first thing which is required is the name. So this is the full name of
+the image to be used. And if you are not using any alias, so the name will be converted into
+a host name. As discussed earlier, it's going to replace the slash with a single dash or double
+underscore. After that, you can also define an entry point and a command which will be provided
+to the container. And these are equivalent to the Docker, you know, definitions of Docker entry point
+and the Docker command. Apart from that, you can provide alias as I've told you earlier. So by
+providing an alias, it becomes easier to access service by just, you know, referring to the alias
+name. And apart from that, if you want to pass some additional environment variables to the
+container or to the service which is running the container, you can also assign variables at the
+service level as well. So to see additional information about services, you can go to CI/CD
+YAML syntax reference, you can search for services, it gives you some other additional information,
+and you know how to define the services. It also has Docker option and where you can define the
+platform and the user and you can also define the pull policies. Okay, so that's about a brief
+recap about services. So let's try to configure services within our pipeline for the unit testing
+and the code coverage jobs. So let me just go back to the unit testing.
+So I'll just define services and I would like to define the name. So here I will be making use
+of one of my Docker image which is specifically created for this use case. So this Docker image
+is hosted on my Docker Hub account and the name of the image is MongoDB non-prod. So this image
+contains a MongoDB and it also populates the database with my solar system, you know,
+details like all the planet details. So everything is built in this single image
+and you can also give it an alias. So let me give it an alias
+Mongo. And you can also use a pull policy as well. So let's say I would like to add a pull policy
+as always. So it's going to always, you know, download this image if you're running this on a
+Self-Managed Runner. Okay, so that's how you define a service. But how does your unit testing job,
+you know, access the service? So if you see here, the unit testing job also runs within a container
+because we are making use of the image option. So now you have two containers running within
+the same runner. So these two containers will have access to one another and can communicate
+when the job is in running state. So in order to connect with the service, you can define the
+variables at the job level. So let me just define a set of variables at the job level.
+So here for the Mongo URI, I need to connect to the MongoDB which is running in the service
+container. So how do I connect to it? So the first thing is I can just use a MongoDB colon
+slash slash. And for the host name, I need to be using the alias. Okay, since I defined the alias,
+I can simply use Mongo. If I did not define the alias, I should be making use of
+the complete image name. So anything after colon, it will be stripped off. So and the slash,
+it could be you could use either a single dash or double underscore. So this would be the host
+name if you're not using an alias. But since I defined an alias, I'll just go with Mongo.
+And I also need to give a port. So this specific image is using the default MongoDB port number,
+which is 27017. And of course, it still, you know, populates a database which uses the same
+name superdata. But talking about the credentials, yes, it uses a different set of credentials.
+So I need to replace this with different credentials, which is non-prod user.
+And for the password, again, this is a sensitive value, you can make use of the CI/CD variables
+to mask it and refer to it over here. But just for the time being, I'm just going to, you know,
+hard code the password here as well. So I'm just going to say password. Okay, so this is how you
+can define a service and your job container can make use of these variables and connect to the
+service using, you know, the hostname and the credentials required. Okay, so just to show you
+that it's making use of the service and these variables, I'll just comment these variables so
+that, you know, the job cannot reference those variables. Okay, so the same set of commands,
+or the steps, I would like to just copy and just paste them in the code coverage because both the
+jobs need to connect to the same database for, you know, doing the unit testing and the code
+coverage. Right. So that's how you define a service. So let me quickly commit it. I'll just
+say configured service container, and I'll just commit the changes to the feature branch.
+So a new pipeline should be triggered. So let's go and check out the pipeline.
+Yep. So let's go here. So you have two jobs running. Okay, as you can see, both the jobs
+have been completed. So let's go ahead and check out the logs. So within the unit testing job,
+so you see a lot of logs over here. So let me just, you know, minimize all this.
+Okay. And okay. So the first thing is, it's preparing the Docker machine executor. So the
+first thing it's doing is it's using the Docker executor with image Node.js 17 alpine. And it's also
+starting the service. Right. So since I defined a service, so first, it's going to start the service
+container, it's going to pull the Docker image, and it's going to run the MongoDB service connector.
+And it's going to wait for the services to be up and running. And then it's going to start
+the job image. Right. So it's going to pull the NodeJS image and run the image.
+So once it is up and running, you can see that in the step script step, it is going to simply
+run the NPM test. And it's going to make use of the service container as the MongoDB to connect
+to it and you know, do the testing. The same thing is also done at the code coverage level.
+So even in code coverage, if you see it did run the code coverage command. And at the top,
+you can see that even this is making use of the service container. So even after,
+you know, commenting out the actual production database variables,
+the jobs are still able to run successfully based on the service container and the variables which
+are used for connecting to the service container. Right. So that's how services work. Thank you.

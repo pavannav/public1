@@ -1,0 +1,172 @@
+﻿Let's go ahead and talk about why caching dependencies is important and how
+to cache the dependencies in the GitLab CI pipeline. So if you remember, we are
+making use of a NodeJS based application and most of the programming
+languages depend upon some dependencies in order to write the code.
+So within Node.js, we make use of the package.json file to define the dependencies
+required for our application. So if you see here, I'm using around 5 to 9
+different dependencies for my application because it's a very simple
+one. But more complex applications have, you know, if not tens or hundreds of
+dependencies. And in order to run the application, first you need to install
+the dependencies and then those can be used, you know, during the application
+runtime. And in Node.js, when you try to, you know, install the dependencies, it will
+be also creating a package-lock.json file, which contains all the
+details regarding the dependencies and it's also going to log their versions as
+a security measure. Okay, so that's about the package.json and how many
+dependencies we have for this application. And if I go back to my
+pipeline, if you remember, we are currently using two jobs, the unit
+testing and the code coverage job. And in both the jobs, before you run the jobs, we
+are installing the dependencies using npm install. So let's see how much time
+it's taking to install these dependencies in both the jobs.
+So here, if you see in the unit testing job, it took around 7 seconds to install the
+dependencies. So each dependency has multiple packages. So currently, you know,
+it's adding around 364 packages and it's taking around 7 seconds.
+And since we have only 9 dependencies, the time is in seconds. If you have hundreds of
+dependencies, the time does increase. It also goes in minutes as well. So the same
+thing is also happening in the code coverage job. So if you go to code
+coverage job, even it requires the same set of dependencies. Since it is running
+on a different, you know, runner machine, again, it's going to, you know, add the
+same packages and this time it took around 6 seconds, right? So if you have
+multiple jobs, which require the same set of dependencies, and if you try to
+run the jobs multiple times, each time it has to add or download and install the
+same set of dependencies and it's going to waste your time. So to avoid this and
+to improve this, we have the caching capability in GitLab. So you can cache
+one or more files when a job gets executed and we can make use of this
+cache in the same pipeline within the different jobs or you can also use the
+same, you know, cache across multiple pipelines. So cache might sound similar
+to artifacts but it is a bit different. So we use cache for dependencies like
+packages which you download from the internet and use in your project.
+So this will be cached on the runner and it can also be uploaded to AWS S3 if required.
+Whereas artifacts are created when the job executes and this can be used in the
+intermediate jobs within the same pipeline. So that's the major difference
+between caching and artifacts. So how do you configure the cache? So the cache can
+be configured for each job using the cache keyword. So if you want to know
+more about the cache keyword, we will explore the syntax reference. But before that,
+this, you know, documentation also explains, you know, how you can use the cache for
+different programming languages like NodeJS, PHP, Python, Ruby and Go as well.
+So now let's go ahead and see what options we have in the cache keyword.
+So if I go back to the CI/CD YAML syntax reference, we have this cache option and
+it has various keys associated with it. So you don't need to use all the keys
+but we'll use some of them. Okay. So one important thing is cache can be
+shared between multiple jobs and pipelines as well. Okay. So let's scroll
+down and check out the path. So you need to define the path which needs to be
+cached. Okay. So it could be a single file or it could be an array of files.
+So you have to use the paths in order to define what has to be cached. And you can
+also use a key. So the keyword is, it's going to give you a unique key for each
+cache. So multiple jobs using the same cache key use the same cache.
+And it also, you know, is the same for different pipelines as well. So as long as the
+key is the same, it's going to download the same cache and use it across jobs
+or across the pipelines. And you can define the key using a string or a
+predefined CI/CD variable or a combination of both of them. So instead
+of using a single key, you can also associate the key with a file as well.
+So when you're associating the key with the files, the keyword or the, you
+know, the unique key will be generated based on the file changes. So whenever
+you, you know, make a change to the file, it's going to generate a unique SHA
+value and that is going to be used as the cache key. So here, I mean, if you're
+working with Ruby applications, you can use the Gemfile.lock as the key file, or
+if you're making use of, you know, Node.js applications, you can use package.json
+or package-lock.json because whenever you make any changes in
+the dependencies, you either make the change in the package.json and when
+you install them, the change would be reflected in the package-lock.json,
+right? So you can use these files as a key in case of, you know, Node.js based
+applications. And apart from the, you know, keys, you can also add a prefix so
+that you can give that key a more meaningful name if required. So that is
+an optional thing. And apart from that, you have the policy option. So if you
+don't define the policy, by default, it's going to use the push and the pull
+policy. So what is the use of the policy? So this policy defines what the job has
+to do in case of a cache. Does it require to download the cache or upload
+the cache? So that is defined using the policy key. So by default, it's going to,
+you know, first pull if any cache is available and then push cache which was
+created in this job. So apart from pull and push, which is a default option, you
+can only use the pull option, which is only going to download the cache when
+the job starts, but it's never going to upload the changes when the job finishes.
+And similarly, if you use only the push as the policy, it's only going to upload
+the cache when the job finishes, but it's never going to download the cache when
+the job starts. Okay, so these are the different keys available. So now let's go
+ahead and add cache to our unit testing and the code coverage jobs. So you can add
+cache, you know, before the script stage. Right, so I'll just add cache. So let me
+make some changes. So I'll just use policy as pull-push and when it's on
+success. So only when the unit test job successfully completes, it's going to, you
+know, push the cache. Else, it's not going to push. It's only going to pull the
+cache. Okay, so that's a strategy, you know, which I'm using. So coming to the
+path. So what is the path which I would like to, you know, cache? If you remember,
+as soon as you do npm install, it's going to create a node_modules
+directory, which contains all your dependencies. So this is the folder which
+I would like to, you know, cache. So I can simply use node_modules.
+And mind you, this path should be a directory or a file which should be available at
+the local Git repository, which was available for the runner. Okay, so that's
+the path. And what should be the key, right? So for the key path, I would like
+to use the files option. Okay, so let's use the files option for the key.
+And for the files option, you can give it an array. So I would like to use the
+package-lock.json as the key. And I can also add a prefix as well. So
+let me add a prefix as node_modules. Okay, so that's a prefix and
+that's the key. Okay, so the same cache, I can use it at the code coverage as
+well. So let me just use this at the code coverage. Okay, the same thing, just
+for the readability purpose, I would like to add this, you know, before the
+before script. Okay, so within the code coverage, I can use the same cache. But
+here, if the code coverage is dependent on the unit testing job, I can simply
+use the pull policy because the unit testing job would have already pushed
+the dependencies. So the code coverage job can simply pull and start using
+this. But in our scenario, both these jobs are running in parallel. So if you
+try to, you know, run the code coverage job only with the pull policy, it might
+fail for the first time if there is no cache available. So to avoid that, I'm
+just going to use pull-push for both the jobs. And talking about the rest of
+the stuff, I'll just leave it the default settings, which I've used in
+the unit testing job. Okay, so that's about the cache key. So let us quickly
+commit the changes and see how it works. So let me just say, add a cache key.
+And I'm going to, you know, push this to the feature branch. But before that,
+let me just close the pipeline. Okay, let me just commit the changes. So this is
+the first commit. So I'll just go to the pipelines, a new pipeline should be
+triggered. So it has to get two pipelines. So let me just stop one of
+them. The reason why two pipelines are created is because I have one merge
+request open. So it's also going to, you know, run a pipeline one for the commit
+to the feature branch and one for the merge request. So I'll just cancel one
+for the merge request. And I'm only running it, you know, for the commit
+thing. Okay, so let me just go here. So as you can see here, the jobs have been
+completed. So let's go to the unit testing job, since it is a first, you
+know, build. So if you go here, so let me minimize all the steps. Okay, so you
+have a lot of steps over here. So first step, it is trying to, you know,
+restore the cache, because we are using a cache keyword. And it's, you know,
+checking for the cache with this key. So what is this key? So this is nothing
+but the key which we have given the prefix as node_modules, and the SHA
+value of the package-lock.json file. So that is a SHA value. And since you're
+running this for the first time, you know, it does not have any cache
+available, if you see file does not exist. So it's saying failed to extract
+the cache. And now since the cache was not extracted, it is going to go ahead
+and do the npm install, it's going to, you know, download all the dependencies
+and install them. So it's taking seven seconds. So now if I go to saving cache
+for successful job, so here you can see that it is creating cache.
+Okay, it found the node_modules path, which contains around 5735 artifacts.
+And this will be uploaded to the Google Cloud Storage, okay, basically GCP storage,
+right. So this is how the cache will be uploaded. So once the cache is
+uploaded, you can again go to the code coverage, even in the code
+coverage, it will, you know, upload the cache to the GCP storage. So that is
+how the cache is uploaded. But here, you know, it was still downloading them.
+So what I'll do here is I'll go back to the pipeline. And I will rerun the
+pipeline. Okay, so you can either trigger a new pipeline or you can, you
+know, rerun the same job again. Okay, so let me rerun the same job again.
+Now this time, it should download the dependencies which were uploaded
+earlier. And the npm install command should not install any dependencies.
+Okay, so as you can see here, the new job has also been completed. So if you
+see restoring cache, so now it's checking for cache, which is for Node.js
+modules. So it found a cache, and it is downloading the cache for this
+specific key from the storage which was uploaded earlier. And once it is
+downloaded, it's going to use the cache. So now if you go to the npm
+install command, it's going to say up to date. So it is not anymore
+downloading any new dependencies, it's just making use of the dependencies
+which were, you know, downloaded earlier. And since it's not installing
+anything, it just took one second for it to, you know, identify the
+downloaded dependencies, and it's going to make use of them, right. So
+that is how useful caching is. So it's going to save you a lot of time
+avoiding to reinstall the same packages across multiple jobs, or
+across multiple pipelines. Okay. And again, it's going to, you know,
+upload the artifacts if there are any changes done in this job, right. So
+this is how you can create cache and use the cache within the job. So you
+can also clear this cache. So you might get a question like, how do I
+clear the cache? So you can clear the cache in two ways. One is the manual
+approach. So if you go to pipelines, so there is a clear runner cache
+option, which is going to clear the cache from all the runners. But you
+don't want to clear the cache manually, you want to clear the cache
+whenever there is a change in the dependencies. So whenever someone adds
+or modifies one of the dependencies, it needs to remove the cache and, you
+know, install the new dependencies. So how to do that, we'll check it out in
+the next session. That's all for now. Thank you.

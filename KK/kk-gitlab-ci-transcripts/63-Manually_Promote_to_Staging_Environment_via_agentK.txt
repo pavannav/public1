@@ -1,0 +1,78 @@
+﻿Let us understand how we can optimize our GitLab CI/CD configuration.
+When creating an application in any programming language or setting up an automated pipeline
+through a CI tool, you have likely encountered situations where you end up copying and
+pasting portions of your code or pipeline from previous work. While copying CI pipelines can
+accelerate initial project setup, relying heavily on duplication can hinder effective
+maintenance and scalability. So we should always consider modularizing your CI pipelines to avoid
+copy-pasting and facilitate easier updates and adjustments as the pipeline evolves.
+GitLab CI/CD has multiple features which help you to get rid of the duplicated code
+and to standardize your workflows which will help you to boost the development speed
+and also it makes implementing a pipeline a simple process.
+So to optimize your GitLab CI/CD pipelines, you can use other features such as the
+Extends keyword, Anchor, Reference tags, Templates, and CI/CD components.
+In this video, we will talk about the first three topics,
+but before that you need to know about a concept called hidden jobs.
+GitLab CI/CD has a concept of a hidden job. Any job which starts with a dot are not run by
+GitLab CI/CD pipeline but can be used for disabling a job without deleting it or for reusable
+configuration. These reusable templates and configuration blocks improve your pipeline's
+modularity and maintainability. So let's understand how the extend keyword works.
+So let's take an example and understand how the keyword is used. So imagine we have a pipeline
+with two NodeJS jobs for unit testing and code coverage. So if you see this in a pipeline code,
+it shares a lot of setup like using the same container image, service containers,
+caching strategy, and also a before script for the dependency installation.
+Although this example involves only two jobs, in other scenarios there might be many more jobs
+using a common set of configuration. So how do we modularize them? So the Extends keyword
+in GitLab CI/CD offers a solution. It's going to create a hidden job with the shared configuration
+and we can let other jobs inherit it. So here's how it works. So the first step is to create a
+hidden job with any name. In this example, we have named it as .base NodeJS job which contains
+the common configuration such as the image, services, cache, and the before script. The
+second step is to inherit the hidden job. So in the unit testing and the code coverage jobs,
+we use the Extends keyword to specify the .base NodeJS job as the parent.
+Once it is done, the GitLab CI/CD merges the parent configuration with the child's job,
+overriding any duplicate values from the parent. And for your reference, here the line numbers
+from 3 to 12 will be merged in both the unit testing and the code coverage jobs.
+So this approach offers several benefits such as you know it's going to eliminate
+repetitive setup code making pipelines easier to maintain, it's going to separate the configuration
+concerns for better clarity, and any changes to the shared configuration are going to be applied
+to all the inheriting jobs automatically. And finally, we can also build reusable templates
+for common patterns streamlining pipeline creation.
+And the next one we are going to talk about anchors. So if you're looking for ways to
+further optimize your pipeline setup, we should not miss out on the anchors. So they are like
+extents, mini-me helping you reuse smaller configurations for maximum efficiency.
+So YAML specification generally has a feature called anchors that you know lets you use
+the duplicate content across your YAML documents. Since GitLab CI/CD is written in YAML format,
+we can use anchors with hidden jobs to share configurations between jobs.
+So to use a hidden job as an anchor, you can define an anchor using the &amp; symbol or the &amp; symbol
+followed by a name. In this example, we named it as node-config-anchor and this has to be provided
+at the hidden job level. And to use the anchor and merge the configuration into any job or a
+current job, you need to define a couple of left arrow symbols and call it by its name
+with the hashtag symbol. So both of these can be seen on lines 14 and 19 in this slide.
+And that's it. After these changes, the hidden job will be used by both the unit testing
+as well as the code coverage jobs. So you might be asking like, so what is the difference? Like
+why do we need to use extends and anchors? Because both of them are doing the same job,
+you know, they are, you know, extending or they are, you know, merging the parent
+configuration with the child jobs. So when comparing the extends keyword to anchors,
+it is important to note that YAML anchors cannot be used across multiple files.
+Anchors are only applicable within the same file where they are defined. So for the purpose of
+reusing configurations from different YAML files, the recommended approach is to utilize
+either the extends keyword or there is a keyword called reference tags. So since we have
+discussed the extends and the anchors keyword, let's dive into the concept of reference tags.
+Using the reference custom YAML tag, you know, to select keyword configurations from other jobs
+sections and we can reuse it in the current section. Unlike the YAML anchors, you can use
+the reference tag to reuse configuration from different YAML files. Imagine a pipeline with
+two NodeJS jobs like we have seen earlier, the unit testing and the code coverage. So they share
+a couple of common keywords like, you know, images, before script and a few things else.
+So to achieve optimization, we can also create a hidden job with the commonly used configuration.
+So we create a hidden job named as .base NodeJS config containing the shared configuration
+like cache strategy, rules and the script command for test and code coverage jobs.
+So now let's explore how we can refer to this configuration from the hidden job within the
+unit testing job. So for the images and the before script keyword, we are directly specifying
+the values as you can see here. But however, for the cache and the script keywords, we are utilizing
+the reference keyword along with the hidden job name and tag. And now moving on to the code coverage
+job, the image and before script keywords can be directly referenced from the unit testing job.
+This highlights the versatility of reference tags, enabling the referencing of keywords
+from both hidden and regular jobs. For the remaining script and the rules keyword,
+the configuration is referred from the .base NodeJS config hidden job.
+So upon implementing these steps, the final merged or expanded configuration of the pipeline
+takes the following form. And if you notice, the rules keyword is only used in the Code Coverage
+job and not in the Unit Testing job as it was only referenced in the Code Coverage job. Thank you.
