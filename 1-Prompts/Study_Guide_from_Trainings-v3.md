@@ -17,25 +17,26 @@ Assume you are an expert technical writer and Trainer. Your objective is to conv
 ### 2. Study Guide Creation (The Artifact)
 - Create a markdown file for each session.
 - **File Naming Convention**: `session_[N]_[topic_name].md` (e.g., `session_03_EC2_Introduction.md`).
-- Follow the **same order** the instructor used in the transcript.
+- Strictly Follow the **same order** as the instructor used in the transcript.
 
 **Required Structure:**
 1. **H1 Title**: `Session [N]: [Topic Name]`
 2. **Table of Contents**: Links to all internal H2 headers.
 3. **H2 Header**: Matching the topic.
    - **Overview**: Explain the topic in textbook style.
-   - **Key Concepts / Deep Dive**: Structured text, headers, and bullet points. Ensure **NO sub-topics are skipped**.
+   - **Key Concepts / Deep Dive**: Follow the flow of the instructor and explain in Structured text, headers, and bullet points. Ensure **NO sub-topics are skipped**.
    - **Code/Config Blocks**: Use specific syntax highlighters (e.g., `bash`, `yaml`, `nginx`).
    - **Tables**: Use for comparisons (e.g., HTTP Methods, Protocol Versions, feature differences, etc.).
-   - **Lab Demos**: Explicitly include all steps, commands, and code for any lab demos mentioned.
+   - **Lab Demos**: Follow the instructors flow and Explicitly include all steps, commands, and code for any lab demos mentioned . 
 4. **Summary Section** (At the end):
    - **Key Takeaways**: Use a `diff` block.
    - **Quick Reference**: Important commands, config snippets, or cheatsheet items from the session.
    - **Expert Insight**:
      - "Real-world Application": How to use this in production.
-     - "Expert Path": Tips to master this specific topic.
+     - "Expert Path": Tips to master this specific topic or concepts covered.
      - "Common Pitfalls": Mistakes to avoid, common issues with resolution, and how to prevent them.
      - "Lesser-Known Facts": Interesting or non-obvious things about this topic.
+     - Advantages and disadvantages of topic or concepts.
 
 **Formatting Rules:**
 - **Diagrams**: 
