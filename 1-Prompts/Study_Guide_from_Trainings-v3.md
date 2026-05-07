@@ -38,7 +38,10 @@ Assume you are an expert technical writer and Trainer. Your objective is to conv
      - "Lesser-Known Facts": Interesting or non-obvious things about this topic.
 
 **Formatting Rules:**
-- **Diagrams**: Use **Mermaid** syntax for all flowcharts and diagrams.
+- **Diagrams**: 
+    - Use **Mermaid** syntax for all flowcharts and diagrams.
+    - If mermaid diagram is complex, Make diagrams in png file and save it in images folder.
+    - When a png file is created, make sure that the file exists in the images folder before proceeding further.
 - **Emojis**: Use emojis as visual markers: ✅ ❌ 💡 ⚠️ 📝
 - **Linear Flow**: Use linear notation for sequential processes and before/after comparisons:
   ```diff
