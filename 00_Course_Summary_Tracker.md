@@ -1,42 +1,36 @@
-# RHEL 8 Container Management Course - Study Guides
+# Course Summary and Progress Tracker
 
-## Course Overview
-This course covers managing and modifying containers in RHEL 8 using Podman. The training includes practical demonstrations of container operations, mounting, networking, and lifecycle management.
+## Course Information
+- **Course**: GCP Professional Cloud Architect (PCA) Study Guide
+- **Model ID**: KK-CS45-V3
 
-## Progress Tracker
-- [x] Completed: Course-Summary.md file created
-- [x] Completed: Session-101-RHEL-8-Features-Managing-And-Modifying-Running-Containers-in-Linux.md
+## Session Completion Status
 
-## Session Summary
+### Module Overview
+- [ ] Session 01: Introduction and Basic Concepts
+- [ ] Session 02: GCP Console and Basic Services
+- [ ] Session 03: Virtual Networks and Networking
+- [ ] Session 04: Identity and Access Management
+- [ ] Session 05: Storage Fundamentals
+- [ ] Session 06: Compute Engine Basics
+- [ ] Session 07: Workload Identity Federation & SSO
+- [ ] Session 08: Security Command Centre & IAM Best Practices
+- [ ] Session 09: Compute Options (GKE, Cloud Run, App Engine)
+- [ ] Session 10: VM Instances Deep Dive
+- [ ] Session 11: CLI, Spot VMs, and Marketplace
+- [x] Session 12: Persistent Disk Concepts - Expansion, Formatting, Local SSD
+- [ ] Session 13: Advanced Disk Concepts and Snapshots
+- [ ] Session 14: Load Balancing and Auto Scaling
+- [ ] Session 15: Cloud Storage Deep Dive
 
-### Last Updated: 2026-03-27
-### Total Sections Completed: 1
+## Session Summaries
+### Session 12: Persistent Disk Concepts - Expansion, Formatting, Local SSD
+- **Topics Covered**: Preemptable vs Spot VM termination, disk resizing (unidirectional), formatting/mounting procedures, regional persistent disks for HA, local SSD characteristics for high-performance workloads
+- **Key Concepts**: Preemption logs show system@google.com actor, disks retain data during termination but charged only for storage/IP, regional disks replicate to exactly 2 zones for fail-over capability, local SSDs are machine-attached and lost permanently
+- **Notable Commands**: \`gcloud compute disks resize\`, \`sudo resize2fs /dev/sdb\`, \`lsblk\`, \`mkfs.ext4\`, \`mount\`, \`growpart\`
 
----
-
-## Session Details
-
-### Session-101: Managing and Modifying Running Containers in Linux
-**Topics Covered:**
-- Mounting host directories to containers for persistent logging
-- Mounting container filesystem to host machine for inspection
-- Running services with static IP addresses in containers
-- Executing commands within running containers
-- Sharing files between multiple containers using volumes
-- Exporting and importing containers
-- Stopping and removing containers and images
-
-**Key Commands Covered:**
-- \`podman run\` with volume mounting
-- \`podman mount\` for container filesystem access
-- \`podman run --ip\` for static IP assignment
-- \`podman exec\` for command execution in containers
-- \`podman volume create\` and volume management
-- \`podman export\` and \`podman import\`
-- \`podman stop\` and \`podman rm\` for cleanup
-
----
-
-🤖 Generated with [Claude Code](https://claude.com/claude-code)
-
-Co-Authored-By: Claude <noreply@anthropic.com>
+## Course Statistics
+- **Total Sessions**: 15
+- **Completed Sessions**: 1
+- **Last Updated**: 2026-05-08
+- **Progress**: 7%
