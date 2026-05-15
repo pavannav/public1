@@ -1,204 +1,211 @@
-# Session 009: Simulating a Host Maintenance Event in GCP
+# Session 9: Simulating a Host Maintenance Event in GCP
 
 <details open>
-<summary><b>Simulating a Host Maintenance Event in GCP (KK-CS45-script-v3)</b></summary>
+<summary><b>Session 9: Simulating a Host Maintenance Event in GCP (KK-CS45-script-v3)</b></summary>
 
 ## Table of Contents
+
 - [Overview](#overview)
 - [Key Concepts](#key-concepts)
-  - [Host Maintenance Events](#host-maintenance-events)
-  - [VM Behavior Options During Maintenance](#vm-behavior-options-during-maintenance)
-  - [Live Migration](#live-migration)
-  - [Shutdown Signals and Scripts](#shutdown-signals-and-scripts)
-- [Lab Demo: Simulating Host Maintenance](#lab-demo-simulating-host-maintenance)
-  - [Creating a VM Instance](#creating-a-vm-instance)
-  - [Configuring Automatic Restart](#configuring-automatic-restart)
-  - [Simulating Maintenance with Termination](#simulating-maintenance-with-termination)
-  - [Simulating Maintenance with Auto-Restart](#simulating-maintenance-with-auto-restart)
+- [Maintenance Policies](#maintenance-policies)
+- [Live Migration](#live-migration)
+- [Lab Demo: Simulating Maintenance Events](#lab-demo-simulating-maintenance-events)
 - [Summary](#summary)
-  - [Key Takeaways](#key-takeaways)
-  - [Quick Reference](#quick-reference)
-  - [Expert Insights](#expert-insights)
 
 ## Overview
 
-This session covers how to simulate and understand host maintenance events in Google Cloud Platform (GCP). Host maintenance involves physical server updates that may require virtual machines (VMs) to be migrated or temporarily stopped. The session demonstrates different VM behavior options during these events and shows live testing scenarios.
+This session demonstrates how to simulate and understand host maintenance events in Google Cloud Platform (GCP). Host maintenance events occur when Google needs to perform maintenance on the physical server hosting your virtual machine (VM). During these events, VMs may be migrated to different host machines to ensure service continuity.
 
-The demonstration uses GCP Console to create VM instances and configure their maintenance behavior, showing scenarios where VMs automatically restart or remain stopped during maintenance events.
+The session covers:
+- Setting maintenance policies for VM instances
+- Understanding different termination behaviors during maintenance
+- Simulating maintenance events to test configurations
+- Live migration process and timing
 
 ## Key Concepts
 
 ### Host Maintenance Events
+Host maintenance events are periodic updates and patches performed by Google Cloud on the underlying physical infrastructure. During these events:
 
-Host maintenance events occur when Google Cloud Platform needs to perform hardware updates or maintenance on the physical servers hosting virtual machines. These events can trigger:
+- VMs running on the maintenance-affected host may be migrated to another host
+- Migration is typically performed using **live migration** (while VM is running)
+- Migration process usually takes only a few seconds
+- The entire process is transparent to the VM owner
 
-- **Live Migration**: VMs are moved to new hosts without interruption
-- **Termination**: VMs are stopped, then must be manually restarted
-- **Automatic Restart**: VMs stop during maintenance but restart automatically afterward
+### Maintenance Policy Configuration
+When creating or editing a VM instance, you can configure how the VM behaves during a maintenance event in the Management section under "Automatic restart" and related options.
 
-```mermaid
-graph TD
-    A[Host Maintenance Event Triggered] --> B{VM Auto-Restart Setting}
-    B -->|Disabled| C[VM Terminates/Stops]
-    B -->|Enabled| D[VM Terminates then Auto-Restarts]
-    A --> E{VM Running State}
-    E -->|Running| F[Live Migration Possible]
-    E -->|Stopped| G[No Migration Needed]
-```
+## Maintenance Policies
 
-### VM Behavior Options During Maintenance
+GCP provides two main policy options for VM behavior during maintenance:
 
-GCP VMs have two primary settings for host maintenance behavior:
+1. **Termination with Auto-Restart (Recommended)**
+   - VM is terminated when maintenance starts
+   - VM automatically restarts after maintenance completes
+   - Default behavior that ensures continuity
 
-1. **Terminate VM**: Stops the VM during maintenance
-2. **Automatic Restart**: Determines if the VM restarts automatically after being terminated
+2. **Termination without Auto-Restart**
+   - VM is terminated when maintenance starts
+   - VM remains in stopped state after maintenance
+   - Requires manual intervention to restart
 
 > [!IMPORTANT]
-> These settings are fixed once an instance is created. To test different combinations, create separate VM instances with different configurations.
-
-### Live Migration
-
-During live migration, GCP automatically moves running VMs from one physical host to another. This process:
-
-- Takes approximately 30-60 seconds
-- Maintains VM uptime
-- Requires no user intervention
-- Preserves all running processes and memory state
-
-Live migration occurs when:
-- The VM is running during a maintenance event
-- Maintenance window allows time for migration
-- No manual shutdown is required
-
-### Shutdown Signals and Scripts
-
-Before termination, VMs receive shutdown signals that can trigger custom scripts:
-
-- **Shutdown Signal**: Sent to the OS before termination
-- **Custom Scripts**: Can be configured to backup data, save memory state, or perform cleanup
-- **Documentation**: Shutdown signals and scripts are logged in system events
-
-## Lab Demo: Simulating Host Maintenance
-
-### Creating a VM Instance
-
-1. Navigate to GCP Console > Compute Engine > VM instances
-2. Click "Create Instance"
-3. Configure basic VM settings (machine type, OS, etc.)
-4. Under "Advanced options" > "Availability policies"
-
-### Configuring Automatic Restart
-
-```
-Location: VM Instance Details > Edit
-Setting: Availability policies > Automatic restart
-
-Options:
-- On: VM restarts automatically after maintenance termination
-- Off: VM remains stopped after maintenance termination
-```
-
-### Simulating Maintenance with Termination
-
-**Scenario 1: Stop During Maintenance (Auto-Restart Disabled)**
-
-1. Create VM with "Automatic restart: Off"
-2. Navigate to VM details > Operations > Simulate maintenance event
-3. Select "Terminate and simulate maintenance"
-4. Observe VM status changes:
-   ```
-   Running → Terminating → Stopped
-   ```
-5. VM remains stopped (manual restart required)
-
-**Expected Results:**
-- VM terminates during simulated maintenance
-- No automatic restart occurs
-- Manual intervention needed to restart VM
-
-### Simulating Maintenance with Auto-Restart
-
-**Scenario 2: Stop and Restart During Maintenance (Auto-Restart Enabled)**
-
-1. Edit VM settings to enable "Automatic restart"
-2. Trigger maintenance simulation again
-3. Observe complete cycle:
-   ```
-   Running → Terminating → Stopped → Starting → Running
-   ```
-4. VM automatically recovers post-maintenance
-
-**Expected Results:**
-- VM terminates during maintenance
-- Automatic restart occurs
-- Service continuity maintained
-- Events logged in Operations history
-
-**Scenario 3: Live Migration (VM Running During Maintenance)**
-
-When VMs remain running during maintenance:
-
-1. Maintenance event detects running VM
-2. Live migration initiated
-3. VM automatically moved to new host
-4. Brief connectivity interruption (~30-60 seconds)
-5. All processes and memory preserved
+> Once set, the maintenance policy cannot be changed for an existing VM. If you need different policy behavior, create a new VM with the desired configuration.
 
 > [!NOTE]
-> Live migration provides seamless experience for running workloads, while termination scenarios help test application recovery procedures.
+> For VM families that support live migration (such as N1 and N2 general-purpose machine types), Google will attempt live migration before falling back to the configured termination policy.
+
+## Live Migration
+
+Live migration is Google's preferred method for moving VMs during host maintenance:
+
+- **Transparency**: Migration occurs while VM is running with minimal disruption
+- **Duration**: Typically completes in seconds
+- **Uptime**: No downtime experienced by the VM
+- **Migration Process**: VM is copied to new host while maintaining network connections
+
+### Migration Timing
+- Migration window varies but typically occurs during scheduled maintenance windows
+- Actual migration precedes the maintenance event
+- All VMs on the affected host are migrated simultaneously
+
+```diff
++ Benefits of Live Migration:
+  - Zero downtime for applications
+  - Maintains network connections
+  - Automatic process requiring no intervention
+
+- When Termination Occurs:
+  - Maintenance requires immediate shutdown
+  - VM restarts automatically (based on policy)
+  - Temporary service disruption
+```
+
+## Lab Demo: Simulating Maintenance Events
+
+### Pre-requisites
+- GCP Project with Compute Engine API enabled
+- Appropriate IAM permissions for creating/modifying VMs
+
+### Scenario 1: Termination without Auto-Restart
+
+1. **Create VM Instance:**
+   ```
+   gcloud compute instances create [INSTANCE_NAME] \
+     --machine-type [MACHINE_TYPE] \
+     --zone [ZONE] \
+     --image-family [IMAGE_FAMILY] \
+     --image-project [IMAGE_PROJECT] \
+     # Management options are configured after creation
+   ```
+
+2. **Configure Maintenance Policy:**
+   - Go to VM instances in GCP Console
+   - Select your instance > Edit
+   - In Management section:
+     - Enable "Provide a termination notice" (if you want shutdown scripts)
+     - Set "On host maintenance" to "Terminate VM instance"
+     - **Disable** automatic restart (VM stays stopped)
+
+3. **Simulate Maintenance Event:**
+   - From VM details page > System Events > Simulate Maintenance Event
+   - Select appropriate maintenance type
+   - Confirm simulation
+
+4. **Observe Results:**
+   - VM power state will change to "TERMINATED"
+   - VM will not automatically restart
+   - Check Compute Engine > Operations for migration details
+
+### Scenario 2: Termination with Auto-Restart
+
+1. **Modify Existing VM** (create new VM if policy was set):
+   - Go to VM instances > Select instance > Edit
+   - In Management section:
+     - Set "On host maintenance" to "Terminate VM instance"
+     - **Enable** automatic restart
+
+2. **Simulate Maintenance Event:**
+   - System Events > Simulate Maintenance Event
+   - Wait for completion
+
+3. **Observe Results:**
+   - VM terminates during simulated maintenance
+   - VM automatically restarts after maintenance completes
+   - Check system events for timestamps
+
+### Verification Steps
+
+**Using GCP Console:**
+- Navigate to Compute Engine > VM instances
+- Check VM status and operation history
+- View System Events for detailed logs
+
+**Using Cloud Logging:**
+```bash
+gcloud logging read \
+  'resource.type=gce_instance \
+   resource.labels.instance_name=[INSTANCE_NAME]' \
+  --limit=10
+```
+
+**Key Observations:**
+- Maintenance events are logged in system events
+- Migration operations appear in the operations history
+- VM startup/shutdown events are clearly timestamped
 
 ## Summary
 
 ### Key Takeaways
-
 ```diff
-+ Host maintenance events are unavoidable in cloud environments
-+ Live migration provides minimal downtime for running VMs
-+ Termination settings allow testing different recovery scenarios
-+ Automatic restart policies affect operational continuity
-+ Pre-termination signals enable graceful shutdown procedures
-- Incorrect maintenance settings can cause service disruptions
-- Not monitoring maintenance events leads to unexpected outages
-! Always test maintenance behavior in non-production environments first
++ Host maintenance events are automatic Google Cloud operations
++ Live migration minimizes downtime during maintenance
++ Maintenance policies are set per VM and cannot be changed
++ Simulation allows testing maintenance behavior without real events
++ Automatic restart ensures service continuity when enabled
+
+! Maintenance events can trigger VM termination
+! Test maintenance policies in staging environments first
 ```
 
 ### Quick Reference
 
-**GCP Console Navigation:**
-- VM Instances → Instance name → Operations → Simulate maintenance event
+**GCP Console Path:**
+- Compute Engine > VM instances > [Instance] > System Events
 
-**Maintenance Options:**
-```yaml
-Availability Policies:
-  automatic_restart: [true/false]  # Enables post-termination restart
-  on_host_maintenance: terminate   # Fixed setting - always terminates
+**Maintenance Policy Commands:**
+```bash
+# Check current instance configuration
+gcloud compute instances describe [INSTANCE_NAME] \
+  --format="table(name,metadata.items.onHostMaintenance)"
+
+# Simulate maintenance event (requires instance ID)
+# Note: Limited options via CLI, use console for full control
 ```
 
-**Behavior Matrix:**
-| Auto-Restart | During Maintenance | After Maintenance |
-|-------------|-------------------|------------------|
-| Disabled | VM Terminates | Remains Stopped |
-| Enabled | VM Terminates | Auto-Restarts |
+**Maintenance Options:**
+- **Terminate**: VM stops during maintenance
+- **Migrate**: VM migrates to another host (automatic)
 
 ### Expert Insights
 
-**Real-world Application:**
-In production environments, configure VMs based on application requirements:
-- Critical services: Enable auto-restart for high availability
-- Stateless apps: Use auto-restart to minimize downtime
-- Stateful apps: Configure shutdown scripts for data persistence
-- Batch jobs: May tolerate longer downtime periods
+**Real-World Application:**
+- In production environments, use termination with auto-restart for critical services
+- Implement shutdown scripts that handle graceful termination signals
+- Monitor maintenance windows and plan capacity accordingly
+- Use preemptible VMs for non-critical workloads to reduce costs
 
 **Expert Path:**
-- Master GCP monitoring and alerting for maintenance events
-- Integrate maintenance notifications with incident management systems
-- Implement automated backup triggers on maintenance events
-- Develop comprehensive maintenance testing strategies
+- Study GCP maintenance schedules and opt-in for maintenance windows
+- Implement application-level resilience for termination scenarios
+- Use managed instance groups for automatic recovery capabilities
+- Monitor Cloud Logging for maintenance-related events and anomalies
 
 **Common Pitfalls:**
-- Forgetting that maintenance policies are immutable after VM creation
-- Not accounting for the ~60-second live migration window
-- Failing to capture and handle shutdown signals properly
-- Over-relying on auto-restart without testing manual recovery procedures
+- Not testing maintenance behavior in development environments
+- Assuming all VM families support live migration
+- Overlooking the inability to change maintenance policies on existing VMs
+- Not implementing proper shutdown scripts for data consistency
+- Ignoring maintenance notifications and custom maintenance windows
 
 </details>
