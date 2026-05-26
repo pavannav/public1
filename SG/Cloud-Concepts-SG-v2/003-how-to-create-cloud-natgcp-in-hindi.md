@@ -39,6 +39,14 @@ graph TD
     Internet -->|Inbound Blocked| NAT[No Direct Access to VM]
 ```
 
+```mermaid
+graph TD
+    VM[VM without External IP] -->|Outbound Traffic| NAT[Cloud NAT Gateway]
+    NAT -->|NAT Translation| Internet[Internet with Public IP]
+    Internet -->|Inbound Blocked| NAT
+    NAT -.->|No Direct Access| VM
+```
+
 **Key Characteristics:**
 - **Outbound-only**: VMs can initiate connections to the internet
 - **Inbound-blocked**: External systems cannot directly connect to VMs behind NAT
