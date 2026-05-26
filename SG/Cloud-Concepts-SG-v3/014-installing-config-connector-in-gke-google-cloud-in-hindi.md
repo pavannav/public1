@@ -1,203 +1,167 @@
-# Session 014: Installing Config Connector in GKE - Google Cloud in Hindi
+# Session 14: Installing Config Connector in GKE
 
 <details open>
-<summary><b>Installing Config Connector in GKE - Google Cloud in Hindi (KK-CS45-script-v3)</b></summary>
+<summary><b>Installing Config Connector in GKE (KK-CS45-script-v3)</b></summary>
 
 ## Table of Contents
 - [Overview](#overview)
-- [Key Concepts](#key-concepts)
-- [Prerequisites](#prerequisites)
-- [Installation Steps](#installation-steps)
-- [Configuration and Usage](#configuration-and-usage)
-- [Troubleshooting](#troubleshooting)
+- [Key Concepts / Deep Dive](#key-concepts--deep-dive)
+  - [Config Connector Overview](#config-connector-overview)
+  - [Service Accounts and Permissions](#service-accounts-and-permissions)
+  - [Installation Methods](#installation-methods)
+- [Lab Demo: Installing Config Connector](#lab-demo-installing-config-connector)
+- [Lab Demo: Basic Configuration](#lab-demo-basic-configuration)
 - [Summary](#summary)
 
 ## Overview
+Config Connector is a Kubernetes extension that allows you to manage Google Cloud resources using Kubernetes-style API calls. This session covers the installation and basic setup of Config Connector in a Google Kubernetes Engine (GKE) cluster, enabling GitOps-style management of GCP infrastructure through Kubernetes manifests.
 
-This session covers the installation and configuration of Config Connector in Google Kubernetes Engine (GKE). Config Connector is a Kubernetes add-on that allows you to manage Google Cloud resources through the Kubernetes API, enabling GitOps-style infrastructure management.
+**Note:** The original transcript for this video was not available during guide creation. This study guide is structured based on standard Config Connector installation procedures and topic continuity with Part 2 of the series.
 
-The session is presented in Hindi and demonstrates the complete installation process from cluster creation to deploying sample resources.
+## Key Concepts / Deep Dive
 
-## Key Concepts
+### Config Connector Overview
 
-### What is Config Connector?
+Config Connector is a Kubernetes add-on that extends the Kubernetes API to support Google Cloud resources. Key benefits include:
 
-Config Connector provides the following capabilities:
+- **Infrastructure as Code**: Manage GCP resources using YAML manifests
+- **GitOps Workflow**: Version control infrastructure alongside application code  
+- **Kubernetes Native**: Use familiar kubectl commands to manage cloud resources
+- **Resource Dependencies**: Handle complex resource relationships automatically
 
-- **Kubernetes-native resource management**: Manage Google Cloud resources using Kubernetes Custom Resource Definitions (CRDs)
-- **Infrastructure as Code**: Define cloud resources in YAML manifests alongside application code
-- **GitOps integration**: Use tools like ArgoCD or Flux to manage cloud infrastructure changes
-- **Consistent configuration**: Ensure infrastructure changes are versioned, reviewed, and audited
+The connector supports 80+ Google Cloud services including Compute Engine, Cloud Storage, BigQuery, Cloud SQL, and more.
 
-### Supported Resources
+> [!IMPORTANT]
+> Config Connector runs in your cluster and requires IAM permissions to create/manage GCP resources on your behalf.
 
-Config Connector supports hundreds of Google Cloud resources including:
+### Service Accounts and Permissions
 
-- Compute Engine (GCE) instances
-- Cloud Storage buckets
-- BigQuery datasets
-- Cloud SQL databases
-- IAM policies and service accounts
-- VPC networks and subnets
-- Load balancers
+Config Connector uses Google Service Accounts for authentication:
 
-### Architecture
+- **Kubernetes Service Account**: Runs the connector pods
+- **Google Service Account**: Provides GCP API access with required IAM roles
+- **Workload Identity**: Recommended for secure authentication without API keys
 
-```mermaid
-graph TD
-    A[Kubernetes API Server] --> B[Config Connector Controller]
-    B --> C[Google Cloud APIs]
-    D[Config Connector CRDs] --> A
-    E[Service Account] --> B
-
-    F[User] --> A
-    F --> G[Git Repository]
-    G --> H[ArgoCD/Flux]
-    H --> A
-```
-
-## Prerequisites
-
-### Cluster Requirements
-- GKE cluster version 1.20 or later
-- kubectl configured to access the cluster
-- Google Cloud project with necessary permissions
-
-### Permissions Required
+Common required IAM roles:
 ```yaml
-# Required IAM permissions for Config Connector service account
-roles/cloudconfigconnector.operator
-roles/iam.workloadIdentityUser
-roles/resourcemanager.organizationAdmin  # Or project editor
+roles/owner                    # Full access (not recommended for production)
+roles/editor                   # Edit access to resources
+roles/storage.admin           # Cloud Storage management
+roles/compute.admin           # Compute Engine management
+roles/container.admin         # GKE cluster management
 ```
 
-### Environment Setup
-- Google Cloud CLI (gcloud) installed and authenticated
-- kubectl installed (version 1.20+)
-- helm (optional, for advanced installations)
+### Installation Methods
 
-## Installation Steps
+Three primary installation approaches:
 
-### Step 1: Enable Required APIs
+1. **Google Cloud Marketplace** (Recommended)
+   - Pre-configured with Workload Identity
+   - Automatic updates
+   - Easy cluster integration
 
-First, enable the required Google Cloud APIs:
+2. **Manual Installation via YAML**
+   - Direct kubectl application
+   - Full control over configuration
+   - Self-managed updates
 
+3. **Config Connector Operator**
+   - Manages Config Connector lifecycle
+   - Automated upgrades
+   - Multi-cluster support
+
+## Lab Demo: Installing Config Connector
+
+### Prerequisites
 ```bash
-# Enable Config Connector API
-gcloud services enable cloudconfigconnector.googleapis.com
-
-# Enable Kubernetes Engine API if not already enabled
+# Enable required APIs
+gcloud services enable cloudresourcemanager.googleapis.com
+gcloud services enable iam.googleapis.com
 gcloud services enable container.googleapis.com
 
-# Enable other APIs for resources you plan to manage
-gcloud services enable compute.googleapis.com
-gcloud services enable storage.googleapis.com
+# Create a GKE cluster if not exists
+gcloud container clusters create config-connector-demo \
+  --zone us-central1-a \
+  --num-nodes 2 \
+  --enable-workload-identity
 ```
 
-### Step 2: Create Service Account
-
-Create a dedicated service account for Config Connector:
-
+### Installation via Marketplace
 ```bash
-# Create service account
-gcloud iam service-accounts create config-connector \
-  --description="Service account for Config Connector" \
-  --display-name="Config Connector SA"
-
-# Grant necessary permissions
-gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member="serviceAccount:config-connector@PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/cloudconfigconnector.operator"
-
-# Additional permissions based on resources to manage
-gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member="serviceAccount:config-connector@PROJECT_ID.iam.gserviceaccount.com" \
-  --role="roles/editor"
-```
-
-### Step 3: Install Config Connector
-
-Download and install the Config Connector operator:
-
-```bash
-# Add Google Cloud repository
-kubectl create namespace configconnector-system
-kubectl create secret generic gcp-key \
-  --from-file=key.json=/path/to/service-account-key.json \
+# Install Config Connector via Google Cloud Marketplace
+gcloud marketplace install \
+  --project [PROJECT_ID] \
+  --name config-connector \
+  --version 1.114.0 \
+  --cluster config-connector-demo \
+  --cluster-location us-central1-a \
   --namespace configconnector-system
 
-# Install Config Connector using the operator
-kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/k8s-config-connector/master/operator-system/configconnector-operator.yaml
+# Wait for installation to complete
+kubectl wait --for=condition=available \
+  --timeout=300s deployment/configconnector -n configconnector-system
 ```
 
-Wait for the operator to be ready:
-
+### Manual Installation Alternative
 ```bash
-kubectl wait --for=condition=available deployment \
-  configconnector-operator \
-  --namespace configconnector-system \
-  --timeout=300s
+# Download Config Connector manifests
+gsutil cp gs://configconnector-operator/configconnector-operator.yaml .
+
+# Apply manifests
+kubectl apply -f configconnector-operator.yaml
+
+# Create namespace
+kubectl create namespace configconnector-system
+
+# Apply Config Connector CRD
+kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/k8s-config-connector/master/operator/config/crds.yaml
 ```
 
-### Step 4: Configure Config Connector
+### Service Account Setup
+```bash
+# Create Google Service Account
+gcloud iam service-accounts create configconnector \
+  --description="Service account for Config Connector" \
+  --display-name="Config Connector"
 
-Create a ConfigConnector custom resource:
+# Grant required roles (example for basic setup)
+gcloud projects add-iam-policy-binding [PROJECT_ID] \
+  --member="serviceAccount:configconnector@[PROJECT_ID].iam.gserviceaccount.com" \
+  --role="roles/editor"
 
+# Enable Workload Identity
+gcloud container clusters update config-connector-demo \
+  --zone=us-central1-a \
+  --workload-pool=[PROJECT_ID].svc.id.goog
+```
+
+## Lab Demo: Basic Configuration
+
+### Creating Config Connector Configuration
 ```yaml
+# configconnector.yaml
 apiVersion: core.cnrm.cloud.google.com/v1beta1
 kind: ConfigConnector
 metadata:
   name: configconnector.core.cnrm.cloud.google.com
 spec:
-  mode: namespaced  # or cluster
-  googleServiceAccount: "config-connector@PROJECT_ID.iam.gserviceaccount.com"
+  mode: cluster
+  googleServiceAccount: "configconnector@[PROJECT_ID].iam.gserviceaccount.com"
 ```
 
-Apply the configuration:
-
 ```bash
+# Apply configuration
 kubectl apply -f configconnector.yaml
 ```
 
-### Lab Demo: Install Config Connector in GKE
-
-1. **Create GKE Cluster** (if not existing):
-   ```bash
-   gcloud container clusters create config-connector-demo \
-     --num-nodes=3 \
-     --machine-type=e2-medium \
-     --region=us-central1
-   ```
-
-2. **Set kubectl context**:
-   ```bash
-   gcloud container clusters get-credentials config-connector-demo \
-     --region=us-central1
-   ```
-
-3. **Install Config Connector operator**:
-   - Enable required APIs
-   - Create service account with proper permissions
-   - Create GCP service account key
-   - Install operator and configure
-
-4. **Verify installation**:
-   ```bash
-   kubectl get pods -n configconnector-system
-   kubectl get crd | grep cnrm.cloud.google.com
-   ```
-
-## Configuration and Usage
-
-### Basic Resource Creation
-
-Example: Create a Cloud Storage bucket using Config Connector:
-
+### Testing Installation with a Simple Resource
 ```yaml
+# storage-bucket.yaml
 apiVersion: storage.cnrm.cloud.google.com/v1beta1
 kind: StorageBucket
 metadata:
-  name: my-demo-bucket
+  name: my-test-bucket-20231215
+  namespace: default
 spec:
   location: US
   storageClass: STANDARD
@@ -205,60 +169,30 @@ spec:
     enabled: true
 ```
 
-### Namespaced vs Cluster Mode
-
-- **Namespaced Mode**: Resources are scoped to specific namespaces. Recommended for isolation.
-- **Cluster Mode**: Resources can be managed from any namespace. Requires additional setup.
-
-### Workload Identity Integration
-
-For enhanced security, use Workload Identity:
-
 ```bash
-# Create IAM policy binding for Workload Identity
-gcloud iam service-accounts add-iam-policy-binding \
-  config-connector@PROJECT_ID.iam.gserviceaccount.com \
-  --member="serviceAccount:PROJECT_ID.svc.id.goog[configconnector-system/config-connector-sa]" \
-  --role="roles/iam.workloadIdentityUser"
+# Deploy bucket
+kubectl apply -f storage-bucket.yaml
 
-# Update ConfigConnector spec to use Workload Identity
-spec:
-  mode: namespaced
-  googleServiceAccount: "config-connector@PROJECT_ID.iam.gserviceaccount.com"
-  workloadIdentity: true
+# Verify creation
+kubectl get storagebuckets
+
+# Check GCP Console
+gcloud storage buckets list --project [PROJECT_ID]
 ```
 
-## Troubleshooting
+### Managing Resource Lifecycle
 
-### Common Issues
-
-**Config Connector pod not starting:**
-```bash
-kubectl logs -n configconnector-system deployment/configconnector-operator-manager
-```
-
-**Permission errors:**
-- Verify service account has required IAM roles
-- Check if service account key is correctly mounted
-- Ensure APIs are enabled
-
-**Resource reconciliation failing:**
-```bash
-kubectl describe <resource-type> <resource-name>
-kubectl logs -n configconnector-system -l cnrm.cloud.google.com/component=cnrm-controller-manager
-```
-
-### Diagnostic Commands
+Config Connector supports standard Kubernetes operations:
 
 ```bash
-# Check Config Connector status
-kubectl get configconnector -n configconnector-system
+# Update resource
+kubectl edit storagebucket my-test-bucket-20231215
 
-# View controller logs
-kubectl logs -n configconnector-system -l cnrm.cloud.google.com/component=cnrm-controller-manager
+# Delete resource
+kubectl delete storagebucket my-test-bucket-20231215
 
-# List available CRDs
-kubectl get crd | grep cnrm
+# View resource status and events
+kubectl describe storagebucket my-test-bucket-20231215
 ```
 
 ## Summary
@@ -266,51 +200,76 @@ kubectl get crd | grep cnrm
 ### Key Takeaways
 ```diff
 + Config Connector enables Kubernetes-native management of Google Cloud resources
-+ Supports hundreds of Google Cloud services through CRDs
-+ Integrates with GitOps workflows using ArgoCD and Flux
-+ Provides consistent, versioned infrastructure management
-+ Supports both namespaced and cluster-scoped operations
-- Requires careful permission management for security
-- Initial setup involves multiple Google Cloud APIs and services
-- Resource reconciliation may take time depending on resource complexity
++ Workload Identity provides secure authentication without API keys
++ Supports declarative infrastructure as code workflows
++ Handles complex resource dependencies automatically
++ Marketplace installation is recommended for simplicity
 ```
 
 ### Quick Reference
 
-**Basic Installation Commands:**
+#### Installation Commands
 ```bash
-# Enable APIs
-gcloud services enable cloudconfigconnector.googleapis.com
+# Marketplace install
+gcloud marketplace install config-connector \
+  --project [PROJECT_ID] \
+  --cluster [CLUSTER_NAME] \
+  --cluster-location [LOCATION]
 
-# Create service account
-gcloud iam service-accounts create config-connector \
-  --description="Config Connector service account"
-
-# Install operator
-kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/k8s-config-connector/master/operator-system/configconnector-operator.yaml
+# Basic resource test
+kubectl apply -f storage-bucket.yaml
+kubectl get storagebuckets
 ```
 
-**Verification:**
+#### Common Annotations
+```yaml
+metadata:
+  annotations:
+    # Prevent deletion of cloud resource
+    cnrm.cloud.google.com/deletion-policy: abandon
+    
+    # Force deletion ignoring dependencies  
+    cnrm.cloud.google.com/force-destroy: "true"
+    
+    # Project override
+    cnrm.cloud.google.com/project-id: "my-project"
+    
+    # State into Terraform
+    cnrm.cloud.google.com/state-into-spec: absent
+```
+
+#### IAM Setup Script
 ```bash
-kubectl get pods -n configconnector-system
-kubectl get configconnector
+#!/bin/bash
+PROJECT_ID=my-project
+SERVICE_ACCOUNT=configconnector
+
+gcloud iam service-accounts create $SERVICE_ACCOUNT
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+  --member="serviceAccount:$SERVICE_ACCOUNT@$PROJECT_ID.iam.gserviceaccount.com" \
+  --role="roles/editor"
 ```
 
 ### Expert Insight
 
-**Real-world Application**: Config Connector is ideal for organizations implementing infrastructure as code, especially when combined with GitOps tools. It's commonly used in CI/CD pipelines to automatically provision and manage cloud resources alongside application deployments.
+**Real-world Application**: Large enterprises use Config Connector for:
+- Multi-environment deployments with consistent resource naming
+- Automated cleanup of temporary environments
+- Compliance enforcement through resource tagging
+- Integration with existing CI/CD pipelines
 
-**Expert Path**: Focus on understanding Google Cloud resource dependencies, mastering IAM permissions for Config Connector service accounts, and integrating with policy management tools like Config Validator.
+**Expert Path**: 
+- Start with Marketplace install and basic resources
+- Implement least-privilege IAM with specific roles per resource type
+- Use `cnrm.cloud.google.com/force-destroy` sparingly in production
+- Monitor resource status with `kubectl get` commands and events
+- Version control Config Connector manifests alongside application code
 
 **Common Pitfalls**:
-- Using overly permissive service account roles instead of least privilege
-- Not properly scoping resources in namespaced mode
-- Ignoring resource reconciliation status in automated pipelines
-
-> [!IMPORTANT]
-> Always use Workload Identity instead of service account keys when possible for enhanced security.
-
-> [!NOTE]
-> Config Connector regularly updates supported resources. Check the official documentation for the latest compatibility matrix.
+- Insufficient IAM permissions causing creation failures
+- Forgetting `forceDestroy` annotation when resources have dependencies
+- Ignoring namespace boundaries for resource scoping
+- Not testing deletion policies in non-production first
+- Mixing manual GCP changes with Config Connector managed resources
 
 </details>

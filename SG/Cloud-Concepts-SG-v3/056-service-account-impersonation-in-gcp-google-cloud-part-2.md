@@ -1,0 +1,1 @@
+API Error: 500 {"error":{"message":"Error calling litellm.acompletion for non-Anthropic model: litellm.APIError: APIError: OpenrouterException - {\"detail\":{\"error\":\"Token limit exceeded\",\"details\":\"Used 2013009 tokens out of 2000000 allowed\"}}","type":"None","param":"None","code":"500"}}
