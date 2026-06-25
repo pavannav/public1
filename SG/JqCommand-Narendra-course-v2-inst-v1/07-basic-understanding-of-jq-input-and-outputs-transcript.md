@@ -1,0 +1,1 @@
+**Task complete.** Created study guide at `SG/JqCommand-Narendra-course-v2-inst-v1/07-Basic-Understanding-of-Jq-Input-and-Outputs-study-guide.md` with proper HTML wrapper, structure, and all required sections.
