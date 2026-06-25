@@ -1,0 +1,61 @@
+[00:00:01] Let's talk about backing up data in Linux. First of all, you may want to work with backup devices. So you may want to use a dedicated backup drive or perhaps backup devices like linear tape open, tape drives, or maybe network attached storage.
+
+[00:00:21] And if you take a look here, you'll see some images. We have a tape drive here, and a large tape. This looks like an LTO or linear tape open. Above it, you can see a bunch of drives. This looks like a RAID array of some sort on a server, but if you need to back up data,
+
+[00:00:41] you're normally gonna be backing up a lot of data. So backing up to tape makes sense. And these can often handle terabytes of data even more. You also have down here network attached storage, which is another good solution. But this is more for smaller businesses, maybe mid-sized businesses.
+
+[00:01:02] And so network attached storage like this, you have companies like Synology and others that will build these. They might have two drives or they might have six drives like this, and they might be able to do RAID one or RAID five, RAID six, maybe RAID one plus zero, and these plug directly into the network.
+
+[00:01:21] Now keep in mind that backup is not fault tolerance. The two are different, and backup really doesn't have anything to do with redundancy. So we set up a fault tolerant array of drives, something like RAID one, RAID five, RAID one zero,
+
+[00:01:40] maybe a mix of those. But then you also need to back up all of the data from that RAID volume. And so backup is different from fault tolerance altogether. Now it's great to use devices, and a lot of these devices are quite often Linux based. Some of these tape drives may be Linux based,
+
+[00:02:01] and most of the network attached storage devices for small to medium-sized businesses are Debian based or perhaps Fedora based. So it's great to use those devices, but also you wanna know how to use backup tools within Linux. So some of those tools include rsync,
+
+[00:02:20] and I use this all the time. Also, the dd command, which could be used to copy data, copy ISO images, zero out a drive, many other uses with that. And then third party tools such as Duplicati or deja-dupe, Borg and others.
+
+[00:02:41] There's also, if you're working with ZFS, you have the ZFS send and ZFS receive commands. There's also sync thing, or you could just use Bash. Now if you go for a third party solution, there are some features that you're gonna wanna look for, including archiving and also dedupe,
+
+[00:03:00] which is short for data deduplication. And that's a technique for eliminating duplicate copies of repeating data during backups. Now as far as that and archiving, rsync works very well, and that's usually the tool I'll work with. But if you are working with third party tools,
+
+[00:03:20] you also wanna look for good compression ratios, good speed, cloud-based options, and also synchronization options. But again, I use rsync a lot. So let's just show a quick example of that where we'll copy some data from our client to our server.
+
+[00:03:42] So here we are at the Debian client. And first I'm gonna check and see if rsync is installed. Now on many Linux distros it is, but on Debian it is not. So we're gonna need to grab that. So we'll do an apt install on rsync and type in our password
+
+[00:04:01] and grab that rsync program. Very good. Now if I'm gonna use rsync and copy data from say my client to my server, I need to make sure the server has that as well. So we'll log into our debian server here,
+
+[00:04:21] and we'll do an rsync installation. And yeah, it was not installed there either. Okay, so we have rsync installed at the server, but one thing I forgot to do during the SSH labs is restore the original SSH configuration
+
+[00:04:41] because we really locked down this SSH server, and it might make it a little bit tough to connect to. So I'm going to restore the original SSHD config file. And this kind of plays into what I talked about before. If you secure something too much, it may get a little bit difficult to get availability to that server.
+
+[00:05:01] So to make things a little bit easier here, we're going to restore that file that we backed up, and it's called sshd_config.bak. So first thing I'm gonna do is copy my sshd_config file, and we'll copy that to something called sshd_config-secure.bak
+
+[00:05:24] because that's my secure version of the file. So we'll press enter for that, and now we'll restore the original one. And so we'll copy that over, sshd_config.bak, the original backup file and restore that to sshd_config.
+
+[00:05:44] Press enter for that, and let's check it. Okay, and that sure looks like the original. It's commented out on port 22, so that's good. And then we also need to restart the SSH service.
+
+[00:06:05] Good. Let's go back to our client, make sure we can connect, and we can. Very good. Now there is a TMOUT going on here, 180 seconds,
+
+[00:06:20] so we have to make sure that we don't time out from that, but we should be good there. Now if we take a look at this client, you'll see I have my directories in here. I have some content in documents and downloads. So let's say I wanted to copy both of those to the server. I could use rsync to do so.
+
+[00:06:40] So let's use the rsync command now, and I'm gonna use some options, -A for archiving. And what that means is when rsync copies over these directories, it will copy over all the data within them. If I do a subsequent rsync copy, it'll look at what has been copied already.
+
+[00:07:03] Those files will be flagged by rsync. If they've already been copied over to the server and there's no changes, it won't copy them in subsequent file copies. So -A for archive is an awesome feature for rsync. We'll also do V for verbose. So it tells us a lot of information
+
+[00:07:21] as it's doing the copy process. R, which means it'll grab sub directories within our directories. And then capital P, which is progress. So this will show the progress of the file copy as it occurs.
+
+[00:07:42] Now we'll go ahead and go into the content that we wanna copy over. So I wanna grab both directories. I'm gonna grab documents and downloads and put those in curly braces. And then I have to state where I'm copying it to and which user account.
+
+[00:08:02] And that's gonna be user at the remote system, which is my Debian server and then a colon and the path to where I want to copy it to, which is this. Let's see if it works. Press enter. All right, good, it's sending it over. Fantastic.
+
+[00:08:21] Now you'll note it didn't ask for a password, and that's because I'm using a key to get into the server. And I had previously typed in my passphrase, so I don't need to type that again, but there you go. It copied everything over. Rsync was successful, and it shows you the size of the files it's copying.
+
+[00:08:41] We've got an ISO image of Ubuntu here that's 2.1 gig, and it did that at 173 megabytes per second. It took 11 seconds to copy that over. And then we had in downloads also this. That is the no machine package installer.
+
+[00:09:01] You can see that from the .deb extension. And that took 138 megabytes per second, took really zero seconds 'cause it's not that big. And then any documents that were in the documents directory were copied over as well. So it kinda went backwards there, but you can see everything was copied, and we got the progress as it was happening.
+
+[00:09:21] So rsync definitely an awesome tool to use, especially with options like this. And if you like that, check out the manual page for rsync once you get it installed. And there's more about rsync in my Linux Networking Basics and Beyond video course. So definitely check out rsync, but also dd
+
+[00:09:42] and third party tools as well. You could also set up Bash scripts to work with your copying of data and automate the process. You could use for loops and while loops and other things within Bash. And you could set up chron jobs
+
+[00:10:01] to schedule when those backups will happen. You could also use Ansible playbooks for your backups and make your backups as automated as can be.

@@ -1,0 +1,81 @@
+[00:00:00] You, Let's get into a little minilab. AWS S3 backend for Terraform state. Now, up till this point, our backend where we store our state file has been local. It's been within the working directory. That's where our
+
+[00:00:21] Terraform TF state file has existed. Now we're going to show how to store that backend remotely. And we'll put that in an AWS S3 bucket. So we have a lab document for this within the AWS remote backend directory.
+
+[00:00:41] And you will also see a code file. So we'll look at that in just a minute. Now, the first thing we want to do is create an S3 bucket. Now, you could do that in the AWS console if you want to do that. The steps are there in option B, but I like option A. And I'm just going to go ahead and create that bucket. I'm just going
+
+[00:01:02] to copy and paste that right into my terminal. But we need to name the bucket and it needs to be globally unique. So I'm going to get rid of bucket name and also the alligators, and I'm going to call it Dave Bucket.
+
+[00:01:22] You can call it whatever you want, but I'm going to call it Dave Bucket. So this command is aws s3mb and then the path s3 colon slash, slash for me, Dave bucket double dash region. Because we need to specify where we're going to build this, which region and US East 2.
+
+[00:01:44] So press enter for that. Okay? And it says the requested bucket name is not available. And like I said, this has got to be globally unique. So let's change it. And I'm going to do Dave dash bucket dash 1, 2, 3. Apparently I've used Dave bucket before.
+
+[00:02:03] So we'll do Dave dash bucket dash 1, two, three. I'll try to remember that. And press Enter. And it made the bucket. So as long as you have the AWS cli, you can build that stuff automatically. You don't have to go to the AWS console.
+
+[00:02:21] You can also build buckets with terraform. And we'll show how to do that in the final lab. But for now, we just built a simple one and we have that running at aws. Let's check it. We'll go over to our AWS console. And a little sidebar
+
+[00:02:40] here. I'm in the IAM users and you might have noticed that the password age for one of my accounts is 1170 days. Another one is 517 days. That's not acceptable, especially in the field. I really need to change the passwords for these. And that's why you're seeing the exclamation points.
+
+[00:03:01] Definitely too long. Need to do a new password here. To me, it's more important to have password length and complexity, but when it gets to a certain point, you really should change the password as well when it gets that old. But anyways, let's get back to the lab and let's jump over to S3 buckets.
+
+[00:03:21] And we'll go to buckets now. And we see it. Here it is, Dave Bucket 1, 2, 3. It is created and it looks good. All right, very good. Now let's go back to our code. And this is the code file AWS remote backend S3TF.
+
+[00:03:41] All right, so we have our terraform block, and we have the required version for Terraform, and we have the AWS provider plugin. But we've got something new here. Now we're telling Terraform that the back ends, meaning our Terraform TF state file, our state file will not be stored locally. It's going to be stored in
+
+[00:04:04] a bucket that we've already created. So this requires this backend sub block and we name it S3. But we have to put in the bucket name here. Right. So mine is Dave Bucket123. I think that's what it was.
+
+[00:04:25] Then you need to specify what the name of the state file will be and what directory it will be in. And I'm saying Dir1 will be the directory and the name of the file will just be key.
+
+[00:04:42] You could call it Terraform tfstate. And we'll do that in a later lab. I'm just saying key for now and we could utilize that naming convention in a variety of ways later. But that's it. That's our bucket. Make sure that you put in your bucket name in here. You can leave the rest as is.
+
+[00:05:00] And then we have our standard provider block, and then we have a resource. Once again, we're going to create a user just named user42. Awesome. So let's save that file and we'll go to the terminal and let's go through our terraform workflow. First we'll do a terraform initial that
+
+[00:05:23] initializes the backend as normal and good. Now we'll do a terraform validate. Check our code success and let's do a Terraform apply. Now let's watch what happens within our working directory,
+
+[00:05:42] which is AWS remote backend as the apply goes through. All right, we'll say yes for the IAM user. It creates it. But what is missing Here there is no Terraform TF state.
+
+[00:06:00] It is not being stored locally. That's the default. So the default back end. And you could say that this is an exam alert. The default backends is local and the back end is where we store our TF state file. Our state file.
+
+[00:06:23] If you want to change it, you could do so within the terraform block and specify the backend that you want. Now, it could be an S3 bucket or a GCS bucket, or it could be within Terraform cloud and so on and so on. But as long as you reference it as backend and give the correct arguments
+
+[00:06:43] for it, your terraform TF state will then be stored remotely. So this is known as a remote backend. All right, let's take a look at it. Let's see what happened. We'll go
+
+[00:07:01] to our S3 in the AWS console and we'll click on our bucket and inside there you'll see DIR1. I'll make this a little bit bigger. Here's our DIR1 directory, and inside that we see a file called key.
+
+[00:07:21] Now again, you might call this Terraform TF state. That's up to you. I'm just calling it key. And we'll click open for that over here. Or you could download it if you wanted to. And when we open it, we see the JSON information for our state file and it opens that in a separate browser tab.
+
+[00:07:45] And if we scroll down here, we'll see the resources. I'll make this way bigger so you can see it and we see the resources. And here is the AWS IAM user user 42 was created. So this is the source of truth, department is ops.
+
+[00:08:02] This is the source of truth for our infrastructure that was created, in this case, just one user. The difference is instead of the source of truth being stored locally, it is now stored remotely within an S3 bucket. So that is the remote state file.
+
+[00:08:22] Very good. Close that and go back to our terminal and you can also view this information with the AWS command. We could do something like an AWS S3 list ls just like the Linux ls command. And we'll do S3 colon, slash, slash. And our bucket name for
+
+[00:08:40] me, Dave Bucket 123. And then we could go to/Dir1. That might take a moment, but that will show the directory. But I might need a slash on the end. There we go. And it sees the actual file. Inside there is key.
+
+[00:09:03] If I want to see the contents of that file, I could use a similar command, but instead of LS I could do a copy command cp, and then we would specify the actual file name key. And then we could pipe that to something like jq.
+
+[00:09:23] If you have JQ installed, press Enter for that. Give that a moment and it works. Okay. Now, if you don't have JQ installed, which allows you to look at JSON files in a more human readable format with color coding, you can install that. You do a sudo apt
+
+[00:09:41] install jq, that's it. And then anything you look at that's JSON, you could pipe it to JQ to view those contents and in a nicer way. All right, so that's the command I did. Sorry about the word wrap with that, but it was the entire path
+
+[00:10:00] dash pipe jq and we get all the information from that state file, just like we saw on the S3 console. Here's our AWS IAM user, user 42, part of Ops, part of Operations, with a unique ID that was applied by Amazon.
+
+[00:10:20] Very good. And so there are plenty of commands that you can use with aws. You could also verify that the AWS user was created without going to the AWS console. We could do something like AWS IAM, get user and do a double dash user name.
+
+[00:10:44] And then the user in question, which is user dash42, and try to get the information from AWS. There it is. And again, very similar information, very JSON based,
+
+[00:11:00] but another way to retrieve that. Or you could just go to the IAM console to view that. All right, that's about it. That's how we can use a remote bucket. So we're pretty much done here. And we'll go ahead and do a terraform destroy.
+
+[00:11:24] And say yes, to destroy that one user. Now, that is not going to destroy the bucket. We created the bucket separately previous to the terraform build. But that does get rid of the user for us. One destroyed. And once we're done with that, we need to get rid of the bucket. You
+
+[00:11:43] can do that in the S3 console if you want to, or you could do it with more AWS commands. You could do it AWS S3 once again. And this time we'll do a remove RM like we're removing a directory in Linux. Same command. And we'll say S3 in the path colon, slash, slash Dave Bucket dash 1, 2, 3.
+
+[00:12:06] And it's going to be dir. And here's the thing, we have to get rid of the contents of the bucket before we can get rid of the bucket. So we'll do a slash dir, one slash key that should remove that file. That state file.
+
+[00:12:26] Okay, delete. Good. And then we can do an AWS S3 but this time we'll do an RB remove buckets and I'll just push this back to the bucket name and remove it that way
+
+[00:12:40] instead of doing it from the console and we can double check that at the console and verify that we have buckets. Refresh that. Okay, no buckets. Very good. And verifying that we have no buckets. All good.
+
+[00:13:02] And that's about it. So if you want to work with a remote state and notice again there is no terraform TF state file here locally and that's because we specified a backend that is going to be remote instead of our back end being local. Backend is remote stored on an S3 buckets.
+
+[00:13:26] Awesome. So that's a little bit about state files. Definitely. Learn more and check out the learn more section of the lab file. That is it for this sub lesson. Let's move into the quiz.

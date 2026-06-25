@@ -1,0 +1,45 @@
+[00:00:07] - In this video, I'd like to tell you about LVM and VDO. So Virtual Data Optimizer, or VDO, provides thin provisioning on top of LVM logical volumes by using data deduplication and compression.
+
+[00:00:21] If you have known VDO in Red Hat Enterprise Linux 8, you should know that since it has been integrated in LVM and the standalone option that works without LVM is no longer available. So in this setup, you should realize that LVM also provides thin provisioning,
+
+[00:00:40] but VDO provides more efficient algorithms and for that reason, it has been integrated in LVM By using VDO on top of LVM, it's easy to increase the size of the underlying volumes while running out of physical storage, and while creating VDO logical volumes, you must realize that the minimal size of 5 GiB is required.
+
+[00:01:04] That's because it's quite heavy on the metadata. You don't have the 5 GiB, it's not going to work. Also, while creating a file system on top of a VDO logical volume, you must use the nodiscard option. This nodiscard option makes sure
+
+[00:01:20] that it handles the thin provision storage pretty well. So mkfs.ext4 -E nodiscard, followed by the rest of the options or mkfs -K followed by anything else that you want to use while creating the storage.
+
+[00:01:41] Before showing you how it works, Let me make a quick drawing so that you can see how VDO integrates in LVM. All right, so let me make a drawing to make clear how you work with VDO is integrated in LVM because overall, there's a lot of layers that is involved
+
+[00:02:01] and well let me give you an overview of all of these layers. It all starts with the VDO pool and this VDO pool is where you are creating your volumes from. Now this VDO pool sits on top of LVM
+
+[00:02:25] And that means that the VDO pool can be created on top of an LVM logical volume. And this LVM logical volume of course is based on the LVM of volume group. And what do we have in the LVM volume group?
+
+[00:02:41] Well, we have the lower layers. And the lower layers of course is your PVs, your physical volumes. And to make it even more confusing, these PVs, as you remember, that can be complete hard disks or partitions or even logical partitions.
+
+[00:03:00] So you have a logical partition that you put in a volume group to create a logical volume to put a VDO pool on top of the logical volume to create your VDO volume on top of that. Wow, complicated, but it's the way how VDO is working. Let's check out how to create this stuff. All right, so let me show you how to work with VDO.
+
+[00:03:24] In order to follow this demo, you need 10 GiB LVM type partition. So let's create a partition before we do anything else. Once again, lsblk, and we are going to use svc.
+
+[00:03:40] So fdisk /dev/sdc, using n for new and p for primary and partition number 1 and first sector and I make it 10G. Next I need to set the type to LVM. Did you ever notice
+
+[00:04:00] that recently fdisk has introduced the option to work with an alias, before you needed to specify the type with a E and now you can just type lvm, kind of cool. P is showing that we now have sdc1 and sdc1 is what we are going to use. So I'm saving it and I am going to use vgcreate vgstorage /dev/sdc1,
+
+[00:04:24] and next I can use lvcreate --type vdo -L 5G, that's a minimal size for your VDO volumes. - V 100G, that is the thin commission size.
+
+[00:04:42] And next I'm using vgstorage/vdopool0 and oh boy, what do we see? We see that modprobe failed with a vdo: Required device-map target not detected in your kernel. Well, I think I know what is going wrong here.
+
+[00:05:01] Let's do a dnf search on vdo. VDO requires a kernel module and there we can see a kmod-kvdo and vdo-support. I want both of them. So dnf install -y kmod-kvdo as well as vdo-support.
+
+[00:05:24] And as you can see here, it is installing a couple of things including kernel core and kernel modules. So we really need to do an update at the kernel level, otherwise it's not going to work, and then we are going to try it again.
+
+[00:05:41] All right, now that we have installed the required kernel modules, let's use the command again. Okay, so where does this problem come from? Well, we just updated the kernel and it's always smart to do a quick reboot and try again. Okay, now that we are back on the system,
+
+[00:06:02] let's create it again. And as you can see, the reboot has helped. So we now have the VDO volume and the VDO volume is available. So we should start using it. And now are we going to do that? Well, I created a VDO volume
+
+[00:06:20] and what is the name of the VDO volume? Well, as you can see, lvol0 on the lowest line. So that's what we are going to format, mkfs -E nodiscard, now shall we make this mkfs.ext4. Otherwise you get ext2, you don't want to have ext2, right?
+
+[00:06:41] On /dev/vgstorage/lvol0. I'm going to mount my /dev/vgstorage/lvol0. Let's mount it temporary on /mnt. So now I'm going to use df -h and grep it on lvol0.
+
+[00:07:04] And what do we see? Well, we see 98G in total, 98G available. That's what VDO is doing. Thin provisioning, it's actually using 5G but it's lying and presenting 98G to be available.
+
+[00:07:20] And that's what we would use a VDO for.

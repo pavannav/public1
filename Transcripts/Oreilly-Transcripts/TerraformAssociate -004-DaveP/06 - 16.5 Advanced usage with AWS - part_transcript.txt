@@ -1,0 +1,81 @@
+[00:00:06] Welcome back. This time it's lab 23, advanced AWS usage with Terraform. You may encounter some advanced AWS concepts in the field and on the exam. So I wanted to set up a lab with some additional AWS concepts.
+
+[00:00:23] As usual, this lab will incur AWS costs, so be ready for that and make sure that you destroy your infrastructure when you're done. Essentially, what we're going to do is we're going to build a web server infrastructure. We're going to start with an EC2 instance, and then that's
+
+[00:00:43] going to be an Apache web server. We'll also have an Elastic ip, Elastic IP or EIP in aws. That's essentially a static IP address. We'll also have a security group with dynamic ingress rules. We're going to build two IAM users which will depend on the instance,
+
+[00:01:03] so they won't be built until the instance is ready. Then we'll have an S3 bucket for our access logs. And also we'll run CloudWatch. That's a monitoring system within AWS. And we'll do some basic CPU monitoring.
+
+[00:01:20] So we'll watch it and make sure it doesn't trip a certain threshold. Okay. We'll also show how to stop and start instances within the Terraform code. All right, so this is lab 23, so feel free to follow along with the Lab document. Make sure you're working in lab 23 here and also in the terminal.
+
+[00:01:43] So first things first, let's take a look at the files. Let's look at variables tf and you'll see we have a lot of variables here. First we have the AWS region block, and we're defaulting to US East 2, but that is a variable, so that could be overridden.
+
+[00:02:03] Then we have an environment variable, which our default is dev, but we also have a validation rule inside of this and a condition. And we've talked about conditions before. This can contain dev, staging or prod, and that's going to be part of our variable known as environment. So it could be any of the three of these.
+
+[00:02:24] The default will be dev, so we can override that from the command line or other settings, Terraform, TF, VARs, and so on. And you'll get an error message if it's not one of those. So if you type something in like Production four, that's not going to
+
+[00:02:40] work. You'd have to type prod for production. All right, we have a variable instance state and the default will be running. We want the instance to be running. However, the other option is stopped and we'll show how to stop that instance and start it. And we'll actually set that within the code. And
+
+[00:03:01] so that uses validation and a condition and has an error message as well. Allowed SSH ciders. We've got our all networks here, but that could be modified also. And our variable for ingress rules. And if we look at the ingress rules here, we see we have a map of ports
+
+[00:03:21] from and to that we can work with. And from that we have our default here and we have Port 22, Port 80, Port 443. We'll talk more about the ports in a little bit. Then we have a variable for IAM users. We've got app deployer and log reader. We've got instance type T2 Microsoft.
+
+[00:03:42] And you might want to modify this to T3 micro depending on the age of your account. We also have variable enable monitoring for CloudWatch monitoring. And that's set to true right now that's our boolean, which is set to true. All right, so that is the variables file.
+
+[00:04:01] Next is the main tf. Let's take a look at that standard Terraform block and provider block. But we have some default tags in our provider block. And so our environment is VAR environment. So that could be dev or prod staging managed by Terraform. And the lab name.
+
+[00:04:21] All right, underneath that we have a data source. And essentially this we talked about data blocks. This is looking for the latest Amazon Linux version from Amazon. So that is very similar to what we've done before with datablocks. One of the differences is you don't see an ID number here. Like we used
+
+[00:04:42] Canonical in the past with an ID number here we just have the owner is Amazon, but we have our values here for what we want. And most recent, true. Okay, so remember, datablocks grab information externally. They don't actually build anything, but they grab info and hand that over to Terraform.
+
+[00:05:02] Then we have a data source for our default AWS vpc. True, we're going to use AWS VPC by default. Also a resource AWS security group for a web server. And the name will be based on the environment that we're working in. And the rest of the name will be Web Server sg. We have a description and
+
+[00:05:21] we have a VPC id. We point to that VPC from the data block here. So data awsvpc.default.id for the VPC ID. And then we have a dynamic block for ingress rules with content from and to, similar to what we've done with our ports in the past.
+
+[00:05:42] And then we have an egress block all networks so it can connect out on everything. And for tags we're just adding var environment Web server sg. So that's the name and here's the actual resource for the instance. AMI is based on the data block for our AMI
+
+[00:06:01] that we were just talking about. Instance type var.instance type we have that set to T2 micro. If you have a newer account and you want free tier, you should probably change that to T3 micro VPC security IDs. We want to make sure it's in the right security group, using the right security group so that those ports
+
+[00:06:20] will be open and then monitoring. Okay, var enablemonitoring that's set to true right now in the variables and we want to make sure that we do have that for CloudWatch, then we have some user data and we've talked about user data before. This particular argument allows us to add all kinds of things. We could add files with the
+
+[00:06:44] file function and we could add data with an EOF basically through Bash. And so this is going to install Apache web server, enable it and just put a little message in there in the web server and some tags for that instance as well. Name and environment.
+
+[00:07:03] Now we also have a lifecycle block and it says ignore changes. So if there's any changes to user data here, we're going to ignore that. All right, Instant state management for aws.
+
+[00:07:20] This is going to be for our desired state, which is either going to be running or stopped. And we're using a provisioner for this. Now, there's several provisioners and we haven't talked too many about these, but the provisioners allow you to do things within Terraform and
+
+[00:07:40] to configure your system. There's local execs, there's remote exec. This is something that we can run locally where we can change the state. Is it running or is it stopped? Basically the state of the instance. But generally we want to kind of stay away from provisioners, if possible. You could also do this with a AWS command and several other ways.
+
+[00:08:05] But in general, just so you know, for the exam for Terraform, they kind of lean away from provisioners and kind of say, that's kind of deprecated. Let's try to avoid provisioners if possible. This is a basic example, so should work for us.
+
+[00:08:21] All right. Another resource, our Elastic ip, that's our static ip, and the AWS naming convention for this is AWS eip. And that's going to be for our web server. We'll Give it a name here and in the correct environment and the domain. So that Elastic IP gets set up as a separate resource. Sounds kind of
+
+[00:08:41] weird at first. An IP address is a resource, but that is the case if you want a proper static IP on aws and then you have to tell the instance to actually use it. Right? So, all right, so we do that with the EIP association.
+
+[00:09:02] And so I am associating the Elastic IP with with the web server. We don't actually do it in the instance, we do it as a separate resource because chances are we might have different instances working and probably just want to set this up individually. So right now, as of this code, we use it as a separate resource. All right, AWS EIP association for
+
+[00:09:22] web server, that's my Terraform id. And we give the instance id. So AWS instance web server and then the allocation for it AWS eip, which is this webserver id. So this links it all together. Links the AWS instance with the Elastic IP only associate
+
+[00:09:43] if the instance is running. So we have a count here and we're saying is it running? We're using a double equal sign, little bit more in depth. But is it running? If that is a one meaning yes, it's on, then yes,
+
+[00:10:00] associate it with the IP address. If it's zero meaning no, it's stopped, then stop the association. However, that won't delete the IP and it won't get rid of the instance. We could just start the instance again and it'll work and it'll utilize that Elastic IP and we'll show exactly how to do that.
+
+[00:10:21] Okay, very good. Let's take a look at IAM tf. This is our users. So take a minute or two looking at this. We have our AWS IAM user block with a foreach iterating across this and it's going to iterate across the couple names that we showed in variables TF with this.
+
+[00:10:43] So a little bit more in depth, we're using two variables, calling on them with the dollar sign and curly braces. VAR environments, depending on what environment they're working in and each value for the actual users and the path is this and some tags for them as well.
+
+[00:11:00] Then we also have an IAM policy. Haven't really talked about this. You can have all kinds of policies and rules for your users for your instances for S3 access. And in this case it's IAM users for S3 access. And the naming convention is AWS IAM policy.
+
+[00:11:22] And we have that policy as JSON code. And we have that written here. Here's the statement effect allow and they can get the object and list the bucket. And here's the actual resource for that, for the actual buckets. All right, let's take a look at that bucket. Here's S3TF, and this is our
+
+[00:11:45] AWS S3 bucket. And we're calling this logs and we have the environment and then we're calling a data block for AWS caller identity. So getting a little bit more in depth here, we also have AWS S3 bucket public access
+
+[00:12:03] block where we can set ACLs and policies here, enable versioning as well. We want that enabled so we can have multiple versions of our logs. And then a lifecycle rule for the AWS S3 bucket. That's the lifecycle configuration. And we have a rule here. Delete old logs is enabled.
+
+[00:12:24] Expiration for this is 90 days. So they'll stick around for 90 days. I don't expect you to run the lab for that long. But they would stick around for 90 days and then they would start getting deleted automatically. All right, and here's our data source for the account ID. AWS caller ID is current.
+
+[00:12:41] All right, very good. So that's the S3 bucket. Finally, I believe we have CloudWatch. And so this is our monitoring in AWS. And so here we have AWS CloudWatch metric alarm. And you can see all the data for that. Very good.
+
+[00:13:01] All right, we have dimensions, alarm actions. This gets more into aws, but feel free to take a look at that for a moment. And I'm sorry, it wasn't. Finally, we also have outputs TF and we're outputting all kinds of information, the instance ID and state that it's in currently the Elastic IP address, which essentially is our public
+
+[00:13:23] IP and our private IP web URL for our website, IAM usernames and so on and so forth. So that is a lot of stuff. Now let's go ahead and get into the lab and we'll be back in part two for that.

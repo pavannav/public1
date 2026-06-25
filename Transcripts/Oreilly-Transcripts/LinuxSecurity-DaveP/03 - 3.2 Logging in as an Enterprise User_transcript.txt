@@ -1,0 +1,87 @@
+[00:00:01] Previously we showed how to log into a system as an individual user and working locally at that system. Now I want to show how to connect to a domain, connect in an enterprise setting as a user in Linux. So in this lab we're going to show how to connect
+
+[00:00:20] a Linux system to a FreeIPA domain. FreeIPA is an open source software for directory services. It's very similar to Microsoft Active Directory, but it's designed to run on Linux. And we'll add a FreeIPA domain user
+
+[00:00:40] into our client system and log in as that new user. So this lab gets a little bit more in depth and I'm just gonna do this step by step. You can follow along and if you're interested in more about directory services, then check out my Building Linux Servers video.
+
+[00:01:00] So let's get into this now. I'm gonna jump over to my Fedora client. This is Fedora Workstation, and it also uses the Gnome desktop so it looks very similar to my Debian client, but on the bottom you can see it is Fedora. So I'm gonna connect as user. And this is just a typical login just like we did before.
+
+[00:01:24] And here we have our Fedora screen. So, I'm gonna bring up a terminal, and you can see I'm connected as user, and the name of this system is fed-ws-39. So the first thing I wanna do in order to connect to the FreeIPA domain
+
+[00:01:43] is to install the FreeIPA client side. Now, the domain itself is already set up. I did that previously before this video. And I created a FreeIPA domain on a CentOS server.
+
+[00:02:00] So that's what this is. So that is currently running and ready to accept connections. We just have to do the client side. So let's install the FreeIPA client. So first I'm gonna make sure that I have the capabilities to install the program. I'm gonna run the id command, and you can see that this user
+
+[00:02:20] is a member of the wheel group. And if you remember before we said for Debian and Ubuntu systems, it's sudo you wanna be a member of if you want to do administrative things. But if you're on a Fedora based system, Fedora, Red Hat, CentOS, then it's the wheel group.
+
+[00:02:40] It's essentially the same thing, different group name. But this user is a member of the wheel group, so we can run administrative commands. To do that, we would still use the sudo command. So that is the same across all Linux distributions. So I'm gonna do a sudo dnf install freeipa-client.
+
+[00:03:07] And we'll press enter. It'll ask for our password. And there we go. And that should start the installation of the FreeIPA client to our Fedora workstation.
+
+[00:03:22] And we'll say yes to this. And that'll go through with the install. Okay? And that is complete. Now, if you also needed some type of special DNS connection, you could do this command with the --enable-dns-updates.
+
+[00:03:43] But we've got it installed. And now what I wanna do is I want to point to the CentOS server where the FreeIPA domain exists. First thing I'm gonna do is check this system. I'm gonna do an ip a and check the IP. This system is 10.0.2.64, that's the Fedora workstation.
+
+[00:04:03] Let's go over to the CentOS system and you can see that this system is 10.0.2.63, okay? Let's make sure I can connect to that. We'll do a ping. 10.0.2.63 And we're getting replies, so that's good.
+
+[00:04:21] And now what I wanna do is I want to change the DNS setting for this client to the IP address of that CentOS server. I'm gonna do that with the nmcli command, and we'll do an nmcli connection modify.
+
+[00:04:40] And really we should first find out what the name of our connection is. And this is the name right here, Wired connection 1. So we'll do that again, nmcli connection modify, double quotes, Wired connection 1, and we're gonna change the DNS address. We would do that with the ipv4.dns argument,
+
+[00:05:02] and specify the DNS address that we want to report to. And it's gonna be 10.0.2.63. That is the CentOS server. Press enter for that. Looks good. We'll do an nmcli connection up on Wired connection 1.
+
+[00:05:20] That's successfully activated. So now we should see that if we just run an nmcli. And now we see the DNS server is this, 10.0.2.63. In addition, if we do a hostnamectl, we'll see that the entire static hostname
+
+[00:05:40] for this computer is fed-ws-39.example.local. I've already set that up. And that is the name of the domain that's running on the CentOS server. It's called example.local, that's the domain name. So we already have that. So our fully qualified domain name
+
+[00:06:00] is fed-ws-39.example.local. And so those are the things you wanna check before you make a connection from a client to a domain. If you wanna check the hostname and you wanna check your DNS connection. So at this point we can go ahead and set up the FreeIPA client software.
+
+[00:06:20] We'll do that with the ipa-client-install command and we'll do a --enable-dns-updates. And I also want to make sure that any users that are created and connect to the domain will have a home directory. So we'll add the option for that, --mkhomedir.
+
+[00:06:44] Let's double check that command, ipa-client-install, --enable-dns-updates, and --mkhomedir. And we'll need to preface that with sudo to show that we have sudo powers.
+
+[00:07:01] Press enter. Okay, and that starts the IPA client install. So Discovery was successful. Very good. So it found that there is a domain available, and it knew to look for a domain at example.local
+
+[00:07:20] and at the DNS IP that I gave to this system, which is 10..0.2.63. Okay, so it's saying do you wanna configure chrony with NTP server? I don't wanna do that, so I'm gonna press enter for no. And look, it finds everything for us. It says here's the domain example.local,
+
+[00:07:42] and it exists at the IPA server, which is centos-9-server.example.local That is the fully qualified domain name for my CentoOS server that I just showed before. So this is good. This is the settings that we want here. So we're gonna say yes for this
+
+[00:08:04] and cross our fingers that everything goes well with the install. It should. Okay, time synchronization was successful and that's really important. If time is not synchronized between a domain controller and also the clients, then you're gonna have issues
+
+[00:08:21] trying to log into that domain. Now, to actually make the connection from the client to the domain, we need to know a user that's authorized to enroll computers. And so this is gonna be the user account at the CentOS server. So I'm just gonna say root for this
+
+[00:08:41] and we'll type in the password. Now, generally you would make a separate administrative account. But we're just gonna use root for this here. And you can see it enrolled in IPA realm EXAMPLE.LOCAL.
+
+[00:09:04] The realm is the Kerberos name for the domain. It's the same name, just in uppercase. And it did a lot of configurations. We don't need to go into depth with that for this course. But in the end it says the ipa-client-install command was successful.
+
+[00:09:21] Awesome. So now we can reboot the system. So we'll do a reboot on this Fedora workstation. Whenever you connect to a domain of any kind, you really need to reboot the system so all those changes will completely take effect. Okay. And so we'll log back in just locally as user.
+
+[00:09:47] And now we just need to set up an enterprise login so that we can actually log into the domain. So, we're going to go to our Settings and go to Users just like we did before.
+
+[00:10:04] We'll need to unlock it. And I want to add a user. So we're gonna go to Add User here.
+
+[00:10:20] And you might not see it, but we're, if we scroll down here, you'll see Enterprise Login and that's what we want. So we're gonna click on Enterprise Login. We need to know the domain that we're connecting to. In this case it's example.local once again. And you also need to know the user account that exists
+
+[00:10:40] on that domain that you want to connect as. I've already created an account on the domain, on the FreeIPA system, that CentOS server. And the name of that is dpro. And you have to type in the password as well.
+
+[00:11:00] And we'll click Add. And there we go. Now we have DP, Dave Pro. So that is the new user here, and we should be able to work with that user from the main login screen. So I'm gonna go to Log Out now.
+
+[00:11:30] And here we go. Here is our new user account, Dave Pro. So we'll connect as that.
+
+[00:11:40] Type in our password. And it says password expired. We have to change it now. So I'll type in the current one and then pick a new one. And that should send that new password information over to the CentOS server.
+
+[00:12:01] And so this is a brand new login. Whenever you log in for the first time into a Gnome-based system, they'll tell you you can take the tour and you can learn more about the Gnome system, which is a good idea if you haven't used it before. But I'm gonna say no thanks to that right now. And that's it. We are connected. It looks like the same exact system, but you will see some differences
+
+[00:12:21] as you start working in the system. And so if we bring up a terminal. You'll see I am connected as dpro. And we have all of our home directories here. But we are actually connected now as an enterprise user.
+
+[00:12:43] We're connected to the FreeIPA domain. Once again, if we do a hostnamectl, we'll see our fully qualified domain name for this system.
+
+[00:13:06] And if we were to go to our Settings and go down to Users, you'll see our user account here.
+
+[00:13:23] And we can make modifications here if we need to. But essentially this is an enterprise user on this system. And we can store data at the domain, we can do all of our connectivity through the domain. And so that's basically how you connect a Gnome client in Linux to a FreeIPA domain.
+
+[00:13:45] So that's an enterprise connection. Now, as a note, you can connect Linux clients to Windows domains in a similar fashion. For example, you can use AD SYS or Active Directory SYS for Ubuntu.
+
+[00:14:00] The process is slightly different, but the concepts are effectively the same. You have to remember to make sure that your host name is part of the domain. You need to make sure that your DNS is pointing to that domain. And you need to make sure that you install the client software and configure it
+
+[00:14:20] so that it can connect to that domain, and then you can have that enterprise user connection. So that's it for this sub lesson.

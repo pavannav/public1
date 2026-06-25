@@ -1,0 +1,35 @@
+[00:00:06] - [Lecturer] So in this video, we'll talk about Inodes and how they are used for block allocation. When a filesystem is created, an inode table is created as well. It's interesting to know that on XFS filesystem, the inodes table is flexible.
+
+[00:00:21] On the EXT4 filesystems, the inode table is pre-allocated and that means that you can run out of inodes. Now each file has one inode and exactly one inode. And the inode keeps all of the administration of a file, but not the filename. ls -l is basically dumping the contents of the inode.
+
+[00:00:42] The only thing noting, the inode is a filename and the filename is stored in the directory table. Another way to see what is in the inode is a stat command use stat on any filename to see inode information printed in a readable format. If you want to find out the inode of a file,
+
+[00:01:01] you can use ls -i that will print the inode number. And in addition to the metadata information about files inodes also include a list of blocks that is used by the file. So how does block allocation work? Well, the block is a primarily unit to store files on disk.
+
+[00:01:20] And block size is a property of the filesystem. Where you make your filesystem, the block size is set and in most cases it is set to for 4KiB, but it may be set to more, which makes sense if you are working with mainly very large files. You can use the xfs_info utility on XFS
+
+[00:01:41] to find the block size or tune2fs -L, which will show the block size on EXT4. Now when files are stored, this happens on block boundaries. And that means that a 10-byte file on a filesystem with 4KiB blocks will occupy one complete block. Now to avoid wasting too much space this way,
+
+[00:02:01] some filesystems allow for block suballocation. For you, it's very interesting to see the difference between the actual file size as well as the size on disc in a human readable way. I mean, if you use ls -l on a file, then you see a size that is reported by the file,
+
+[00:02:21] but you don't see how much disc space the file actually occupies. That's a 10-byte file on a 4KiB block. In the next demo, I want to show you how you can get inside the inode, that is if you are on EXT4, because this only will work on EXT4 filesystems.
+
+[00:02:41] So I'm starting to mount my EXT4 filesystem on the mnt directory. Oh, already mounted. Well that's even better. And next I'm using cp /etc/hosts to /mnt using ls -il on /mnt. And what do we see?
+
+[00:03:00] We see the size of the file 158 bytes for the hosts file and we see the inode number and it's the inode number that I care about here. Next I'm using debugfs on dev/sda3 to open the filesystem in the debugger. And in the filesystem debugger, you can check the contents of any inode.
+
+[00:03:23] So stat 13 is dumping the inode number 13. And what do we see? Well, we see the modes, that's the permission mode and we see the generation and we see the type, which is a bad type. And hey, that is funny.
+
+[00:03:40] I'm making an accident because our host file is not inode number 13, that's inode number 12. But EXT is pre-allocating inodes. So even if there is no file currently using inode number 13, we can see it. Do you see by the way, the creation time? December 31st, 4:00 PM 1969.
+
+[00:04:03] Wow. That is the original Unix timestamp, which starts at January 1st, 1970 and is counted as second since the date. And this is right before. Does that matter? No, not too much. Let's investigate an inode that is used by a file.
+
+[00:04:21] So stat on 12 and there we can see the type is regular, the permission mode, we see the flags, which is about extended attributes and stuff. We see the user currently set as the owner, so User 0, that's root. Group 0 is set. We see the number of links. That's about hard links to the file.
+
+[00:04:41] You know, every file in the inode has a hard link counter. So the file does not know which names it has, but it does know the amount of names that are linked to this file. Here we have all the different times and we have extended attributes. So that is interesting. We have some selinux extended attributes
+
+[00:05:01] stored here in the file. And then there is the Extents. The extent is about a physical location of your file. Now if we use exit, then we get out of here. Oops, that's my mistake. We need quit to get out of the filesystem debugger. And next, if you use stats on /mnt/hosts, what do we see?
+
+[00:05:23] We see more or less the same information in a more readable format. But you will see that the inode itself is providing a little bit more information than what you see in stat. Stat is typically the information that you are going to need as an ordinary user.
+
+[00:05:41] And that's how you can investigate on EXT filesystems, what is inside an inode. Unfortunately, XFS filesystems do not have an easy accessible filesystem debugger as EXT4.

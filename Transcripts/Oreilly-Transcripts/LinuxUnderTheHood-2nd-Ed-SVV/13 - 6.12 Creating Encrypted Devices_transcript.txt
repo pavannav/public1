@@ -1,0 +1,55 @@
+[00:00:06] - All right, in this video we are going to talk about encrypted devices. In order to create completely encrypted devices, you can use Linux Unified Key Setup, also known as LUKS. LUKS or Linux is a standard way for creating
+
+[00:00:20] encrypted devices and it encrypts complete devices which results in a new device mapper device. And the device mapper device needs to be opened after creating it. After doing so, the filesystem can be created on that encrypted device mapper device. Once the device is encrypted, it's the device mapper device.
+
+[00:00:43] It should be mounted, and not the original device. So if you are going to encrypt sda4, for instance, then you are not going to mount sda4. You are going to mount a resulting device mapper device. And to access the encrypted device,
+
+[00:01:00] a password must be entered. You can do that manually or automatically through /etc/crypttab or using a decryption server. I'll show you the manual method and I also show you how to use clevis and Tang for automatic opening of LUKS encrypted devices. So here is the procedure. Let me demonstrate.
+
+[00:01:24] So to create an encrypted device, I first need a device. Let me create another logical partition on sda. Sda8 is what it'll be. The main utility in looks is cryptsetup.
+
+[00:01:44] I'm going to use cryptsetup luksFormat on dev/sda8. So Cryptsetup looks format is going to create the encrypted layer. So really on top of the sda8, you have the cryptographic layer and that is going to wipe all data that might be already existing on the device.
+
+[00:02:02] Now we need to provide a pass phrase. This pass phrase does have some complexity rules. So make sure that you have the decent combination of special characters, the right number of characters, etc,
+
+[00:02:22] in order to create a safe pass phrase. So now I've created my encrypted sda8 device and we can check on it using xxd on dev/sda8. Piping it through less and what do we see? We see a looks header, we see a sha256 algorithm that is being used.
+
+[00:02:43] And if we go further down then we encounter the encrypted layer. First megabyte of the device is used for administrative purposes. This is the cryptographic layer, that is on the device and which makes everything that you do on a device completely unreadable.
+
+[00:03:00] Now I need to do something with this device and that involves a second step, which is cryptsetup luksOpen. So I am going to open dev/sda8 and the resulting device. I wanted to have the name secret. We need to answer the passphrase because without a passphrase you can't use a device.
+
+[00:03:22] And now the result is a device mapper device. So in dev mapper, we can see where is it, right here. The secret device also known as device mapper device dm-12. So mkfs.ext4, I repeat, it's not going to happen on sda8,
+
+[00:03:41] it's going to happen on the secret device that we have created. So dev/mapper/secret will do that for you. And now I can mount my dev/mapper/secret device on whatever I want to mount it on. And I can copy files, let me copy files, etc, everything starting with c or d.
+
+[00:04:04] Let's copy that to the mnt directory. So we have a couple of files now. So at this moment, my device is open and if I would use cryptsetup luksClose, then I can close it again.
+
+[00:04:21] Dev/mapper/secret and oops, still in use. Does that make sense? Yes, that does make sense because it's mounted. Now we can close it. So now the device no longer exists. And if you wanna have access to the device again you need to use cryptsetup luksOpen to open it.
+
+[00:04:41] And hey, in case you are wondering is this really secure, well try to use your xxd on the dev/sda8 device and you'll see, oops, that's a typo. And you will see that really the only thing you see is crypto data. So that is completely unreadable.
+
+[00:05:02] That makes your data secure. Now there is one thing that you need to realize and that is to access the LUKS encrypted volume, a passkey needs to be entered. Let's talk about that. Let's get back to the slides. So what is this thing about the passkey?
+
+[00:05:22] Well, if you want to access your LUKS encrypted volume, you need to enter a passkey. You can do that manually if you want, but that is disruptive for the boot procedure. I mean if you want the device to be mounted automatically the boot procedure will stop and will prompt for a passkey.
+
+[00:05:40] You can also use an etc crypttab and in the ETC crypttab you can put your passkey. That's kind of useless because it takes away the security benefits. If you really want to do it a nice way, you can use a tang server and a clevis client and these can be used to enter passkeys automatically. And that's actually kind of cool
+
+[00:06:01] because the result is that the LUKS encrypted volume will be opened automatically when it is booted on the network where the tang server is available. And does that make it more secure? Yes, because LUKS encryption in many cases is to protect your data from people stealing your servers or your hard disks.
+
+[00:06:21] You are using it in a trusted environment. Decryption will happen automatically. You are using it outside of the trusted environment. You will manually need to enter your passkey. Let me demonstrate how to set up this clevis and tang solution. So I am going to set up my fedora machine
+
+[00:06:40] as the tang server. And in order to do so, I need dnf install -y of clevis as well as tang. So now that the software is installed, I need systemctl enable --now tangd.socket.
+
+[00:07:01] So what is in this socket? Systemctl cat on tangd.socket should show us. And there we can see it's doing a ListenStream 80. So that's pretty simple. It uses the HTTP port. So we need to make sure that port is allowed in the firewall. Firewall-cmd --add-service http --permanent
+
+[00:07:27] and firewall-cmd --reload to reload. Also, we don't want to worry about SE Linux. So I'm going for setenforce 0. Let's first see that we can bring this up and running.
+
+[00:07:41] Now that we have the tang server running, we can go to the client. So what are we doing on the client? Well, to start with, we need to install the clevis software. So dnf install -y clevis. All right, so now on the client,
+
+[00:08:00] I'm going to use clevis luks bind -d, followed by the name of the device that I want to decrypt. Tang, which is the protocol that I want to use, followed by "url":, name of the server or IP address that's for the same.
+
+[00:08:22] And that's all entered the existing LUKS password. So what this is doing? Well, we have the clevis client. The clevis client is where the LUKS encrypted volume is available, and we need to provide the password and give that to the tang server. And that's what is happening right here.
+
+[00:08:41] So I am going to enter the existing LUKS password. There we go. And we can see that the advertisement contains the following signing keys. And yeah, we want to trust these keys. So use uppercase Y to do so. And that registers the client with tang server.
+
+[00:09:03] And that makes that, at this moment the cryptsetup luksOpen dev/sda8 on dev/mapper/secret will work even after a reboot. And that's how you can configure clivage and tang for automatic crypto key entry.

@@ -1,0 +1,47 @@
+[00:00:06] - [Lecturer] All right. So Kernel modules are pretty important. Now how do we manage and tune them? Well first you know, you need to know how Kernel modules are loaded. That can happen in different ways. In many cases it'll be through the initramfs or initrd.
+
+[00:00:22] initramfs is a RAM file system, initrd is a RAM disc, which is basically the same if you look at the functionality. And the purpose is that the initramfs is compelled for your Kernel to contain all the required modules that are needed to boot your system.
+
+[00:00:41] This happens where you install your system and normally it's a procedure that only happens when you install your system. Doesn't need to repeat it very often anymore. You can log modules through systemd-udevd. Systemd-udevd is a powerful part of systemd that is reacting on hardware detection.
+
+[00:01:03] It's your plug and play manager if you want to. So systemd-udevd works together with the Kernel to discover what exactly is going on on the hardware and load the appropriate driver. You can also load Kernel modules manually using modprobe.
+
+[00:01:20] That's pretty uncommon nowadays. Now when you are working with Kernel modules, it's nice to note that some of them take parameters, many of them don't, but in case they do, you can use these parameters to tweak performance of your Kernel module and that can make an important performance benefit on your system.
+
+[00:01:41] Now if you want to get information about Kernel module parameters, then you can use the modinfo command. As just mentioned, some Kernel modules have options and if you want to automatically load Kernel module options, you create a file in etc/modprobe.d, reflecting the name of the module,
+
+[00:02:01] such as etc/modprobe.d/cdrom/conf if you want to tweak this, the behavior of the CD-ROM module. In this file, you use options modulename, which is the name of the module followed by name is value. For instance, option cdrom debug is true. If you want to accept the debug option
+
+[00:02:21] for the CD ROM device to true. Now, to manually load Kernel module parameters, you can add parameter name is value to the command line while loading the module. Some Kernel modules keep their current parameter values in sys/module/modulename/parameters and separate files in that directory.
+
+[00:02:42] If that doesn't help, you can also try modprobe -c pipe grep modulename to print module configuration. But you should be aware, in many cases it's very hard, if not impossible to get information about Kernel module parameters that were used upon logging.
+
+[00:03:00] Now let me show you how you can work with Kernel module parameters. So to start it, I'm using lspci -k. lspci is listing devices on the PCI bus and -k is what you add if you want to see which Kernel modules are actually being used. Now we are looking at the ethernet controller
+
+[00:03:21] on my VMware virtual machine. This is the emulated ethernet device and the Kernel module in use is e1000. So does this Kernel module have any parameters? Well, we are going to find out using modinfo e1000. Now the parameter information is to the bottom.
+
+[00:03:42] So we have per and behind that you can see what exactly it is. So TXDescriptors, which is a number of transmit descriptors, which is either an array or an integer. So it's not only telling you what the parameter is, also the kind of value that it expects.
+
+[00:04:02] Like here for instance, debug level. The debug level which is set to an integer. So you use debug equals whatever to set it. Now let's use lsmod pipe grep e1000, before doing so, what do you think? Is this module actually being loaded?
+
+[00:04:21] Well, the answer should be yes because we have networking and if you have networking going over ens33, ens33 needs this e1000 module, so it needs to be there. But fortunately, we can use modprobe minus-r e1000 to remove it.
+
+[00:04:41] And that is basically working because in the output of the lsmod command in the third column, you don't see any dependencies. If a module is used by other modules, modprobe -r is going to refuse. If a module is not used by anything else, then you can safely remove it, even if that will break networking functionality.
+
+[00:05:02] As you can see, ens33 is no longer available. Now I'm going to use modprobe e1000 followed by debug is 4 and that is loading the module again, let's first check using lsmod pipe grep e1000. And as you can see, it's loaded again.
+
+[00:05:22] Now do we get anything that makes sense if you use modprobe -c e1000. And the answer is well, we get a lot of information and really, really, really a lot. The modprobe -c sometimes is useful, sometimes it's not.
+
+[00:05:41] And unfortunately here we have one of these examples where it's not so very useful. How about grepping on debug? Well, even if you grep on debug, it's still not very useful. And how about grepping on 4? Is that bringing anything? No, the information isn't apparently even stored
+
+[00:06:00] in the modprobe configuration. Now for this specific module, you should really look at the behavior of the module to check if it is doing what you expect it to do. And assuming that it is, you can use echo "options e1000 debug=4"
+
+[00:06:21] and redirect that to etc/modprobe.d/e1000.conf and then you can use modprobe -r on e1000 and modprobe e1000 again.
+
+[00:06:40] And as you can see, that even brings back our networking. Now if you would like to see if there is parameters apart from modprobe -c there's another option. And this option will be to check the sys directory. In sys we have a subdirectory with the name module and in the subdirectory module
+
+[00:07:00] you will find a configuration directly for every single Kernel module that is actually loaded. So go in the e1000 directory and there you can even find a parameters subdirectory with the current parameters that were found. So we have copybreak. So copybreak and copybreak is set to 256.
+
+[00:07:23] As I mentioned, this is how you set Kernel module parameters, but unfortunately it's not always easy to find the current Kernel module parameters that are in use, which is the case for this e1000 module. Also notice that many Kernel modules
+
+[00:07:41] come without any parameters, so it's hard to find a working example, but it if ever you need it, this is how you do it.

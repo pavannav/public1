@@ -1,0 +1,33 @@
+[00:00:06] - So let's start by investigating how processes are created. When you run a command, a new process is created as a child of the current process. And to do so, the current process creates an exact copy of itself and a new unique process id, PID is assigned
+
+[00:00:23] and the code of the child process is loaded. It replaces the code of the current process and that is done by using the fork system call. After doing fork, the execve system call will follow to replace a copied code with the new process code.
+
+[00:00:41] In some cases, fork cannot be used, and as an alternative execve can be used without forking the parent process. But that's pretty exceptional when it happens and you can do it yourself, as I will show you in a bit. Now the execve system call replaces the current process with the new process.
+
+[00:01:00] And by doing so, the new process gets the PID of the old process and no parent child relation is created. Let me show you how these relate to one another. All right, so what happens when you run a command? Well, typically you run a command from the child the bash child. And the bash child will use fork to create a copy
+
+[00:01:23] of the bash child. So that is where fork is coming in and that's step one. And next, execve is used. And what is execve doing? Well, execve is going to replace the bash child
+
+[00:01:41] with your command and then you have the child process for the best environment that is created. This is what you normally do when you run a command. Now what are you going to do when you run exec? Well, simple. You have your bash child. You are going to exec command, which is calling execve,
+
+[00:02:03] and execve, well, is going to replace the bash child with the new command. Now the differences in the PIDs, so here, you had the old PID. Let's say we had one, two, three. Your new command will keep the PID
+
+[00:02:20] that previously was used by bash. But here if you start from PID one, two, three, and you fork your new command, that will get its own PID. And then the parent child relation between these processes is established. So you may have heard of the bash internal exec.
+
+[00:02:41] Exec is a command that uses the execve system call. Many people think that the system call is exec, that's not true. Execve is the name of the system call. Using exec can be useful. For instance, when a system has been booted with init/bin/bash kernel argument.
+
+[00:03:00] If that happens, bin bash takes PID 1. And from such an environment, you cannot just fork the systemd process, because it would become a child of bin bash, and systemd cannot be a child of anything. It needs to be PID 1. And the solution is, in that case, is to use exec/usr/lib/systemd/systemd.
+
+[00:03:20] And that replaces the current bash process with the systemd process, which is next, getting the PID 1. Now let me show you what the effect is of using the exec command. So I'm using echo dollar, dollar, where dollar dollar is showing the current PID. Next, I am going to use DNF install minus y zsh.
+
+[00:03:44] I want to install ZSH as a different child so that we can start it as a sub child and analyze what is going on. So now we have 4786. That's my current PID. And if I'm going to run zsh, then echo dollar dollar
+
+[00:04:00] is showing that we are in 6025. And that is something that we can use, if we use P-S-F-A-U-X pipe grab minus B five ZSH for instance, which is showing the current ZSH process and where it is coming from. So what we see here is that ZSH has been started
+
+[00:04:22] as a child process to the bash process with its own PID. Now let me clean up and get back to my bash process. Echo dollar, dollar showing 4786. And now I'm going to use exec zsh. And what do we see? Well, echo dollar dollar is showing
+
+[00:04:41] that we are still in 4786. So if I repeat the P-S-F-A-X pipe grab minus B five on ZSH, then what do we see? We see that ZSH has indeed replaced the bash code. It's no longer bash that is the child of pseudo minus I, it's ZSH.
+
+[00:05:01] So if I want to get back to the bash environment, well, exit is not really going to work, because exit will exit the pseudo minus I and bring me back into process 4691. So do you have any idea how we can get back? Well, one solution only. Exec bin bash.
+
+[00:05:22] And then if you use echo dollar dollar, we are back in 4786 in a bash environment. Is that so? Well, echo dollar child should tell us. Yes, that is so. And that's how exec can be used to manipulate how you want to start a process.

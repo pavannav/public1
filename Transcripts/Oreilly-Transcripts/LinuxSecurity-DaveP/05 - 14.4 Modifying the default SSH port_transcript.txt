@@ -1,0 +1,45 @@
+[00:00:01] Let's begin the lab. We're going to configure our SSH server for some more security, and this is gonna be Lab 27 in the repository. Now this lab is pretty large, so you may want to take periodic breaks, and I've broken it up into several sublessons, so we have several sublessons within this one lab,
+
+[00:00:23] and so this is Lab 27 - Securing SSH, and all configurations once again will be in our sshd_config file. Make sure that you have backed it up. The first thing we're gonna do is change the SSH inbound ports.
+
+[00:00:40] So, by default, SSH servers use inbound Port 22, and this is very well known. However, many of the port scanners out there are set up to scan just the first 100 or maybe the first 1,000 ports of a server. If we change the SSH port to something higher than 1,000,
+
+[00:01:04] it could lead to a little bit of an increase of security to our server. It might be less likely to be scanned. So we're gonna change the port number on our server now. We'll go over to our Debian server and open up our sshd_config file,
+
+[00:01:26] and, remember that I'm working in the console of this server directly because if you connect via SSH and you start making changes to SSH and restart the service, you'll probably lose your SSH remote connection.
+
+[00:01:41] So I'm working directly in the console here. I'm gonna go into Insert mode, and we'll go up to the port, uncomment it, and change the number to 2222. Now, normally I'd pick something less well known and something higher in the range, so just off the top of my head
+
+[00:02:00] I might pick something like 30741 or something like that. You just wanna make sure that whatever port number you pick is not a well-known port number with a well-known service, and it's not a port number that your infrastructure and your organization uses. So, normally I'd pick something higher in the range,
+
+[00:02:23] but for this lab, 2222 is fine. All of these systems are in an enclosed isolated network address translation type of setup, so 2222 should be fine. So I'm gonna set that, and we'll escape out of Insert mode,
+
+[00:02:41] and :WQ to save and quit. Now, a couple things about this. One, if you're working on a Fedora or RHEL or CentOS system, you'll have to use the semanage commands that we showed previously to tell SELinux about the port change,
+
+[00:03:00] and that was previously during the SELinux sublesson. Also, if you have a firewall running, you'll have to open Port 2222 on that firewall, and you'd probably want to close Port 22 at the same time. In addition, we have to restart the service,
+
+[00:03:20] so let's do that now. We'll do a systemctl, restart on SSH. SSHD is fine also. Now if you're working in Fedora or CentOS, that's gonna be SSHD. If you're in Debian and Ubuntu in newer versions, it's just known as SSH, but SSHD is an alias to that,
+
+[00:03:41] so it should also work, and I think it does. Now, once we've restarted it, let's check it out. Let's take a look at the status of SSHD. When we do so, we get the last several lines of the log and we can see that Port 2222
+
+[00:04:03] is indeed what the server is now listening on on all IPv4 networks and all IPv6 networks. You might not want IPv6 at all. As another layer of security, we could turn that off also, but for now I'm gonna leave both running
+
+[00:04:21] and it is listening. At this point, we should be able to connect from a client to the server. So let's go over to our Debian client. And by the way, it doesn't matter what directory you're in, but we'll just stay here for now, and let's do our SSH connection.
+
+[00:04:42] So it's gonna be the SSH command user@10.0.2.51. Now, if I just do it like this, look what happens. It says connection refused. There's no route to Port 22. That's because we're not using that anymore, we're using 2222.
+
+[00:05:01] So, we have to add the -p parameter and the port presenter for that, and, boom, we're in, no password required, One, no password required because we're using keys, and, two, the pass phrase for the key is not required
+
+[00:05:20] because we had previously connected in this terminal session, and this is the same terminal that I was running in the previous sublesson when we built the keys, so we don't need that pass phrase unless we end the session and start a new one. So there you go. We are in and we have made the connection
+
+[00:05:40] to user at debserver with a totally different port number. Now, if we go back to our client and run, say, an nmap against that server on 10.0.2.51, it does actually see 2222 is open,
+
+[00:06:00] so this concept is something that may or may not make your SSH server more secure. It depends on what port scanner is being used to scan that system and how it's configured, but quite often when attackers are scanning systems, they're trying to scan systems in bulk, and they don't have time to scan all ports at the same time,
+
+[00:06:23] so instead they'll do one through 100 or one through 1,000 or something similar to that. But in this case, nmap does see it, 2222 is indeed open, and instead of being called SSH, it's called EtherNetIP-1. So you can do more testing with that
+
+[00:06:40] and try other port numbers. It's not the most powerful security concept, but it's another way of trying to deflect would-be attackers. The only difference here is that the client needs to know what the port is that they have to connect to. However, that can be modified
+
+[00:07:01] within your config file as well. You can specify the port numbers in here if you wanted to, and then you could make that into a sort of alias, and this way you could connect by IP and host name as well as the port and the key that you need. So if you do have to connect by other port numbers,
+
+[00:07:21] you could modify it that way at the client side. So definitely test that on your systems and then make sure it works, and make sure you can connect from the client to the server.

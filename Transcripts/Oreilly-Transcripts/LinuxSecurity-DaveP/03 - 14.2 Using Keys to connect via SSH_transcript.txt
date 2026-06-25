@@ -1,0 +1,77 @@
+[00:00:00] In this lab, we'll show how to create cryptographic key pairs for making connections via SSH. To SSH into a system using a key, you need to have a key pair. The first key is called the private key, and it resides on the computer where the key pair is built, usually the person's workstation.
+
+[00:00:22] The second key is called a public key and it resides at the SSH server, or whatever remote system that will be connected to. When you attempt to SSH into the remote system, that system presents its public key. If it matches the private key stored at the local computer,
+
+[00:00:41] then the connection will be allowed. So we're gonna be working in lab 26 and you can see here, we have the lab document, "Using Keys to Connect Via SSH." So feel free to follow along with that. And I'm gonna jump over to my Debian client system. So first we're gonna create a strong RSA key pair.
+
+[00:01:03] And RSA is the encryption algorithm that's used by SSH by default. You can use other ones as well. To create a key pair, we'll use the ssh-keygen command, and by default, that would create an RSA-based key pair,
+
+[00:01:23] and it would build them as 3072 bits. Now if you want a stronger key, you can do that. We can use the -b parameter, and then specify something stronger, like 4,096 bit or 8,192 bit, which is estimated to be a secure key
+
+[00:01:42] until at least the year 2030, several years away. So let's see if we can build that. We'll do it now. And it says, "Generating a public private key pair." Okay, so that may have taken a minute on your system, maybe more. If it takes too long,
+
+[00:02:00] you can try a smaller key at 4,096 bit, or just do the standard SSH key gen command and that'll build a 3072 bit key. But mine is done, took about a minute, and it's saying, "Enter the file in which to save the key." By default, it'll store it in this path, in our home directory, in a hidden directory called .ssh,
+
+[00:02:23] and then the name id_rsa. If you're good with that, you could just press enter. Or you could store it as a different name in a different path, if you wish. I'm gonna press enter for that. And then it asks for a passphrase. It's really important to use a passphrase in the field
+
+[00:02:40] if you're working with SSH keys. So I'm gonna type one in now, and confirm it. Now if you don't use a pass phrase and leave it blank, then if someone was to gain access to your system, they would have access to all of your SSH keys.
+
+[00:03:00] So we'll press enter now, and it says, "The identification has been saved," in our home directory, in the hidden directory, SSH, and the file name is id_rsa. That's the private key. And then the public key is also stored there, id_rsa.pub. And then we have a shot 256 key fingerprint for this,
+
+[00:03:23] and a random art image for our RSA 8,192 bit key. Now you may say, "Well, why do we want to use a passphrase? One of the reasons to use keys is to get away from passwords." That's sort of true. But when you work with these SSH keys,
+
+[00:03:43] you'll only have to type the passphrase the first time you connect with that key. Now let's view our SSH key pair. We're gonna change over to the hidden.SSH directory. And inside of there you'll see a couple different files. You'll see authorized keys, which is the keys
+
+[00:04:02] that are authorized to connect to this system. You'll see the id_rsa file and the id_rsa.pub file. Those are the key pair, collectively, that we just built. We also have known hosts, which are known hosts that I can connect to that are known good.
+
+[00:04:24] So we can take a look at these keys, but the important thing is that you keep the private key private. You don't want to share it with anyone. That's why it's known as the private key. The public key, however, we could take a look at that. We could do a CAT on id_rsa.pub,
+
+[00:04:42] and you'll see it's a fairly large RSA key. We know it's RSA because here it says ssh-rsa. And these keys always start with quadruple A, and it ends with the username and computer at the end of that key. So that's our public key.
+
+[00:05:00] Let's go ahead and create another key now. And this one's gonna be an ed25519 key. I prefer to use this if I can. Some organizations require RSA and a certain bit strength, but I prefer to use ed25519 if at all possible.
+
+[00:05:21] So I'm gonna do an ssh-keygen again and use the -t parameter to specify the type of key. And the one I want is ed25519. Press enter for that, and it's gonna build a key pair based on the name id_ed25519.
+
+[00:05:40] I'll use that for the default. That's fine. Press enter, and we'll type in the passphrase. Now, of course, you want that to be lengthy and complex. It builds those files. Once again, it builds a key pair. That's the private key, and that's the public key, and they're inside the hidden.SSH directory.
+
+[00:06:03] We have the fingerprint and we have ed25519, and that's 256 bit. Now you can have a much smaller bit size when it comes to ed25519 because it's elliptic curve based, and it utilizes that elliptic curve technology.
+
+[00:06:22] Let's take a look inside of our .SSH directory again. Here's the original RSA key pair we made, and here is the ed25519 key pair that we created. Excellent. Now we need to copy the public key to the remote host, to the Debian server.
+
+[00:06:41] We're gonna do that with the ssh-copy-id commands. And I want to copy over the ed25519 key that I created, but I'll need to specify that. So I'm gonna use the -i parameter, and in double quotes, state which key I want.
+
+[00:07:00] And that's id_ed25519, and you can either just type 25519 by itself or .pub, and then specify where we want it to go. It's gonna be user at 10.0.2.51. We'll press enter for that, and it attempts to copy that over.
+
+[00:07:21] But I need to know the password of the user account at the server. So we'll type that in now. And it says, "Number of keys added is one." Very good, and now we can try logging in with this command. Now, if we had just said SSH copy ID and user 10.0.2.51,
+
+[00:07:45] and omitted this part, it would copy both keys over, the ed25519 key and the RSA key, which we don't want. I just want to use ed25519. In addition, if this key was in a different path,
+
+[00:08:00] we could state that path within the double quotes along with that file name. And so that's the power of the -i option. Let's go ahead and SSH into the remote host now, using our ed25519 key. So we're gonna do an SSH, but I'm gonna need to specify the key for now.
+
+[00:08:24] We'll do -i and double quote and will say id_ed25519, and then the account and IP of what we're connecting to. So we'll connect now.
+
+[00:08:41] Now the first time we connect, it says, "Enter the password to unlock the private key." So yeah, this is a password, but it's not password based SSH. This is the pass phrase that's associated with this ed25519 key. So I'm gonna type that in now.
+
+[00:09:02] And we're into the server, but we only have to type that passphrase once during a session. Okay? So you can see I'm connected now at user@debserver. If we do a control D, and then hit the up arrow and connect again,
+
+[00:09:21] it's just gonna bring us in. It's not gonna ask for that pass phrase again because we're continuing with this terminal session. To make things easier, let's remove the RSA key from our client and I'll just close that connection. And so we'll remove that key now. We'll do remove id_r*.
+
+[00:09:44] So anything that starts with id_r, press enter. And now you can see the RSA key is gone, and we just have this key. This way, we don't have to specify that with the -i option. We could just do something like this,
+
+[00:10:02] and we should be able to connect because there's only one key in the .SSH directory. By default, .SSH is where our SSH program looks to keys to find out how it's gonna connect. That's the default location. Excellent.
+
+[00:10:20] You'll note in the lab, in lab 26 there's some extra credit. If you wanna learn more about the RSA command and RSA in general, you can go to the manual page. And if you wanna learn more about ed25519, there's a manual page for that as well. You might say, "Dave,
+
+[00:10:41] can we automate this process a little bit more? Can we use an alias? Can we incorporate the information of the name of the key and the path to the key and so on?" And the answer is yes. And I'm at my main system here, and if we take a look and go inside our .SSH directory,
+
+[00:11:00] you'll see that I've created a config file. Aside from that, I have a lot of keys in here, and that's not all. I keep a lot of other SSH keys in other directories. But I've set up a config file here, and you could do the same. Let's do a vim on that config file and take a look at it, and go full screen.
+
+[00:11:20] If you look down here, you'll see a heading, adding LNSF hosts here. I have connected previously with an SSH two Deb server. And what that's doing in this configuration file is it's saying, "oh, okay, we're gonna connect to this IP address. We're going to use the user account, called user,
+
+[00:11:42] and the key that we're looking for, the authentication key or identity file is located here." And the actual key name is called lnsf-ed25519. So if I wanna connect to that Debian server, all I have to do is do an SSH Deb server.
+
+[00:12:02] And the same goes for these other hosts. SSH Deb client will bring me to that IP, using this same key and the same user account name, and so on and so on. So if I was to type ssh debserver, it connects me automatically as the user account
+
+[00:12:21] on that remote DEB server. Same thing, if I was to do an ssh debclient, connects me to that. So again, that is the config file that you can create. You just call it config, and you can add the host alias as you see fit
+
+[00:12:41] with those various keys and usernames, IP addresses or host names. So there you go, definitely do some testing with keys and make sure that you can connect from a local system to a remote system via SSH.

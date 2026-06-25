@@ -1,0 +1,61 @@
+[00:00:01] Wouldn't it be great to be able to review the logs from multiple servers right from the comfort of your own Workstation? Well, that's what rsyslog can do for you. In the next two sub-lessons, we'll run through a Lab where we install rsyslog so that we can pull the logs
+
+[00:00:20] from remote systems and view them from our main computer. This is Lab 32. And we're gonna show how to install rsyslog. How to configure an rsyslog centralized server and how to push logs from the remote servers to the centralized logging server. I'll be working on two systems.
+
+[00:00:41] Just one centralized logging server, that'll be my Debian Client System and one Debian Server, that'll be the remote server to be logged. And I'll be working as roots on both of these. Okay, so let's move to our Debian Client. And I'm already logged in as roots.
+
+[00:01:02] First thing I wanna do is install rsyslog. Okay, so we'll say YES to this and grab the rsyslog program, because it's not built into Debian Systems by default. Now if we move over to /var/log
+
+[00:01:23] and take a look, you'll see something new. You'll see the syslog file. So now we actually have syslog. It wasn't there before. Also the rsyslog service is now active and running and enabled.
+
+[00:01:40] And you can also refer to that as simply syslog. So syslog is a protocol. It's something that you can use on many different systems, not just Linux. And we can pull information from all kinds of devices as long as they have syslog installed. And that's what we could do from our Linux Workstation.
+
+[00:02:02] Now we'll go over to our server side. And I'm already connected and logged in as root, and we'll install rsyslog over there as well. And this is the server that we want to grab the information from. So like I say, with rsyslog, you can work from the comfort
+
+[00:02:23] of your Workstation and grab the log files from as many other systems as you like. Three servers, 10 servers, switches, routers, Wireless Access Points. As long as they have syslog installed and enabled and the port open on their firewall, then you can push that information
+
+[00:02:41] right to your Workstation. And we'll do that by setting up the configuration so it tells these servers where to send their logs. And we'll grab all that and push it into our main Workstation. So now we have it installed on both systems. Now we'll move on to the next step,
+
+[00:03:00] and that is grabbing the syslogs from the remote servers. So this assumes the Workstation that will gather remote logs. And so on that Workstation, we're gonna do a vim on /etc and the rsyslog.conf file.
+
+[00:03:22] So this file was created when we installed the program and we're going to modify it. We'll press Enter for that. And if we scroll down here, we'll see two items, provides UDP syslog reception and provides TCP syslog reception.
+
+[00:03:40] We want to uncomment the lines for both of these, so that it will allow the reception or the receiving of logs from remote systems. And we do need TCP and UDP to do this. So uncomment those and uncomment these.
+
+[00:04:02] And you'll note that by default this runs on port 514 for both TCP and UDP. Many times in the field, we'll change that port. Maybe we'll do something like 5140 or something different. But quite often, we'll change that default port.
+
+[00:04:20] We're gonna leave it as the default for this lab. So we'll make that modification. And that's all we have to do. :WQ to save and quit. And we need to restart our syslog service. And again, you can type rsyslog or just syslog.
+
+[00:04:43] Now the Workstation should be listening on the network for port 514 for syslog information. And we can test that. And we may need the sudo command for this. We'll do an SS and let's try -tulnp
+
+[00:05:05] and we'll filter our findings just for rsyslog. Let's try that and see what we come up with. And there we go. We see that we are listening on port 514
+
+[00:05:20] IP version four and IP version six for TCP and for UDP. We do see rsyslog. And the process ID for this is 10986. Very good, we could also do something like an ss -ant and we should see that port listed here for IP version four
+
+[00:05:41] and here for IP version six. Now, if you are doing this on a Fedora-based system, you'll need to inform SE Linux about this change and you'll have to use SE Manage to do that. And if you have a firewall running, you'll have to open up port 514.
+
+[00:06:01] So the Workstation side is done. We'll jump over to the server side. And again, you wanna make sure that you have syslog installed on any server that you want to grab the logs from. So make sure that rsyslog is installed in this case. And we'll go to the server
+
+[00:06:20] and we'll do a vim on /etc/rsyslog.conf just like we did on the Workstation. But this time we're gonna make a different modification. And let's scroll down here. And here is the line I'm looking for. This has to do with privileges, and where it's gonna write the information for the log.
+
+[00:06:44] By default, it's gonna write the information to /var/log and syslog. And that's fine, but we don't want that. We don't want to write this information locally. No, we wanna push this information out to our Workstation,
+
+[00:07:01] so we can again review these logs from the comfort of our leather high backed chair or what have you. So we're gonna comment this out. So we'll go into Insert Mode here and comment that line out.
+
+[00:07:20] Now we could keep that line and we could do both. We could have the logs stored locally and we could have the logs pushed out to our remote system. But for now, we'll just do pushing out to remote system. And there's a lot of options for this. I'm going to replace this with *.* so we're gonna move
+
+[00:07:40] all the logs over and we're gonna move that to the Workstation. And it's gonna be a @@10.0.2.52:514 because that's the listening syslog port at that remote system at that Debian Client. There's a lot of other options for this,
+
+[00:08:01] but this should work just fine. So we'll Save and Quit out of here, and we'll do a system CTL restart on rsyslog. Good, at this point, we can reboot the system to generate some logs, and we'll do just that.
+
+[00:08:22] And we'll go over to our Client and monitor from that Workstation. Now again, consider a different port like 5140. A lot of times we'll use 30514, but remember to open it on the firewall,
+
+[00:08:40] and again, issue that SE Manage command on SE Linux-based systems. Let's go back to our Client System, and let's monitor from the Workstation. So the remote servers logs, should now show up in our /var/ log, and we should see them in our syslog file.
+
+[00:09:02] Let's take a look at that syslog file. Okay, so if we do a tail on that, we'll see a lot of debserver entries. So that's it. It's grabbing my Debian server log and it's pulling that in
+
+[00:09:20] and putting it into the syslog file. The problem is that it's also grabbing a lot more information. If we do a cat on syslog and we scroll back, we're gonna see deb-client as well. Let's make this easier. Let's do a less on syslog.
+
+[00:09:43] And you can see right in the beginning, we have lots of deb-client stuff. Scroll down, down, down, keep going down. And then we see debserver stuff. So we're getting entries and logs from both systems, the local system, the Debian Client, and the remote system, the server.
+
+[00:10:01] In the next sub-lesson we'll show how to kinda branch those off so we can have our logs more organized.

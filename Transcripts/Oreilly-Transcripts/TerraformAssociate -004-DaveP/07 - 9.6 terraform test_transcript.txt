@@ -1,0 +1,109 @@
+[00:00:06] Let's talk about the Terraform test command and testing in general. And this is all within lab 10 terraform testing. So feel free to take a look at that lab file and let's jump over to
+
+[00:00:20] our VS code. And I'm in lab 10 now. And so first of all, Terraform Test is a command that you can run. It was first seen in Terraform version 1.6. And so that's why I've said in the past you want to make sure you have
+
+[00:00:43] 1.6 or higher. There was a lot of additions to 1.6 and one of them was Terraform Test. So this is a command you can run to test your configuration, but you have to have some pre written tests in the working directory. And normally
+
+[00:01:01] they would go in a subdirectory called tests. So we have those here. I have three test files and they're written with whatever name you want. And then the extension.hclvs code will show them as terraform files because it knows we're working in a Terraform project.
+
+[00:01:26] So these are known as tftest HCL files and again located in the tests directory. And so we have three test files. These are all pre apply tests, meaning you run these tests before you
+
+[00:01:45] do a Terraform apply to see if your code will work properly. And it goes beyond the type of test that's done with Terraform Validates or Terraform Plan.
+
+[00:02:00] So let's take a look at these. I'm going to remove the terminal for now. We'll start with custom variables TFTEST hcl and you'll see that we have some variables in a variables block here. And we have a run block. So the run block is really the test itself.
+
+[00:02:23] And what it'll do is it will assert a condition and possibly an error message. The condition will depend on whatever we select. Here we're saying that we want the instance type to be a certain thing.
+
+[00:02:40] And if it's not, you'll get the error message that's listed here in double quotes. Expected instance type t3 dot small got this? Whatever the variable refers to or whatever this path refers to, then we have another one, a separate test run. Check custom instance name and we're asserting a condition where
+
+[00:03:03] the instance name should be something specific. And if not you'll get this message expected this got whatever that variable is. So that's the first test. The second one is IAM validation test. So as you can guess, this is
+
+[00:03:24] checking IAM user creation and will those users be able to be created? Once again we have some variables here, test user 1, 2 and 3. And then we have our tests. We've got a run block check if user one exists and assert block with a condition.
+
+[00:03:44] If it contains the user named this, then it's good. If not, it's going to be an error message. I am user test user 1 not found. And then the same exact test just for user two and for user three.
+
+[00:04:02] And then finally, and this is the one we're going to focus on the most Unit Basic TFTest HCL here. This one will check the IAM user counts and it's expecting three users. Test user 1, test user 2, test user 3.
+
+[00:04:20] If not, you'll get an error message expected three IAM users and got whatever the length is that was that is to be created. And we have another one for checking the instance type and another one for checking the environment tag. So I've built all these tests for you and they're all inside lab 10.
+
+[00:04:43] Normally they need to be stored in a tests directly in your working directory. Okay, so if we take a look at the rest of the code, if we look at main tf, we see we have a terraform block, a provider block with variables. And we have an EC2 instance called test instance.
+
+[00:05:03] And then we have our AWS users resource. And for this one we're doing a count meta argument. But this time we're using length and that'll depend on a variable here. And then for the names, we're using account index like we've done before.
+
+[00:05:21] So that's our main tf. Then we have our variables TF with all the information here. And then we also have outputs, and this leads to outputting information based on our tests, if they pass in this case.
+
+[00:05:40] All right, good. So those are the tests. Now again, remember, these are pre apply tests. So we would do these before we've applied the infrastructure. Post apply tests will work differently and we'll talk about that in a moment. So let's bring the terminal back up and let's make sure that indeed we are in lab 10.
+
+[00:06:03] And let's run the terraform test command. This should fail because the directory is not initialized yet. So let's see what happens. And we'll go full screen on the terminal here and you'll see indeed we ran terraform test and it starts the first test, custom variables
+
+[00:06:22] tftest HCL in progress and it failed missing required provider. And you're just going to see that missing required provider error multiple times because we haven't initialized yet. So let's go Ahead and initialize with the terraform init.
+
+[00:06:44] Good. We get the backend provider plugins. Very good. So now we have an initialized directory and now we can properly run our terraform test. So we'll do that now. Terraform test and this time it should pass and we should I think get nine passed tests in total.
+
+[00:07:05] Let's run it. And this can take a bit as it checks through the code. And we did, we got success. 9 passed, 0 failed. So it started with custom variables tftest hcl and it checked the custom
+
+[00:07:21] instance type and custom instance name. Both passed. Then it did a tear down test in custom variables and that passed. Next was the IAM validation TF test in progress and it checked for user 1 in our code, user 2 and user 3 and all users being tagged and all
+
+[00:07:42] of those passed. Then it tear it down and passed. And then finally the UnitBasic TFTest HCL it checked the complete IAM user count, the instance type and the environment tag all passed. And the tear down passed as well. So nine passed all together.
+
+[00:08:02] Very good. Now note how the results only show successes. The messages in the test file will not show up unless there is an issue. So those conditions that we saw when we looked at those test files and the error messages, these messages will not show up
+
+[00:08:24] unless there is a failure. So let's go through some individual tests and then cause some problems. Okay, so first one, let's do a terraform test once again.
+
+[00:08:41] But I want to call on an individual test to do that. We'll do a dash filter and we'll say equals and we have to specify the path and the name of the test. So we'll do tests slash and I want unit underscore basic TFTest HCL press enter.
+
+[00:09:03] That should do the three tests that we saw and all three passed as it should, because we haven't made any changes yet. However, let's go ahead to variables tf and let's find the instance type which is t2 micro and let's change that to t3 micro.
+
+[00:09:28] Let's say someone made a mistake and they created a larger instance type. Well, we don't want to be billed for that. We can have a test that will test against these types of things and hopefully stop us from deploying these larger instances.
+
+[00:09:44] Save that file and then we'll run the test again. And go full screen on that or maximize the terminal at least. And so this is the command I just issued.
+
+[00:10:00] And the IAM user count was fine. That passed. But when we went to check Instance type it failed. And the error is the test assertion failed. And it says on Test Unit Basic TFTest HCL Line 16 in check instance
+
+[00:10:22] type the condition. This did not work. Expected instance type T2 micro got T3 micro. Then it did the check environment, which did pass. But then the teardown fails because one of our tests has failed.
+
+[00:10:42] So failure two passed and one failed. And so that's one example of testing and validating our code. Let's go ahead and fix that and we'll change it back to T2 micro, save it and run that test again and just make sure that the unit basic test will work. And it does.
+
+[00:11:03] Success three passed. Let's go to our second example. We'll do the IAM validation test. Okay, so we'll change this once again. We'll do a terraform test, dash filter tests. But now we'll do the iamvalidation.tftest hcl.
+
+[00:11:27] That should pass because it passed originally with our full test. So four successes. It checked the users and then checked all users are tagged. Let's create an issue.
+
+[00:11:40] This time we'll go to our resource in main TF and we'll go down to the IAM users and let's say that we just kind of made a mistake here. And inside the variable I typed a one by accident.
+
+[00:12:03] Well, you see the red line and you see all the red here. We know there's a problem right there, but let's leave it as that so that we can do our test. And so we'll go back to a larger terminal here and run that command again and run through the test.
+
+[00:12:23] Well, it's going to check if user1 exists, and that's going to fail right off the bat. And it says reference to undeclared input variable. Now this comes from terraform Next on main TF, line 29 for the AWS IAM user, this is underlined. The one is no good.
+
+[00:12:44] So an input variable with this name has not been declared. And it even says, did you mean this? That's what it should be. And because that failed, it's going to skip the checks for user 2 and user 3. And so one failed, three skipped altogether.
+
+[00:13:03] So this actual error here is something that comes from the terraform core. This right here is from our terraform test. And then inside that, this comes from terraform core in the cli. And then these are the rest of the test right here.
+
+[00:13:22] All right, let's fix that, because obviously we don't want that one there. Get rid of that. Actually, let Me put that back for a second because when we do so you also see problems in VS code and problems in inhabit the same area as the terminal. If we click on problems, it'll actually tell you in Main tf.
+
+[00:13:44] No declaration found for this, right? We're referring to a variable block that does not exist. There is no iam1 usernames.
+
+[00:14:01] The variable block declaration is iamusernames. Good, let's go back to the terminal, test it again and it should succeed now that I fixed it and saved it and they all pass. Very good. All right, so everything's fixed now and thank you to
+
+[00:14:21] those validation tests. Now let's go ahead and do a Terraform apply. And this is going to create four resources, the instance and the three users.
+
+[00:14:40] And we'll have some changes to outputs. Once it is created, we'll say yes to this and we'll fast forward through the creation of these resources. All right, apply complete resources added 4 and we now have an instance
+
+[00:15:00] with an ID of this that's part of our output and the state is running. And we also have our IAM usernames, Test User 1, Test User 2 and Test User 3. Very good. Now we could run the test again and we could do something like Terraform test.
+
+[00:15:22] And if you want to get more information, you could do it in verbose mode. So we could do a dash verbose and press Enter. And we're going to get lots of information here based on the plan and the tests.
+
+[00:15:42] So it kind of builds the plan into it when you run in verbose mode. So give that a try as well. Posts all the information about the plan in the CLI that it could. It could be a bit much. Okay, now this is a post apply test, but we're not going to have any
+
+[00:16:03] issues with this because it always has functioned properly. Also, post apply testing can be done in other ways. For example, we could do a Terraform plan with a refresh dash only.
+
+[00:16:22] And so that will do the plan, but just with a refresh. So this is another way to do that. You could also do this with a Terraform apply refresh only. So it's not really going to build or change or remove anything.
+
+[00:16:43] And if anything was to fail, it would show on your list if you made any changes to the code and had to reapply. Instead of reapplying and possibly getting some issues, you could run it as a refresh only, or you could do the terraform test again.
+
+[00:17:02] You can also do specific post apply tests. However, if you create one of these and you place them in the same directory as the other ones in the tests directory, then they will run when you do a Terraform test command.
+
+[00:17:23] This could actually cause additional infrastructure to be built in some cases if the test is not coded properly. So my recommendation is to be careful with post apply tests. You could also run tests from a mini module if you wanted to have it
+
+[00:17:40] in a little module as well. So play around with it. Take a look at the lab document and the additional documents within the lab. There's also a testing document and see if you can make it fail in some really interesting ways. When you are done, I'm going to break out of this.
+
+[00:18:02] Make sure that you destroy your infrastructure. So I'm going to do that now. Terraform destroy and we'll just fade out here. But verify that you have destroyed your infrastructure and that's it for this sub lesson.

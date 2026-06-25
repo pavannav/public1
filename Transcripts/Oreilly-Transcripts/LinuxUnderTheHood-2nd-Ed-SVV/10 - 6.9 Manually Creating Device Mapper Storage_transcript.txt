@@ -1,0 +1,37 @@
+[00:00:06] - Al right, So device mapper normally is used in the background, but you can also manipulate it directly to create your own storage devices. And that's exactly what we are going to do in this video. So the dmsetup command can be used to list
+
+[00:00:22] and manage device mapper storage. You can use dmsetupls to get an overview of currently existing device mapper storage and that'll show you created by all of the higher level systems that they're using in device mapper. But more interesting, you can also use dmsetup create
+
+[00:00:40] to create devices without using an upper layer device manager. So for common usage, using dmsetup to create devices is not recommended. We are going to do this here because this is Linux under the hood and its cool to know that you can. So dmsetup create command can be used to create new device
+
+[00:01:01] on sectors that are not yet used by any other devices. That's very important. If you are using sectors that are already addressed by something else, it's not going to work. To create a device mapper device with dmsetup, you need to use a command that looks like dmsetup, create device name, and then you need to specify a table.
+
+[00:01:23] So table zero block count. Block count is the number of blocks that you want to put in your device. Then you have linear, and then you are going to specify the source device and the start block. Now notice that the blocks are expressed as 512 bytes units.
+
+[00:01:41] That's a default sector unit and this default sector unit is defined by the underlying storage. Also realize that if you create devices, it's not written anywhere, so it's not persistent and that means that you need to include the command in the starter procedure or manually run it again to get access to the devices.
+
+[00:02:01] But hey, actually that offers nice chances to create hidden devices, for instance. If you're the only one who knows how to create the device, big chance that nobody else will even be aware that the device exists. Now after creating the device in this way, the block device is created in dev mapper
+
+[00:02:20] and next you can use is block device to create file system and mounted device. In this demo, I'm going to show you how it works. So for this demo, we need to make sure that the complete hard disk is available. Let me use LSBLK and yes I have an SDB, but a XXD on dev/SDB,
+
+[00:02:41] then we create some file system on top of it? Oh XFSB. Do you see that? Very first couple of bytes? This is your XFS metadata and that's because I use MKFS.xfs on the SDB device. I wanna wipe it. So dd ifs dev zero OF is dev/SDB BS is 1M
+
+[00:03:06] and count is 1,024. I want to wipe the first gigabyte of it, just to be sure. Next, I'm using dmsetup create my device --table
+
+[00:03:22] 0419304 linear on dev SDB zero. So what does that mean? That means that without a typo, I'm creating a table that starts at logical addressing 0,
+
+[00:03:40] 419304, that is 419,304 sectors of 512 bytes. So this creates a 200 megabyte volume. Linear because that's what you typically do for storage devices, Dev/SDB, because that's the underlying device
+
+[00:04:00] and zero because that's where we want to start on the SDB device. Now I'm using dmsetupls and what do we see? We see that my device actually exists and ls -l on dev mapper where we can see that my device exists and points to the dm-3 device.
+
+[00:04:20] So next I can use MKFS.ext4 dev mapper my device, and that will create a file system. Let's mount it dev mapper my device. So I am mounting it on mnt and we still get this hint which we can safely ignore
+
+[00:04:41] and touch on mnt, my secret device or anything. Why is this my secret device? Well, let's reboot and let's see what happens. Alright, so now we have rebooted. How about this dev mapper directory? What do we see? Hey, where is my device? Well, as I told you, it's not written anywhere,
+
+[00:05:02] so it's not automatically recreated or anything. So what we need to do, we need to check on the history and hey, look at that, command number 302. So exclamation mark 302, that is going to create the device again, and now I can mount it again, dev mapper, my device
+
+[00:05:23] on /mnt and in the /mnt directory. We can see that we have access to the device again. So this is one way to create your own device and the benefit of it is that if you want to securely hide stuff on your computer,
+
+[00:05:40] well this is one thing that you can do, and just imagine that you make it looks encrypted device as well. Then not only it's not visible, but in the rare chance that somebody finds your device and wants to access your device, well you have LUKS encryption. Let's talk about LUKS encryption
+
+[00:06:00] in one of the next videos in this lesson.

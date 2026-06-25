@@ -1,0 +1,109 @@
+[00:00:06] Let's do some basic troubleshooting of common terraform mistakes. We'll introduce some errors in our code and then we'll fix them. Now, first of all, want to make sure that you did indeed destroy your infrastructure, which was just a user.
+
+[00:00:23] And if we go over to our AWS console, what I want to do is go to iam, and we haven't been here yet during this video course, but we'll go to iam, that's for the users in aws, and we'll go to the users link and just make sure that that user is gone.
+
+[00:00:43] So we had made a test user, but we also destroyed it, so it should not be listed anymore. And I just have my three regular accounts here in Users, so that's where you would go. And if you want to do some real quick testing with Terraform, IAM users is a great way to do it because
+
+[00:01:00] they build really quick and they're free. So that's how you do that. All right, so it was destroyed, and that means that our current terraform TF state will be null. There is no infrastructure. Excellent. So let's go ahead and start creating errors.
+
+[00:01:23] The first thing I want to do is I want to clear all of the terraform files. So I want to reset the directory so that it's not initialized. I want to uninitialize it, so to speak. You can do that by deleting the terraform directory,
+
+[00:01:42] the lock file, and the two TF state files. Or you could do it in the command line with something like RM RF and in curly braces. We could do something like dot T star, T star and close the curly braces.
+
+[00:02:03] But be very careful with this, because this would remove any files that start with the letter T. So maybe not. Maybe we won't do that. And instead I'll just pick these. Here, control, click,
+
+[00:02:20] hit the delete key, and now it is uninitialized. Very good. We do still have our logs file. That's okay. Let's go to main TF and let's take a look here. So first thing I want to do is put a dollar sign before the username.
+
+[00:02:49] So we'll do dollar sign here, and once I put that dollar sign there, it's kind of like I'm trying to reference a variable, I'm trying to use a variable, but that's not how you do it. That's not proper syntax.
+
+[00:03:02] So immediately it is red underlined, and the file name and directory are turned red. And we have problems here in our problem count so that's not going to work. I'll save it and then I'll run a terraform format. So do a terraform fmt, press Enter and make this bigger so we can see it.
+
+[00:03:28] Here's the command I issued, and it says Invalid character in AWS IAM user main TF line 18. And it underlines that dollar sign.
+
+[00:03:40] And then it also says invalid expression. So it's really two errors in one. Same thing, dollar sign. So the first one is invalid character. It says this character is not used within the language. And the second one, invalid expression says expected the start of an
+
+[00:04:00] expression, but found an invalid expression token, which is the invalid character, that dollar sign. Okay. So that is no good. We can't do that. What are we trying to do here? Well, we're trying to set it up so we can have multiple users and use a portion of the name and have an index, an account.
+
+[00:04:24] So let's fix it. First of all, we'll get rid of this and I'll add a line. I'm going to say count equals three. And again, this is a meta argument within Terraform. We'll talk more about
+
+[00:04:41] meta arguments later on, but I want to have three users this time. Now, in the name section, I'm going to modify this. Right now it's set as user 1 in double quotes. I'll change it to user lowercase dash dollar sign and then the count
+
+[00:05:01] index. And we've seen this once before, but at this point, we need to put that into curly braces and we'll say count dot index, close the curly braces. And in fact, it knew what I was trying to type. But you'll notice that the dollar sign is inside of the double quotes.
+
+[00:05:24] So sometimes I'll make a mistake when I'm coding, especially if I'm coding quickly. Maybe I'll put the dollar sign outside of the double quotes, which will create that error. The dollar sign has to be inside of the double quotes. In addition, the count.index has to be within curly braces,
+
+[00:05:41] and the dollar sign will be outside of that curly brace, indicating what our variable is and what our count will be. Okay, now, if we were to omit the curly braces, we won't see any red underlining and we won't see any red in the file.
+
+[00:06:07] So it doesn't really look like there's a problem. And in fact, Terraform will not interpret that as a problem as far as the name goes, because everything is inside of double quotes, which means it's just a string.
+
+[00:06:22] And in a String of information. You can have anything alphanumeric and symbols. It doesn't really care what it is. However, we have this count equals three, so there could be an issue with that. So let's save it and then let's run a terraform fmt again.
+
+[00:06:41] And it just does a little formatting for us. That's fine. And now let's run a terraform validates. Okay. And it says missing required provider. Okay, if we scroll up here, we'll say, oh, well, we have a provider. What's wrong with that?
+
+[00:07:02] Provider looks good. Well, we didn't do the terraform init yet. Remember, we removed all the terraform files. So the directory is not initialized. It's not a working terraform directory right now. So sometimes you'll see that missing required provider error and it really just means you have to run terraform init.
+
+[00:07:24] Let's run that terraform init. Now that initializes the backend and it successfully initializes it. Very good. Okay, so we're fixing problems slowly one by one here.
+
+[00:07:42] Let's create another problem. Let's go off on a tangent a little bit and let's change the aws version to 40.40. Now they're only on version six, so that's just a silly version number that they're not going to get to for quite a while.
+
+[00:08:02] And then let's save it and then do another terraform init and we get an error. Failed to query available provider packages. The Latest one is 6.28 and that does not match our constraint for versions 40.40. Not going to work.
+
+[00:08:21] So let's change that back. I'm just going to press control Z a couple times to go back in time. You could do undo and then save it and then run that terraform init again. And you might want to do that with the dash upgrade option. And now it does successfully initialize,
+
+[00:08:40] but with the same exact provider plugin. Good. Now the next problem is if we were to actually do a terraform apply, this will not give us exactly the results that we want.
+
+[00:09:01] So let's go ahead and do that. Now let's make sure the code works. First of all, we'll do a terraform validate. And look, it says invalid value for name must only contain alphanumeric characters, hyphens, underscores, commas, periods, symbols.
+
+[00:09:20] And I said it could have all that because it's a string, but it does not allow dollar signs. And it's underlining that right here. And the reason being because dollar signs are Normally used outside of a string to indicate some type of variable information or perhaps within the string just before curly
+
+[00:09:40] braces or something like that. So let's fix it and we'll change it back and we'll use our curly braces that will surround count.index, save it. And now let's run Terraform validate again.
+
+[00:10:00] Now we have successful code. The configuration is valid and at this point what it should do is create three users. They will be called User zero, User one and User two. That's what should happen. Save it one more time and let's go ahead and apply it again. This should go through really quick.
+
+[00:10:23] It's going to add three resources, three users. We'll say yes and look, 1, 2, 3 or in this case, 01, 2 creating done. Let's go back to our IAM users section of our AWS console refresh.
+
+[00:10:45] And there they are. User 0, user 1 and user 2. Excellent. So a lot of issues and things you might see. I kind of combined it all together into one big conglomerate of problems, but gives you an idea of some of the things you might see as you're going through your code
+
+[00:11:02] and just running into those happy little mistakes. Last thing, let's set the logging to work within our BASHRC file and we could set it permanently now before we set logging with the export command. But that's only good for that entire session or for that entire
+
+[00:11:21] session until you restart the computer. If you want it to be really persistent, we can set logging in BASH rc. So persistent logging, and that's good for longer term troubleshooting, especially if you have to restart your computer. So first thing I'm going to do is make a directory in my home directory
+
+[00:11:43] called logs and Terraform. Let's jump to another terminal here and I'll go to my home directory here. Okay, this is my home directory in Linux for my user account and I'm going to make a directory and we'll do that with dash P
+
+[00:12:01] because I want it to be two directory levels. And so we'll do make directory dash P and I'm going to say logs slash terraform. And more to the point, it's going to be a relative path.
+
+[00:12:21] We'll do Tilda logs, Terraform, press Enter. And now we should have that additional directory in here, type LS and we see logs. And if we do an LS logs, we'll see we have Terraform inside that.
+
+[00:12:41] So that is what I want to create and that is where I want to store the logs in a persistent fashion. Then we'll go to our BASH RC file and you want to make sure that you have one. First of all, if we do an LS A, we'll see. Yes, we have a bash rc. We've been there a couple times working with Terraform so far in this video course.
+
+[00:13:03] And so I'm going to open that up and we'll do that separately. Let's do that in our other terminal because sometimes working with vim or other editors in the terminal can cause some problems. So instead I'll do it in my plain terminal, do a vim on bashrc, press enter and we'll go to the bottom, go to insert mode
+
+[00:13:23] and add something new here. I'm going to say this is my logging directory and what we'll do is the same exact command that we used in a previous sub lesson.
+
+[00:13:41] Export TF underscore log equals trace. Very good. And then we also need to know what the path is. So export tflog equals trace. That will do logging for every command. But if I want it to write to the logs directory that I created,
+
+[00:14:04] I have to export that as well. We'll do a tflogpath equals and we'll use the relative path for that. We'll do Tilda logs terraform so we have the path, but we also need a file name here. So we'll do another slash and we'll just say terraform log.
+
+[00:14:26] And again, this file name could be whatever you want. It's up to you. And the path could be whatever you want. You just have to make sure that you have that directory created. So that's it. I'm going to get out of insert mode, save and quit that file.
+
+[00:14:40] And then when we're done with that, we need to make BASH RC recognize those changes. To do that we can either restart the computer or log out and log back in, or source the file. And so we'll source it. That's the easiest way. Source. Bash RC Press Enter.
+
+[00:15:00] That will now take effect on any new terminals that we run. So it's not going to work here. And if we go back to VS code, it's not going to work in any of the terminals that are already running. We need a new terminal. So we have one that's in lab nine, but I want to open another one. So
+
+[00:15:20] a brand new terminal will right click on Lab 9 and go to integrated terminal and let's type a command terraforminit press enter. That should reinitialize the directory. And now if we go back to our big terminal and Change over to logsterraform and look inside there.
+
+[00:15:42] We will now see a file called Terraform Log. Let's run a cat on that and see what we see. Press Enter and there it is. There's all of our debug and trace information and lots of line items here. So you could go back through this or you could send this file
+
+[00:16:01] to whoever you like. And as you restart the computer, it'll be persistent because those exports will continue to run every time you restart the computer. So we're going to want to remove that when we're done. But for now, let's go ahead and destroy the infrastructure.
+
+[00:16:20] We'll do a Terraform destroy. Press Enter and we'll say, yes, that's going to get rid of the three IAM users. All right, we'll verify that on our AWS console. They are gone. User 012 are gone. Bye bye. And we'll go back to the big terminal and take a look at our file again.
+
+[00:16:47] And it's much bigger because we also have that terraform destroy information in addition to the terraform init. And that file will remain there and it'll be appended to until we
+
+[00:17:00] unset those variables. But to do that we'd have to either comment them out or or delete them altogether from the BASHRTC file. So let's do that now. Go back to our home directory, do a vim on bashrc, and I'll just comment them out for now.
+
+[00:17:25] So that the logging will stop now actually, and I'll save the file. But actually the logging won't stop until I source that bashrc and that'll only take effect for the new terminals that we open.
+
+[00:17:45] There we go. So verify that you have destroyed the infrastructure and work on troubleshooting with Terraform. Do some testing, create some issues for yourself and figure out the answers. Do some troubleshooting. It's
+
+[00:18:00] really going to help you to work with Terraform in the future. And that is it for this sub lesson.

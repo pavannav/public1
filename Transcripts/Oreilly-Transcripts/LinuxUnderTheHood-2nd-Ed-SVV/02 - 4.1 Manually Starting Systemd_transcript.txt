@@ -1,0 +1,27 @@
+[00:00:06] - Alright, so I'm assuming that you already know about systemd basics, and in this lesson we are going to do the cool stuff. First, I wanna talk about how you can load systemd manually. So what is going on when you are starting systemd?
+
+[00:00:20] Well, systemd normally is automatically started while you are booting, and when you are entering a minimal troubleshooting mode with a boot argument rd.break, an initramfs init process is loaded and there will be no systemd. And when entering a minimal troubleshooting mode with the GRUB2 boot argument init=/bin/bash,
+
+[00:00:40] a bash shell is loaded as the init process. And to start systemd in this case, use the command exec /usr/lib/systemd/systemd to replace the current program with systemd. You need to use exec, because otherwise systemd will be forked as a child process of your current bash environment, and that's not going to work.
+
+[00:01:01] Let me show you. Alright, so we need to pass some specific boot arguments while rebooting. So I'm going to reboot, and we'll wait for GRUB to pop up. So here we see the GRUB bootloader, pressing E
+
+[00:01:20] and I'm going to the line that loads the kernel. So removing rhgp and quiet, because who wants the system to be quiet while booting? And then rd.break. That will do it for us. So Control + X to boot. So now we are in the switch_root environment. I'm going to use ps aux, pipe it through less
+
+[00:01:42] because it's really the first line that I'm interested in. And there we can see that init currently is PID 1. And that's exactly what it's supposed to be. This is the init that is coming from the initramfs, which is actually what you are accessing while you are using rd.brake.
+
+[00:02:01] Next I'm going to use exit, and that'll exit the rescue shell and resume normal booting, where init is linked to usr/lib/systemd/system. So we need to log in and confirm, and check what is going on here. So now I'm using my ps aux | less again.
+
+[00:02:23] And there we can see PID 1, which is currently usr/lib/systemd/systemd. And that is what is normally happening. And how about init? If I use which init, then we can see /sbin/init and ls -l on /sbin/init, and /sbin/init as you can see is linked to
+
+[00:02:42] /usr/lib/systemd/systemd. And that is how it comes that we see systemd as PID 1 at the moment. So the loading of systemd is what is actually happening while you switch from the initramfs to the root file system. Okay, now I'm going to replace the rd.break
+
+[00:03:00] with init=bin/bash. So I need to reboot again. Here we go init=bin/bash, which is quite an obvious line. We are telling the boot procedure to use a bash shell as the init process. So next, when we use ps aux | less,
+
+[00:03:22] then we can see PID 1 all the way to the top that is bin/bash and that's exactly what we were trying to do. So with Bash being PID 1, can we just run /usr/lib/systemd/systemd to start the systemd process?
+
+[00:03:40] Well there you can see that that doesn't work. It's giving a weird error message, but the error message is really because if you try to start systemd in this way, it'll fork systemd and systemd cannot be a child process. You need to replace the current bash process with systemd
+
+[00:04:00] and that is what we are going to do using exec on /usr/lib/systemd/systemd and that will resume the normal boot procedure. It replaces bash with systemd by using the execve system call instead of using fork. So that is how you have learned that
+
+[00:04:20] even if you are starting with a different PID 1, if you are doing so, just throw it out using an exec and replace it with systemd if you want to start systemd manually.

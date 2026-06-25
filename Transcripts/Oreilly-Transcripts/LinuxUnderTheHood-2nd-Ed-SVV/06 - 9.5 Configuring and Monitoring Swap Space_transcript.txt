@@ -1,0 +1,43 @@
+[00:00:06] - In this video I'm going to tell you about configuration and monitoring of swap space. Now first there is the essential question, how much swap do you need? And the answer is simple. There is no uniform answer to this question.
+
+[00:00:21] But there are some guidelines. On systems with less than one gigabyte of RAM, the recommendation is to allocate twice the amount of RAM as swap. On systems with more than four gigabytes, having 25% of RAM available in swap is often enough. Some applications have their own recommendation
+
+[00:00:41] and some applications don't work well if swap is enabled. Kubernetes clusters for instance, if you want to install a Kubernetes cluster node using Kube 8 EM, you can't have any swap. And also you should consider the amount of inactive anonymous memory. All of your inactive anonymous memory should fit in swap.
+
+[00:01:00] Now if you are using swap, you should monitor it because having swap is good but it can cause problems. So for a generic overview, you can use a free and top utility. They'll show you about current swap usage. More important than the statistics about your current swap usage is information about how actively swap is being used.
+
+[00:01:24] First, you should compare swap usage to inactive anonymous memory. If more swap is used than inactive anonymous memory, you might have an issue. I would say it needs further investigation. Also, you should monitor the si and so parameters
+
+[00:01:40] in the vmstat 2 20 output. That gives you an impression of how actively swap is being used. Now let me demonstrate how to add some swap space and how you can monitor swap activity. I'm starting free -m What is free -m showing me? It's showing me that I don't use any swap space at all.
+
+[00:02:01] Well, that is actually good but not very exciting. So I am going to restart this system, give it a little bit less memory so that it will use swap space. Let's reboot and at the kernel boot prompt, I'm going to edit my current line and I'm putting mem=2048M
+
+[00:02:24] Two gigabytes, that's a little bit less but still a reasonable amount and I would expect that it starts to swap a little bit. But hey, we'll see once it's up and running again. So let's use free - m again and yay, it's swapping.
+
+[00:02:40] So this system is swapping, so we wanna know what is going on, right? And in order to do so, I first want to have a look at this proc/meminfo And there we can see that we have 365 megabytes of inactive anonymous memory and 483 megabytes of active anonymous memory.
+
+[00:03:03] So how does that relate to the used and the swap? Well, we can make two statements about it. Used memory is more than all the active and inactive anonymous memory together. That makes sense because it also includes the buffering cache that is used and some kernel memory as well.
+
+[00:03:21] The other important parameter is that we have 168 megabytes in swap, which is less than the inactive anonymous memory. So that means that basically we're good. Now talking about analyzing swap usage, I should also show you vm stat 2 50,
+
+[00:03:40] which is going to run the vm stat utility with a two second interval and it will do so 50 times. And as you notice, I just started Firefox because I wanna know if the system is getting active, what the relation is between SI and BI. SI is for swapping, BI is for blocking,
+
+[00:04:00] and what I'm looking for is that blocking is way bigger than swapping. As long as that is the case, your swap usage is not really harmful. And that is the case, so we are good. Nevertheless, I'm going to allocate some additional swap space. So let me start by using dd if=/dev/zero of=/swapfile
+
+[00:04:23] bs=1M and count=1024 I want to create a swap file. There we go. You might be wondering, don't we have to swap to a partition or another device? Well that depends. If your disc is very full, then a big file like this
+
+[00:04:43] will most likely be fragmented. And fragmentation on swap files is bad for performance. So it really depends on how you are going to do it. If you can avoid creating the swap file on a device that is already pretty charged, you shouldn't suffer at all.
+
+[00:05:01] But if you can, it's always better to create a swap device, create a partition market with the swap type that is type 82 and you can follow the same procedure for your partition. Now I'm going to use chmod 0600 on /swapfile
+
+[00:05:21] because it needs to have the appropriate permissions. And next I'm using mkswap /swapfile to format it with the swap file system. And then I can use swapon /swapfile And there we go, my swap file currently is active. Do we see that?
+
+[00:05:40] Yeah, in free -m we can see that certainly we have three gigabytes of swap instead of two. And here you can see that we also have a significant increase of the use of swap in general here and that makes sense because we are running out of memory. Well running out of memory, we are having memory
+
+[00:06:00] that is pretty well used here. Looking at the statistics, there's nothing to worry about because we have 552 available. But you can see that the memory pressure is getting higher. Now I've just used this secondary swap valve and you might be interested in motivating your kernel a little bit more to start using it.
+
+[00:06:22] That goes through the swapiness parameter. The swapiness parameter is a CCTL tunable. It has a value between zero and a hundred. And if you write a high value to proc/sys/vm/swappiness then you are telling your kernel that on memory shortage
+
+[00:06:40] it should favor swapping out inactive memory. So this is going to stimulate your kernel to swap more memory and on an active system you will definitely see a difference here. On an inactive system, don't forget nothing really is happening here. You won't really see much happening, but if you are going to start more applications,
+
+[00:07:02] you will see that the amount of swap is going to increase. I'm not recommending setting the swappiness to a very high parameter, so I would say reboot. After the reboot it takes a default parameter and you should be good again, but this is how you can allocate more swap on your system.

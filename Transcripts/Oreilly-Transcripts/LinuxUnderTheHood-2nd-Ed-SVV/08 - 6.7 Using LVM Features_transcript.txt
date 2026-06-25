@@ -1,0 +1,69 @@
+[00:00:06] - In this video, we are going to explore some LVM features. The first feature we are going to talk about is the LVM snapshot. So a snapshot takes a picture of the current state of the data. And that is useful, as it allows making a backup of files in a stable state,
+
+[00:00:23] instead of files that are open, which may fill in backups. A snapshot does not replace a backup. It is an aid to create a reliable backup, and once you've done it, you should remove it. When no files have changes, files in the snapshot point to the original file blocks,
+
+[00:00:40] meaning that the snapshot can really be small. After files change, the original file blocks will be stored in the snapshot, where the new file blocks are stored in the original volume. And as a result, snapshots will grow over time. While creating snapshot, always ensure that it is big enough to store all of the predicted file changes.
+
+[00:01:01] Let me make a drawing to show you how snapshots really work. Alright, so what's going on with these snapshots? Well, to start with, there's the LVM volume. And in the LVM volume you have metadata, and you have your blocks. The part where actually your files are stored.
+
+[00:01:21] Now if you are going to make snapshots, what exactly are you going to make a snapshot of, well, that will be the metadata. So, initially, the snapshot can be pretty small. And you can even mount the snapshot, because from the metadata, it will point to all of the original blocks.
+
+[00:01:41] Now what is going to happen if you are going to create a new file, well your new file will be written to the original volume. It's a new file, so you will never see it in a snapshot. Now the interesting thing is, what is happening if you are going to modify a file. Well if that is happening,
+
+[00:02:01] the old blocks are copied to the snapshot, and the new and modified blocks will be stored in the original volume. So the more you change files in the original volume, the bigger your snapshot will grow, and eventually you may run out of disk space because the snapshot is becoming so big.
+
+[00:02:22] And that is really something that you should think about before creating the snapshot. Also, do realize that because snapshots are always growing, they really aren't meant to be a replacement of a backup. You wanna make a backup, use the TAR utility, don't use snapshots.
+
+[00:02:40] But do use the snapshot as an aid to creating these backups. Let me show you how to work with these snapshots. Alright, now that you have a conceptual idea of how snapshot works, let me make a demo. I can safely skip the first four steps on this slide, that is just for completeness.
+
+[00:03:00] In case you didn't create a logical volume yet, I already created a logical volume that occupies 50% of the available disc space in the volume group. So I'm going to start on step five on the slide. The essential part before we continue that we need to check, is the available disk space in the volume group.
+
+[00:03:21] And here we can see that I have one gigabyte available within the volume group. Because it is a requirement that the snapshot is always in the same volume group as the original volume that it is connected to. So let me use CP. Or better, let me use mount so that we can verify,
+
+[00:03:40] and yeah, it's mounted on slash LV data. So I'm going to use CP ETCB star to slash LV data, to make sure that we have some files in the LV data directory. We can ignore the messages here, because yeah, I did not do a recursive copy. I don't care about the sub directories.
+
+[00:04:00] What I do care about is LV create, minus S, minus S is a snapshot option. Minus N LV data snap, that's the name that we are going to assign to the snapshot. And dev VG data slash LV data, that's the name of the original logical volume. Then we need to assign a size,
+
+[00:04:21] minus L, lowercase L is a convenient option, where I am going to use 5% free. Now the size really depends on how long you want the snapshot to be available. If you create a snapshot because you are going to do a test installation that consumes lots of disc space,
+
+[00:04:40] you might want to have your snapshot much bigger, up to the size of the original logical volume. But here, 5% free, that means that we have a 100-megabyte snapshot. That should be more than enough. So as you can see, LV data snap is created. LVS is showing that, and we can see it right here.
+
+[00:05:01] And we can also see LV data 0.02, that's the size that it's currently occupying. And oops, I made a mistake, I said 100 megabytes, that was obviously wrong, we use 5% of the free space and not 5% of the total space, so 50 megabytes in a snapshot,
+
+[00:05:20] but still, that should be big enough. Now let me create a directory slash snap. And let me create some changes on the original volume, so I'm going to remove LV data, B star. Lots of files, it should have been removed now. And now I'm going to mount my snapshot dev VG data
+
+[00:05:43] LV data snap on the directory slash snap. I'm ignoring the FSTAB thing, that's really an option, I don't know what it is, kind of a bug. It's not important at all. What is important is what we see in the slash snap directory.
+
+[00:06:01] So the slash snap directory contains the original files that existed on the volume, but now no longer exists. 'Cause look, LS on slash LV data, is showing no files in LV data. So the snapshot still contains them, and in this case, that means that I can use the snapshot
+
+[00:06:20] to revert them, if I accidentally remove them. That's not what we are going to do. I don't need the snapshot anymore, I am going to first use LVS. Where we can see that it's still pointing to the original LV data. And the data percent, 0.19%, that is still very small.
+
+[00:06:41] But that is because we only have a couple of text files within the snapshot. Now let me use UMOUNT on slash SNAP and let me not forget to do an LV remove, of dev VG data LV data snap.
+
+[00:07:00] And yes I want to remove it, and now the snapshot is gone. Good, another feature that I wanna talk about, is backup of the volume group configuration. This is a nice and interesting command, it's a VG CFG backup command. Volume group configuration backup.
+
+[00:07:20] You can use it to back up volume group configuration. And such a backup can be useful if a logical volume was accidentally removed. You can use VG CFG restore to revert to the original data. This demo does require some logical volumes in VG data. Well, we actually do have logical volume in VG data, right,
+
+[00:07:43] so we should be okay. And let me show you. I'm starting with LVS on VG data. And LVS on VG data is showing that I have made LV data logical volume. Now I'm going to use VG CFG backup,
+
+[00:08:03] minus F slash TMP slash VG backup, dash dollar date plus percent D dash percent M, dash percent Y. I like my backups to have a date suffix.
+
+[00:08:21] Now we can see that the volume group VG data is successfully backed up. So what is in there? Well, let's check it in TMP VG backup with my date suffix, we can see the metadata about the LVM structure that we currently have. Now if I use LVS, I still have my logical volumes.
+
+[00:08:41] If I use LV remove dev VG data, LV data. Then, oops, file system in use, well let's UMOUNT it, so UMOUNT LV data, and LV remove, and yes I want to remove it. And now LVS is showing that we don't have it anymore.
+
+[00:09:02] Oh boy, let's assume that you regret this. Then what are you going to do? Well, first you need to change the state of the volume group to which you want to restore a logical volume. So VG change is how we do that, VG change minus A N, on VG data.
+
+[00:09:21] Minus A is for active, N is for no. So now we can see, zero logical volumes in VG data are now active. It's kind of funny, we already didn't have any logical volumes active anymore, but hey, you should always use VG change minus A N on the volume group before restoring your snapshot.
+
+[00:09:42] Next, VG CFG restore minus F slash TMP VG backup. And that should restore it. Oops, that was almost right, I'm making an error, do you see that, I use my string, which is a file name.
+
+[00:10:00] I forget the VG for the volume group. So if we add the name of the volume group, then it should be successful, and we can use VG change minus A Y on VG data to make it active again. And what do we see? Well we see that LV data has been restored. So VG CFG, backup VG CFG restore are convenient options,
+
+[00:10:25] to make sure that you can revert if anything is going wrong. Hey, there's one more thing I need to show you, in ETC LVM. What do we have, we have a backup directory. And in this backup directory, we have VG data,
+
+[00:10:41] so what is this VG data? Look at that, this is a backup that was created a few minutes ago. And likewise, we have a backup for CS, which is the older volume group. And this backup was created yesterday morning. So, what is going on?
+
+[00:11:01] Well, what is going on is that backups are automatically created as well, on the CentOS system. I'm not sure about your distribution, you should check your distribution settings. But that means that if your distribution automatically makes a backup when you make changes to your LVM configuration,
+
+[00:11:21] well, you can restore, if anything is going wrong, even if you have never used VG CFG backup before. And that can be useful.

@@ -1,0 +1,43 @@
+[00:00:06] - Alright, let's check out how you can actually tweak unit files. So first there is a systemctl edit command. systemctl edit is using the Nano editor. I don't know about you, I don't like it.
+
+[00:00:20] If that goes for you as well, then I would say make sure you set the editor variable in your .bashrc;source or .bashrc to make it persistent. And if you do like Nano, well then you don't have to do this. Next you can use systemctl cat on your unit file
+
+[00:00:40] to show the current contents. And if you want to see all the parameters that are available, use systemctl show on your unit file and then you can use systemctl edit on the unit file to change the unit file in whichever way you want. Now if you do that you will create a drop in file
+
+[00:01:00] in the etc/systemd/system/httpd.d/ in this case. And this drop in file will be merged with the main unit file in usr/lib/systemd/system If you don't want that, you can also use systemctl edit --full on your unit file. That will make a copy of the file from usr/lib/systemd/system
+
+[00:01:21] into the /etc/systemd/system directory. And it'll apply edits in the /etc directory. In both cases your modifications will always win and override and make sure that whenever your system gets updated, and unit files in the usr/lib/systemd/system directory
+
+[00:01:40] might change, your modifications will be kept. Let's have a look. So if I would use systemctl edit on httpd.service where by the way you can skip the .service part if you don't specify the unit type, then systemd will always assume that you are working on the service.
+
+[00:02:00] Then here you can see Nano. As I told you, I don't like Nano. So let's get out of here and let me do this. echo "export EDITOR=/user/bin/vim > -/.bashrc
+
+[00:02:25] And now if I use source on -/.bashrc and I'm using systemctl edit again, then we see the Vim editor. Alright, before we are checking on the edits,
+
+[00:02:43] let's have a look at the current content using systemctl cat. So systemctl cat on httpd is showing the current unit configuration where it clearly indicates where it has obtained the unit configuration. As you can see, user/lib/systemd/system/httpd.service
+
+[00:03:03] Now before making any changes, you might wanna know which which options are available. That is where you can use systemctl show on your unit. And that will show all the different parameters that make sense in the context of this unit file.
+
+[00:03:20] Optionally you can use systemctl/-- all the differences and --all is showing also irrelevant options, and that doesn't make too much sense. So let's go for the relevant options and let's check if there is an option interesting enough to put it in the unit file.
+
+[00:03:41] Now I happen to know that there's a couple of options that relate to a restart. So we have restart. restartS, and that's an interesting option and we can see a restartS and Nrestarts and... No it's a restartS, but hey, actually what I want is in the SSHD unit file.
+
+[00:04:04] So let me use the systemctl cat on sshd.service and there we go, restart is on failure and RestartSec is 42 seconds. So I'm going to copy these options and now I'm going to use systemctl edit on httpd.service
+
+[00:04:25] and now we need to check what it is doing. As you can see on the top two lines, it's telling us Editing /etc/systemd/system httpd.service.d/override.conf So what is it doing?
+
+[00:04:40] It's keeping the original configuration in userlib/systemd/system and it adds an override.conf and it is going to merge the two files together and it's telling you where to do. We should do that right here. So I need the service section to be included because the service section is where
+
+[00:05:02] these restart options should be used. And in case you are wondering where should I do it? Well use the knowledge that we talked about before. Check the main page of systemd directives and systemd directives will tell you where you can find more information about restart and restart check and then you will learn
+
+[00:05:21] that this is in the service section. All of the lines below are just for informational purposes. It's convenient to see the current configuration in user/lib/systemd/system but you shouldn't touch it. So I have my modifications here and I am going to save them.
+
+[00:05:40] And next, if I use systemctl cat on httpd.service there you can see the default configuration from user/lib/systemd/system And here you can see the override from /etc/systemd/system and both of them are effective on the currently running unit file.
+
+[00:06:01] Well, is it currently running? I don't think we ever started it, so it should be picked up when we are using systemctl start on httpd Let's check, systemctl status on httpd This is the current status. So I'm looking for the PID that is 33-344.
+
+[00:06:25] Let's do kill -9 33344. Whoops, that's one three too many. And do a systemctl status again and what do we see? We see it's activating.
+
+[00:06:40] So actually the restart option is doing its work and the service will be activating after 42 seconds in total, which is actually quite cool because this means that systemd allows you to protect services and if anything goes wrong with the service, it is automatically being started again if these two options are included.
+
+[00:07:02] Very convenient options, I like them.

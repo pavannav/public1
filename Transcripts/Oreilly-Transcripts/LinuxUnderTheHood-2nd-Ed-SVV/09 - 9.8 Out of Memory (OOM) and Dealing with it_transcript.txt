@@ -1,0 +1,73 @@
+[00:00:06] - Alright, when you want to optimize your Linux memory, you should consider out of memory, or OOM situations and how to deal with it. This is related to memory overcommitting. Let's explore how that works.
+
+[00:00:20] To deal with memory in an efficient way, the Linux kernel allows memory overcommitting. And memory overcommitting allows a sum of all virtual memory that is claimed by applications to be bigger than the total amount of available physical memory. That kind of makes sense because we have 32 terabytes of virtual memory,
+
+[00:00:41] and most systems only have a couple of gigabytes of physical memory. And without memory overcommitting, it wouldn't make sense to have that large amount of virtual memory. But it might bring problems, because as long as the mapped physical memory doesn't exceed the available physical memory, shouldn't create any issues,
+
+[00:01:01] but the risk is that the kernel has overcommitted too much, and has to deliver more memory than physically available. If that happens, the out-of-memory killer is invoked. Now you can manage overcommitting settings also by tweaking the appropriate sysctl tunables. By default,
+
+[00:01:20] the vm.overcommit_memory sysctl tunable is set to the value zero, which uses a so-called heuristic overcommitting algorithm. With that setting, a request that obviously exceeds possible memory allocation will be denied, and all other overcommitting is just allowed.
+
+[00:01:40] You can check the Committed_AS parameter in /proc/meminfo, which indicates the total amount of physical memory that is required given the current workload. And that is normally a good indicator to predict issues. As an alternative, the vm.overcommit_memory setting can be configured differently. The value of one, as just mentioned,
+
+[00:02:01] will always grant overcommit requests even if they're obviously not reasonable. The value two means that the kernel limits per process overcommit requests to the amount of swap space plus a percentage of RAM, which is 50% by default. When set to two, the vm.overcommit_ratio tunable
+
+[00:02:21] can be set to define the percentage of RAM that we're talking about. So with an overcommit_ratio of 50, four gigabytes of RAM and eight gigabytes of swap would mean that you have a maximum overcommit size that is set to 10 gigabytes. Then there is CommitLimit in /proc/meminfo,
+
+[00:02:41] and that shows what is available. Let me demonstrate. So let's have a look at top, and you press four times, the smaller-than button, then your processes are sorted on the use of virtual memory.
+
+[00:03:00] Now what you need to observe here, is that we have four gigabytes of memory, and if you just count the first four processes, that is like 14 gigabytes of virtual memory already. So that is very loud and clear, overallocated. The most active process is gnome-shell,
+
+[00:03:20] gnome-shell is the graphical interface, which by itself is claiming more virtual memory than the amount of physical RAM that is available on the system. Good, I am going to change the vm.overcommit_memory setting, and I'm doing that through /etc/sysctl.conf, because it doesn't make much sense to do that on a running system,
+
+[00:03:41] which already has current allocations. It's not as if it is going to break functionality. So I am going to set the setting to option two. I also need to verify the available RAM and swap space and calculate the amount needed so that 50% of RAM plus swap
+
+[00:04:02] is less than the highest VIRT allocation that was found in top. So what do we need here? Well, we have four gigabytes of RAM and we have two gigabytes of swap, and that makes a total of six, and 50% of that is three gigabytes,
+
+[00:04:20] so that should do it. Let's figure out what is going to happen. Now I'm going to restart the system, and I'm going to tweak down the amount of memory just a little bit because we wanna see effect, right? So reboot, and in group, I am adding mem=2048M.
+
+[00:04:52] And hey, what's going on? Well, I can tell you what is going on.
+
+[00:05:00] Gnome-shell is allocating too much memory, and we have just restricted the overallocation, So this doesn't work anymore. And there's only one thing that we can do about it. We can restart, and switch back to the original settings. I do need to go in troubleshooting mode to do so.
+
+[00:05:23] So I'm using systemd.unit=rescue.target. It should even get as far as multi-user target, but just to make sure that we avoid some unnecessary reboots, let's do rescue.target,
+
+[00:05:41] in which I'm going to edit the sysctl.conf file. No longer any vm.overcommit_memory. There we go. And next, systemctl isolate graphical.target.
+
+[00:06:05] So here we go again, and I'm logging in, providing my password, and this time we see that it still doesn't work. Oh boy, what's going on? Well what is going on, is what we call a logical error. I was in a rescue.target.
+
+[00:06:22] In a rescue.target, your sysctl has already been processed. So if in rescue.target, you are tweaking settings in sysctl, then really, that is going to be kind of useless. We really need to restart the system so that it can pick up the settings in sysctl. Would there have been a better option?
+
+[00:06:41] Absolutely. Emergency.target would've been much better in this case. And that is for the simple reason that emergency.target comes before the processing of your sysctl settings. So everything at this point should be alright again.
+
+[00:07:01] And as you can see, GDM is correctly loading. So we have now managed overallocation related to over allocation is the OOM killer. When no memory can be allocated for a process, the OOM killer is triggered. That's the out-of-memory killer, and this out-of-memory killer
+
+[00:07:20] will kill a process to free resources for the memory-allocating tasks. In order to do so, it uses a couple of parameters. The process OOM score. All processes have an OOM score, and the process with the highest score will be killed. Easy like that. That is because this is the way that the OOM killer
+
+[00:07:42] is finding the process where it can get the best possible win of available memory. The OOM score is set as 10 times the percentage of memory that is used. So that means if a process uses 50% of memory, the OOM score is 500.
+
+[00:08:00] And current process OOM scores can be read from the /proc/<pid>/oom_score file, you can even display it in top if you want to. Based on the current OOM score, you can predict which process will be terminated in an OOM situation. If you want to, you can change the default calculation.
+
+[00:08:20] To do so, adjust the current score by writing a value to /proc/<pid>/oom_score_adj. ADJ, that's for adjust. So echo-200 > /proc/<pid>/oom_score_adj will lower the current OOM score with 200, and that makes your process
+
+[00:08:40] less likely to be killed. If you want to monitor this, then I would really recommend to use top because in top, you can easily monitor current OOM score. First you press F for the filtering options, then you select OOMs, you press Q to get back to the top display, and you will see what is going on.
+
+[00:09:01] In this demo, I'm going to show you how you can adjust OOM scores to influence which process is going to be killed in case of an out-of-memory situation. So we start with top, and in top, I'm going to use F for filter, and I'm looking up the OOM score current.
+
+[00:09:23] That's enough, I don't need anything else. So I'm pressing Q to get out of the top interface, notice that if you want to make this permanent, you can use the uppercase W for right. So we see that gnome-shell has the highest OOM score, 836.
+
+[00:09:40] And that means that if you are going to get the OOM trigger involved, that gnome-shell will be killed. It said so, well, let's try. In order to try, you can use echo f > /proc/sysrq-trigger. You learned about sysrq-triggers before,
+
+[00:10:00] and by echoing an f to this, well, you will trigger a full OOM kill. And then this happens. What is this? Well this is gnome-shell being restarted, because that is what we were requesting, basically. OOM trigger is taking the process with the highest OOM score. That was the gnome-shell, so it has just been reset.
+
+[00:10:24] You should be able to see that in the output of commands like dmesg and the like. And there we go, this is the out-of-memory message, which is indicating that gnome-shell was just terminated. So now I'm going to change that, and I'm going to use echo -400.
+
+[00:10:41] I make it a really big number, because I wanna make sure that it won't affect the gnome-shell anymore. So I'm echoing this value to (pidof gnome-shell)/oom_score_adj
+
+[00:11:00] and next, I'm going in the PID directory. So /proc(pidof gnome-shell) Oops, and what do we find here? Well, we find the OOM score,
+
+[00:11:21] which is currently set to 436. It was 836, but the OOM score adjust was applied to it. And that's a minus 400. And what is the result? Well, the result is that
+
+[00:11:40] if I now use echo f > /proc/sysrq-trigger to wake up the OOM killer again, no longer gnome-shell will be killed, but something else. And well, this is something else. Well, this something else is, oh, look at that. The gnome-software process. Well that's how it works,
+
+[00:12:00] and that is how you can influence how the OOM killer is going to do its work.

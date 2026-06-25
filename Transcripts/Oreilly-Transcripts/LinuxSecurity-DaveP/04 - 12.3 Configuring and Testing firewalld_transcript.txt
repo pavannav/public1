@@ -1,0 +1,89 @@
+[00:00:01] Continuing on with our lab for firewalld, we're gonna move through the lab a little bit further. This is lab 23 in the repository and so we're going to go ahead and change the default active zone. We're gonna test the firewall from a remote system after we change that zone and raise that level of security.
+
+[00:00:21] Then we'll add a rule to allow SSH, we'll test SSH, we'll show how to remove the SSH rule, we'll change the active zone back to the original, and we'll open and close multiple ports at once. So a lot to do in this sublesson.
+
+[00:00:40] Let's get to it. Now first of all, I'm gonna show you my Debian client. I was able to SSH into the CentOS system and it's telling me we must now type things and we are in there. We're SSHed into CentOS nine server. Now let's go back to the server and let's start configuring it
+
+[00:01:00] so it can be much more secure. The first thing I wanna do is change the active zone. So we're gonna run the firewall-cmd command and I'm gonna change the zone. Instead of using that public zone, we're gonna do a --zone= and change it to block. So we're gonna use the block zone and that template is much more secure,
+
+[00:01:23] but we have to specify which network interface we're gonna do that to. So we're gonna use the --change-interface arguments and we have to say what the name of the interface is. For this CentOS system, it's enp1s0. Yours may be different for your Linux system.
+
+[00:01:42] So we'll say equals enp1s0 and this would be good, but if we were to restart the computer, we'd lose that zone. If we want it to be persistent across reboots, we would need to add --permanence.
+
+[00:02:01] So there's our command. We'll press Enter for that, it says success, and it tells us the interface is under the control of network manager. Yes, that's right, that's what CentOS uses and it sets the zone to block, fantastic. So now let's go ahead and run the firewall-cmd command
+
+[00:02:22] and check that zone. We'll do a --get-active-zones and you can see now instead of it saying public, it says block, very good. If we wanna learn more information about this zone
+
+[00:02:40] or if we want to add rules, we're gonna have to specify that zone until we change the default which we'll do later. But until we change that default, we have to specify the zone whenever we make changes or view it. So we'll do a firewall-cmd--zone=block
+
+[00:03:00] and I wanna list all the information for that zone. So we'll do a --list-all, press Enter. and we see the block zone is the active zone. It's not the default zone when we type commands, but it is the active zone. It's the one that's actually working at this point.
+
+[00:03:20] We can see the interface that's being used, it's enp1s0. We can also see that icmp block inversion is set to no. We have no services and we have no ports, so let's see how that works from the client side.
+
+[00:03:40] And I'm gonna get out of this SSH connection. Now you may say well, hey, you're still connected to that system. How is that possible? Well, current SSH connections will continue until they get timed out if there is a timeout mechanism. But if I was to close out and then try to connect again, it shouldn't work.
+
+[00:04:01] So let's try that now. Let's do a ping first on that server and look, it says packet filtered. So this is getting filtered out. We're not actually getting replies, but we know that the server is indeed there and is running a firewall. We'll also try SSHing into it
+
+[00:04:24] and it says no route to host. The firewall is doing its job. If we go back to the server, we can run another firewall-cmd on zone block and we can also list the ports that are open. All we see here is a blank line, an open space.
+
+[00:04:42] That means that no ports are open whatsoever, so no one can connect to the server on any inbound port at all. So we've done our job. We can also run a test from the client. We could do another nmap. If you don't have that, you can do a sdu apt install nmap
+
+[00:05:02] or if you're on a Fedora or a CentOS-based system, dnf install nmap and grab that. But we'll just do an nmap here and right off the bat, I'm gonna do it with a -Pn and do a scan of that system. Now that may take a couple minutes, so I'm gonna leave that running
+
+[00:05:20] while we do some work on the server. So we'll jump back to the server and we'll add a rule to allow SSH because obviously if we want to use this server, we have to let people in and computers in at some point in some way, so we'll show an example of that by allowing SSH.
+
+[00:05:41] So we're gonna do a firewall-cmd once again with the zone=block and we're gonna add a port. We'll say add-port=22/tcp because that's a tcp-based port and we'll make it permanent so that this rule
+
+[00:06:00] is persistent across reboots, and we can abbreviate that with just --perm. Press Enter and it says success. That should add the port to the list, but we have to reload the firewall. So we'll do that with a firewall-cmd and a --reload. That'll reload all of the zones,
+
+[00:06:21] all of the interfaces, and success. At this point, we can check our work. We could do a --list-ports and we see that 22 is open. You could also do a list-all
+
+[00:06:40] and you'll see on that list, the ports have 22 open as well. Very good, let's go back to our client and our nmap finished, and it took 70 seconds, not too bad. And it shows 1,00 scanned ports, 926 filtered, and 74 filtered with a host-unreach.
+
+[00:07:04] So effectively they're all filtered and the firewall is doing its job, but now we just enabled SSH. We turned that rule on on the firewall, so we should be able to get in from the client. Let's go through the history and SSH in.
+
+[00:07:21] There we go, we're good. Now we can do things on the server once again. So that's our test of the firewall, very good. You could also do another nmap if you wanted to. We're gonna close out of this SSH session.
+
+[00:07:41] Run another nmap for the fun of it. See if it actually finishes before we change the server. But we'll go back to the server now and let's show how to remove a rule, it's pretty easy. If we go back through our history, instead of add, it's just gonna be remove if we wanna get rid of that rule there.
+
+[00:08:00] Okay, so we'll remove port 22 from our list, success, and we want to reload it again. I'm just grabbing that from my history as well, and success. Very good, let's do a list-all and you can see port 22 is now gone from the ports, awesome.
+
+[00:08:20] Now like I said, we have to constantly type that zone=block and you probably aren't gonna wanna do that. You're gonna wanna set a default zone. So we could do that here. Let's do a firewall-cmd and we'll do a --get-default-zone.
+
+[00:08:42] When we do so, we see the default is public. That's not actually what's being used. What's being used is the active zone. That's the block zone right now. But the default zone issuing commands and talking to the system is the public zone.
+
+[00:09:01] We can change it and so we could change this to set default zone and set that to block, and we have success. If we do another get-default-zone, we'll see that now it is block.
+
+[00:09:21] So if we were to make any additional changes like if we wanted to do a list-all for zone block, we wouldn't have to type in zone block anymore because the default is block. Press Enter, and we get the information. Not only is it the active zone now, but it's the default zone for our commands.
+
+[00:09:42] Okay, let's go ahead and change the active zone back to the original and we'll change the default while we're at it. So we're gonna do a firewall-cmd and we'll change the zone with the --zone= and change it back to the original which is public.
+
+[00:10:02] Once again, if you're on a Fedora server, this is normally called Fedora Server and it's capital F, capital S. But on CentOS and Red Hat, it's public and I believe that's the case with Debian and Ubuntu too if you install firewalld on those. So zone=public, we'll do a --change-interface=
+
+[00:10:27] and whatever your network interface name is and a --permanence or just P-E-R for short. Now I know this command was probably in the history and I could have just modified one item.
+
+[00:10:40] But it's probably pretty far in the history at this point, so I just typed it again. Check the command, looks good, press Enter, success. The interface is under control of network manager, setting the zone to public, awesome. So now we'll do a firewall-cmd, -get-active-zones just to check it
+
+[00:11:03] and it says public is the active zone. Now that that is active, let's set the public zone to the default once again. That's the original setting, set-active-zone.
+
+[00:11:20] We'll say public, and I'm sorry, we wanted set-default-zone. Little happy mistake there, but it's set-default-zone. There we go, success, and let's check it with the firewall-cmd list-all.
+
+[00:11:40] There we go, we're back to the original and we have the public zone being used by default by our interface enp1s0. Two more things to do before we close out this sublesson. The first thing I wanna do is I want to show how to open multiple ports.
+
+[00:12:02] So this is pretty easy. We could do a firewall-cmd --add-port and then we can use curly braces to add multiple ports. So this is pretty common and let me just go to the top of the screen here. This is pretty common when you're installing servers that have lots of services running.
+
+[00:12:22] So for example, I'll work with the free IPA domain server quite often. That requires a lot of ports. For example, you might open port 80 and then separate each port with commas, and you'll open 443 for HTTPS,
+
+[00:12:40] 389 for LDAP, 636 for secure LDAP. Also 88 and 464 for Kerberos. And whatever those ports are, you can close that out and then specify whether it's TCP or UDP. If you're working with a free IPA server, you'd have to open some UDP ports as well.
+
+[00:13:04] We'll make that permanent and it'll add all those ports to the firewall. Now we'll do a firewall-cmd -reload or --reload. Success, and now let's do a list-ports to check it
+
+[00:13:24] and we see all the ports that are listed here, awesome. If you wanna remove those ports, that's easy. We can just up arrow back to this, change add to remove, and we're good.
+
+[00:13:42] Now one more thing here. We still have port 2222 to deal with and you'll notice that the other ports are still listed. That's because I didn't reload the firewall yet. No point in doing that because I still want to remove another port so we don't wanna reload it twice.
+
+[00:14:01] So we're gonna do a remove-ports, but that port is 2222. Wanna get rid of that because any ports that are open on the firewall could be security vulnerabilities. So we'll say that and we'll do /tcp --permanence, Enter, Success,
+
+[00:14:21] and now we can do that firewall-cmd --reload. Good, now let's do another list-all to check it. Awesome, we are back to the original. Public active default zone on enp1s0. The service is Cockpit. DHCPv6 and SSH are all available through that firewall.
+
+[00:14:44] So we did a lot of work there. If you need to, go through it again and go through the lab document to make sure you're doing it right. We have a little bit more to do and we'll do that in the next sublesson.

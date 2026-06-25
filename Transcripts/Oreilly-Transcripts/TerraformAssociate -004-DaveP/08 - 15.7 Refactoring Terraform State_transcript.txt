@@ -1,0 +1,71 @@
+[00:00:06] Now let's move into refactoring. If you have code and you make changes to the code, quite often, Terraform will destroy and recreate those resources. But you may not want that sometimes enter in refactoring. Refactoring,
+
+[00:00:24] your Terraform state allows you to rename or restructure your resources as you wish without destroying and recreating them. So we could make changes without destroying those resources. Okay, very good. So this is the refactoring terraform
+
+[00:00:43] minilab within lab 19. So feel free to follow along with the lab documents. And so in the lab, you'll see a problem statement. When you rename a resource in Terraform code, Terraform sees it as deleting the old resource
+
+[00:01:00] and creating a new one, whatever that name is that you choose. With refactoring, we can use the moved block. So this is a new block in Terraform that we haven't covered yet. The moved block is a main and crucial component for safely refactoring resources within the same Terraform state.
+
+[00:01:25] It declaratively tells Terraform how to update resource addresses and names without destroying and recreating the underlying infrastructure. So it's all about preventing the destruction. Right.
+
+[00:01:40] So let's go through the lab here and make sure that you're in the refactoring Terraform directory in the terminal. And let's take a look at our main tf. All right. Standard Terraform and provider block. And then we have two resources, one user each.
+
+[00:02:00] Now, do we have to do this? No, you could use the count meta argument or the foreach meta argument. But I'm just keeping it simple here with two separate users, they're both AWS IAM users. The Terraform IDs are dev user1 and devuser2. And the actual names are Developer Alice and Developer Bob,
+
+[00:02:22] and they're both part of the engineering team. All right, very good. Let's go ahead and apply this. We're going to initialize so TI for Terraform init. Good. And let's do a TA for Terraform. Apply dash, auto dash approve.
+
+[00:02:42] And it's created. Those two users, they are created. Let's verify that with a Terraform state list. Trying to get you into the habit of typing this command because you'll be using it quite often in the field, especially when you're looking at new infrastructure that you haven't seen before. So there they are. They're both IAM users,
+
+[00:03:02] but they are Dev User 1 and Dev User 2. Right. Now, let's say we wanted to rename these users Right. Let's say we wanted to rename these all together, and we want to do that in the code.
+
+[00:03:20] And let's say we wanted to change it from dev user one to engineer underscore alice. We're renaming the terraform ID here. Okay. And we'll do the same thing for dev user 2. We'll call
+
+[00:03:41] that engineer Bob and we'll spell it correctly. There we go. Okay, so engineer ALICE and Engineer Bob, we've modified both of these and we'll save that file. Now, I don't want you to apply this. I just want you to check it. So let's go ahead and do a terraform plan.
+
+[00:04:00] After you save the file, let's do a terraform plan and check what would happen here. Maximize the terminal. And you can see here's the command I issued. It would create and destroy. So dev user one, that terraform ID and dev user two,
+
+[00:04:20] those would be destroyed. And then we'd have Engineer Alice and Engineer Bob would get created. Okay, so that's what we're not going to want. If we need to make changes to terraform IDs or other information, we want to refactor it. And we could do that with the moved block.
+
+[00:04:41] All right, so I'm going to cancel out of here. I don't want to do any of this. I want to leave the code as is for now, but I do not want to apply this. All right, so let's go back to our code and get the terminal out of there. And we're going to add a moved block to the main tf and we'll do
+
+[00:05:02] that before the resource block. You could really do it wherever you want. Doesn't really make a difference, but we're going to create that. Now, this is the moved block, a new block. So we'll create that. And what you need to know is what the resource was and what it will be.
+
+[00:05:24] So it's going to be from equals, and this is what the resource was. Actually, it's what it is on AWS right now, but it's what it was in the code. And so this is going to be aws, IAM user.
+
+[00:05:41] And I can't accept these because this is what it will be. So AWS_IAM_USER.DEV. Okay, that is what it used to be.
+
+[00:06:00] All right, good. And now we need to know what it will be, which is what we just changed it to in the code. So we'll say two and we'll do AWS Iam user. And this time we can say Engineer Alice. Right. That is what the resource was. It was dev user1. Now it will be Engineer Alice. And now we don't see any red lines.
+
+[00:06:23] It should function properly. And we'll add a second moved block for the Bob account. And once again, we'll say from AWS_IAM user.dev_user_2.
+
+[00:06:42] And we'll say 2. And that's going to be AWS IAM user engineer Bob. Good. We'll save that and let's check it again. And we'll check that again with the Terraform plan. So we'll bring the terminal back up, do another Terraform plan. Alias is TP over here.
+
+[00:07:04] And look what happens here. Okay. Terraform will perform the following actions. It'll change dev user 1 to engineer Alice and dev user 2 to engineer Bob.
+
+[00:07:22] Notice in the plan, though, 0 to add, 0 to change, 0 to destroy. Right. But it will modify this at the terraform state. So let's do it. Let's apply this actual code change with these moved blocks.
+
+[00:07:43] So we'll do a TA now for our auto approve. And that is now complete. Excellent. So now we have a Terraform TF state backup that's going to have the old names with dev user1 and dev user2. And now we have our new Terraform TF state, which should have engineer
+
+[00:08:01] Alice and engineer Bob. Let's take a look at that. And here it is. Here's Engineer Alice. And I'm sure BOB is down there as well. You could also check that with the terraform state list. And you should see those new names. Keep in mind that these names are Terraform IDs. Okay, so no changes had
+
+[00:08:22] to be made at the AWS console. You could possibly take this refactoring idea to the next level and make changes that would happen as well on the AWS console. But for this lab, we just did it within the states. Let's verify that these users still exist.
+
+[00:08:42] And we'll go to our AWS console now and refresh our IAM users. And there they are. Developer Alice and Developer Bob. Very good. All right. So both users still exist. Fantastic.
+
+[00:09:01] And at this point, if we wanted to, we could go back to our code and we could do some cleanup here because we've changed the resources here and we've informed the TF state of this with our apply, we could get rid of these moved blocks. We don't need those anymore. So we could delete those and save it.
+
+[00:09:23] And then if we do a terraform plan, Again, it should just show that no changes are going to be made. The infrastructure matches the configuration. Very good. Now you could also do this manually and you could do that with the terraform state command using Move.
+
+[00:09:45] Okay, so this is the refactor command. And in order to do this you would need to give the entire name of the user. So we might do something like awsiamuser engineeralice and we could change it to something else.
+
+[00:10:05] Maybe we change it to developer Alice or something else. You could do that with Terraform state mv, but a little comparison. If you use the moved block, you're documenting what happened in code. It's more
+
+[00:10:20] team friendly, it's version controlled also with your state files. Whereas state move or state me V that works in all your versions. It's quick for one off changes, but it's not documented and it could be error prone. Right. So watch out for using that. But that would be the command line equivalent
+
+[00:10:41] of working with those moved blocks. And if you go to the bottom of your lab document, you'll see some common use cases here. Moving something like an instance from AWS instance server to web server, or maybe moving the path of a bucket and AWS path to a module path,
+
+[00:11:04] or moving from a module to just a regular VPC or whatever. So removing that module code there. Ok, so some extra common use cases. But generally with the refactoring
+
+[00:11:20] what we're doing is we're dealing with how we organize our code and how we name things with terraform IDs mostly. And that allows us to, when we use the moved block, that allows us to modify that state file and make it match all the code that we're working with. All right, so we can get some more clarity here.
+
+[00:11:43] Okay, so once again, when refactoring, you can do this with the moved block or you can use Terraform state move, but it's more recommended to use the moved block. And there you go, that's it for this sub lesson.

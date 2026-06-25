@@ -1,0 +1,75 @@
+[00:00:06] Let's talk about dynamic blocks. A terraform dynamic block is used to programmatically generate repeatable nested configuration blocks within a resource. Or it could also be a data source or provider or provisioner.
+
+[00:00:23] And this is going to be based on the collection of input data. In our case, we're using the dynamic block within a resource block. So let's take a look at the code here. And it has some instructions in the comments. This code is complete. You don't have to make any changes to it. We're going to run it,
+
+[00:00:42] but you don't need to make any changes. And so we have a resource here. This is an AWS instance, Debian 13AMI on US East 2. However, if we look here, we'll see a couple things underneath it.
+
+[00:01:04] First of all, we have a locals block, and second, we have two dynamic blocks. So let's go through that. First of all, we have our resource for the instance, and that's going to rely on our VPC security groups.
+
+[00:01:22] And so we've talked about that in the past. We've created those for aws. In this case, it's looking to a particular VPC security group, which is called AWS securitygroup.sgwebserver here, this security group resource that I'm creating. Aws Security
+
+[00:01:40] Group SGWebServer. Right. The key here is what's inside of it. In the past, if we wanted to open up ports on a security group, we could do it individually. We could do it in several different ways in the code. But to make it easier and more reusable, we can use dynamic blocks.
+
+[00:02:04] So I've got a dynamic block for ingress and a dynamic block for egress. So let's look at that code here. First, we'll start with ingress, and we're using a foreach meta argument and we're pointing to local.inbound ports, which is up above.
+
+[00:02:20] And we'll show that in a minute. The content for this we have from ports and to ports, and those have ingress dot value. And we're going to grab that information dynamically from the locals block.
+
+[00:02:42] Then we have some of the standard stuff that we've used before. Protocol equals TCP cider blocks, all networks, basically. But it's this stuff that I've marked in red that is going to be grabbed dynamically from the locals blocks. Here we have the other one, dynamic egress, that's for outbound
+
+[00:03:02] and another meta argument for each. This time it's local outbound ports and the contents again from port this time egress and two port egress value.
+
+[00:03:20] Once again the same protocol TCP CIDR blocks all networks which we've used in the past. But really it's these combination of using for each with the local outbound ports and the from and to ports for each of these. That's the information that we're grabbing from our locals blocks.
+
+[00:03:44] So let's show that. Let's go up to the locals blocks and you'll see we have locals and you can have multiple line items for this with multiple lists, which is a nice thing. So we have our inbound ports and that's this in the dynamic block.
+
+[00:04:05] And we have our outbound ports which if we scroll down is this in that dynamic block? So ingress inbound pretty much the same thing. Egress outbound, pretty much the same thing.
+
+[00:04:20] And then we can have a list for each of those and we just have a list of ports. There's only two in each one. For the inbound ports we have 80 and 443. For the outbound ports we have 443 and 1433, which is basically an SQL port. So note how the dynamic block is nested within the resource.
+
+[00:04:46] So this is a sub block or a nested block within our resource. Both of those dynamic blocks are. And that's how we can reuse information very quickly. So we might have a single locals block, but we might have four
+
+[00:05:03] or five resources, maybe more, that just use this dynamic code that really won't change. And I could just copy and paste it to each resource that we're working with. Very good. So let's go ahead and run this and build it and go to our terminal
+
+[00:05:23] and we want to make sure we're in the dynamic blocks directory. So I'm going to open up an integrated terminal there. So we'll run a terraform init and fast forward through that.
+
+[00:05:40] Okay. And I'm getting a failure here. Let's take a look. So it says error while installing HashiCorp AWS version 6.30. No space left on device. Well, I neglected to remove some of the terraform directories and I have no space left here. I have a couple options. I could remove some
+
+[00:06:00] of the terraform directories directories or I could increase the size of the virtual machine and actually I think I'm going to do that. I'm going to increase the size of the virtual machine right now. And we're just going to do that. And I'll be back in just a Moment. All right, and I'm back.
+
+[00:06:20] And so I just deleted some stuff from this virtual machine. So keep this in mind. If you made your virtual machine maybe 20 or 30 gigs, that can fill up pretty quick with all these AWS provider plugins that we're downloading. We're going to talk about how we can fix that with cached providers later on.
+
+[00:06:41] But for now you may want to get rid of some of those Terraform directories in some of the older labs and perhaps increase the size of your virtual machines storage. All right, so let's do this again. Let's do a TI for Terraform Init and we'll fast forward through that.
+
+[00:07:03] All right, and now it's successful because we have enough space to place that provider plugin in here. And now let's go ahead and check the code. Definitely want to do a Terraform validate. Success. The configuration is valid and let's apply it.
+
+[00:07:20] Let's do a TA and we'll fast forward through this. All right, that's done. Two resources added. First of all, the security group. It's always going to create the security group first. And that is an implicit dependency in Terraform. We talked about the
+
+[00:07:42] differences in the last lesson about implicit and explicit. This is an implicit dependency where it says, okay, you have some network infrastructure and in the form of a security group, I've got to create that first and then build the instance afterwards, which we're just calling dynamic ports.
+
+[00:08:05] All right, let's take a look at that on our AWS console and we'll go to EC2 and go to instances and there it is, Dynamic Ports lab. Let's open that up and let's take a
+
+[00:08:21] look at the security. And here we go. We've got our inbound rules 80 and 443 are opened up and our outbound 1433 for SQL and 443 HTTPs for outbound. Very good. That is what we wanted.
+
+[00:08:43] If we go back to our code we see in our locals block, that's exactly what we set up. Inbound ports 80 and 443, outbound ports 443 and 1433. And once again, we referenced those with those dynamic blocks inside
+
+[00:09:02] of the AWS instance resource using a for each meta argument and pointing to local.inbound ports with different ingress values here and then also the dynamic egress block here with the foreach meta argument and local
+
+[00:09:20] outbound ports with our egress values. Very good. Now you might say, well, where do ingress and egress come from? Those are names that come from the AWS naming convention within their API ingress and egress.
+
+[00:09:43] So we're calling the locals blocks inbound and outbound ports. You can call those whatever you want as long as you reference them correctly from the dynamic blocks. So there you go. All right, so we're pretty much done with this lab. Always remember
+
+[00:10:02] to destroy your infrastructure. So I'm going to do a TD for terraform destroy here, And we'll say, yes, and we'll let that destroy. Now, one other thing that you may have noticed, and if we just look at the code here, you'll see that there is no terraform
+
+[00:10:21] block and no provider block. They don't exist. That's because I have them in version dash provider. Okay. However, you may find that you don't even need this information sometimes because Terraform will automatically and implicitly figure it out.
+
+[00:10:46] It'll look at the code and say, okay, yeah, you're using aws. It won't know what region if you don't have the provider block, but it will guess that we're using AWS and try to download the AWS provider plugin.
+
+[00:11:01] And in addition, it might say, okay, you don't even need this information. It'll just say, okay, is Terraform running? Yes. And okay, we need that provider even though that code's not there. So sometimes you could do this lab without the code, but I do have the terraform block and the provider block in this separate
+
+[00:11:21] version dash provider. Now, our version here is tilde greater than 6.26. You may have noticed when we did the Terraform initially that it actually downloaded 6.30, which apparently just came out today. That's the new version of the provider plugin and just came out today during the
+
+[00:11:41] recording of this video. So it grabbed that latest version of the minor release because we have that tilde. Very good. All right, so let's just verify that that is destroyed, and it is very good.
+
+[00:12:00] So remember to close this out. A terraform dynamic block. A dynamic block, as we've used here for our ingress and egress, is used to generate repeatable nested configurations. So we nest or use sub blocks for our dynamic blocks within our resource,
+
+[00:12:23] and we can reuse these as necessary. And normally with a dynamic block, we'll point to locals blocks. We don't have to, but quite often we will. So that's it for dynamic blocks and this sub lesson.

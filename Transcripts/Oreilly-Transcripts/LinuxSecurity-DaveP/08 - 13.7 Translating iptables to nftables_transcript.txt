@@ -1,0 +1,47 @@
+[00:00:01] One last concept I wanna cover for this lesson is translating iptables information to nftables. You might work with a system that's older and it might require iptables, or perhaps you're more fluent with iptables than nftables. So to help in your nftables learning process,
+
+[00:00:21] there's an iptables to nftables translator. It's not perfect, but it helps with your learning curve when getting into nftables if you're new to it. So I'm gonna be working in Debian 12 server and we're gonna be working in Lab 25 if you wanna follow along.
+
+[00:00:41] Now at this point, as of the recording of this video in 2024, most Linux distros have moved over from iptables to nftables. And in fact, iptables is probably not even installed on newer distributions. So for example, on our Debian server,
+
+[00:01:02] which I'm working as root again, we could run the iptables command and you'll see the command is not found. So iptables is not installed whatsoever, it's just nftables. However, if we want to show translation from iptables to nftables, we need to install iptables so we can get that command.
+
+[00:01:23] So we'll do that now, we'll do an apt install iptables, dash Y so we can grab that. And the commands that we're gonna be using is iptables dash translate.
+
+[00:01:40] And to see if that is going to work, we'll do an iptables dash translate double dash version. And there it is. So we have iptables dash translate, version 1.8.9. Now, if you actually had iptables running, it might be a good idea to dump the contents of that iptable.
+
+[00:02:00] So for example, you might do something like an iptables save and then dump that out somewhere, at least temporarily, to something like this. But that's up to you, if you have it running. Again, on most distros, you won't have it running
+
+[00:02:20] and have to install it. Alright, so now let's make sure nftables is enabled and running. And it is, it's active and enabled. We're good. And let's check our rule set for nftables. And once again, in case you have firewall D running,
+
+[00:02:43] you're probably gonna want to disable that as well. But our nft list rule set is showing the basic blank firewall where everything is accepted. Okay, so now let's say that you wanted to allow port 22 access inbound to the server.
+
+[00:03:02] And let's also imagine that a person knew how to do it in iptables, but not with nftables. Well, we can use the translator for this. Now, normally with iptables you would run the iptable's command and to allow SSH access,
+
+[00:03:20] it would be something like this, dash capital A, input, all caps, dash P type of protocol, tcp, double dash D ports, 22, and then most likely something like dash M contrack, double dash ctstate,
+
+[00:03:41] new in caps, dash J, and accept in caps. I believe that would be it. So as you can see, iptables syntax is a little bit more complex than the nftables syntax that we've shown so far. Of course, nftables gets much more deep,
+
+[00:04:02] but in general, iptables syntax is more complex. So what we can do is we can take this and change the command from iptables to iptables dash translate. And let's see what we get. There we go.
+
+[00:04:20] So the results in the translation is nft add rule ip filter input tcp deport 22 ct state new counter accept. This is not perfect though. This will probably not work in nftables, but it's close.
+
+[00:04:42] There's a couple things here. We don't need the case sensitive parts, and in fact, they could probably break the command and we might have to make some additional modifications here. So instead I might do something like this, nft add rule, inet filter,
+
+[00:05:03] which is the built in table, by the way. As you can see here, it's called inet filter. So we have to change that from ip filter to inet filter. And then something like input in lowercase, tcp deport 22, which is correct,
+
+[00:05:23] ctstate and new counter accept should be correct. So just a couple things we have to modify from that translation and this should work. We'll press enter, looks good, and we'll do an nft list rule set.
+
+[00:05:40] And that is now added to our chain inputs. So at this point we should be able to do SSH into this server. So that's a quick way of translating. And so sometimes you may need to work with iptables, some versions of Kubernetes,
+
+[00:06:00] or older deprecated systems, older Linux distros. You might still be working with iptables for a variety of reasons, so this ip translate command can help aid you in that process and kind of make the learning curve a little softer. So let's clean up the system now. I'm gonna do an nft flush rule set.
+
+[00:06:21] I don't want that rule that I added. And if we were to restart the computer, it would flush it out also, or if we were to do a system CTL restart on nftables. So I'm going to just do the rule set flush,
+
+[00:06:40] and then I'm gonna disable nftables altogether on this system. So we'll do a system CTL double dash now disable nftables. Good. And then I want to get rid of iptables altogether. I don't need that. I don't want it. If you ever have any extraneous or superfluous programs, extra programs,
+
+[00:07:02] you don't wanna have them on the system, on your server. So we wanna get rid of those. So we'll do an apt purge iptables. That'll get rid of the iptables program and all its commands and any configuration files that correspond to it.
+
+[00:07:21] And then we'll reboot the computer for good measure and make sure that it still works, log in as root, and it'll just ping out to a server on the internet. Everything should be good at this point. So great work. You blew away nftables.
+
+[00:07:41] There's some extra credit links that you may wanna check out in the lab file, but that's about it for this lab and for the lesson.

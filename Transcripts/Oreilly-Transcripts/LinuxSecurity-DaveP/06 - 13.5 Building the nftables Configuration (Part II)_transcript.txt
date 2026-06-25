@@ -1,0 +1,51 @@
+[00:00:01] So far, the only connectivity we have is SSH. Let's show how to add additional rules so that we can have ICMP for pinging and, more functionally, DNS. So we'll go to our Debian server again and we'll add a new rule to our table and chain.
+
+[00:00:21] So we'll do an add rule and the table name once again, inet ports_table, name of the chain, input. And here's the rule I want to do. It's going to be ICMP. So internet control message protocol, that is the protocol that underlies pings. So ICMP and then the type.
+
+[00:00:43] And in curly braces, the type I want is echo-request. So when you actually ping from one computer to another, it's requesting a reply. So it's echo-request in curly braces and we'll do an accept for that.
+
+[00:01:00] Press enter, that should add the rule. And I also want to allow replies, otherwise what's the point? So we'll just up arrow that and change request to reply. Press enter for that and we should be good. Let's do another list ruleset. And I'm just up arrowing through the history.
+
+[00:01:22] Press enter. And if you look at the bottom of the screen, you can see we have our rules, TCP dport 22 for SSH, and we have our ICMP echo request and echo reply is set to accept. Let's go ahead and test that.
+
+[00:01:41] Go back to our client and see if our ping works. And it does. We're getting replies. Very good. Now would you actually want ICMP? Probably not. Quite often, I'll filter that out either at the firewall or elsewhere. Don't really need ICMP echoes going all over the place
+
+[00:02:02] and a lot of administrators will frown upon those in general. So quite often I'll filter that type of stuff out. But I just wanted to show another rule here and show how this works. And the reason is because I want to show it on the server as well. I'm gonna quit out of nft and we'll go to the top of the screen here.
+
+[00:02:20] Now, if we do a ping and we try to connect to the clients, we will be able to do it. If we try to ping something like example.com, we're gonna have an issue with that. And that's because DNS is not allowed at the firewall. And you can see the error.
+
+[00:02:41] Temporary failure in name resolution. Well DNS is actually running on this system and it works on my network, but the firewall is blocking it. We could, however, ping example.com by IP address. The IP address of example.com currently is 93.184.216.34.
+
+[00:03:05] And you can see we're getting replies for that. So we can get replies when we're pinging by IP address. But if we do anything with name resolution, with DNS, that's not gonna work. Let's show how to add a rule to allow DNS by name.
+
+[00:03:21] We'll go back to our nft shell and add a couple more rules. First, we have TCP sport 53 accept, so another TCP based protocol,
+
+[00:03:41] and that's gonna be DNS or port 53. But this time we're doing sport or source port, and that's gonna be going out to try to do any type of DNS name resolution. So we're gonna accept that for TCP, but we're also going to need to do that for UDP
+
+[00:04:03] because a lot of DNS actually rides on UDP on the transport layer. So we'll add that as well. And now if we do a list ruleset, we should see those new rules at the bottom. TCP for the source port 53 and UDP sport 53, accepting both of those.
+
+[00:04:23] At this point, it should work. So let's quit out of the nft shell and let's try to do it again. We'll go to ping example.com and there you go. Name resolution is working
+
+[00:04:40] and so you can see we did a ping example.com and it resolved that to its IP address. That is DNS working. And that's because we added these two rules. Excellent. Now let's say that you needed to remove a rule from your NF tables.
+
+[00:05:00] Let's show how to do that now. First we have to find the handle for that rule. If you remember back in the UFW lab, the rules were numbered. Well, the same thing happens here in NF tables and we call them handles. They're automagically added when you create a rule.
+
+[00:05:20] To view those, you could do an nft -a list table, and then the table name, which is inet ports_table. Press enter and now we're just viewing the table that we want here and we can see after each item there's a handle number.
+
+[00:05:43] So the table itself has a handle number two, and that's because it's the second table in NF tables on the system. Then the chain for this table is handle one because it's the first chain for that table. And then we have the rules within there with different handle numbers.
+
+[00:06:02] I don't wanna get rid of SSH, but I'm gonna pick another rule here and we'll get rid of some of the DNS. So the DNS rules are handle five and handle six. I want to get rid of handle five. So to do that we'll do an nft delete rule,
+
+[00:06:21] and then we have to again give the entire path, table, chain and the rule to delete by the handle number. So that's gonna be inet space ports_table, then the chain, input and then the rule. I want to get rid of the TCP DNS.
+
+[00:06:42] So that's gonna be handle five, press enter for that. No news is good news. Let's do another list of our table and we see that that rule has been removed. Let's do a ping of example.com.
+
+[00:07:00] You'll notice that still works and that's because it's UDP that we need the most to do this type of name resolution. DNS servers use TCP as well, but only some of the time. UDP is the important one when it comes to port 53 with DNS servers. So the ping example.com should still work,
+
+[00:07:21] and that's why I chose to remove the TCP portion of DNS. You could also remove the entire chain if you wanted to. You could do a nft delete chain and then specify the table name, inet ports_table,
+
+[00:07:40] and then the handle number for the chain, which would be handle one. I'm not gonna do that. I don't wanna lose my chain 'cause then I'll lose all the rules within it as well. But that would be how you would do that. If you really needed to, If you were in a bind, you could flush out all the rules with an nft flush table
+
+[00:08:03] and then the name of the table. But be careful with that, you'll lose the entire table of information. And to get rid of all rules altogether for all tables, that would be an nft flush ruleset. But again, be very careful with that
+
+[00:08:20] 'cause that's gonna remove everything that we did. Now we haven't actually saved any of this information, so it's not persistent yet. If we were to reboot the system, we would lose these rules. In the next sub lesson, we will show how to save the configuration and back it up and restore it later.

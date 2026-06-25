@@ -1,0 +1,91 @@
+[00:00:01] - Now it's time to work with AppArmor Profiles, and we're gonna be working in Lab 19. So if you wanna follow along, it's Lab 19. In this lab we're gonna create an AppArmor profile, we'll analyze the profile, we'll show enforce and complain modes and work within those,
+
+[00:00:20] and then we'll disable and remove that AppArmor profile. So for this lab, I'm gonna be working in my Debian 12 client system as root once again. If you're working as a sudoer, just make sure you incorporate the sudo command before any of the other commands.
+
+[00:00:40] Okay, so we're in our client now. And so first thing we wanna do is install the required applications. So you wanna make sure you do have AppArmor up and running. And then we're also gonna do an apt install apparmor-utils. You're gonna want the additional AppArmor Utilities.
+
+[00:01:01] You may already have those. And I believe this Debian client already does. But we're also going to install Auditd, and that's the auditing program within Linux. So we're gonna install that now and we're gonna be using that later in Module Four as well. But we need that for this particular lab as well.
+
+[00:01:21] So install those and say yes. Good, and so let's verify that AppArmor is still up and running and it is, it's active and enabled. And let's also check the status of Auditd.
+
+[00:01:43] Now in some systems, this will not run automatically when you install it, so you definitely want to check it, but we are active and enabled here, so we are good. Okay, at this point, what I want to do is I want to make a copy of a program
+
+[00:02:01] that already runs in Linux and then associate a new AppArmor profile with that new program. So I'm gonna wanna work in two terminals here and let's do something a little bit different. Let's run the tmux program.
+
+[00:02:20] And so tmux is a terminal multiplexer. It allows you to have multiple terminals open in one console window, and it works great on server systems. I use it a lot when I SSH into servers, so I can have multiple window panes. So this is a cool tool to use.
+
+[00:02:41] And again, it's called tmux. Another good one is GNU Screen, but I like tmux the most. So that's what I've gone into here. And we can multiplex the screen by pressing Control + B and using the percentage sign or the quote.
+
+[00:03:00] And so if you wanna learn more about tmux, you can learn more about that on my website. But one way or another, you wanna have two terminals running. So I don't care how you do it, but two terminals. And so in the first terminal, I'm gonna press Control + B and the Left Arrow Key to get back to the first terminal. I'm going to take a look here. And what we're gonna do
+
+[00:03:20] is we're going to take the manual pages program and copy that into a new program of our own creation. The manual pages program is known as man, that's the binary, and that's stored in /usr/bin/man.
+
+[00:03:41] So I'm gonna copy that, and I'm gonna copy that to /usr/local/bin/human. So we'll copy that over now and let's access that new path. We'll do a CD to /usr/local/bin
+
+[00:04:00] and take a look inside there. And you can see there's a couple things in here. We've got AWS, we've got starship, but now we have human. So that is gonna be the same program that we use for the manual pages. It's gonna be the same exact program.
+
+[00:04:20] So in a second terminal, go over to the second terminal here. Let's see if we can use that new application. We'll do a human on the ls command. And that brings up the manual page or hu-manual page for the ls commands, awesome. So it works, and we'll press Q to quit.
+
+[00:04:43] The next step is to generate an AppArmor profile for this new human program. And so you can see here why I'm copying over the program. I don't wanna make profiles for the manual pages program because first of all, it already has an AppArmor profile
+
+[00:05:01] and second of all, I don't wanna make any problems for that manual pages program. So we'll go back to our first terminal and to create an AppArmor profile, we'll use the aa-genprof commands, and we'll do that on the human program.
+
+[00:05:22] And we'll press Enter. And that should begin the generation process for this AppArmor profile. I'm gonna go back to my second terminal and see if it still works. Let's see if the program still works. We'll do a human and check out the man page for ping,
+
+[00:05:43] and it still works, all is good. And the system is gathering information on this as we go. I'm gonna press Q to quit out of there. And we're simply trying to have the system log the process of using that new human program and allow AppArmor to see that logged information.
+
+[00:06:03] Let's change back over to the first terminal, and you'll see that we're still in the process of creating this profile. So it's profiling this, and now we need to go through AppArmor events. So what we're doing is we're scanning the system log
+
+[00:06:22] for AppArmor events, which I've already created by running the program. So we're gonna press the S key here, and now we're gonna be presented with a lot of log entries that we have to answer. I'm gonna keep it simple, but you can guess that there's a lot of possibilities here.
+
+[00:06:40] We can configure this program to work exactly the way we want. But for now, just to make this profile, we're gonna select inherit, and we're gonna inherit the profile information from AppArmor for each option here. And there's gonna be several of these. So we're gonna press I for inherit.
+
+[00:07:01] We'll do it a second time, a third time, and keep going for each one. There we go, that's done. And now for this second set of questions, we have the option to allow or deny all of these different options
+
+[00:07:21] for owner and the paths. And you have other options as well, like globbing and audit and so on. But for these, again, we're just gonna make it simple. There's a lot of possibilities with this, but we're just gonna keep it simple. And we're gonna say A for allow for each one. So A for allow for each of these.
+
+[00:07:40] And again, there may be a bunch of these for the human program. Okay, and that's it. There was about nine of those or so. And when we're done, we can save the changes. We'll press S to save. That writes the updated profile information
+
+[00:08:02] for the human program. And then F to finish. It sets the profile and we are done. Now let's go ahead and verify the application functionality and analyze the AppArmor profile. So I'm gonna go to my second terminal
+
+[00:08:20] and see if we can run that program still. We'll do a human ping and yes, we can see the hu-man page for that ping command and press Q to get outta there. Now let's go back to the first terminal, and we'll analyze the AppArmor profile. I'm gonna run the aa-status command, but this time I'm gonna pipe that to less,
+
+[00:08:41] so it's a little bit easier to read through. We'll press Enter, and we can see the AppArmor module is loaded. On this particular system now we have 34 profiles that are loaded, 24 of those profiles in enforce mode, which means they're actually working, they're enforcing the security of these programs.
+
+[00:09:02] Now, previously we showed usr/bin/man, but now we also have usr/local/bin/human and the sanitized_helper for human, right? So these are new profiles that we created, and they're working properly. They are in enforce mode. However, if we arrow down here,
+
+[00:09:20] we're gonna see a bunch of human options that are in complain mode. Now we could have modified that as we created the profile, and we could do so later as well, but we're just trying to show a basic example here. We'll press Q to get out of this. And let's go to the second terminal. And let's take a look at the actual profile files.
+
+[00:09:44] So I'm going to change directories and go to /etc/apparmor.d and take a look inside there. This is where the profiles are gonna be stored. And we can see usr.bin.man, and we can see usr.local.bin.human, the one we just created.
+
+[00:10:03] Note that path delimiters like the slash are gonna be replaced with dots in this file name. You don't normally have slashes or backslashes in a file name. So instead we're using dots to represent those.
+
+[00:10:20] And so that is the actual profile file itself. Let's take a look at that actual profile. And that's usr.local.bin.human. And if we look here, we'll see all of the paths for this human program that we're dealing with, and we can add individual rules in here as well
+
+[00:10:43] and really build up our profile for who and what is allowed to access the human binary program. So take a couple moments to view the actual profile. And when you're done, just get out of that, and we'll continue on.
+
+[00:11:01] Let's go back to the first terminal and show how to modify a profiles mode. You can work in enforce mode or complain mode, and you can change from one to the other. And we could do that with a couple different commands. We need to know the actual name of the profile in order to do this, and that's the file name.
+
+[00:11:23] So let's show how to change our human profile from the enforce mode over to complain mode. We'll do that with the aa-complain command and then specify the name of the profile.
+
+[00:11:40] And the name is here. So we're gonna type that in now, usr.local.bin.human, press Enter, and it sets profile to complain mode. If we do an aa-status and take a look,
+
+[00:12:01] you'll see that that main human profile has now been added to complain mode, and it's not in the enforce mode anymore. We could change that back simply by doing an aa-enforce. And the name of that profile once again,
+
+[00:12:21] usr.local.bin.human. That sets that to enforce mode, check the status with less, and we should see that listed. And here it is. Now, one of the reasons we do this is to check what's happening with our profiles.
+
+[00:12:43] We could do a lot of testing with a profile when we put it into complain mode, and then we can kind of adjust our profiles as we go. When we're done, we put them back into enforce mode, so they can actually do what they're supposed to do. That's the whole point of using that. We'll press Q to get out of there.
+
+[00:13:01] And you wanna make sure that all of your stuff normally is in enforce mode unless you're working with something or testing something, so verify that your stuff is in enforce mode. Now let's do some cleanup. We'll disable and remove the profile we just created, and we could do that with an aa-disable command
+
+[00:13:22] on usr.local.bin.human. So press Enter for that, that is disabled. If we do an aa-status, it should not be listed anymore. And actually I'll do that with a piping to less.
+
+[00:13:41] And you should not see it on the list here either in enforce mode or in complain mode. Press Q to get outta that. However the profile still exists, and you'll see that still. If we go to our second terminal and do an ls,
+
+[00:14:00] we'll see that the actual file is still there. But if you were to take a look in disable, you'll see it's listed there as well. And there it is. So it's disabled and the system knows it, but the file is still there.
+
+[00:14:21] If we needed to re-enable it, we can. It's still exists. We would just do an aa-enforce or aa-complain on that file name. To remove the profile altogether, you first wanna disable it, and then you can remove the file here. Back in the apparmor.d directory,
+
+[00:14:43] we can get rid of this altogether, just do an rm usr.local.bin.human, press Enter. And at this point, the profile has been disabled, and we've removed the actual file. So at this point, the profile has been disabled,
+
+[00:15:01] and we've removed it. So we're back to normal on this system. In the next sub-lesson, we'll show how to work with a pre-generated profile.

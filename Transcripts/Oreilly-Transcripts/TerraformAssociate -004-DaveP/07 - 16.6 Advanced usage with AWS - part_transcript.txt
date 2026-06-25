@@ -1,0 +1,113 @@
+[00:00:06] All right, moving into part two, let's go ahead and create a terraform TFVARS file. And so we have an example here already for you. And you can base all your work off of this and you can actually utilize
+
+[00:00:22] this if you want. We, we could customize this as we like, but let's go ahead and create this now. Now a lot of this is actually commented out, so let's copy it and let's make the actual file and we'll just call this,
+
+[00:00:43] rename it. We'll just call it Terraform tfvars. Good. Now we can see the code properly. We have our basic variables. Aws, region, environment, instance, state, instance, type. Very good. Now let's go ahead and look at what we have in the lab.
+
+[00:01:03] And you can actually just take the custom ingress rules for that. We'll grab those and use those. They're in the lab. Or you could use the defaults. So I'm just going to leave the defaults
+
+[00:01:21] right now that are in our variables and the rest of our lab. Okay, but we want to leave this here because we're going to change over to that later. Very good. All right, let's go ahead and save this and let's go make sure we're in lab 23 and initialize our directory. I'm going to do that with the
+
+[00:01:41] TI for terraform init and we'll just fast forward through that. Good. Successfully initialized. Now let's run a terraform plan with the TP and take a look at the plan output here. All right, we'll scroll up. There's a lot of data.
+
+[00:02:03] Scroll up here. Scroll, scroll, scroll. Okay, good. All right, so it's reading the data blocks. It's got to do that first. And then it tells us it's going to create the AWS cloud Watch metric alarm for the high cpu, the Elastic IP for the web server, the Elastic
+
+[00:02:23] IP association for the web server, IAM policy, IAM users, and also the IAM user policy attachment and the AWS instance. Okay. Not necessarily in that order. Also the AWS S3 bucket and the
+
+[00:02:41] bucket lifecycle configuration, public access versioning, and the security group for the web server that we're using. Very good. Also a null resource. This is used so that we can make our changes from running to stopped altogether. That is 15 to add. We have a lot of outputs
+
+[00:03:01] that are going to happen here. And that is about it. All right, let's go ahead and do the terraform apply. We'll do a TA for Terraform apply auto approve don't forget, I'm using these aliases here. And it's going to build all this stuff. Note the order builds the Elastic
+
+[00:03:22] IP, then the Security Group S3 bucket logs, IAM Policy Security Group. It's building the web server and it's going to build the users after the web server because they depend on that. And then it does the null resource for the local exec for the instance
+
+[00:03:41] and the state of the instance. And we'll just fast forward through the rest of this creation. All right, it's done. Took about a minute, 15 resources added. Remember that, because when we destroy, we want to make sure it is 15.
+
+[00:04:02] Here are our outputs. All right, we've got the CloudWatch alarm and the ARN for that. We've got the Elastic IP, that's our public IP address. We have the IAM user ARNs, we have IAM user names, DevApp Deployer, DevLog Reader, which we saw. We've got the instance ID that came from AWS. We've
+
+[00:04:21] got the private IP, the state, which is running right now. Very good. S3 bucket name, security group name, and the web URL, which essentially is just the IP address with HTTP in the front. All right, very good. Let's check this out. Let's do a couple things here.
+
+[00:04:41] First, let's check and see if everything here will work for our website. And so what I'm going to do is I'm going to kind of create a little variable here. We'll do a web underscore URL $sign and in parentheses we'll do a terraform output.
+
+[00:05:05] And I want the web URL. Okay, now we saw this in the outputs, but I'm going to grab it with the terraform output commands. We'll do that with raw, so it'll strip all the extraneous information and punctuation. And we'll do webrl close the parentheses. Very good.
+
+[00:05:26] And oh, my bad. I didn't put an equal sign in there. Gotta always have an equal sign if you're creating this variable. There we go. That's now set. And now let's access it. Now, I'm just doing a curl here. We could have curled HTTP and the IP address. I'm setting this up as
+
+[00:05:40] a nice little variable that we can use throughout this session if we wanted to. And you could do more testing with it. Right, so $weburl press enter and there it is. Hello, from Dev Environment. We just curled that information from the web server and it's telling us the instance ID as part of that as well. Excellent.
+
+[00:06:05] So that is the message we wanted to see. And that is accessible because we opened port 80 with the security group. Let's go ahead to the AWS console and check all this. First we'll go to our instances. Let's refresh here. I'm in Ohio, US East 2, and we see the dev web server.
+
+[00:06:22] We see it is running. That is the instance states. Very good. If we look in security here, I'm going to make this a little smaller so I can actually scroll this. Okay. If we look in security here, we see ports 80, 443 and 22 are open on the ingress side. And all ports outbound,
+
+[00:06:42] all networks down here. Excellent. All right, let's also go to Elastic IPs. If you're in EC2, right as of the recording this video, you can scroll down, go to Elastic IPs. And we do see our Dev Web Server EIP. That's a public IP 313621.
+
+[00:07:03] That's the allocated IP address zero. And so that is good. Let's also go to IAM and check our IAM users. Let's see if they were built and they were dev app deployer and devlog reader. They're in a special path. My other users are just in the root, basically the top directory.
+
+[00:07:23] These ones we put in app users. All right, let's go to the S3 bucket and take a look at that. And we'll go to buckets. Okay, good. Here it is. Deb Web server logs. Click on that now. Nothing in there right now. There's nothing really to log
+
+[00:07:41] yet, but that works. And finally, let's go to CloudWatch. Here we go, Cloud watch. We'll go in here, take a look. And we can go right to alarms, or you can look here. We can see EC2 running. Good.
+
+[00:08:02] Okay. CPU utilization, 80%. That is the rule. Basically. That's the alarm that we have set. That's the threshold. If it goes over 80% for X amount of time, it'll actually send an alarm over. And so we would have to really work this web server to get that alarm. But that would show up here.
+
+[00:08:24] You could also click on alarms directly to see this if you're in a different page. All right, very good. There's some AWS commands in the lab as well if you want. You can work with that. Awesome. All right, let's go to our terraform TFVARs.
+
+[00:08:41] Okay. And in there, what I want to do is change the instance state. Right now it's set to running. I want to change that to stopped. Now, there's a variety of ways to do this with AWS commands. There's other ways to do it in terraform. I'm going to do it right here with this argument. Instance state equals stopped. Save that.
+
+[00:09:00] Go back to our terminal and let's reapply here. This time I'm just going to do a terraform apply so that we can see what happens without the auto approve. Okay, that's going to refresh the state. Read through everything. Now you may say, well Dave, this is going to destroy stuff, but really
+
+[00:09:21] it's not going to destroy the resources that we want. It's going to destroy these resources, quote unquote, that make the association for us for our web server. And don't forget, if you see brackets with a zero in them, that's part of the index. We only have one web server. Indexing normally starts at zero.
+
+[00:09:42] So it's just the association and the null resource that's being destroyed and replaced respectively. So one to add, two to destroy. But really we're not destroying the eip, we're not destroying the instance. So we're going to say yes to this.
+
+[00:10:01] That executes. Okay, good. Apply complete. And now we get our outputs once again. We still have our instances, but that should work. Now if you look at the outputs, you'll see it still says running. That's because we have to refresh this.
+
+[00:10:20] This is one of those times where I might do a terraform apply dash refresh only. We've shown this before. This is one of those times where I'll do a refresh. It's not actually applying any changes, just refreshing based off of the state. And what's going to happen? The only thing that's going to happen is a change to our output. Instead of running, the instance state
+
+[00:10:41] will show as stopped. So we'll say yes to this. And now it indeed says stopped. Very good. All right. That should be stopped for real. If we go to the AWS console, go back to EC2 and go to our instances, you'll see dev web server is
+
+[00:11:02] stopped. Now our EIP still exists. Okay, still there. And the instance is still there. It's just stopped. And the association with the public ip, the Elastic IP has, has been removed.
+
+[00:11:23] Let's put it back so that it will work again and we'll go back to our terraform TF VARs and change it to running save it. Okay, and we'll do a terraform apply again. Once again, I'll just do
+
+[00:11:41] a full terraform apply here without the auto approve. Without the alias. Okay, and we'll say yes. Now it's still going to show stopped until again we do that refresh only.
+
+[00:12:03] But if we were to go to the instance, here it is running again in the AWS console. And now if we say yes to the refresh only, that is now running. Very good. Okay, let's go ahead and work with our foreach and show that foreach
+
+[00:12:25] can iterate over anything that we set either in our variables TF and values or in this case in our Terraform TFVARs. We go back to Terraform TF VARs. You'll see our IAM users.
+
+[00:12:41] I want to add another user. I'm going to call it Backup Operator. We'll just do double quotes. Backup Operator. Good. Okay, save that and let's run that terraform apply again.
+
+[00:13:05] And all it should do is add that new user. However, it's also going to add an association for the user. So we'll say yes. And we should now get this additional Backup Operator account.
+
+[00:13:20] Say yes for that. That's done. Now we have three IAM usernames. Jump back over to IAM in our AWS. Console. And here it is. Dev Backup Operator. You can also modify your ingress rules.
+
+[00:13:45] And let's show the dynamic nature of this. We have the dynamic stuff set up in the files already. All I need to do is make modifications to my terraform TFRS. So now I don't want the 22 and 80 and all
+
+[00:14:01] that anymore. I want different ports. And here I have 53, 110 and 8080 set up for you. We're just going to uncomment all of that with a control slash and those will be our new rules. Okay, now let's go ahead and save that and we'll do a terraform apply again.
+
+[00:14:25] Watch the magic sauce do its thing. Okay, one to change. All it is is the rules for our security group. We'll say yes for that. Should go relatively quick. Okay, good. Now let's go back and go to EC2 in the AWS
+
+[00:14:41] console. Go to instances. I really should just have these pages open on separate tabs. Just quick tip for you that probably work better for you. Keep all of them open and we'll go to security and take a look. Now the ingress ports are no longer 22 and 80. It's 110,
+
+[00:15:00] 53, 80, 80. Very good. No change to the outbound rules. Okay, very good. Let's go back and let's scroll through here to through our commands and let's Do a curl on our web URL.
+
+[00:15:20] Shouldn't get anything at this point. Shouldn't work because that port's not open anymore. Port 80 is not open. So I'm just going to break out of that with a control C. You can also do a terraform state list to take a look at all the resources that you have here.
+
+[00:15:40] Right. So that's about it. Take a look at the files and take a look at how our terraform TFVARS data and values interacts with our dynamic blocks and all the other information in our files. All right.
+
+[00:16:00] And when you're done reviewing everything and checking it out on the AWS console, definitely do a terraform destroy TD. So we want to make sure that those 15 resources get destroyed. Okay. And it's actually 17 now because of the additional user and the association for the user for the policy that we created.
+
+[00:16:22] So now it actually should be 17. We'll say yes for that. And for these more in depth labs, I highly recommend that you go through each page in the AWS console and make sure that everything is indeed terminated, especially the instance shutting down now and the elastic
+
+[00:16:43] IP. Okay, that's gone. Check your users, the S3 bucket. Check it all, make sure that it all gets destroyed and verify that destruction happens properly within terraform here.
+
+[00:17:01] And There we go, 17 destroyed and that is it. See the lab document for more information. Definitely check out AWS a little bit more. One more thing I wanted to put EKS in here. EKS is a term that you'll see a lot and you might work with in the field. That's the elastic
+
+[00:17:20] Kubernetes service. AWS's Elastic Kubernetes service EKS, that's a managed service that automates Kubernetes deployment, scaling, management, containerized applications within Kubernetes on aws. The point of EKS is it eliminates the need for users to work with a
+
+[00:17:40] control plane like a typical Kubernetes control plane. Plus you can have high availability across multiple availability zones. So this was something that I wanted to add. But it can take like 15 or 20 minutes just to build it and sometimes it could fail. So you can do it.
+
+[00:18:00] And I've added another lab in the repository. If you go to Z more info and go to extra labs, you'll see a lab called Lab eks. And so this actually allows you to create a EKS Kubernetes cluster.
+
+[00:18:21] But it's going to cost money. It's going to cost more than just a typical instance and it's going to take a lot of time to build, so it's going to be a time consuming lab. And you also want to be really sure that everything gets destroyed if you do that lab. So I just put that in the extra labs for you. But you should definitely know what EKS is.
+
+[00:18:42] That is that Elastic Kubernetes service. And it can, of course, be configured via terraform. All right, that's it for this lab. Awesome work. I'm out of here.

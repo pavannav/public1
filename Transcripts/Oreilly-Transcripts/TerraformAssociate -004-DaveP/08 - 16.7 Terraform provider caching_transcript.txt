@@ -1,0 +1,69 @@
+[00:00:06] Welcome to Lab24. Terraform provider caching. So by default, Terraform downloads the provider plugins into your Terraform directory. And it'll do that for every directory that you're working in.
+
+[00:00:21] And you've seen previously in the course that I ran out of space. So I ran out of space on my VM because I had so many provider plugins. The AWS provider plugin, I don't know exactly what it is, but I know it's more than 500 megabytes. And so that'll take up a lot of space real quick. I only made this virtual
+
+[00:00:41] machine about 30 gigabytes so quickly with all those labs, it took up the space of the drive. So at that point I had to increase the size of the drive and I deleted some of the Terraform directories. But it can be a lot. It can take up a lot of space,
+
+[00:01:00] but also it uses up Internet bandwidth. And you know you're going to be utilizing a lot of download power for your organization's Internet and you don't really want that if possible. So if you can cache the provider plugins or store them in a separate place where people can get access to them, that can be really helpful.
+
+[00:01:23] This lab gets into Terraform provider caching. All right, so let's get into it. I'm working here in Lab 24. We've got a basic. We've got the lab document, so feel free to follow along with that. And we have the main tf. All right, so the first thing I want to do is configure our dot terraform
+
+[00:01:44] RC file and we want to go to our home directory. So I'm going to change over to my other terminal here and we'll maximize that. Now you'll notice I was having a little fun here. I just changed the color and the icon and the name of the terminal and you could do a lot
+
+[00:02:03] with the VS code terminal. And if you're interested in that, I have an article at Proust Tech. VS Code Integrated Terminal. I also have a basic VS Code Pretty in depth article. But this one is just about integrated terminals and how to work with those.
+
+[00:02:21] And so pretty in depth. Check it out if you're interested in doing more with the integrated terminal. But anyways, let's get to the lab. We want to go to the home directory and so we'll do an LS A and what I'm looking for is a TerraForMrC file. Normally when you install Terraform that will not exist by default.
+
+[00:02:44] You will see a Terraform D directory that we can make use of, but you normally will not see a terraformrc right off the bat. Terraform RC is used for terraform configurations that you want to do. So we can create it, but you have to do it in your home directory and we
+
+[00:03:03] can edit it. So I'm going to do a vim and we'll call it Terraform rc. Like most RC files, it's going to be a hidden file. So I'll make that now. And what I want to do is I want to tell the file where our plugin cache is going to go.
+
+[00:03:23] So the whole idea with caching is so that we can store our provider plugins in one location and reuse them. That's caching. Right? So terraform provider caching. To do that we have to specify a caching directory. So I'm going to say
+
+[00:03:42] plugincachdir equals and we'll give the path to that in double quotes. I'm going to say dollar home. So the home directory for my user slash dot Terraform D, which we've seen already, slash and the default name
+
+[00:04:00] right now is plugin cache and close the double quotes there. So that's plugin cache dir and dollar home. Terraform D plugin cache. All right, and we'll press enter for that. That's really the only line you need.
+
+[00:04:20] I'm going to put in another line here that I use quite often. Disable underscore checkpoint and set that to true. All right, good. So that's what I want. Looks good. We'll save and quit out of there. And now our terraform Terraform RC is created. And here it is.
+
+[00:04:42] Very good. However, we have Terraform D because. But we don't have the actual cache directory yet. So let's change over to that Terraform D directory. When you look in there, you will see we have checkpoint information credentials for JSON, which we've used in the past, and our stacks plugin
+
+[00:05:02] if you're using Terraform 1.6 or higher. But we don't have that plugin cache directory yet. So we just simply make it do an MKDIR plugin cache. And that's what we named it. You can really name it whatever you want, but that's the default.
+
+[00:05:20] And so we now have plugin cache. And that's where the terraform program should now cache our provider plugins. All right, let's take a look at our main TF and we just have a basic configuration file here. Terraform block, provider block. And we've
+
+[00:05:41] got an IAM user block A resource so very basic. And that's fine. Let's go over to our Lab24 directory and let's do a terraform init and we'll fast forward through that.
+
+[00:06:04] Okay, so that went ahead and initialized our directory and it grabbed the provider plugin. However, let's take a look at our other terminal and let's change over to plugin cache again.
+
+[00:06:24] And now if you look inside there, you will see that we have registry Terraform IO and deep down that path is where you'll find the provider plugin. Good command to see that real quick is the tree command. If you don't have that, you can grab that and we'll just install that real quick.
+
+[00:06:47] Okay. And run the tree command. And now we can see registry Terraform IO, HashiCorp AWS 6.30.0, Linux. And here is our provider plugin binary.
+
+[00:07:01] And at, I don't know, 600 megabytes, you could check the size of that if you want. It's a big file. Now you may say, well, Dave, there is a terraform directory here and that is true, but if we go back here and take a look at that, you will see it does indeed exist.
+
+[00:07:20] And if we open it up, it'll look like the provider plugin is there. But really this is just a symbolic reference at this point to the plugin cache. Yes. So that actually is working for us. And if we work with other directories and use the AWS provider in other working directories, it should grab
+
+[00:07:43] it from here, from our plugin cache directory. You might say, dave, why didn't you show this earlier? I'm running out of space here and you know, my apologies, but it's more advanced stuff that we show later on.
+
+[00:08:00] Okay, so that's really it. At this point, our providers will be stored there, each provider that we work with, but that's going to be by the version. So this might be helpful for you. If you're using the same version all the time. If you're using version constraints like the tilde or the greater than, it's always going to go for that newer version. And so it's going to place all that stuff in your cache directory.
+
+[00:08:23] It can still save you some Internet bandwidth and save you space on the system. But there are some drawbacks to it. Before I discuss those, let's change everything back because I don't actually want to use that right now. So let's modify that. First thing we're going to do is go back to our terraform RC file.
+
+[00:08:48] Okay, so we'll modify that again and I'm just going to comment these out for now.
+
+[00:09:00] You could delete the file if you wish. I might do some more testing with this. You could delete it or you could just comment out or delete those lines. All right, and we'll save that. And at that point it should not use that anymore. Now you could also remove the plugin directory as well if you want.
+
+[00:09:22] And I'm actually going to do that to save some space right now. So we'll go to CD Terraform D and just get rid of that plugin cache. We'll do that with an RM R and I'm going to force it. We'll do an RM dash RF.
+
+[00:09:42] There we go. And now we don't have that cache, that plug in cache anymore. And that'll save us some space as well. All right, so a couple considerations with this. If we go back to the lab document here, if you go towards the end, these are the issues here. Caching is good, but it's not great. There are some things to consider.
+
+[00:10:05] You might have concurrency issues, especially if you're running multiple Terraform instances, multiple directories. Maybe you have multiple users. Unused providers like old ones are not removed automatically. So you have to do manual cleanup.
+
+[00:10:21] This might not be the best for CICD pipelines and the dependency lock file is really crucial. And so. And that's stored right here. And we talked about this as well with the different hashes for the different platforms that you're working with.
+
+[00:10:40] So Terraform caching is good, but maybe not the best. And we also talked about how you could store your provider plugins in other locations and you could do that with the Terraform providers commands and Terraform providers lock. And we showed that in another video earlier in the video course.
+
+[00:11:03] So feel free to use that as well. So different ways to go about this, where you can store it, you could store it locally and cache it, or you could store it on a server or file server, file mirror, that type of thing. So that's up to you. All right, so that's about it for Terraform caching
+
+[00:11:21] and that's it for this lab.

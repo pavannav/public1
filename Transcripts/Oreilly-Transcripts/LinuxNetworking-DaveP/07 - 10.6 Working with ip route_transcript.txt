@@ -1,0 +1,61 @@
+[00:00:01] - We're back with another lab. This time it's the ip route show command, which we can abbreviate to ip r. Let's get into it now. The ip route show command will show your default gateway and any networks that you have access to. But again, you can abbreviate this down to ip route
+
+[00:00:23] or just down to ip r, you'll get the same information. So the default gateway for me is showing us 10.0.2.1. One thing you need to remember about gateway devices is that they should be on the same IP network
+
+[00:00:41] as your host, as your computer that you're working at. So if we run an ip a command, you can see my IP address is 10.0.2.52. The gateway is also on the 10.0.2 network. It needs to be. So any hosts on a local area network
+
+[00:01:00] or any virtual machines, if they want to communicate out to other networks or out to the internet, they have to hit a gateway first and that's gotta be on the same IP network as that computer. And you can see the network that we're connecting to is 10.0.2.0/24,
+
+[00:01:21] and we're using the ens3 network interface card to do so. We also see a metric of 100. The lower the metric, the higher the priority for network access for that network interface card. Let's show a couple examples of ip r with some options. We'll do an ip with -c for color and r
+
+[00:01:43] and pipe that to column -t. Press Enter and you'll see the information, but it's in a nice column format, which is similar to the older route -n command in Linux,
+
+[00:02:00] and it's also in color for us. So we can quickly identify the names of network interface cards and IP addresses. You might also have a lot of information on a system. So for example, let's go back to my main system here. If I run an ip r command, I'm gonna get a pretty good amount of information here.
+
+[00:02:21] So maybe I wanna filter some of this. Let's do an ip -c r and filter default. So this is nice. This is nice and color coded. It tells us all the default connections. So I have connections for this network interface card
+
+[00:02:43] through 10.42.0.1. I've got this on the gateway, 10.42.0.1 again. And then we have this connecting on this gateway, 192.168.41.1. The filtered term is in red and it's colorized
+
+[00:03:01] as far as IP address and names of adapters because of the -c. You might also notice that this has its own color scheme. So I'm using the Tilix terminal multiplexer here. That's my terminal emulator that I'm working with, which allows me to split the screens,
+
+[00:03:20] and you can add whatever color schemes you want. This happens to be the Dracula color scheme that I like for this particular set of terminals. So if you're wondering where these colors come from, that is it. But those are some different options for ip r. Let's imagine a scenario. Let's say that you go to someone's office
+
+[00:03:41] and they have a Linux server and the customer's very upset because there's a problem with the server. Maybe no one can connect to the server or maybe the server cannot connect to anything else. Well, when I'm looking at Linux systems, quite often I'll do an ip a ; ip r.
+
+[00:04:02] And look at the information here, look at the IP info and look at the default gateway. Well, a couple times in the past I've gone and looked at systems that for some reason had no gateway. And if you don't have a gateway, you really can't connect to anything.
+
+[00:04:20] So let's create this scenario. Let's actually play it through and show how that would work. To remove the gateway, we can do an ip r delete defaults, and you're gonna have to do that with sudo permissions. You can see here it says operation not permitted.
+
+[00:04:40] That's because I didn't type sudo for my account. If you're working as root, it should work fine, but here I need sudo 'cause I'm working as my user account. So we'll do that again. And no news is good news, but again, in this case, it's actually bad news because if we run an ip r, our default gateway is gone.
+
+[00:05:01] The system knows what network we're supposed to access, which is 10.0.2.0, but that's a given because of the IP address that we have. We're within the 10.0.2 network. But now, if we try to connect out to something, it'll say, sorry, network is unreachable.
+
+[00:05:21] Can't do it. We can't connect out to anything. It's not gonna work. Other systems may be able to connect in, depends, but we can't connect out. So that's a problem. So we'd have to troubleshoot this. And so if I go to a client, quite often one of the commands I'm gonna run
+
+[00:05:41] is this, ip a ; ip r and see all the information, or just ip r and it'll say, oh hey, there's no default gateway. We need to put that back. So chances are just by looking at this, I could say, oh, I know what the gateway is. This computer is on the 10.0 0.2 network.
+
+[00:06:02] I know that because of the /24, which is a triple 255.0. So my guess is the gateway is gonna be 10.0.2.1 'cause normally the gateway is the first IP that's usable in that particular network or subnetwork. But it would be a good idea
+
+[00:06:20] to go find the network documentation and make sure of that fact before we actually do anything. So let's say we did that and found out that indeed the gateway is 10.0.2.1. We could add that back on. So we could do an ip r add default and specify what IP address we want to use.
+
+[00:06:42] So we'll say via, meaning using 10.0.2.1. And I forgot my sudo again. I'm gonna do that a lot during this course. I know it. And you can tell that I work as root a lot on servers. But when we do sudo, it says, yes, it works,
+
+[00:07:00] so it doesn't say anything. But we get no results, but that means it should have worked. So if we run our ip r command again, we will see, yes, defaults via 10.0.2.1 on ens3. At this point, we should be able to connect out.
+
+[00:07:20] And we can and we're gonna get replies here from example.com. Excellent. So that's a little bit of troubleshooting and that's one of the reasons that ip a and ip r can be very powerful commands for you when troubleshooting a Linux system. You can also add additional routes to other networks if you need to.
+
+[00:07:40] Let's say I needed to connect to the 172.21 network. We could add that once again with the ip r add command and specify the network that we wanna connect to. Let's just say it's this, 172.21 is the network number, so we put a /16 on the end there.
+
+[00:08:00] Then we have to state what device we wanna use to connect out. It could be we have multiple network interface cards and we want a second card to connect out to a separate network altogether. I only have the one on this system, so we'll say dev for device and then the name of it, ens3.
+
+[00:08:20] And did again, gotta have sudo. And now when we do an ip r, we'll see that additional network. Now in reality, I don't have access to that network. It doesn't exist here. I just made it up. But it could exist. It could be another IP network that's running through a switch or something like that.
+
+[00:08:40] And it could be that we maybe do have physical access to it, but we need to create that route. Now, if I run an ip a command, I don't have an IP address on there. I would have to add an IP address to actually be able to connect. You can actually add IP addresses with the ip a command temporarily,
+
+[00:09:01] but more likely I would do that with something else like nmcli, which we're gonna show later in this module. And what I would do is I would add an IP address on that network, something like 172.21.0. maybe 52. It all depends and it's really whatever we choose at that point.
+
+[00:09:21] But I don't need that network so I'm gonna get rid of it. We'll do an ip r delete and we'll specify that network that we want to get rid of and that's gonna be 172.21.0.0/16 with sudo.
+
+[00:09:41] Run an ip r, and there we go. Now we just have our default for the gateway and the original network that we connect to, which is normal. So a little bit about ip r, ip route, that's the last sub lesson of this lesson. Definitely take a look at the ip --help
+
+[00:10:02] and IP man pages, so manual ip. Definitely look at both of those to get more information about how the ip command works.

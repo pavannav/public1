@@ -1,0 +1,103 @@
+[00:00:06] Time for Lab 21, using HCP Vault with Terraform Cloud. All right, so the overview here. This lab demonstrates how to use HCP Vault, that's HashiCorp's managed vault service, in their cloud to securely
+
+[00:00:23] store our AWS credentials. This is the last way. We gave a whole list of possibilities for AWS credentials, from hard coding to terraform TFRs, to environment variables, local environment variables on the Terraform cloud, and then finally using Vault.
+
+[00:00:41] So now we're actually going to do that. It's a pretty mammoth lab, so hold on tight. So we're going to securely store and retrieve those AWS credentials and do that via the Terraform cloud, which is really HCP Terraform. So you're going to be working in both of those at the same time.
+
+[00:01:02] Now, big warning. This lab will require you to send your AWS secret key over the Internet to the Vault cluster. If you're not comfortable with sending that and doing that, stop and simply watch the video. However, just like with my previous suggestions, when you're done with the secret key, just delete it.
+
+[00:01:23] Delete it at AWS and create a new one. Right. And when you're done with this video course, really, you should make sure you delete all secret keys. Okay, good. Okay, so this lab is broken up into seven parts. Pretty massive lab. So take it slow and let's go through
+
+[00:01:41] it step by step here. All right, now, part one is setting up the HCP Vault cluster. You have to do that at Hashicorp's cloud, and you'll have to sign up for an account to do that. The link is here. You can sign up with an email address or with GitHub. You can also link your Terraform Cloud or your HCP Terraform account
+
+[00:02:04] with the regular HCP Cloud. Okay. The HCP Portal. So you can tie those together if you need to. For now, I'm working in them separately and logged in to both separately as we speak.
+
+[00:02:21] So here I'm in the HCP Terraform, the Terraform Cloud, that's at app Terraform IO and this tab over here is at the HCP Cloud, the general HCP cloud, which does actually include Terraform as well. So nowadays you can do all of it right here@portal
+
+[00:02:44] going to need to go to create an account if you don't already have one. And again, you could do that by email address or by your GitHub account. You can tie that in if you want to. All right. Once you get your account and get logged in.
+
+[00:03:01] We can create our HCP Vault cluster. And you can see here we can work with Terraform, Packer, Boundary Vagrant and also Vault Dedicated. We're going to use that. So let's go to Vault Dedicated now. And you have some options, you have some pre configured templates, but we're not going to use these. We're going to start from scratch
+
+[00:03:20] and create our cluster. All right, good. Now if you get the option you want to make sure you select development mode. This is the cheapest. Now you will note at the bottom here, this is important. This Vault will cost 61.7 cents per hour.
+
+[00:03:43] So two things. One, if you're not comfortable with that, just watch the video. Two, make sure that you destroy the vault. It is extremely important and we're going to double check that vault and make sure that it indeed is destroyed.
+
+[00:04:01] Now also keep in mind, when you start a new HCP Account, you're granted $500 in trial credits across all the HCP products and you can use those until they're done. So it should be free if you're new to this and have a new account. Otherwise $0.61 and that adds up really fast.
+
+[00:04:25] So two things. If you're not sure, don't do it and just watch the video. If you are sure, make sure that you destroy Incredibly important. All right, so we're selecting Amazon Web Services for hours because that's the credentials that we're going to be sending.
+
+[00:04:43] We want it in development mode. And the extra small cluster size, 2 CPUs, 1 gig of RAM. Very good. The rest of this we can leave. Actually, I'm going to change the region to US East 2 because that's what's going to be in my code.
+
+[00:05:01] We'll leave the network configuration as it is. 172.25.16 is fine with a slash 20. Okay, and then we're going to give a cluster ID, basically a cluster name. I'm going to call this vault-demo-cluster. Keep that in mind. That'll be the name of the vault. So when you search
+
+[00:05:21] later to destroy it, that's what you're going to be looking for. So vault demo cluster. Very good. And everything else should be default. I'm not enabling reporting. And we're going to go ahead and create the cluster now.
+
+[00:05:40] Here we go. Network creating Vault Cluster. Creating this could take 5 to 10 minutes, so be patient and I'm going to fast forward through all this and we'll be back when it is complete. All right. So that actually took 10 minutes to build the vault cluster. And again, it's called Vault Demo Cluster. If for some reason you're not
+
+[00:06:03] there, you can go back to your vault dedicated and click on the cluster name. All right, at this point we want to access it. And so you could do this in a variety of ways. You can launch the web UI right from here. You can use other quick actions, make sure
+
+[00:06:21] that your status is running so that's running properly. Another way is to grab the cluster URL for the vaults and we would want the public URL. So I'm going to grab that now and we'll copy that and I'm going to place that in a safe location and I'm just going to actually
+
+[00:06:42] save that into my lab here. I'm going to make a file, let's just call it info Txt and we'll save some information in there. Could have just done a vim for that. But we'll say public, public URL, is this okay?
+
+[00:07:02] And we'll save that for now. I'll probably save my token in there also. Now normally you wouldn't do this. You wouldn't save your token to a file here, but I'm just doing that for now just so I have it and that's okay for educational purposes. All
+
+[00:07:23] right, so we have that copied and now let's go ahead and generate a token. I want a new admin token. So we'll click on generate token and that should be copied. And we'll need this for terraform. So I'm going to copy that
+
+[00:07:42] into my file also and we'll call that admin token and paste that in. Okay, the token normally will start with HVS. That's HashiCorp Vault Secret. So we have that now and we'll get out of here and save and quit this file. So I have that saved to info txt.
+
+[00:08:01] All right, good. Now you would want to save that securely normally, but I'm just putting that in info txt for now. At this point we should be able to go ahead and launch the vault through another site. So let's go to launch web ui that'll open in another tab.
+
+[00:08:21] Good. And it says sign into vault. All right, so we're going to sign in as admin default and we're going to paste our token in there, which I still have. Paste that now and sign in. So just in case we lose our connection or forget the URL, we have that
+
+[00:08:43] stuff saved to info txt, but now we are in never save browser and we are in Our vault. Very good. Okay, let's move on to step two of this massive lab. Now we're going to store our AWS credentials in the HCP vault.
+
+[00:09:03] So to do that we have to enable a secrets engine first. So in the sidebar here we're going to go to Secrets engine and you'll see we have the cubbyhole, which is just a built in type of thing for per token temporary secret storage. We need a real secrets engine. So
+
+[00:09:21] we're going to go to enable new engine and I'm going to select kv. Okay, KV is your standard secrets engine. There's lots of options here. You could put SSH keys in, you could do keys for the cloud as well. We could do that with aws, but I want to do it differently. I want to do it with a standard KV Secrets engine. So I'm going to click
+
+[00:09:41] on that and then we're going to specify the path. I'm actually going to leave it as KV as the path. Now quite often that would be secret and that's standard, but I'm going to go with KV because KV is actually what stands for key value. It indicates a key
+
+[00:10:01] value version 2 engine type within vaults. So we're going to use that and we'll leave everything else as in as is and we'll enable that engine. Okay, so now we have multiple secrets engines, we have the cubbyhole
+
+[00:10:21] and we have kv. So let's go back to the KV Secrets engine and let's go ahead and store our AWS credentials in the vault here. So inside the KV Secrets engine, we're going to create a new secret. We'll set the path for this, I'm going to call it aws
+
+[00:10:41] and then we'll add the secret data. So what we need is the access key and also the secret key. All right, I'm naming these lowercase access underscore key and lowercase secret underscore key. So first I'll grab the access key. Let's go back to our system here
+
+[00:11:00] and let's open up another terminal. I have a bunch of terminals. Let's clean this up a little bit. There we go. And in this terminal let's change over to AWS and let's look at our credentials. Good.
+
+[00:11:20] Here's my access key and we'll copy that to here. And by default you can't see what it is, but you can look at it if you want. All right, good. And let's add another one. This one's going to be secretkey.
+
+[00:11:41] And again, normally you would never show your secret key anywhere. And this is the moment of truth here. We're actually going to be pasting a real secret key into the vault. So it's going to go over the Internet. So you may not want to do this again if you don't just watch the video. But I am going to not only delete the secret access key in the AWS console, I'm going to delete the entire user account.
+
+[00:12:04] But for now, let's copy it. And I'm going to do that when we're done with this video course and we'll add that on. Good. So now we have access key and secret key. They both look good. And let's go ahead and save the path for the secret, which is aws.
+
+[00:12:21] In a previous lab, we were doing other paths. We were doing things like database creds and things like that and adding the key value pairs in there. Here we're doing the path as aws. We'll save it and that is done. The entire path for that is v1 admin, kv data AWS.
+
+[00:12:43] The CLI path would be this. Very good. And then we have our sub keys in here. It is done. All right, so now you have other options. You could do this using the vault cli, but we did that in the previous lab. No reason to do that here.
+
+[00:13:02] Let's continue on and we'll verify that the credentials indeed are stored. So if you needed to, you go to Secrets engines, KV AWS and verify that they are indeed their access key and secret key.
+
+[00:13:20] Very good. Now, we did not click sensitive for anything like we did in the Terraform Cloud lab. We had that sensitive checkbox. In Vault. It's considered that everything is sensitive. That's a default. Implicitly sensitive, implicitly sensitive.
+
+[00:13:44] So that is good. And now we can get into part three. And we're going to go over to the Terraform Cloud, the HCP Terraform. And you want to make sure that you are logged in. And you can see our TFTEST here. That was our workspace
+
+[00:14:01] that we created previously in another lab. I'm going to go right to workspaces now. If you're new to Terraform Cloud, you'll need a Terraform Cloud account or HCP account. And you could just work in Terraform. You want to make sure you've created an organization and create a new workspace.
+
+[00:14:20] Okay, so I'm going to create a new workspace here. We had TF test, but I'm going to create a new one. Okay, so new workspace and we'll put that in our default project, doesn't really matter where that goes. This is going to be CLI driven workflow this time for terraform.
+
+[00:14:41] And the workspace name will be hcp-vault-demo because it's going to be connecting to our vault. All right, HCP vault demo and we'll click create. Okay, good. That is created.
+
+[00:15:02] Now I want to add some terraform variables. So I'm going to go to variables for this workspace and we'll add a variable. Okay. All right, so terraform variables, first off, the key and the value. The first thing I want is my vault address.
+
+[00:15:23] And we're going to call that vault underscore address. And we're going to refer to that in the terraform code. And I'm going to grab that from my file here. Here it is. That is it. And we'll copy that over as the value.
+
+[00:15:43] Good. Okay, we'll add that variable in. Now we'll add another variable and that's going to be our vaultstoken sensitive stuff.
+
+[00:16:01] So we're going to have to set this as sensitive, but it doesn't have to be an environment variable. It can just be a terraform variable. Okay, we'll go back to our file here. Grab that token that we saved, paste that in, make it invisible and make it sensitive.
+
+[00:16:23] Okay, good. We'll add that variable and then one more. Another terraform variable. This is going to be vault underscore namespace. Good. And the namespace is just admin. When we created the vault, that's what
+
+[00:16:42] we set it up as. As admin does not need to be sensitive, only that token does so that no one else will see it. Okay, vault underscore namespace and admin. We should be good. Add that variable in. And now we are set. We have our vault running.
+
+[00:17:03] We have it set up properly with the KV Secrets engine. And we have the secrets in there that we need. And then we also have our new workspace for the terraform cloud with the variables. There you go. That wraps it up for part one. In the next sub lesson, we'll get through the rest of the lab.

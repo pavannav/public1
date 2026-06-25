@@ -1,0 +1,45 @@
+[00:00:06] - Alright, now that we know all about boot procedure, let's do a fun exercise and mess it up a little bit. So I'm opening a root cell and I'm going to use dd if =/dev/zero of=/dev/sda
+
+[00:00:24] Hmm, sounds dangerous, right? bs=1 count=446 What did I just do? Well, I wiped the part from the mass boot record that contains the GRUB boot loader.
+
+[00:00:41] xxd -l 512 /dev/sda is showing that the partition table still exists. We haven't really talked about partitions yet, so I didn't want to remove that as well, but I did remove GRUB. Then what is going to happen if we reboot? Well, let's give it a try and find out.
+
+[00:01:01] And uh-oh, we are getting on the installation disk. Why is that? That's because of the boot order. Boot order will normally start from hard disk. If no hard disk is found, it'll start from the installation disk. And if no installation disk was found, it'll try to find a boot image on the network. Now most installation discs do have
+
+[00:01:22] some option for troubleshooting. Ubuntu and Fedora, for instance, if you boot from the disk, you get a complete system including a graphical user interface. In CentOS Stream we have this troubleshooting option and it's a troubleshooting option that I'm going to use. So we are not going to install CentOS,
+
+[00:01:41] we are going to rescue a CENTOS Stream system. So here the rescue system is loaded and it's asking us what it wants us to do. So it's telling that the rescue environment will now attempt to find the current Linux installation and mount it onto the directory mnt/sysroot.
+
+[00:02:01] Well, you know, sounds good to me because that means that we can access the actual installation. And uh-oh, we have a passphrase. What is this passphrase? Well, the passphrase, that looks like looks encryption.
+
+[00:02:21] Fortunately I happen to know the passphrase of this system and the reason that it's asking for this passphrase is that really it is trying to load all of the fail systems and oh no, I am getting "Pane is dead". That's no good, so we need to try again.
+
+[00:02:41] And I do need to try again using the rescue system. Now from here there's only one option and that's to restart the system again. Troubleshooting and a rescue is sent to a stream system. So we have just tried the automated procedure. The automated procedure had a problem.
+
+[00:03:01] So now I'm going to do the manual procedure. I'm not trying to find anything, I'm just going to build it up manually myself. So what is the plan? The plan is that we are going to mount the root file system on a temporary directory, make it complete and then you see each root to make that the actual root directory
+
+[00:03:22] so that we can do our troubleshooting. So that would be option number three. Not mounting the system, I know, we are going to press enter and we are going to take it from here. Starting with lsblk, what do we see in lsblk?
+
+[00:03:40] lsblk showing everything on this system. So we have sda1 we have sda2 Hmm, what is sda2 ? Well we need fdisk -l /dev/sda sda2 and that's all I'm looking for is an lvm partition. And do we see any lvm?
+
+[00:04:00] Well as we can see lvs is showing the lvm logical volumes so that's good. So I'm going to try to mount dev/cs/root which is the root valve system temporarily on the mnt directory. And uh-oh, dev/cs/root does not exist. Well, we see the lvm logical volumes
+
+[00:04:22] but we don't get a dev/cs/root existing. We need to investigate the volume group. VG display on CS. And what am I looking for? I am looking for information if this volume group is active.
+
+[00:04:44] I don't see anything but you know what? I can do a vgchange -a y cs And there we can see that now we have two logical volumes that are active so I can try to mount it again and now the mount is working.
+
+[00:05:00] Before I'm going to do the chroot environment, let's investigate what is going on in the system. So I'm using ls in /mnt and that's looking okay. ls in mnt/boot nothing. ls in mnt/dev nothing. ls in mnt/proc nothing.
+
+[00:05:21] And that's going to be a problem if I want to reestablish my complete environment. Hey, before we continue, you might be wondering, can't we just use GRUB to install from the boot disk? Yes, that would be an option as well. But you know, I don't know if there is any version differences between what is on the boot disk
+
+[00:05:42] and what is on the real system. And that is why I'm going through the effort of reestablishing my system through the chroot environment. Now in order to do so, I'm going to create a couple of bind mounts, mount-o bind of what? Of /proc and /mnt/proc
+
+[00:06:02] and mount -o bind of /dev and /mntdev We could also do a bind mount for boot, but really we have access to the device. So I'm using mount /dev/sda1 /mnt/boot
+
+[00:06:21] And now just a test of a couple of these commands. Here we have the mnt/dev and that means that we are in business. I can get into the mnt directory, use chroot. and now that I am in my root valve system, let's have a look, we recognize some files.
+
+[00:06:40] Well, I recognize some files that I've created before. And now that we are here I can use grub2-install and dev/sda and that'll reinstall the sda device. And that is interesting, we are getting unknown device, no such device, but we also get installation finished, no error reported.
+
+[00:07:03] Can we analyze? Of course we can. xxd -l 512/dev/sda and that will show that we have a grub2 boot loader. So it seems to be alright and that means that I can exit my chroot environment and another exit will reboot the system, here we go.
+
+[00:07:26] So did you also see the "Welcome to GRUB" and the booting system? That means that the problem is now resolved.

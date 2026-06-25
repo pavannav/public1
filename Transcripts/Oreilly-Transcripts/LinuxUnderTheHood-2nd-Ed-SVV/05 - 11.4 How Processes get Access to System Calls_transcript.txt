@@ -1,0 +1,23 @@
+[00:00:06] - All right, in this video, I will explain how processes get access to system calls. So in early versions of Linux, processes would either run as root or as a non-privileged user and there was nothing in between. The result was too many processes
+
+[00:00:20] running with root privileges and that invoked a risk of security threats. And to offer more fine-grained access, capabilities have been introduced. Administrators can use setcap to set specific capabilities. And you can use getcap to find capabilities currently set on programs.
+
+[00:00:42] Processes can also get access to specific system calls through inheritance. And if a parent process has access to specific system calls, and forks a child process, the child process inherits the capabilities. Or the process is programmed to access specific capabilities.
+
+[00:01:00] Now I would like to show you on a CentOS 7 system how you can use getcap and setcap. In case you are wondering, why CentOS 7? Well, because I wanna show you the ping utility, and the behavior of the ping utility has changed between CentOS 7 and recent Linux distributions. All right, so just to make it clear, we are on CentOS 7.
+
+[00:01:25] Let me show you /etc/os-release, because the behavior for the utility that I wanna test has changed. And for that reason, this demo doesn't work on recent Linux distributions anymore. Let's start with getcap /bin/ping,
+
+[00:01:41] where we can see the capabilities. So the capabilities are set to cap_net_admin, as well as cap_net_raw. And the result is that we can use strace /bin/ping -c 1 127.0.0.1,
+
+[00:02:03] and let me send the output to less. And what we are looking for is capget. There you can see the utility getting the different capabilities that it has. So this capget is a connection between the utility and the capabilities.
+
+[00:02:20] It's how the program is getting access to its capabilities. So the result is that ping can do its work. The best way to test it is to do it as a non-root user. And I might as well do it on localhost because an IP address is an IP address. And that is working.
+
+[00:02:40] Now as the root user, I'm going to use setcap cap_net_raw=-ep /bin/ping. And again, as an ordinary user, ping 127.0.0.1.
+
+[00:03:00] And what do we see? We see socket: Operation not permitted. Now why is that? That's for the simple reason that ordinary users need the cap_net_raw capability in order to be able to access the network device in a way that ping is doing it, and now we've taken that away. Now also interesting is what is going to happen
+
+[00:03:21] if we do this as the root user. Well, what do you think is going to happen? The root user is the root user, and being the root user, the root user doesn't need any capabilities. Now let's just make sure that we restore access even for the ordinary user by adding the ep permissions again on cap_net_raw.
+
+[00:03:41] Final test. It's working again. And that shows how the ping utility on all of CentOS is using these capabilities.

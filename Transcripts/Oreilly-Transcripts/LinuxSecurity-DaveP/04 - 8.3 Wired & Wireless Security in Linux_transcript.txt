@@ -1,0 +1,77 @@
+[00:00:01] In this sub-lesson, we'll cover a little lab on wired and wireless security in Linux. I'm going to be working in Lab 16, so feel free to follow along with that in your repository. And in this lab, we'll demonstrate how to block protocols at the kernel level with a bash script.
+
+[00:00:21] And we'll do a little bit of analyzing network interface statistics. I'll be working on my Debian server to demonstrate during this lab and it has a wired connection named ens3. I'll be working as root. I think what I'll do is I'll actually SSH into that system from my main system.
+
+[00:00:42] And most of what we cover here will be available to you to do in wired and wireless connections, okay? So it's kind of generic for both. First thing we're gonna do is block protocols at the kernel level. So the first thing I wanna do is make sure that I can ping my server from another Linux system.
+
+[00:01:04] And so need to make sure that you have two systems for this, make sure they're booted up, and make sure you can ping from one to the other. Then we're gonna show how to block those ICMP pings. So I have both my systems up and I'm gonna ping the Debian server from the client
+
+[00:01:20] just to make sure it has connectivity. That's 10.0.2.51, and we are getting replies. Good, so I'm gonna SSH into my Debian server from my main system here. And I'm gonna do that with an ssh debserver. So debserver's actually an alias. It's a host that I've created in my SSH configuration file.
+
+[00:01:43] And that config file knows the name and IP address of the system I'm connecting to, and the SSH key I'm using and other options. I'll show you how to set that up later in this video course. But for now it's basically like an alias.
+
+[00:02:00] So we do an ssh debserver and it says, WELCOME TO DAVE'S MEGA-DEBIAN SERVER! I'll be sure to have a good time and enjoy this. Now I'm connecting directly as a user and we said you don't wanna connect directly in SSH as root. So I'm connecting as user, and instead of connecting as root first,
+
+[00:02:21] I'm gonna connect as user and then elevate my privileges with an su - and type in the password for root. And so now we're in as root at debserver and we can get to work here. So what I wanna do is I want to block ICMP echoes and also stop forwarding.
+
+[00:02:42] So let's take a look at this debserver. First of all, let's go to /etc/network. Inside of there you're gonna see several files. The main networking configuration file is interfaces. And if you wanna learn more about this type
+
+[00:03:01] of networking in general, check out my Linux Networking Basics and Beyond course. But for now, that's where the main networking goes on. We can create additional scripts and place them in this network directory. And that's what we're gonna do here. So I'm gonna run a vim and create a new script.
+
+[00:03:23] We're gonna call this secure-interface-ens3.sh and we'll press Enter. Okay, and I wanna add some information to this. Here we go. This is the information I wanna add, and I just pasted this in from the lab document
+
+[00:03:42] to make it faster. So we're creating a script. So we set up the shebang with bin/bash and I'm echoing some information into here. First of all, I'm echoing a 1, which means I'm enabling this particular function, which is to ignore all ICMP echoes.
+
+[00:04:02] Then I'm echoing a 0 for forwarding. That's gonna turn off IP forwarding for IPv4. These types of things are done within proc/sys/net. And if you're working with IPv4, the IPv4 directory. So you're gonna be working in this commonly
+
+[00:04:21] if you wanna do some security with your IP networking. So this is the items that I wanted to add here. I'm going to save and quit outta the file. And then we need to set it to become executable. We'll do that with the chmod command
+
+[00:04:41] with the +x on that file name. There we go. Now your network interface name may be different. It could be ens3, it could be enp1s0, and so on and so forth. So you can name this file whatever you like. It doesn't really make a difference as long
+
+[00:05:01] as you refer to it properly in the next step. And the next step is to add that script to the interfaces configuration file. So now let's go and edit that interfaces file. We're gonna do that with a vim interfaces.
+
+[00:05:20] Press Enter and you'll see the main network configuration here where we have our IP address and the gateway address for the system. All we have to do is find our network interface, which is called ens3, and add a line onto the end here.
+
+[00:05:40] Make sure we're tabbed in once. And we'll specify that we want to up a file. We want to load a file with this network interface. This is known as pre-up. So we'll do a pre-up and we're gonna give the entire path to that script that we just created. So we'll do a /etc/network/secure-interface-ens3.
+
+[00:06:07] That's it. That should be your line item. And that should bring up that script as it brings up the network interface. Save and quit and I'm gonna go ahead and reboot the server.
+
+[00:06:21] We could down and up the interface, but I'm just gonna reboot the server altogether. So we'll reboot now and you'll see that my SSH connection to that server is lost. And we'll give that a moment to reboot. And you can see it here, rebooting, rebooting.
+
+[00:06:40] Very good, now we should be able to SSH back in. Now that our server's rebooted, I've gone to my client and now let's try pinging that server once again and see what happens. Well, pings are being blocked. Excellent.
+
+[00:07:02] So we'll do a Control + C to break outta there because the destination host is unreachable. And let's go ahead and return the server back to normal just so you have normal access to that server. Gonna go back to /etc/network and the interfaces file.
+
+[00:07:25] And if you want, you can just comment out that line for now and it won't take effect. And that'll effectively make it so that it doesn't pull up that script. So we'll escape outta here and save that file,
+
+[00:07:42] reboot that server once again, and check if we can ping the server from the client and we can. So it's good. So that's one way to block certain information directly at the kernel level in Linux. So a little bit of networking security there for you.
+
+[00:08:02] It's kind of like doing firewalling, but directly at the kernel level with commands and with scripts. We're gonna show lots of firewalling, actual firewall tools later on in the course. Now let's analyze our network interface card's statistics a little bit, and keep in mind that I'm working with a virtual machine here,
+
+[00:08:21] but it'll work essentially the same way on a physical system. So I'm back at my Debian client, and I'm gonna connect as root here just so it's a little bit easier for me to navigate and see everything without sudo. So one of the places that we go to is /sys/class/net.
+
+[00:08:42] And if you go to that directory, you'll see all of your network interface devices as directories. So for this system, the name of the main network interface is enp1s0. So that is the main network interface. Then we have the local loopback, which is 127.0.0.1.
+
+[00:09:03] But this is what I wanna take a look at. So I'm gonna change over to that directory and take a look inside. Now from here you can see all kinds of files and directories. And the one I wanna go into is statistics, but there's lots of other great information here.
+
+[00:09:22] But let's take a look at statistics. And inside of there you're gonna see all the statistics that are written to individual files by Linux. So we're talking about received and transmitted frames and packets and bytes and so on.
+
+[00:09:41] So here we have rx_packets. That's the received packets on the system. Here we have tx_packets. That's the transmitted packets or the sent packets on this system. So lots of different information that you can take a look at. Do you wanna see collisions? Check out the collisions file.
+
+[00:10:00] We could do a cat on collisions and see if there has been any as of yet. Right now, no, it's at zero. Want to see transmit or receive errors? You could do that. We could check the tx_errors file, zero errors, and the rx_errors file.
+
+[00:10:24] So hopefully these are zero for you as well. It depends on your network connection. The more busy your network connection, the more things your system is doing, the more likely you will have collisions or errors. Do you wanna see the data in real time? Try using the watch commands.
+
+[00:10:41] And so for example, we could do a watch on the cat command for, let's say, rx_packets. That's received packets on this system. Okay, we'll run that now, and right now it's at 5,922 and climbing.
+
+[00:11:01] And if we were to go to another system and start hitting it with some information, for example, we could do something like this,
+
+[00:11:20] 1,500 byte packets, and send them over to our client. You'll see that the packets is going up a little bit faster. If we were watching rx_bytes, it would be going up very quickly and we could do that as well. We could do an rx_bytes
+
+[00:11:45] and you could see that increase in real time. So this is some real manual ways of watching and collecting data on your system, and you could incorporate this into scripts and even make it into a program if you wanted to. So this is one of the main places that you'll go
+
+[00:12:01] to is /sys/class/net, and your network interface device. And all of the information in there is great information. You have power information. You have a lot of other info there. But also the statistics directory has lots of good information that you can work with.
+
+[00:12:22] The other directory that you'll be working in quite often when you wanna work with Linux networking is /proc/sys/net. And inside of there you have your IPv4 and all of the configurations within that and IPv6 and the netfilter.
+
+[00:12:41] So these are two of the places that you're gonna go to when it comes to getting more into the security of Linux and the programming of Linux. So definitely check those out and you'll note that there is some extra credit in the lab document as well, so do that. And that is the end of this sub-lesson.

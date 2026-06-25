@@ -1,0 +1,95 @@
+[00:00:06] Now let's analyze our bucket, our instances and our scripts directories. Okay? All the additional terraform files and connected files for this. All right, so the entire process consists of two terraform configurations,
+
+[00:00:22] an S3 bucket and AWS infrastructure creation instances and IAM users. We're going to create that S3 bucket first. That's going to contain the state file and then we'll use that state file to create our AWS infrastructure.
+
+[00:00:42] All right, let's take a look at the files. So first we'll go to bukkit and all it is is a main TF file. So let's look at that. All right, so we've got a terraform block provider block using US East 2 standard stuff. Then we have a module.
+
+[00:01:01] All right, so we're using a pre built module available to you millions of downloads, very commonly used. It's the S3 bucket AWS module and we're using version 4.2.2 right now. All right, so that's the module and that will download that module code
+
+[00:01:21] from the Terraform registry and place that in the terraform directory in the modules directory. Then we just need to know a couple things about that bucket. You can configure hundreds of inputs and outputs, but we just need to know a couple things for this lab.
+
+[00:01:42] And the main thing that you're going to have to type in is the bucket name. You're going to pick a very unique bucket name and place it there in the double quotes. I've already set up the rest. Forcedestroy is true control, direct ownership is true, object ownership is bucket owner enforced
+
+[00:02:00] and versioning enabled is also true. So that's it, that is the module. All we're going to have to put in when we start actually modifying things is the bucket name. Okay, so that's the bucket directory and that's the easy one. Now let's look at the instances directory.
+
+[00:02:21] This is where the bulk of the stuff is. So first we'll go to version tf. That's our version file. We have the terraform block and the required providers and the terraform version. So we said that this script will build the bucket first and that's going
+
+[00:02:40] to act as our location for our state file. That will be our remote backend and it's being done in AWS within S3 it's an S3 bucket. And so in the version file we're going to say terraform and we're going to say backend S3.
+
+[00:03:00] Now when we start configuring, you'll need to put in the bucket name that we selected, that unique name. And then we'll also put in a key that's going to be a directory and also the name Terraform TF State. And we also have to specify the region. I've already done that. It's us East 2.
+
+[00:03:20] We have two providers for this lab. We have AWS for our AWS instances and IAM users, and we also have Azure RM in the case that you want to do an Azure virtual machine. That's optional, but it's something that you could do if you want to. And the provider will be loaded for that and then required version.
+
+[00:03:41] For terraform, I'm using 1.14.0 or higher. All right, that's the version file. Very good. Let's look at the rest here. Now we'll go to Providers, because I have a separate file for Providers tf and we're using two different regions in aws.
+
+[00:04:04] Now, remember, this lab is kind of a culmination of a lot of the things that we've done in this video course. So we. One of the things we did was we utilized multiple regions in aws, but we said if you want to do that, you have to use an alias.
+
+[00:04:21] So we've got our default region, which is US East 2, but we also are going to use US East 1, which is Virginia. But to do that, we have to have an alias. So that's going to be AWS Virginia, and we have that alias set up there. No features or config for Azure rm, but you could add
+
+[00:04:40] those if you needed to. All right, next, let's look at the key deployer, separate key deployer file. Well, we're going to build our own SSH key pair, and we're going to have that deployed to both locations, US East 2 and US East 1.
+
+[00:05:01] Here's the AWS key pair deployer for Ohio. And we're going to have to enter our public key here, and we're going to use that same public key for the AWS key pair deployer for Virginia, and we'll enter that here. And the name of the key has to be sshkey.
+
+[00:05:23] And you'll note that for Virginia we had to add this meta argument, the provider meta argument, AWS Virginia. That is the alias. If we didn't put that, it would try to load that within Ohio, within U.S. east 2.
+
+[00:05:41] But we want to have this key pair deployed to both locations. So we're putting it in there like that. And we'll add that public key here as well. All right, that is the key deployer now let's move over to let's do SG tf.
+
+[00:06:00] This is our security group file. Well, I want to have some ports open. I want to have 22 for SSH, I want to have port 80 for HTTP and 443 for HTTPs. And so building on our previous work, we're going to use a locals block to define those ports.
+
+[00:06:21] That information is not going to change. So I'm not using variables blocks. I'm going to use a locals block for that. And we have the inbound ports 22, 80 and 443 and also outbound ports, just for fun. Okay, now we have the actual resource, the security group.
+
+[00:06:41] And I'm calling that SG Web Server Ohio. And that's utilizing dynamic blocks that we also talked about previously for our ingress and our egress, our inbound and our outbound. Very good. And that is iterating with a foreach meta argument based on the locals
+
+[00:07:04] blocks and the individual line items for those inbound ports and for this dynamic block, outbound ports, just like we did previously. So we're making use of the locals block so we can reuse these numbers
+
+[00:07:23] and the dynamic blocks within our security group resource so we can automatically get that information and the for each meta argument so we can iterate on each of these port numbers one at a time. Now, I have that for Ohio and I've also built one another
+
+[00:07:42] security group for Virginia. You'll note that once again, we're using the provider meta argument to specify the alias AWS Virginia, but we're reusing the same exact dynamic blocks. These dynamic blocks are the same exact thing
+
+[00:08:00] that we used in the Ohio resource group. And they're also referring to the same locals block. Makes sense. Right? So it saves us time. We reuse code all over the place. Excellent. So that is the security groups, and that's going to allow us the access that we need.
+
+[00:08:20] Now let's look at the AWS instances. All right, so first on the list here we have aws instance web server 1. And by default it's going to be created in Ohio on US East 2. And you see the AMI we're using Here, this is Ubuntu 24.04.
+
+[00:08:45] And then we have variables for the instance type and the key name. And then the VPC security group that we're using, AWSSecurityGroup SGWebServerOhio. Well, that was this in our SG TF file.
+
+[00:09:04] So that's what we're referring to. That means that that instance will be able to work with these open ports. After that we see a user data file. Well, we've done this before. This is an argument that allows us to input user data. And we're using
+
+[00:09:20] file function and pointing to a script which I've already created for you called Hulk YAML. Good. And that should be the correct path. But you're going to want to check all this stuff next for tags, the name Web Server 1. Easy enough.
+
+[00:09:40] Time created. Well, we're using a double function that we showed before. A function within a function. We have timestamp inside of format date. So we should have a really nice formatted timestamp for the time created. Here we have something new id, and this is going to be a randomly generated ID for the instance.
+
+[00:10:03] This is something new that we haven't seen yet. And this is going to be based off of the code in Random tf. This is a different type of resource that you can use to generate numbers and other things randomly. And so what this is going to do is it's going to generate a 16 byte
+
+[00:10:23] random ID which is going to be associated with the name instance ID1 and then we have another one for the second instance. These are going to be our own IDs separate from the AWS IDs that we can have a lot of purpose for. We can use them in a lot of ways.
+
+[00:10:41] So this is Random Generator. Good stuff. Let's go back to the AWS instances and what we're going to see in the Tag is our ID that's generated and we see the dollar sign and our variable for random id.instanceid1 hex.
+
+[00:11:01] If you ever use the Random generator, you have to specify hex on the end because it's going to be a hexadecimal number. That's it. So some more in depth stuff here. And we have another resource, the second web server, and it's essentially the same thing. It's just Web Server 2.
+
+[00:11:20] The differences are that it's using the alias for the provider and it's called Web Server 2. And it's going to use that second random ID that was in random TF. That's it. Otherwise it's essentially the same. The AMI is different for that region.
+
+[00:11:41] Very good. All right, now it says here, if you decide to use the Azure VM which I have set up for you, you're going to want to uncomment the dependson meta arguments in each resource here. And that way what'll happen is it'll create the Azure Virtual Machine
+
+[00:12:02] first and then build the AWS instances. Okay, I'm not going to do that for this lab. That's optional. If we take a look at Azure VM tf, you'll see that everything is commented out. But it's everything that we did in the Azure lab previously, all the
+
+[00:12:22] network infrastructure and the actual virtual machine as well. If you want to use that, you'll have to uncomment all this out and you'll have to uncomment out dependson so that it'll build that first. But again, we're not going to do that here.
+
+[00:12:40] Okay, next Accounts tf, more resources. Now we're going to create IAM users and this one has a dependson which is active. It depends on a list of instances, the two instances that will be created based on their Terraform IDs, and that's surrounded by square brackets
+
+[00:13:01] as a list should be. So that's the dependson meta arguments and then we're using a foreach meta argument and we're going to iterate on each of the accounts that we want to create using each key.
+
+[00:13:23] And that's a list of accounts that's in variables tf and we're converting that to a set with the to set function. And then we have tags for that as well, similar tags. We've got a double function here, format, date and timestamp. If we look at variables TF, we'll see we're using a T3 micro
+
+[00:13:44] and we're seeing the default is SSHKEY for our key. And then more importantly, the variable block accounts and the defaults within that list. Alice, Bob, Charlie, Denise, Aaron, Franklin and Darth.
+
+[00:14:01] So those are the IAM users that it's going to iterate upon within accounts TF with this two set var accounts. Good. What else have we not shown yet? We also have outputs.
+
+[00:14:22] Ok, so outputs, let's look at outputs tf we're going to output the public DNS server for server one and server two, also the public IP and the private IP for both of those. All right, so all that information for both servers.
+
+[00:14:41] Now you might have noticed before that we said okay, in the bash script we need to find out the output. And that was here. And this is why I'm calling this Public IP Server 1 and Public IP Server
+
+[00:15:00] 2, because in the outputs, that's what I'm calling them, calling them Public IP Server one, which is going to be this value right here, which is public IP for web server 1 and down here public IP server 2, you reference them by the Terraform ID for the output block.
+
+[00:15:22] Excellent. So we'll get all those outputs when we're done. All right, what have we done here? Accounts, AWS instances, Azure, key deployer outputs, providers, random SG variables and version. That should be it. So that's all of the instance files.
+
+[00:15:42] Very good. And I think we can end this sub lesson there. So take a look at all those. It's a lot of stuff. And kind of review everything that you see and we'll move on to the next sub lesson.

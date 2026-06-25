@@ -1,0 +1,81 @@
+[00:00:06] All right, great. Moving on to part two. Now we're going to copy and analyze the Azure infrastructure code, and we're going to spend some time doing that. We're also going to copy over our subscription ID into the code so that Terraform can talk to Azure properly.
+
+[00:00:25] And that's basically all we're going to do here. So let's go into our terminal and if you take a look, you'll see that I do have code set up for you already in the file code txt. So it's all ready for you. All you're going to have to do is change
+
+[00:00:42] the subscription id, but we'll do that. Now let's copy over the file and you want to make a file called Azure tf. Really, you can name the terraform file whatever you want. I'm selecting Azure tf This time we'll press enter. Now we have the Azure TF file.
+
+[00:01:02] Good, let's take a look at it. Minimize that terminal. So at the top here we have the Terraform provider. And you can see that we're using the Azure RM provider. So up until this point we've been using the AWS provider.
+
+[00:01:20] Now we're going to work with a new one, Azure rm. So we can utilize the Microsoft Azure platform. And you can see the source here. This is stored at the Terraform registry. So it's at HashiCorp AzureRM. And then we see the version I want to use exactly 4.57.0 for this lab.
+
+[00:01:45] Now, this is the latest provider plugin as of the recording of this video. Newer provider plugins will definitely come out over time. But this is the one I want to use for this code. So I've locked it in
+
+[00:02:01] specifically as 4.57.0 by just using the equal sign. There's no greater than or less than, there's no tilde, just equals. All right, next we have the provider block, and this is the provider, Azure rm. And this is where you can change the configuration for the Azure provider.
+
+[00:02:23] And the only thing we need to do is put in our subscription id. Now you might actually see that in your terminal, or you could go to your login in your browser and you can go to Subscriptions and find the ID there as well. I'll make that a little bit bigger.
+
+[00:02:46] I just went to Subscriptions from the homepage and we can copy that over if we want to make that a little smaller so I can copy over the entire id. And we'll take that now and I'll place that directly into the
+
+[00:03:02] subscription ID here. And it has to be in double quotes. So this is the configuration information we have for Azure rm. You could have other configuration information, but that's all we need. We need the subscription ID if we're using version 4 or higher.
+
+[00:03:23] Let's go through the rest of the code here. Next, we have a resource, and this is a resource group, Azure RM Resource group. That is the block label type that we're using. I'm calling it RG1.
+
+[00:03:42] And for this resource group, we're using East US as the location. So this is similar to regions in aws. Now, if you want to build a virtual machine in Azure, we need to supply a lot of information. So let's go through those. Now we have another resource,
+
+[00:04:00] the Azure Virtual network. So within our resource group, within our region, we're creating a virtual network. I'm calling it Network One, and it's using the address space 10.0.0.0 16 and we see our location, we have to specify the resource group.
+
+[00:04:25] Now that's going to be the entire name here. So it's going to be Azure Resource Group RG1 location. For this location argument, then we also have Azure Resource Group RG1 name for the resource group name.
+
+[00:04:45] That's going to be the entire terraform name for that. Inside the virtual network, we need to create a subnet. So here we have Azure RM subnet, and I'm calling it subneta. The name of it is internal. That's what it'll show in Azure.
+
+[00:05:03] And again, that has to be within that resource group, and it has to refer to the virtual network that we're creating within that virtual network. In the subnet, we can specify a IP network that we want to use.
+
+[00:05:21] In this case, I'm using 1.0.0.2.0. And so that's going to be the internal network for that, the private ip, so to speak. Next, the resource that we need here is a public ip, so we can actually connect to our instance that we're trying to create, our virtual machine
+
+[00:05:41] that we're trying to create. Because in Azure they call them virtual machines, AWS they call them instances. All right, so we need a public IP for that. So the block label for that is Azure RMPublicip.
+
+[00:06:00] I'm calling that for the Terraform name. Terraform Public IP, giving it a name. And we're specifying the allocation method will be static for this. And of course, we're giving the location and the resource group name as well. So we need that entire path here once again, for that resource group.
+
+[00:06:22] Now we also want to have security groups so that we can connect. What I'm most interested in here is SSH capabilities. So we create a security group in Azure. It's known as azurermnetworksecuritygroup.
+
+[00:06:42] Then you can name it whatever you want for your Terraform id. The important part is the security rule here. You have to specify the name and the protocol that it uses, and most importantly the destination port range, or in this case just a number. And for me that's going to be port 22.
+
+[00:07:02] And this information, most of it is placed in double quotes because it is strings of information. But wait, there's more. We also have the resource for a network interface card. We need to select that as well. For a virtual machine, that'll be azurermnetworkinterface
+
+[00:07:22] and I'm calling that NIC one. And again, specify the resource group that we're using for that with the resource group name and the location. Then we're using an IP configuration within that resource.
+
+[00:07:41] For the private IP allocation, we're setting that to dynamic. And then we have a public IP address. But that is pointing to this. Let me move this over a little bit. That is pointing to AzurePublicIP, TerraFormPublicIP, which we referred
+
+[00:08:00] to previously. If we go back, we'll see that public IP that we set up as a separate resource with a static allocation method. So I don't want that to be dynamic, I want a static IP applied to that. This is the way that we would do that.
+
+[00:08:20] But for the private ip, I'm fine with dynamic. So that's just a string. Next we have another resource, a security group association. We have to associate the network interface card with the security group. So that block label is going to be
+
+[00:08:41] azurermnetworkinterfacesecuritygroupassoci And then we have to specify the network interface ID and the network security group. And so we're linking to those, the network interface and the security group that we've already seen. And we're putting ID on the end here.
+
+[00:09:05] And then we finally get to the actual virtual machine that we want to build. Right? So this is our Azure RMLinuxVirtualMachine with AWS. We just used AWSinstance here. It's going to be a lot different. It's going to be
+
+[00:09:23] a different name depending on what operating system you're running. Quite often it'll be a Linux virtual machine, but that will depend on the os. So this is similar though to AWS instances. I'm giving it A name.
+
+[00:09:41] I'm giving it a size. This is a small size on Azure, so that it won't use too many resources and it won't cost too much money. And I'm giving it a username. I'm calling this admin user. I'm also stating the resource group name that it has to apply to and the location. I'm also supplying the network interface
+
+[00:10:02] that I want this virtual machine to use. Good. So that's the actual virtual machine that's going to be built that we're going to see. And in addition, we have more information for that resource. We have the SSH key that we want to use. I've already filled in that information for
+
+[00:10:22] you. It's in the keys directory and the name is azurekey Pub. If you chose a different SSH key name or placed it in a different directory, you would have to change that. And you'll note that we're using a file function that's a terraform function that calls on a specific file, and we're calling on
+
+[00:10:42] that public key as part of our SSH key pair. We also have the OS disk, that's the storage, and we have the source image reference. So if you're using an older version of Azure, the references will work
+
+[00:11:01] a little bit differently. This is how we reference an image that's stored on Azure using the provider plugin 4 or higher. And so that will be canonical. And we're using Ubuntu 24.04, and we're looking for the latest image for that on the Azure platform.
+
+[00:11:24] All right. Finally, I've got a couple other things, and again, keep in mind, this information could be separated if you wanted to, you could put this information in separate terraform files. But we've progressed a lot here in this video course, so I'm just placing it all in one file for you.
+
+[00:11:43] And the last part of the puzzle here is our outputs. So these are outputs just like what we've seen previously when we've used AWS. And we're going to output the public IP address. The naming convention's a little bit different. With AWS, it's PublicIP.
+
+[00:12:03] With Azure, it's PublicIPaddress and that's where you would refer to it, right over here. So you would need the entire name for this. It's azurermlinuxvirtualmachine AzureVM1, because that's the Terraform portion
+
+[00:12:24] of the ID, and then the actual name that we pull from the information that comes from Azure, from the actual API, and that's PublicIPaddress. So when we're done building this, we should see the public IP address
+
+[00:12:43] and we should see the resource group that we're a member of. So there you go. Spend a little bit more time taking a look at that information and make sure that you understand what all of these resources are.
+
+[00:13:00] For more information, you can click the link in the Lab document. That will bring you to the Terraform Registry and give you more info about the Azure RM provider. But take a look at all these different resources and blocks that we're working with, and all the different resource names that we're working with as well.
+
+[00:13:23] Also, make sure that you've plugged in your subscription ID from Azure into the provider block here in the subscription ID argument. All right, that is about it for part two. Come on back for the actual build.

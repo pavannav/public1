@@ -1,0 +1,27 @@
+[00:00:06] - Okay, so let me explain how LVM is organized. In the heart of LVM, (marker pen squeaking) as the abstraction of all the storage that you have, there is the volume group.
+
+[00:00:24] In order to create a volume group, in the bottom layer, you are going to add your physical volumes. That can be a hard disk, another hard disk, or even a partition. In fact, any block device can be a physical volume.
+
+[00:00:43] (marker pen squeaking) And the nice thing about LVM is that at a volume group level, you don't have to see the difference between these different physical volumes anymore, and that allows you to create a volume group that is really very big.
+
+[00:01:00] And from the volume group, you are going to create your LVM logical volumes, your LV1, your LV2, your LV3, and these are the storage devices on which you are going to put your file systems. So your mkfs is happening on top of the LV. So if you wanna work with LVM, what do you need to know?
+
+[00:01:22] Well, you start with the PV. On top of the PV, you have your VG, then you have your LV, and that's your block device sequence. Let me show you how to work with this. So using lsblk to figure out about my storage devices, and there I can see
+
+[00:01:41] that I have some space available in my sda. So I am going to use fdisk in my /dev/sda to create a new partition. So it's adding logical partition 7. That's all right with me. First sector, I'm accepting the default
+
+[00:02:00] and I make this a two-gigabyte partition. And then we can see that it created a new partition 7 of type Linux. Now I need to change the type if I want to use it for LVM, if I want to play according to the rules. So on partition number 7, I am going to make it 8e for an LVM partition.
+
+[00:02:20] Just to verify, p is showing that sda7 is now a Linux LVM partition. So I can write and I can set up my LVM using vgcreate, vgcreate vgdata /dev/sda7 will do that for me. Now you may also first use pvcreate, but you don't have to.
+
+[00:02:44] In order to put sda7 in the volume group, it needs to be a physical volume, but vgcreate is detecting, "What is this sda7?" It notices that sda7 is not yet a physical volume. And as you can see, it first created as a physical volume,
+
+[00:03:01] and then it creates the volume group. We can verify that using commands like pvs, which is showing the physical volume, and vgs, which is showing the volume group. And now I'm using lvcreate -l 50%FREE, I want to allocate 50% of the available disc space, -n lvdata.
+
+[00:03:24] I want to use the name lvdata and volume group vgdata. And that is creating the logical volume. So at this point, I can use my mkfs dot whatever I want on the logical volume to start using it.
+
+[00:03:42] So dev/vgdata/lvdata is what I want to use. And there we go, I can start using it. So how am I starting to use it? Well, I'm putting it in etc/fstab, or I'm creating the system the mount file if I want to. And I'm going to include /dev/vgdata/lvdata,
+
+[00:04:02] I'm mounting it on /lvdata, still need to create it as ext4, defaults mount option zero and zero. And that should do it. mkdir /lvdata, mount -a. It's complaining again, I don't care about a complaint.
+
+[00:04:22] I'm just ignoring, and mount will show that the logical volume is now being mounted. Hey, how come that we have this dev/mapper name? We'll talk about it later. For now, it has been mounted, so it's good.

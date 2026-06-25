@@ -1,0 +1,47 @@
+[00:00:06] - So you can manually create your containers. You can also use systemd. So containers just provide a way to run a process in multiple namespace, which cgroups applied. Docker and Podman are very common ways to implement containers,
+
+[00:00:21] but you can also easily implement them on Linux using systemd-nspawn. Systemd-nspawn is mainly about running applications in perfectly isolated environment and not so much about providing a distribution model for applications, as is the case with Docker registry and others. What does that mean?
+
+[00:00:40] It means that they don't have a registry. You need to create the container images for yourself. So that means that to create your own container, you need a chroot filesystem that contains all that is required. And in the next demo, I am going to show you how to use debootstrap, which is a Debian-based package
+
+[00:01:02] to install systemd-nspawn containers on Ubuntu. The systemd-container package contains systemd-nspawn as well as machinectl, which is the main tool to manage the containers and to create the container, the image, if you want to call it that way, I'm not even sure if it's a real image,
+
+[00:01:20] but the image is created in the /var/lib/machines directory where systemd-nspawn expects to find the container images. Let me show you. So for this demo we are going to use an Ubuntu server and let me start by doing a sudo apt install
+
+[00:01:42] debootstrap systemd-container as well as bridge-utils, that's for the networking. That makes it easy, already installed. Okay, now I'm going to create the container environment. So that is mkdir -p /var/lib/machines/helloworld,
+
+[00:02:09] And then I'm going to use sudo debootstrap stable /var/lib/machines/helloworld,
+
+[00:02:25] followed by http://deb.debian.org/debian/. So this is creating the foundation of your container,
+
+[00:02:42] the packages that you need in the chroot environment. It's a little bit like what we have seen before with the dnf installroot command, but this is the debian alternative. So next I need to take care of setting some permissions.
+
+[00:03:00] So chown root:root /var/lib/machines and let's also use chmod 700 /var/lib/machines So now that we have the base environment available for our container,
+
+[00:03:22] we can use the appropriate tools, well the appropriate tools, that is systemd-nspawn and that's what you are going to use to start a container. Normally it runs a root shell in the container environment and it takes a couple of options like -b, which will actually boot a container and provide a root shell after
+
+[00:03:40] or -U, which will tell it to create a user namespace, - M name allows you to give it a name as well. And once a container is running, you can provide additional setup. It's a little bit of manual work that needs to be done, but that's the way it is. It's not Docker or Podman. So you need to install dbus to allow usage of machinectl.
+
+[00:04:04] You may have to configure networking and also set the hostname, if you want something more specialized here. Let me demonstrate. So I'm going to use sudo systemd-nspawn -UM helloworld.
+
+[00:04:25] And there we can see that I'm root on helloworld. Now in order to have this work, I will need to make sure that I've a password. So passwd allows them to set the root password and that would be the root password within the container.
+
+[00:04:43] Then I can use exit and we can test. So I'm going to use systemd-nspawn again with the UbM, we add the b option to have a boot and as you can see provides a login prompt.
+
+[00:05:00] It really looks like a virtual machine but it's not a virtual machine, it's a container. So I need to provide my login credentials and I will need to make sure that we install the dbus application. The dbus application is required to make management of the container easier
+
+[00:05:24] and then I can use exit and then we are ready to manage the container with machinectl. If you need to disconnect from a current container, you can see right now it's still showing a login prompt, use Control + closing square bracket three times.
+
+[00:05:40] It'll tell you once you have started a container as well. That's how you can get out. Let's get back to the slides to talk a bit about machinectl. Okay, so let me show you what we need to do with machinectl. machinectl is actually the management interface for your systemd-nspawn containers. Let me demonstrate. So to start with, I'm using machinectl list-images
+
+[00:06:04] which will show all the images that currently exist. So machinectl start helloworld is going to start a helloworld container, machinectl will prompt for authentication
+
+[00:06:21] and now we can see that authentication is complete. So machinectl status helloworld is showing me in a systemd interface that we have a container with the name helloworld. So if you want to log in machinectl login helloworld.
+
+[00:06:43] And first it prompts for the credentials of the current user and then it shows the login prompt. So here I can use my root login and my password to actually login and then I can do whatever I want to do
+
+[00:07:00] in the container including the ps command. ps aux which is showing the current processes. Of course, this is a systemd-nspawn container and it is in this systemd-nspawn container, systemd is PID 1. That's kind of the default situation in systemd-nspawn. Let me use Control + closing square bracket three times
+
+[00:07:22] to terminate the connection. So the container itself is not stopped, it's only the connection that is stopped and I can use machinectl stop helloworld if I want to stop it. Now, if I would want this container to start automatically,
+
+[00:07:40] I can also use machinectl enable or machinectl disable. machinectl is really a bit like systemctl. It's a systemd command that is used to manage containers, a bit like systemd units.

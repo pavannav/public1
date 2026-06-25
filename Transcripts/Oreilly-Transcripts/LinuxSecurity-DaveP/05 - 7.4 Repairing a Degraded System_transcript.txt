@@ -1,0 +1,51 @@
+[00:00:01] Now we have a degraded system and this sub lesson will show how to repair that system. We're gonna continue on with lab 15 in the start troubleshooting heading. And let's just imagine that this was a system that we had to fix, but let's imagine
+
+[00:00:20] that we don't know what the problem is just yet. We've just arrived on the scene and we need to fix the problem. So let's take it from square one. First thing I would do on this system is run the same command we ran in the last sub lesson, and that's a system CTL status. When we do so, we see that our deb client here is degraded, not good.
+
+[00:00:44] So it's degraded, it's in red. We know we have an issue. It tells us here failed one unit or one units, but if we scroll down, we're not really gonna see what the issue is. We're gonna have to troubleshoot a little bit further. So I'm gonna press Q to quit outta here,
+
+[00:01:02] and then I'm gonna run another command. System CTL double dash failed. When we do so we'll see all failed services. And if you're doing this lab with me, you should see the SSH service has failed. It may be called SSHD if you're working on a fedora based
+
+[00:01:23] system or other systems, but look at that. It's loaded, it's installed, but it has failed. So that's a problem. Now if you have other services that have failed, those will be listed here as well. Hopefully you don't, but we're gonna troubleshoot this particular service.
+
+[00:01:43] Now, if you remember, when we restarted the service, it told us a couple things and let's actually just do it again. I don't care how many times you restart the service, it's not gonna fix the problem. If we do it again, we'll get those messages back.
+
+[00:02:01] One of the cool things about Linux is you'll get some helpful messages that might help you troubleshoot. So the first thing it tells you is to do a system CTL status on the SSH service, and then it gives you another option, journal CTL, with these options for SSH service. Okay, so let's try that.
+
+[00:02:20] Let's do a system CTL status on SSH. Press enter and it says failed, but that's all I'm getting here. I'm getting the exit code. It's an exception, but I'm not getting much more. If you remember previously we said if you want to see any log information, you'll have
+
+[00:02:42] to proceed your command with sudo. So when we do that, we'll get this log, but in this particular case, we only get the last five lines. And all it's really telling us is the SSH service start request repeated too quickly and ultimately it failed.
+
+[00:03:02] It tried to restart it a couple times and it failed. So we're not getting get enough information here from system CTL. So we should move on to the other command that they recommended for us. And that is the journal CTL command. The journal CTL command looks at the journal in Linux
+
+[00:03:22] and the main journal in Linux is all the logging that's done for the entire system and all the applications. So we can use journal CTL to grab information from the logs. For example, quite often I'll do a journal CTL dash U
+
+[00:03:40] and then the service name. In the help file, and in the results in Linux, they said you could use XEU and you can, but generally I'll just use dash U, but the name of the service, this will filter the entire log, the entire journal for just SSH entries
+
+[00:04:00] and also will add sudo into the beginning because we need sudo permissions to show this information. We'll press enter and we'll see the entire log since the beginning of time for this particular system, the beginning of time is in June of last year, and that's because I've copied
+
+[00:04:22] this virtual machine from a clone that I originally built in June of last year. But we can use the page down key to go all the way to the end, or you can use the tail option just to see the end of the log files. But if we look here at the end here,
+
+[00:04:40] we see March 20th, that's today. When we're recording this, we see those last five lines that we saw from system CTL. But if we look a little bit further, we'll see this line here. And this is what I want. Generally, I'm going to disregard most of the system D messages.
+
+[00:05:01] What I'm looking for is a message that deals with the actual service. In this case it's SSHD. And this tells us exactly what the problem is and where it is. It's inside slash etc slash SSH. And it's the file SSHD underscore config,
+
+[00:05:20] and it tells us line 14 has a badly formatted port number. Well, that's what we did, but this is telling us exactly what the problem is. So this is very powerful in your troubleshooting. So let's quit outta here. And again, like I said, you could use the tail command
+
+[00:05:40] just to see the end of your journal and the last 10 lines, or you could add options to see more lines if you needed to like 20 or 30. But this isn't color coded, and so if it helps you to be color coded, you can
+
+[00:06:00] just do the regular command as we showed before. Either way, we know what the issue is, this is telling us exactly what the issue is, so let's go ahead and fix the problem. And we're gonna do that just by modifying the configuration file and setting it back to what it should be.
+
+[00:06:20] So I'm gonna do a sudo vim SSHD underscore config. Now of course you'd have to be within slash etc slash SSH. I never left that directory, but that's where you'd want to be. Or you could just type the entire complete path if you wanted to
+
+[00:06:41] and get into that SSHD underscore config file. And we'll look for line 14. You could count down if you wanted to, or you could do a colon set number command in Vim, and that'll show line numbers for you. Here is line 14 and here is the line item.
+
+[00:07:01] That's a mangled port number. That's not a real port number. So I'm gonna go into insert mode and back that out. And in fact, I'll just comment it out because by default the server uses port 22. We'll leave it like that, control C to get out of insert mode, colon WQ to save and quit.
+
+[00:07:22] But remember, after you configure the file, you have to restart the service. So we'll do a system CTL, restart on SSH, and we'll do that with sudo and look what happens. No news is good news. If you don't see any error messages,
+
+[00:07:41] then most likely it has worked properly. Let's go ahead and test that. We'll do a system CTL status on SSH, and here we go. It's green, active and running and enabled, and it's listening on port 22.
+
+[00:08:02] Finally, we can do a system CTL status on our whole system, and we see that now it's back to running and it's green. Fantastic. If you have other services that have failed on your virtual machine or your Linux system, or if you're ever troubleshooting a server
+
+[00:08:21] that's having some types of problems with configuration files, services, or applications, then try this troubleshooting method and see if it can help you fix those problems and gain the respect of technicians worldwide.

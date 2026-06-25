@@ -1,0 +1,33 @@
+[00:00:06] - So in this video, we are going to explore targets a little bit more. You should already know about multi-user.target and graphical.target and stuff like that, but then you also know that you can create your own targets?
+
+[00:00:20] Let's check it out. As you know, a target is just a group of units. And if a target contains the AllowIsolate=yes option, it can be used to boot the system in a specific state. Now a limited number of targets with this option is provided, but you can also easily create your own. Let me demonstrate.
+
+[00:00:43] So to start with, I would like to investigate what's going on in graphical.target. So let's get on /usr/lib/systemd/system/graphical.target. So what do we see?
+
+[00:01:00] Well, we see unit description and nothing else really. Most important, there is the After, which defines the dependencies and AllowIsolate=yes, and the AllowIsolate=yes, that is what it's all about. Now I wanna create my own target. So how am I going to do that? Well, I'm copying.
+
+[00:01:21] I can do it in a more convenient way. Let me repeat the previous command and use Control + A to move the cursor back to the start of the command line. Then I can use cp of this graphical.target to /etc/systemd/system, and I'm calling it my.target.
+
+[00:01:42] Then I'm going to edit my built target. And we are going to clean it up just a little bit. So my own target, I don't care about the documentation. It requires this multi-user.target definitely.
+
+[00:02:02] We need a Requires here. And the Requires make sure that if I'm starting my target, it'll ensure that multi-user.target is included as well. I don't need no Wants, so let me remove the Wants, and we can keep the Conflicts and the After. And of course, we need the AllowIsolate=yes.
+
+[00:02:24] Good. Now before we continue, we should investigate how exactly a target knows about the units that it should start Well that is an /etc/systemd/system. And in /etc/systemd/system, you see all Wants directory
+
+[00:02:41] for all of your targets. So if we have, where is it? The multi-user.target. Multi-user.target has a multi-user.target.wants. And whenever you are going to use a systemctl enable, then a symbolic link is created in the target
+
+[00:03:01] that is specified in the install section for your unit. So what does that mean? Well, that means that if I'm going to modify my sleep.service, we can enable the sleep.service to learn in the my.target. We don't see a my.target.wants directly yet.
+
+[00:03:20] That doesn't matter. We will see that that problem will be fixed automatically. So let me start by doing a vim on /etc/systemd/system/sleep.service, and I'm going to change the WantedBy to my.target.
+
+[00:03:42] Next, I'm going to use the systemctl enable sleep.service. And then we should check, look at this line, it created a symbolic link /etc/systemd/system/my.target.wants/sleep.service to /etc/systemd/system/sleep.service.
+
+[00:04:00] Now the fun thing is that we do not yet have the my.target.wants before running this command. But if we have a look at the output of ls again, now we can see that my.target.wants has been created. So ls on my.target.wants. and we can see the sleep.service which is running here.
+
+[00:04:23] And now that I created my own target, we can even make it the default. So systemctl set-default of my.target, and then I'm going to reboot, and we are going to check what happens when we reboot.
+
+[00:04:40] Hey, did you see that? We don't have a GDM popping up anymore. Does that make sense? Of course that makes sense because we are now in the my.target. Systemctl get-default is showing that we are in my.target. And systemctl list-dependencies
+
+[00:05:03] is showing all the dependencies in the my.target, including the sleep.service, as well as the multi-user.target and everything else. And that's how you can create your own target. Well, I am going to get back to the graphical.target, if you don't mind, because that is easier for display purposes.
+
+[00:05:27] And I'm rebooting one more time to get back in normal state.

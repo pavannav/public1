@@ -1,0 +1,61 @@
+[00:00:01] For this last portion of the lab, we're going to work with authentication settings. The default authentication settings in an SSH server leave something to be desired, especially if you have confidential or mission-critical systems. So we're gonna show a couple ways to modify authentication options.
+
+[00:00:21] So we'll go back to our server now, and we'll jump back into our sshd_config file. And the first thing I wanna show is lowering the maximum amount of authentication attempts. So when you try to connect via passwords, you will be given multiple attempts
+
+[00:00:41] to get the password right. We can reduce that amount of attempts within the configuration, but right now we're only connecting via keys. So I'm going to change that. And we're gonna turn password authentication back on,
+
+[00:01:04] to yes. And then we're gonna look for the max off tries configuration. And there it is. And we'll uncomment that,
+
+[00:01:20] and you can see that it says six, six maximum authentication tries. To me, that's too much. Normally the rule is the three strikes and you're out rule. But I'm gonna change this to one, because I'm stingy. So we'll change that to one, close outta here,
+
+[00:01:40] save and quit. Restart the SSH service. And let's change over to the client. And see if we can connect. Now I wanna connect via password. So I'm gonna change to the sysadmin account.
+
+[00:02:06] And we'll try to connect to the remote system user account. But this should fail, anyhow. Let's type in the password.
+
+[00:02:22] Okay, and it says "Too many authentication failures." So there's a couple issues here, if we go back to the server. And the configuration file. You'll remember that I set up that allow groups, SSH allowed.
+
+[00:02:40] And sysadmin's definitely not part of SSH allowed. So, I'm gonna comment that out. Save and quit, restart the service. And at this point we're actually testing, 'cause I'm not sure exactly what's gonna happen. Go back to the client, try to connect again.
+
+[00:03:02] And we're in. Good. So that's pretty interesting, I've never seen this, this is live. It said too many authentication failures, but really, that wasn't the problem. The problem was that the user account was no longer part of the SSH allowed group.
+
+[00:03:21] Okay. But we're in, and it worked. That's because I typed the password correctly the first time. Let's close outta that and try to connect again. And I'll type the wrong password on purpose, test12, my old password that was given to me by some silly administrator. Now we see, indeed,
+
+[00:03:40] too many authentication failures, can't get in. The password is incorrect. Who knows, maybe I actually typed the password incorrectly before, I'm not exactly sure what happened, but I know that I can't connect now, because I typed the wrong password. We'll try it one more time.
+
+[00:04:00] Try to carefully type the password, and we are connected. So, it's the one strike in your out rule. Now you could change that, you could make it three, that's what I'd usually do on a system. But, on some systems it may need to be less, it all depends on your organization's policies and procedures. The next thing we could do
+
+[00:04:21] is set a minimum login grace time. So we'll go back to the configuration file. And this time we're searching for login grace time, and there it is. We'll uncomment that. And you can see that the login grace time by default is two minutes.
+
+[00:04:40] What does that mean, that means that if you try to make a connection to the SSH server, with a password, and it asks you to type the password. If you wait, and you don't finish typing the password in two minutes, it'll knock you off the connection. So we can change this.
+
+[00:05:00] We could change this to, say, 15 seconds. Escape out, colon WQ to save and quit. Restart the service, go back to our client again, close out of that current connection. And try to connect again. So I'm going to press Enter, and it's gonna wait for a password.
+
+[00:05:20] We'll give it 15 seconds, and we'll fast forward this video. And so 15 seconds have elapsed, and the cursor is not blinking anymore, it's just solid. So we'll press the Enter key, and it says connection closed by that system,
+
+[00:05:40] so we didn't make it within the grace time. So login grace time can be a good security feature in conjunction with a minimal amount of authentication attempts. Finally, I'd like to disable X11 forwarding. So we'll go back to our server, and go back to our config file.
+
+[00:06:01] X11 forwarding is when an SSH client can run graphical programs that are stored on the server, but actually run on the client side. And so this can be a security risk, and it's a good idea to turn it off, not only at the server side, but also at the client side.
+
+[00:06:23] So to disable this, we're gonna look for the X11 forwarding option. And you can see that by default, in our system, it is set to yes. So I'm gonna backspace that and set that to no.
+
+[00:06:40] And we'll close out and save and quit, and restart that SSHD. Now this can also be turned off at the client side. If we go to our client, and I'm gonna exit out of the sysadmin account, and go back to the user account. Because the user is an admin on this system.
+
+[00:07:03] And we'll change over to /etc/ssh. Inside of there, on this system, we'll see the ssh_config file. ssh_config is for the client side configuration. Let's take a look at that now.
+
+[00:07:24] And you will see all the configuration data for this particular host. And this is for basically all client connections. It says host, and we have a star, or asterisk, that's the wild card, so any connection that's made, unless it's named somewhere else.
+
+[00:07:43] So if we look down here, we'll see, ForwardX11, and it says no right now, that's the default. So, you'll notice, if I try to delete that, it says "Changing a readonly file." Well, ding, ding, ding. That's the principle of least privilege kicking in.
+
+[00:08:00] So I'm gonna get outta here, and do it again with sudo. Haven't typed my sudo password in a while, so we have to do that. And now we can make the modifications here, uncomment it. And then you'd wanna set it to no, make sure it's definitely set to no. We also have trusted X11 forwarding,
+
+[00:08:21] you may wanna set that to no as well. And on the client side, you can turn off password authentication, and all kinds of other good stuff as well. So that's client-side configuration, it's not the server side, but it's a good idea to turn off X11 on both ends, so that people are not able
+
+[00:08:40] to actually open those graphical programs from a remote system. So we'll go ahead and escape outta this, and we'll save it. Now, some systems require that you use the dash X or the dash Y parameters to actually make those X11 forwarded connections via SSH.
+
+[00:09:04] And then that would allow you to open those applications, those graphical applications. But with newer systems of OpenSSH, you might not even need those options. So as you can see, there are dozens of settings
+
+[00:09:21] that you can work with in your sshd_config file, on the server, and the ssh_config file on the client. And so these are some of the options for you. Definitely check out that SSHD configuration file, and look at all the different options that are there.
+
+[00:09:41] For more information, you can do a man on sshd_config. Because the manual pages aren't just for commands, they're also for concepts and configuration files as well. And you will find tons and tons of information in here about SSH and SSH security.
+
+[00:10:02] That's it for the lab, and that wraps up this sub lesson.

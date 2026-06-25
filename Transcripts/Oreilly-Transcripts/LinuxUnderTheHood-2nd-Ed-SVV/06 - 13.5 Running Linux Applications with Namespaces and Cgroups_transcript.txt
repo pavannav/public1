@@ -1,0 +1,31 @@
+[00:00:06] - So you now learned about namespaces and earlier, we have talked about cgroups. So you can manually run applications with namespaces and cgroups, which allows you to come pretty close to what we call nowadays a container.
+
+[00:00:21] So what is required to actually run a restricted Linux application? Well, first, is the unshare command, about which we have already learned. You can use it to start an application in a namespace. And also applications can be added to cgroups, and you can even do that manually.
+
+[00:00:40] So cgroups are mounted as a pseudo mount, and you can echo the PID value into cgroups.proc file within the cgroups' pseudo mount. So how do we use unshare? Well, we already learned about that. unshare can be used to run processes in a namespace, unshared from the parent. And unshare has different options to specify which namespaces should be created.
+
+[00:01:04] In the previous lesson, you have learned about unshare --fork --pid --mount-proc zsh, which will run zsh in a new PID namespace. Now we have already talked about unshare, but in this lesson,
+
+[00:01:20] you haven't really had a look at cgroups. So let me show you how you can manually create some cgroups. So let me show you mount | grep cgroup, which is showing the cgroups' pseudo mount. Next I'm going into /sys/fs/cgroup/, which is the mount point for the pseudo mount.
+
+[00:01:42] And in there we can see the current cgroup settings. These are the system default settings, and if you want to create a new cgroup, you need to create a new subdirectory, and that's what I'm going to do, mkdir mycgroup. And I'm getting in this new subdirectory. And what do we see?
+
+[00:02:00] Just because of the fact of creating this new subdirectory, all these cgroup parameter files have been copied in here. Now what you need to do, you need to make sure that when you run a process that this process has its PID ending up in the cgroup.procs directory. So, dd if=/dev/zero
+
+[00:02:21] of=/dev/null. That's a command we have seen quite a couple of times already. & echo $!. Pick the PID of this last command and redirect that to cgroup.procs.
+
+[00:02:41] Just to verify, cat cgroup.procs and that now contains the PID of this process. And now I want to use echo 50 > cpu.weight. In the past, we used CPU shares, now we use cpu.weight. The default CPU weight is 100.
+
+[00:03:00] So this process is getting half of the default cpu.weight. Now in order to make this working all right, I should also use dd if=/dev/zero of=/dev/null as an ordinary background process. And then I need to shut off all but one CPU.
+
+[00:03:21] This is a two-core system, so I'm going to use echo 0 > /sys/bus/cpu/devices/cpu1/online and that will shut off my cpu1. And now we are going to check what's going on in top, and what do we see? We see that 4123 has healthy amount of CPU cycles
+
+[00:03:44] as PID 4133, and that's because PID 4123 has been started manually in the cgroup. I just need you to be aware that you don't need no systemd to start processes in a cgroup. You can do that manually. And here you go, this is how you do it.
+
+[00:04:02] So now that we know how it works, you might want to clean it up as well. Enable your CPU and use killall on the dd processes. So you have just seen how you can manually run processes in a specific cgroup.
+
+[00:04:20] And before, you have learned how you can namespaces as well. systemd can also be used to make that a lot easier. So systemd offers integration for running processes in namespaces, as well as cgroups. And you have already seen how that works. So when using a mount namespace, you will need to copy all the required files into the namespace directory.
+
+[00:04:40] Take care of that. Otherwise, it might not work. The cgroup directives that you will find in systemd are CPUWeight and MemoryMax. So if you use MemoryMax in a systemd environment, in fact, you are creating cgroups. But that's not what we want to do here. You already learned about that in the lesson about systemd.
+
+[00:05:01] We wanna talk about containers, right?

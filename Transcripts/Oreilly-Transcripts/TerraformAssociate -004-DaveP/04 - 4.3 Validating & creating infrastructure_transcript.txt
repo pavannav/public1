@@ -1,0 +1,71 @@
+[00:00:06] Now it's time to initialize, validate and create the infrastructure. So let's do that. Let's go ahead and open the terminal and make sure that you're in lab 04. That's going to be our working directory.
+
+[00:00:23] And the first thing we'll do is a terraform initial. So this is our initialization for this code. We'll press Enter, maximize that terminal so we can watch. It's installing The HashiCorp AWS 6.27 provider plugin and it does
+
+[00:00:43] everything else that we showed previously creates the lock file and we can see that here and it says terraform has been successfully initialized. So now we can work within our directory and go further.
+
+[00:01:00] I'm going to minimize that terminal and let's go forward. Now something that I normally do as well is I'll do a terraform fmt. I always like to format the code. We'll press Enter and it did do a little bit of fixing up for us. We see it lists main TF here. If we run it again, it won't say anything because the formatting is all done.
+
+[00:01:23] So that's good. Next thing I want to do is make sure that the code is going to run properly. So we'll run a terraform validate, press Enter and it says success. Green is good. The configuration is valid. Now we can go through the terraform plan if we wish.
+
+[00:01:46] However, I'm going to bypass that this time and just do a terraform apply because that's going to show us the plan as well. So we'll run the terraform apply and let's take a look.
+
+[00:02:01] This is a longer plan than last time. Here's the command I issued and it says it will create what will create AWS. Underscore instance lab04, our Ubuntu server. If we scroll further down, we'll see the additional resources.
+
+[00:02:24] So we have additional resources. And first we have the Security Group allow ssh. Then we have the Security Group allow tls. Then we have the Security Group egress for outbound access.
+
+[00:02:41] Then the Security Group ingress rule to allow ssh and the Security Group ingress rule to allow tls. Collectively, we have six resources that we're creating. Each one of those is a resource. So every Security group and every Security Group rule is a resource.
+
+[00:03:03] Now you may ask, why get billed more for these? Generally what you get billed for. There's several services that you get billed for in aws. In fact, more than several. There's a bunch, but the main ones are the instances that we're creating. That's what really takes up the space and the processing power within the AWS cloud. So it's the instances
+
+[00:03:23] that we're more concerned with. But altogether we have six resources that we're building. Zero to change, zero to destroy. That's exactly what I want. So I'm going to type in yes and build this now. And you can see what it did. Terraform decides what to
+
+[00:03:41] create, in what order. And it has various criteria for doing this, but it built egress first, then allow ssh, allow tls, the security groups, and then it built the rules for those. And then once those firewall rules were set, then it can go ahead
+
+[00:04:03] and build the instance, which will have usage of those inbound rules and also the egress ruled. So it builds that instance after all of the security groups. Keep that in mind. This is part of the order of precedence
+
+[00:04:22] when it comes to the Terraform criteria. And it looks like everything went okay. Apply complete resources added 6. Excellent. So we are in good shape here. Let's confirm this at our console.
+
+[00:04:43] And I'm here at the AWS console, logged in as Terraform. I'm looking at US east two. And we'll hit the refresh button. And indeed, it has created lab04 and given it an instance id. Let's delve a little bit deeper. We'll click on the
+
+[00:05:00] instance ID and take a look. Now we have a public IP address. That would be the address that you could SSH into, or you could SSH into the public DNS name. Either way, let's look at the security.
+
+[00:05:20] And you'll note the two security groups that were created, allow TLS and allow SSH. Then you'll see inbound rules. We see inbound port 443, that's for TLS, and inbound port 22 for SSH. Outbound rules. Nothing to display just yet.
+
+[00:05:40] All right, very good. So it did create the security groups. We know and we know it created the instance and it applied those security groups to the instance as per our code. So that is good. So our analysis on the AWS console is complete. Let's go back to our
+
+[00:06:01] code and take a look at our Terraform TFState. Close the terminal for now. If we go to TFState, you'll see everything in JSON format. This is the source of truth of what we just created. This is our state file. And so if we scroll down here, we'll see it created an aws
+
+[00:06:21] instance called Lab 04. And all the information about that instance and the security groups that it deals with. And if we go farther, we'll see the AWS security group resources that were created.
+
+[00:06:44] Okay, all three of those. And then the security group rules, everything is listed and all the information is here in case we need it for our configuration.
+
+[00:07:00] And that's it. About 368 lines of code, all JSON stored in the state file. That is our source of truth. Now, the state file is really important. It is that source of truth. Let's say that somebody came into the AWS console and decided to remove
+
+[00:07:23] one of the security groups or decided to terminate Lab 04. That would be a real problem. And normally if you're working in Terraform, you don't want that. You want everybody to work in Terraform. If you have a team of people
+
+[00:07:42] working together, you want them all to deal with Terraform. And no one really should be going into the AWS console at all. If we were to delete lab04 in the AWS console and then we went into VS code here locally and ran a Terraform plan or apply, it'll throw some
+
+[00:08:02] errors. It'll say, there's something wrong here. There's an issue. Your code is not really matching with what is there according to the state file. And so that's one of the reasons that we have the state file to be a source of truth and to check what should be on the cloud.
+
+[00:08:24] So keep that in mind. All right, so that's a little bit of analysis there. And finally, what I want to do is I want to SSH into the instance. If you don't know what the DNS name or the IP address is of the instance,
+
+[00:08:40] you can find that out in a variety of ways. We could find that out here at the AWS console Console. Or we could look through the state file. There's more advanced ways to do this, for example, with outputs. And we'll show that in the next lab. So we could scroll through the whole file to find it. Or we could search
+
+[00:09:02] Press Control F and we'll do publicip and bam, there it is. Here's our address. That's what I want. Or the DNS name if you want to go by that. I'm going to connect by ip. So we'll copy and paste that in and we'll do an ssh.
+
+[00:09:23] And normally if you're connecting to an Ubuntu instance on aws, the default admin account will just be Ubuntu. So we'll do Ubuntu and paste in that IP and try to Connect.
+
+[00:09:40] Now, when we do so, it says, hey, the authenticity of the host cannot be established. Are you sure you want to connect? I do. I just built this thing. So I do want to connect. So it can see the instance via SSH and Port 22. I'll say yes.
+
+[00:10:02] But then it says, sorry, permission denied. We're looking for a public key and we have not set that up yet. That is not going to work. Now, really two reasons why this isn't going to work. The first reason is the public key. We haven't set up an SSH key pair yet. We'll do that in the next lab.
+
+[00:10:23] The other reason is because even if we could try to connect, the SSH server within, our instance will not be able to go outbound. And the reason for that, if we go back to our code, is that we did not
+
+[00:10:40] add the VPC security group ID necessary. That would be the egress security group id. If we scroll down here, we see AWS security group and we see egress. And it's there. It's there set up as a security group.
+
+[00:11:02] And that will get loaded into the AWS infrastructure. But for every instance that we want to use egress, we have to state that. So we would have to put that into this list of security group IDs.
+
+[00:11:21] That is the issue. That was what it was missing here in the code. So we don't have the SSH key pair and we don't have the listing for the egress security group within our list here inside the instance. We'll show how to do both of those in the next lab. But for now, everything is running and looks good.
+
+[00:11:44] And that's it for this sub lesson.

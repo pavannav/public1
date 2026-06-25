@@ -1,0 +1,59 @@
+[00:00:06] - So the most important item to allocate disks is the partition. But when we talk about partitions, you should know that there's two different types, MBR and GPT. Let's talk about MBR or master boot record.
+
+[00:00:21] Master boot record was introduced in 1981 with your original PC standard. So it's pretty old. And the MBR is the first 512 bytes on disk of which 64 bytes is used as a partition table. In those days, this were pretty small, so 512 bytes was all it was available.
+
+[00:00:42] In this limited space of 64 bytes, four partitions can be defined as primary partitions and then the partition table will be full. If any more partitions are needed, one partition needs to be created as an extended partition and within the extended partition, logical partitions
+
+[00:01:01] can be created. Let me make a drawing to explain how these are related. All right, so if this is your hard disk, on your hard disk, you would create primary partitions
+
+[00:01:21] And then at a certain moment you may have used all of your primary partitions. What are you going to do if you want more? Well, all of the remaining disk space in that case is going to be used in an extended partition and in the extended partition, you would create logical partitions.
+
+[00:01:41] So the logical partition is always within the boundaries of an extended partition. And using this approach makes that you can create more than just four partitions. Now there is a thing that you should realize about all of this. Your four primary partitions
+
+[00:02:00] or your four first partitions is what I should say are numbered in order. So sda1 and sda2 and sda3 and sda4. Notice that you can create any partition as an extended partition. Doesn't have to be sda4. You might even want to create one big extended partition
+
+[00:02:20] and use logical partitions inside. The important thing is that regardless the number of primary partitions, your first logical partition is always sda5. The second logical partition is always sda6. And likewise, they are numbered in order. The consequences of this
+
+[00:02:41] show when you delete your sda5, after the next reboot, sda6 and sda7 are going to be renamed. So suddenly sda6 will have become sda5. That's one of the reasons why you want to use UUIDs or labels while mounting your partitions.
+
+[00:03:02] So MBR does have a couple of limitations. That's obvious because it was created in 1981. So the problem is that 64 bytes are available for addressing no more than 4 partitions. And that means that in the addressing space you have 16 bytes for each partition.
+
+[00:03:20] And using these 64 bytes, a maximum size of 2 terabytes can be addressed. And another limitation as we have just discussed is that only 4 partitions can be created through MBR. Now let's analyze these MBR partition tables. So let me start by using ls on /sys/firmware.
+
+[00:03:44] And what are we looking for? Well, we are looking for a UAFI subdirectory. If you don't see a UAFI subdirectory, then you are on bios. Next, let's do lsblk for lists block devices. So list block devices is showing the block devices
+
+[00:04:01] that I've got. I have three of them and one of them is used for LVM, but that doesn't really matter. So lsblk is a nice overview. We can also look under the hood what's going on using xxd. xxd is a hexadecimal viewer. And by using xxd -l 512, I'm going
+
+[00:04:21] to limit the output to the first 512 bytes. That's exactly what I want because I want to see the massive boot record and the partition table. Do you see it, the partition table? Probably not. But if you look a little bit closer than here, the highlighted part, that's a partition table.
+
+[00:04:41] Master boot record always ends with the magic code that is 55aa. And here we can see the three partitions that exist. And in case you wonder, how do we see it? Well, you can recognize the partition types 83, 8e, 83, that's a Linux partition and LVM partition as well as a Linux partition.
+
+[00:05:02] Now I know this is not very readable and that's why most people prefer using fdisk -l on dev/sda, but if for any reason your massive boot record is damaged or whatever, fdisk -l won't work. But xxd -l will still still work. Let's talk a bit about GUID partition table.
+
+[00:05:22] So in the GUID partition table or GPT more spaces available for addressing partitions. GUID is a part of the unified extensible firmware interface or UEFI. But all Linux can be used on biosystems as well. GUID uses 64 bits for local block addresses, which means
+
+[00:05:43] that on this which sectors that have a size of 512 bytes, the maximum size is 8 zetabytes. Also in GUID, the maximum of 128 partitions can be created. And for that reason there is no longer any need to differentiate between primary and secondary partitions.
+
+[00:06:02] So because GPT is bigger, it can't be stored in MBR. Also, you don't want it to be stored in MBR because on UEFI, you don't use MBR really anymore. So GUID is stored elsewhere and where? Well it starts in the second sector on disk
+
+[00:06:21] where you will find the GPT header and right after that the next sectors are used for storing up to 128 GPT partitions. Each partition needs 120 bytes entry. So a mix of 32 sectors can be used to store GPT partitions and a backup GPT header is stored
+
+[00:06:42] on the last sector on disk. That can also be convenient in case you have any trouble accessing your partition table. It can be resourced from there. So let me demonstrate how we can analyze what's going on on the GPT system. So I'm starting lsblk on this fedora system
+
+[00:07:01] and as you can see it has a boot efi as it has a boot efi, this must be width partition table system. So let's start using xxd -l 512 on dev/sda which is showing oh boy, command not found. Well we need to install it right?
+
+[00:07:20] So dnf install -y xxd will do it for us. So let me use xxd -l 512 on dev/sda where we can see the protective MBR. And really there's not much inside. You see that?
+
+[00:07:40] That's because on an MBR system all the stuff that is needed to boot is on the MBR system partition. Now I'm going to show you the GPT. And in order to do that we have a kind of a special approach. Dd if is dev/sda, bs is 512.
+
+[00:08:00] Skip is 1 and count is 1. So this is the input file. We use the input file dev/sda with the block size of 512. We skip the first block and we count one block. And that is what I want to show you in xxd. And there we can see EFI PART.
+
+[00:08:22] So that is the EFI partition table. This is the GPT header. Now if you want to see the partitions as well, we need to continue in the next sector. So I'm changing the previous command. Skip is 1, is now becoming, skip is 2, and the result is what you see right here.
+
+[00:08:41] So what is that? Well, these are your partitions. Partition number 1, partition number 2, partition number 3. There is place for 4 partitions in every single sector. Next, we can use fdisk -l on dev/sda for a list. Currently fdisk supports GPT.
+
+[00:09:00] There's no need to use part its or anything else anymore. Now this is the beginning and I am going to look for the number of sectors. Why am I going to look for the number of sectors? Because I want to show you the backup GPT header, which is in the last sector on disk. And in order to do so, I'm using again, dd if
+
+[00:09:22] is dev/sda, bs is 512. And skip is and we are going to do a small calculation to number of sectors. That is 41943040 minus 1.
+
+[00:09:44] And that is what we pipe to xxd for hexadecimal view. And what do we see? We see the backup GPT partition header.

@@ -1,0 +1,65 @@
+[00:00:01] Creating profiles is great, but it's also wise to harness the power of the internet, the power of others as well. You can find lots of well-written AppArmor profiles out on the internet, even tested ones that are available within the APT package Manager. So we're gonna be working in Lab 20,
+
+[00:00:22] and that is AppArmor and Apache example. In this lab, we'll install an Apache web server, and the whole purpose of the lab is to use AppArmor to further protect our Apache web server once we install it. So we'll install that. We'll download and install an AppArmor profile for Apache.
+
+[00:00:44] We'll install, enable and enforce the profile. We'll analyze the profile and the Apache web server, and then finally disable and remove the profile and bring our server back to normal. For this lab, I'll be working on my Debian 12 server as root.
+
+[00:01:00] You wanna make sure that you have AppArmor installed and also the AppArmor Utilities and Audit D installed, and make sure those services are running. So I'm gonna connect to my Debian server directly from my main system. So we'll do an ssh debserver and connect automatically.
+
+[00:01:23] As I mentioned before, I have those aliases set up, and we'll connect as root. And now like I said before, I like to use tmux or some type of multiplexing program. Tux is usually the solution.
+
+[00:01:40] It's quick, it's easy to use, and most organizations will allow me to install it on the server. So I already have that installed on my Debian server, so I'm gonna run it now. And this is the beauty of ssh-ing into the server and using tmux. When we do so, we can now split the screen.
+
+[00:02:00] To do that otherwise when we're SSH-ing in, we'd have to SSH in twice with two separate terminals. Tmux allows us to have those multiple terminals. So I'm gonna press Ctrl B and the percentage sign and get that second terminal on the left. Go back to the first one, and we can get to work.
+
+[00:02:20] So this is a Debian server, and it does not have Apache installed by default. So if you want the Apache web server, you'll have to install it. We'll do that with an apt install Apache2, and we'll say yes for that. That's gonna use up nine megabytes of space. I think we have that available.
+
+[00:02:45] And once it's installed we'll check it. System CTL status Apache2, and we can see it is active and running. Let's go full screen here, and we can see it is enabled as well.
+
+[00:03:00] Now in some cases applications like Apache will not run automatically within your system if you're running Ubuntu or other systems. So you definitely want to check it and make sure that it's active and enabled. Once you have, we'll go to a second terminal and check the built-in website,
+
+[00:03:20] and we'll do that with the curl command. Let's check if we have the curl command. That's not found, so I'm going to install that as well. And now we can use it. So we'll do a curl http:// and the local loop back IP 127.0.0.1,
+
+[00:03:40] and we'll do that on port 80, and we'll pipe it to less so we can view that content. Press enter, and if we look at the top here, we can see Apache2 Debian default page. It works. All right, good. So the web server's working. We wanna make sure that is the case before we continue.
+
+[00:04:00] And that is our installation of Apache Web Server. The next step is to install, enable and enforce an AppArmor policy for our web server. So we'll go back to our server and go back to the first terminal. And the first thing we'll do
+
+[00:04:20] is install a safe Apache module. So this is an Apache module, and it's also considered an AppArmor profile, and we're gonna grab that. It's apt install, and it's called Libapache2-mod-apparmor.
+
+[00:04:40] So this is a module we're adding to Apache2 so that AppArmor can further protect it. We all know that web servers can be insecure, so we wanna secure them as much as we can. So we'll press enter for this. that grabs that through apt. Once that's done, we will restart the Apache web server.
+
+[00:05:03] So we'll do a system CTL, restart, Apache2. And now we'll set that new profile to enforce mode. And so we're gonna do an aa-enforce, and the name of the profile I'll just tell you
+
+[00:05:20] is USR.sbin.apache2. Press enter for that, and it says setting apache2 for AppArmor to enforce mode. Very good. Now let's analyze that profile. Let's do an AA status, and we'll pipe that to less as well.
+
+[00:05:44] And we can see here that 13 profiles are loaded, and all 13 are in enforce mode. Very good. Let's look down the line here. We have three for apache: apache2, apache2 default URI,
+
+[00:06:00] and apache2 handling untrusted inputs. And that last line is the key. The module we installed for Apache has instructions on how to handle untrusted input. So this is a type of input validation, and when you do this kind of thing,
+
+[00:06:20] it can help to reduce injection attacks, cross scripting attacks or XSS and also lateral attacks from other applications. So that last line item is key, and we can further go into the profile and make more modifications and add rules as we see fit
+
+[00:06:40] for our web server. Note that this is just one example of an AppArmor policy or profile if you will. And just one example for Apache2. There's plenty of others that are available on the internet and via the Apache website, but let's verify that we can still connect
+
+[00:07:00] and go over to our second terminal and run that curl on our local loop back IP again. And indeed we can. Apache2, Debian default page. It works. That's all I care about. As long as I can access that web server on port 80, that's good enough for now. Now let's make note of the actual profile.
+
+[00:07:21] Let's change over to /etc/apparmor.d. And inside of there we should see the profile name. And here it is, usr.sbin.apache2. And what I'd like you to do is take a look at that profile,
+
+[00:07:42] and if we do a vim on that, you can see what it's including. And if we scroll down, we'll see the rules that are in here and the capabilities for this and how it deals with handling untrusted input.
+
+[00:08:00] Okay, so certain commands won't be able to be typed in any input fields on the web server, so there's some good stuff. So take a couple minutes to review that when you get a chance. But I'm gonna close outta there now. And at this point we can go ahead and set everything back to normal. So we're gonna disable and remove the profile
+
+[00:08:22] and change everything back to normal here. So first thing, we'll go back to our first terminal here, and we'll do an AA disable to disable the profile. And that's usr.sbin.apache2. Good, that is disabled.
+
+[00:08:42] We'll check that and make sure that it is disabled with an AA status. And yes, it's not on the list, so that is good. And then we want to remove that profile altogether. So I'm gonna change over to my second terminal here, and we'll do an RM on USR sbin apache2.
+
+[00:09:03] That is gone. And we're also gonna do an apt purge on the module that we installed, the AppArmor module for Apache. Now instead of an apt remove, we're doing an apt purge,
+
+[00:09:20] which removes the program, but it also gets rid of any configuration files that are associated with it. So this is gonna be an apt purge libapache2-mod-apparmor, and we'll say yes. And I wanna make sure that goes through first
+
+[00:09:40] before I remove Apache itself. So that looks good. And now we'll do an apt remove or purge if you wish, on apache2. So here we go, apt remove apache2. Good, we'll say yes. And that is done.
+
+[00:10:00] At this point, everything should be back to normal before we started the lab. And normally what I'll do is I'll reboot the server just to be sure. So I'm gonna reboot that now. That closes out my SSH connection, and we can see that is rebooting now.
+
+[00:10:20] Everything should function properly, but I'll just log in and make sure, and everything looks good. So that's about it. Make sure you go through the lab and work on your own systems and work with AppArmor as much as you can. And if you have more questions about AppArmor, you can check out the help files
+
+[00:10:41] and the manual pages that are listed in Lab 19. That's about it for this sub lesson.

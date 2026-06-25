@@ -1,0 +1,127 @@
+[00:00:06] Time for another lab. This time it's check blocks, preconditions and post conditions. In Terraform you will want to run various checks against your infrastructure and you want to do this to make sure they will function
+
+[00:00:23] properly as planned and will continue to do so as after deployment. This can be accomplished with the following techniques. First, check blocks. Check blocks are top level check constructs that started back in Terraform version 1.5.
+
+[00:00:43] They're used to validate the health and configuration of your infrastructure. And if we take a look at lab 11 in VS code we have a file here called checks TF. And if we take a look at that you will see these check blocks.
+
+[00:01:03] The first one is verifying the instance is accessible and healthy. That's just a comment. Here's the check block. The name of it is instance health. And then inside of that we're using a sub block and this is the data block. And for this we're verifying that the instance actually exists.
+
+[00:01:24] Then we have an assertion similar to our terraform test from before with a condition that has to be met. If the instance is not running then that means it's not healthy and you'll get this error message.
+
+[00:01:40] And we have some additional assertions here as well. Then we have a second check. Verify the instance configuration matches expected values. And so this is a config check this time and again a condition. If it doesn't match the variable reference for the instance type, then we'll get an error message expected. This got this.
+
+[00:02:05] So these are check blocks and we can place them in their own little checks tf file. Now by the way, this is lab 11, so feel free to take a look at the lab documents.
+
+[00:02:20] And I have a more expanded testing document as well within there. So that's check blocks. The second technique is precondition tests. This is where you define a custom check that must pass before Terraform creates a resource.
+
+[00:02:40] And finally post condition tests. This is where you define a custom check that validates resources final states after they have been applied. So this is similar to what I was talking about in the previous lab where we had pre apply and post apply tests.
+
+[00:03:01] I prefer to use that terminology when it comes to the Terraform test command and terraform testing structure. Pre apply and post apply. But if I'm working with check blocks and preconditions and post conditions, I'll use that terminology.
+
+[00:03:21] Now both pre and post condition tests must exist inside of a life cycle block. So this is another new block in Terraform. Normally you can only have one life cycle block per Terraform block file.
+
+[00:03:40] But you can have multiple precondition and post condition tests within that lifecycle block. So let's run lab 11 or at least a portion of it, and we'll jump back to our virtual machine and versus code. And let's take a look at our main tf.
+
+[00:04:02] I'll minimize the terminal and go to the top. Here we have our terraform block, we have our provider block, and then we have a new block data. We've actually seen this once or twice, but we're using the data block as a data source for our AWS ami. More on this later on as we get into
+
+[00:04:22] more advanced terraform. We also have an AWS availability zones data block. Then we have a security group with ingress and egress.
+
+[00:04:40] And by the way, this is the older way to show security groups and allowing certain ports to work. The way that we did it previously is the newer way back in a earlier lab. So this is an older version, but it can still function. And then if we go down further, we'll see our resource.
+
+[00:05:01] This is our AWS instance. And we have another new item here, user data. This argument can allow us to call on a file as we've shown before when we called on a cloud INIT script. It can also be used to run some scripting information.
+
+[00:05:24] So we could do an EOF here and run a bunch of commands if we wanted to. And then finally we get down to the actual life cycle conditions and the preconditions and post conditions, which is what I want to actually show here. So here is the life cycle block and we said you can only have one
+
+[00:05:41] in a terraform file. And inside of that we can have our preconditions, things that are tested for before we apply and post conditions, things that are tested for after it is applied. And so first we have a precondition block and the condition is
+
+[00:06:00] dealing with the region. So we want to be using US East 2 and it'll check that if it's not US East 2, we should get this error message that's listed here. Pretty similar to the terraform test that we did before. But these are
+
+[00:06:20] going to exist within precondition or post conditions. And inside Lifecycle we also have a post condition test that checks the public DNS and a post condition test that checks if the instance is actually running, which is a nice one.
+
+[00:06:41] And then a post condition test for the instance type T2 micro or what have you. So those are our pre and post conditions inside the lifecycle and you might put those in a Separate file altogether. You might have a lifecycle TF or something like that. In this case, I placed it directly in main tf.
+
+[00:07:05] Let's go ahead and go through our terraform workflow. So we'll do a terraform init. This should work. I'm using an older AWS provider for this. But that's okay.
+
+[00:07:20] This is just a basic set of infrastructure that will work fine with version 5. Now let's do a terraform validate and check. Okay. Good. Success. The configuration is valid now and we'll go maximize the terminal.
+
+[00:07:40] Now let's do a terraform plan and check our plan. Let's see if this works properly. Okay. Now this is why I wanted to do this. You're going to see a lot of warnings here. And they're just warnings. And the reason is all of these block assertions for the post condition
+
+[00:08:03] tests. They won't be known until after the apply happens. We can't check something that doesn't exist yet with a post condition test. Right. We could do precondition tests, but not post condition tests unless it has been created. Very good.
+
+[00:08:21] And by the way, we've talked about saving the plan. You may want to do that, especially if you have these additional lifecycle preconditions and post conditions. So I'm going to do that now. I'm going to do a terraform plan. Dash out equals and we'll call this lifecycle tests and that'll save
+
+[00:08:40] that. It'll also paste it into the terminal. But that'll save it here in case I want to use it later. Sometimes I'll also date this file. I'll put the dates on the actual file name. Very good.
+
+[00:09:00] Okay. But so far everything looks pretty good. We can go ahead now and do the apply. So we do a terraform apply, cross our fingers and hope that everything works. We get the warnings once again, just like within the plan. And we're going to say yes to this. And we'll fast forward through as this creates.
+
+[00:09:25] Excellent. It is done. Let's scroll up here. It went through the whole creation and then it said apply complete. And really, even though there's a ton of information there, it's only two resources that were created. Yeah, we have lots of data blocks and things like that,
+
+[00:09:41] but only two resources altogether. Then we get our outputs. This comes from Terraform from our outputs tf, we've got the instance ID that AWS gave us. We've got the public DNS, we've got the public ip. We've done that before. And the state which is running our Terraform TF state
+
+[00:10:00] file knows about this. And so that is something that we're being told because it checks it. All right. We also have our security group ID which is called this and a test summary. And that test summary is coming from our lifecycle post condition tests.
+
+[00:10:25] And so here is the terraform testing demo. This is all part of that test. We get the instance ID information. T2 micro state is running public IP public DNS region is US East 2.
+
+[00:10:40] And then it tells us whether these tests passed or not. That is all part of our life cycle block within our main tf. Now the way this is outputted is shown within outputs tf. If we scroll down here at the end we have an output called test summary and an EOT which is just going to basically post all this information
+
+[00:11:03] here which is based on variables. So I built this whole thing up for you so it would work real nicey nice and output all that information. Let's go back to that. And so it says tests passed. Precondition region is US East 2.
+
+[00:11:20] Good post conditions. Now remember, precondition is before it actually runs. So it's checking our code and making sure that indeed we're going to use US East 2. The post condition is checking after it has been applied. And there's three of them. It says the instance has a public DNS. The
+
+[00:11:40] instance is running and the instance type matches what is expected. And it shows that we do have a web server running over here. And you can do some additional checks with terraform plan dash refresh dash only if you wanted to. Excellent. Now let's go ahead and force a test failure by changing the region.
+
+[00:12:05] So here's what I'm going to do. I'm going to do this directly from the terminal. We'll do an echo and I'll say AWS/ region equals double quote US:US:1 close double quote and then close the single quote. That's the entire
+
+[00:12:23] echo that we're going to run here. And I'm going to push that out to the file Terraform tfvars and so we'll press enter to this.
+
+[00:12:40] And when we do so that goes ahead and creates Terraform TF VARs for us. And now if we look at that we'll see that this is just a value. If you remember from variables we can have the variable listed in variables TF and then we could have the value listed in Terraform TF VARs which will override the default value that's listed in variables tf.
+
+[00:13:05] Okay. And what that effectively does is that's going to change the region from US East 2 to US East 1. That should then create an error. So let's go ahead and run a terraform plan and we'll press Enter for
+
+[00:13:22] that and look what happens. It says planning failed. Terraform encountered an error while generating this plan. And this is the error generated by Terraform and it tells us the aws region is U.S. east 1.
+
+[00:13:44] And then our precondition test, assertion and condition will come in to play and say, no region must be US East 2 for this demo. And this was checked by the validation rule at variables tf.
+
+[00:14:04] Let's take a look at that. We'll go to variables tf and if you look here, here's the variable block AWS region. The default is US East 2. But again, remember, if we create a TERRAFORM TFVARS file, that will
+
+[00:14:23] override that default and we selected US east one. And then inside that variable we have validation and again a condition and error message in here. So a new block validation that can go inside of a variable block.
+
+[00:14:41] We're expecting us East 2. If not, we'll get this error. Very good. Let's change it back. We could either change it in tfvars or delete tfvars al together. And I don't mind changing it here.
+
+[00:15:01] And we'll save it and then run that plan again. And effectively what's going to happen at this point is Terraform TFVARS is going to override variables tf. But it's the same exact information, so it should work. Give it a shot. And now this time we're going to get all the information, but we're not
+
+[00:15:22] going to get the warnings because we've already applied the infrastructure. So the postcondition tests should pass every time. Very good. And by the way, if I wanted to utilize the plan that I saved previously, lifecycle tests, I could do that with the Terraform apply and just name
+
+[00:15:44] the file. So that would just be lifecycle tests and it would apply everything based on how this was saved back when I saved it, whenever that was, 10 minutes ago, a day ago, whatever.
+
+[00:16:00] So if you need to apply a plan that's been saved before, that's going to be the way to do it now. Another command you can run that will also give outputs and test information is Terraform Show. If we run the Terraform show command and give that a moment, that's going to show everything. And we've shown this before,
+
+[00:16:23] it will show all the resources that have been created based on what is listed in our TerraForm TF state file. In addition to that, it will show the outputs based on our special outputs block that's giving us all this information, the instance ID and the
+
+[00:16:41] public DNS. So all that extra stuff will show up in a terraform show as well. And not only the outputs, but also that terraform testing demo summary at that last output that we did. So terraform show can be pretty powerful as well.
+
+[00:17:01] And that's it. So let's jump into one more item here and what I'd like to do is try to stop the instances using an AWS Command. Let's run AWS EC2 and that's going to be a space stop instances and we'll do a double dash instance dash IDs.
+
+[00:17:28] And I might not be sure exactly what the instance ID is, although the output did show it. If I wasn't, I could use a variable and I could do something like dollar sign. And we've done something similar to this before. Dollar sign open
+
+[00:17:42] parentheses terraform output. And by the way, tab completion still works in here. And we'll do a dash raw and we'll say instance underscore id, close out the parentheses space double dash region because we have to
+
+[00:18:00] specify the region for this. And in double quotes it's going to be US East 2 and the double quotes. And let's press enter and see if that stops the instance. There we go, stopping instance.
+
+[00:18:21] Okay, for this instance id, it's the only one we have. And I just pulled that from the terraform output. Good, good, good. Now because that instance is actually stopped on aws, let's do a terraform plan refresh only and see if we get a failure.
+
+[00:18:49] That refreshes based on everything there. And we're getting a warning here because the instance state is stopping and we're going to get a couple of those check block assertions
+
+[00:19:03] and also post condition failed for that. All right, so in order to fix that we'll have to restart. So we'll change it to start instances and give that a moment.
+
+[00:19:27] And I had to do that a second time because it actually hadn't completed stopping I think. So now that is pending. We'll see if that starts up properly. That could take a minute. And so I just waited a minute for that to start back up because it can
+
+[00:19:44] be time consuming and hopefully it is started up. Let's go ahead and do the terraform plan refresh only again and see if it is fixed. We'll press enter for that. That'll do the refresh and we're good. The warnings are not there. However, you will note that when we stop it and
+
+[00:20:05] restart it with the stop start instances command with AWS, we're actually going to grab some new public IPs here, so watch out for that as well. All right, so that was a whole lot of stuff that we just did here.
+
+[00:20:22] Take some time and look through checks TF and look at the assertions and condition and error messages and also main TF where we have our lifecycle block and our preconditions and post conditions. I know I hit you with a lot in that lab, so we're getting more complex
+
+[00:20:43] here, but just take it step by step and if you have any questions you can always contact me at prows Tech. And when you're done playing around with it and testing, make sure that you destroy your infrastructure. So I'm going to do a terraform
+
+[00:21:00] destroy now and we'll fast forward through that. Destruction. And destroy complete. So there you have it a little bit about check blocks, precondition tests and post condition tests.

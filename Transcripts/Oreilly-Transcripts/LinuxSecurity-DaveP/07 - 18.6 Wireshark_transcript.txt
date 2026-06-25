@@ -1,0 +1,77 @@
+[00:00:01] Part of my security mindset is the term be vigilant. Always be watching. And that means logging, auditing, and also doing things like packet captures. One of the best tools for this is called Wireshark. And if you look here, you see an example of the Wireshark program. And this allows us to be vigilant
+
+[00:00:22] and capture packets that are being transmitted and received on a local system and remote systems. So, we're gonna do a little sub-lesson here where we explain what Wireshark is and why we would want to analyze packets. We'll install Wireshark to our Linux virtual machine.
+
+[00:00:40] We'll capture packets with Wireshark from our network interface card, and we'll analyze the packet capture. So let's jump over to our Debian client. And first thing I wanna do is install Wireshark. So we'll do a sudo APT install Wireshark.
+
+[00:01:00] And we'll say yes, you can see it's gonna install a lotta stuff. Okay, now we get a message here that says "Dumpcap can be installed in a way "that allows members of the Wireshark system group "to capture packets." And this is recommended over the alternative of running Wireshark as root.
+
+[00:01:20] But, either way can be a security risk. So for now we'll say no,. And then we'll show how that works and then we'll turn it on later. Good, so the installation has completed. Now by default, the way we just installed it, only users with sudo powers or roots
+
+[00:01:40] are expected to use Wireshark. The problem, if a Debian-based typical user wants to work with it, it won't work by default outta the box. Without sudo, we won't be able to capture, or we might not be able to see the device we want to capture from. Also, you might have issues with root, root might not be able to run the program as usual.
+
+[00:02:02] So the solution is to reconfigure the program to use a Wireshark group and add members to it. Though this can be a security risk as well if you're not careful who becomes a member. But usually it's better than just telling people
+
+[00:02:20] "Use sudo permissions." So the procedure for this, we'll do a sudo, D package dash reconfigure. And that's gonna be on wireshark-common, that's the main program that we need to reconfigure. And this time we'll set it to Yes.
+
+[00:02:41] Okay, press Enter for that. And we'll add our regular user account to the Wireshark Group. Now, normally you would do this as root, so I'll open up a separate terminal here. And connect as root.
+
+[00:03:01] And we'll add our regular users with the usermod command, and that'll be a dash A, dash G. The group is Wireshark. And the user we want right now is user. Press Enter for that, and that is done.
+
+[00:03:20] And we'll close that terminal. And we'll need to log out and then log back in, so we'll do that now. So we're back into the system. And sometimes you might need to actually reboot the system,
+
+[00:03:40] especially if it's a virtual machine. So if logging out and logging in doesn't work, try rebooting. But we'll do an ID command here, and we see that we have the Wireshark group is added to our user account, and that's the 123 group. Awesome. Now a typical user can do captures without having to run sudo, and be a member of the sudoers.
+
+[00:04:03] So, let's go ahead and open Wireshark. Okay, so we have Wireshark open, and you can see our main network interface card, ENP1S0. That might not even be visible if we didn't have the Wireshark group,
+
+[00:04:20] and if we didn't use sudo. Now let's go ahead and double click on ENP1S0, and start capturing packets on our system. And we could see some STP packets coming in. Very good. So it is capturing, in real time.
+
+[00:04:41] Now we'll go over to our server. And let's do a ping of the client, at 10.0.2.52. And we'll keep that ping running. Go back to the client. And you can see the ICMP packets coming in, echoes, requests, and replies.
+
+[00:05:03] And they're gonna keep coming. Very good. We're also getting ARP messages. Excellent. And so we can let this go for a couple moments. Let's also connect to a website with our browser
+
+[00:05:21] while we're at it. Now this is just connecting to our local system, but you can also use Wireshark in a promiscuous mode to go out to other systems as well, and there's a variety of ways to do this. But we'll just connect to my website just to get some kind of data in here.
+
+[00:05:42] And you're gonna see TLS, you're gonna see HTTP, TCP, blah, blah, blah. And when we're done, we can stop the capture. And we can start analyzing what we have here. Now why would a person to use this? Really, it's to see what's happening on our servers
+
+[00:06:01] and to make sure that they're doing what they're supposed to be doing and nothing more. I've used Wireshark to uncover unwanted FTP servers, gaming servers, and so on. I know, Dave, you're such a drag. But that was my job for a while, doing investigation on servers and seeing what they are up to.
+
+[00:06:21] And Wireshark was one of the big tools in my toolkit to do that. And so, we can go through Wireshark, and we can look through all these packets individually. Or we could filter for packets, and we could do something like filter for ARP.
+
+[00:06:40] If we press Enter right in that filter screen, we'll get all of the ARP packets that have been captured on this system. And so for example, we're sending out a broadcast right in the beginning. What is ARP? ARP is address resolution protocol. And the question is, who has 10.0.2.51?
+
+[00:07:02] Tell me 10.0.2.52, I wanna know. Well, that's good information right there. But we can drill down even further in here, if we go here into the frame, we're gonna work in the data link layer portion of the OSI model.
+
+[00:07:22] And we can see all the information about that frame, the interface ID that we used to capture this frame, ENP1S0. The type, it's ethernet. And so on and so on. If we go further into ethernet two here, we'll see information about MAC addresses, and that's media access control, those are the addresses
+
+[00:07:42] that are burned into the network interface card physically. So we see the source here, that is our local system, and we see we have a Realtek network interface card. Really it's a virtual machine, so it's a virtualized Realtek network interface card. But it would look the same way on a physical system.
+
+[00:08:00] And this is the MAC address for that. And that's one of the sub-layers of the data link layer. The destination is a broadcast, and so it's not any individual Mac address, it's all MAC addresses out on the network, so it's all Fs, which would be like 255.255.255, six of those.
+
+[00:08:20] So it's just broadcasting out to find out, who is 10.0.2.51. We need to know what the MAC address is of 10.0.2.51, before we can communicate with them. Because all IP packets are encapsulated into frames on the ethernet layer,
+
+[00:08:41] data link layer, or layer two. So we wanna find out what that is, and to do that we use the address resolution protocol. And so, we're trying to find out who this is, we don't know yet, it's all zeros. But we know what we are.
+
+[00:09:00] And the whole point of address resolution protocol is to resolve between the IP address on layer three and the MAC address on layer two. So, if we go down a couple more frames. And in fact, it tells us in this next frame, 10.0.2.51.
+
+[00:09:20] Oh, that Debian server, that's at this MAC address. And if we click on that, we'll get the drill down data down here. And within address resolution protocol, now we see it. The sender is 10.0.2.51. That's the Debian server. And that's because it is replying to the ARP question,
+
+[00:09:45] who has this IP? Tell me. So this is actually a reply from that server and it's saying "My MAC address is this. "There you go." And the target is actually this local system .52,
+
+[00:10:00] and that's its MAC address. And now we see that information down on the data link layer as well. That's just one example. You can filter for all kinds of stuff, we could do ICMP, and filter for that, and we see the ICMP echo requests and replies. So here's an example.
+
+[00:10:20] And if we scroll down for this, we see once again all the MAC address information for the two systems that are trying to talk to each other. And then, in the IEP section on layer three of the OSI model, we see the protocol we're using is ICMP. And we see, source address staff 51, destination 52.
+
+[00:10:43] So we have requests and replies. Well, we did that ping from the server. And so, the server started the request originally, and our system here replied to it.
+
+[00:11:01] In addition, you could sort for TCP. You could sort for connections via TCP, which is layer four. And then you'll find additional information in there. For example, if we go down to the transmission control protocol section,
+
+[00:11:22] this will show the ports that are being used by the source and the destination computers. So what did we do? Well, from our local system, and this is the packet I'm drilling down into. From my local system, 10.0.2.52, we connected out to a website,
+
+[00:11:41] which happens to be at 162.159.61.4. Guess what that is? And it even says here, the ports, right here, but we can drill down and find that information here as well. The destination port of that web server is 443, and that's HTTPS.
+
+[00:12:00] And the source port we used to go out was 59602, and then you get tons of other data about that. Now we can go much further with this, but this just gives you a basic idea of how you can work with Wireshark. And you can save your capture if you want to, do a Save As.
+
+[00:12:20] And save that to wherever you want, we'll call that capture one. So that we can refer to it later, and compare it to other captures. And then you can start creating a baseline, when you have a lotta captures to an individual system. So there's a little bit about Wireshark.
+
+[00:12:40] For more information about Wireshark, check out the wireshark.org official website, and definitely download it to your system, install it, and work with it, check out how it works, it's a great tool to have in your toolkit.

@@ -1,0 +1,79 @@
+[00:00:06] Now it's HashiCorp console lab 25 using Consul with Terraform. So Consul is another tool that Hashicorp develops. It's a service networking solution that could do a lot. It can do service discovery automatically, find and connect to different services in
+
+[00:00:21] your infrastructure. It does health checking. It works as a key value store. It works as a service mesh with a secure service to service communication method with tls. And it can span multiple data centers as well.
+
+[00:00:40] A real world use case would be, let's say instead of hard coding your database information, your database endpoints and so on, you could store those in Console. And then if you have any changes with your databases across the board, you could just update Console and all the database
+
+[00:01:01] applications automatically will get the new values at the deployment. So we're going to work a little bit with the key value store just because that's easy and we can run it locally and you can see how we can call on that from Terraform. So real Basic Lab with Console. But let's get into it. This is lab 25.
+
+[00:01:21] Feel free to follow along with the Lab document and make sure you're in the Lab25 directory. Now, for this to function, we first have to install Docker on our system. I don't have Docker yet. Actually, maybe we do.
+
+[00:01:43] Let's check it. I think we might do a Docker version. We're at 29.2, so we do have that. If you don't, you can do a sudo apt install Docker IO for more information. There's install methods at the end of the lab documents.
+
+[00:02:06] But I'm just going to work with this Docker install that we have here in Debian 13. And let's do a couple checks. Let's do a systemctl status on docker and we see, yes, it is active and running and enabled. So that's good.
+
+[00:02:25] All right. If you're using Ubuntu 24 at this current time, you'll probably have to go through the Docker install. You may or may not have it on macOS or Windows. So make sure that you get Docker installed again, information about that at the end of the lab. All right, good. Now, you also want to make sure you add your user account
+
+[00:02:42] to the Docker group. So we'll do a sudo user mod dash a capital G and add to the Docker group our current user. And we'll just do that as the variable with dollar sign uppercase user. I'll put in my sudo password and that should be good. I'D recommend
+
+[00:03:03] doing a restart also when you're done so that you can work with Docker at the very least. I'm going to open up a new terminal within Lab 25. That's where we're working here. There we go.
+
+[00:03:20] Good. All right, so let's get into the lab here. First thing, let's look at the files. We have a main TF and we also have a Docker compose to actually build our console server in a nice little container.
+
+[00:03:42] All right. So. So, and if we look at the main TF real quick here, you'll see we have a terraform block provider block for Console. So we're installing the console provider plugin that comes from Hashicorp.
+
+[00:04:00] You'll note that by default, Consul will run on 8500 and it'll also use other ports as well. But the default port for HTTP for web connections, 8500 and for using things like curl. And we have some other information is here as well. We have data, a data block for our console keys.
+
+[00:04:20] Information that we're going to access a resource which is a local file message and an output, a message from Console. Very basic. And then we have our Docker compose here that we're going to use to build our console server. This compose file will automatically grab the image and install the container. So let's go to our terminal
+
+[00:04:42] and we'll start Console using Docker with that image. And the entire command is in the lab file. So we'll paste that in. Okay. And let's see if this works. Press Enter. Okay. And that grabs the image.
+
+[00:05:03] Okay. Pulls the image. Good. And it downloaded a newer image of it. And that looks good here. Very nice. All right, let's verify that that is actually working. Now we'll do a docker PS and search for console.
+
+[00:05:20] You could probably just do a Docker ps. Okay. And we. We see hashicorp console that's been up for 20 seconds. Looks good. We see the ports that it's running on. Excellent. All right, let's do a curl against that. We'll do a curl and see if the Docker container is actually working properly.
+
+[00:05:41] We'll do a curl on HTTP://,/, local host. That's going to be our default port for this container. Or you could do 127.0.0.1://1/8500. /v1/status header.
+
+[00:06:02] Okay. Invalid. Let's see. Did I do something wrong here? I typed header. I want leader for this. My apologies. And we get the leader information there with the IP within our docker 172.17 network on port 8300.
+
+[00:06:24] Very good. You might also just see the local loopback IP in that case. And let's see if Consul is working properly within our browser. Open up a new page here and go to HTTP localhost colon 8500.
+
+[00:06:42] There it is. Console is running in that Docker container and we have access to it. Very good. All right, so let's keep this simple. First thing I want to do is store a key value pair in Console. You could do that in the web UI if you want,
+
+[00:07:00] or you could do it with the curl command. This is very similar. These key value pairs is very similar to working with Vault. In a previous lab we did that. And you can also use the curl command to get or put information.
+
+[00:07:20] And you could do that in Vault as well. And so this is going to work in a very similar fashion. And you can even see the path is very similar as well. All right, so let's put that in. I'm just pasting that in from the lab. That is done. And let's verify it in Console. Make sure that we're in our console instance here.
+
+[00:07:43] And go to key value on the left. And here is app. If we go into that, we'll see config and then we'll see our welcome message. That's what we just pasted in. Very good. You could also verify that with a curl,
+
+[00:08:00] just a standard curl message within the terminal. All right, let's go back and take a look at our main TF again. Okay, so again, we have our terraform block. We have our console provider and the path to that local host 8500.
+
+[00:08:23] We have data and we have a separate welcome message here. Hello from console. And that's what I'm going to use. A resource, local file. And we have a variable here, path module welcome Txt, and our content.
+
+[00:08:41] And that's going to be within console keys. Well, it's going to be data, console keys, app configuration, and the variable is welcome message. Now, you'll note you don't put key here, you put var, because we're calling on a variable here within that data block. And then we have the output value, the message retrieved from console,
+
+[00:09:01] and that message here. All right, back to the terminal. Let's do a TI to initialize the directory that will install the provider plugin for Console, which we haven't used yet. And so we'll get that inside of here.
+
+[00:09:22] Very good. Bit smaller than the AWS provider plugins, I believe. All right. And now let's go ahead and do a terraform plan and check what is supposed to happen here. All right, so this is the command I did Terraform plan with the alias tp
+
+[00:09:40] and it says it'll create a local file message one to add. That's it. And the message will be this. Welcome to Terraform and Console integration. Okay, very good. This looks correct to me. So let's do a terraform apply and I'll do an auto approve for that.
+
+[00:10:01] And it is done. All right. And there's our output message from Console. Welcome to Terraform and Console integration. Right, just like this. And the message we put in. And it also went and created that local file message that is welcome. Txt. Let's take a look at that.
+
+[00:10:22] We'll do a cat on welcome. Txt and we see welcome to Terraform and Console integration. Very good. Let's do an update within Console. And the command for that is in the lab. This is in number seven here. So we'll add another message similar to what we did before.
+
+[00:10:41] We'll do a curl exput. And now we're saying configuration updated dynamically. And just placing that into the console key value pair. All right, now if we look at our welcome message here and refresh it in the Console docker container, we see configuration updated dynamically.
+
+[00:11:06] If we do a terraform apply again, that should be replaced with the new message. And when it's done, the output message from console configuration updated dynamically.
+
+[00:11:20] Very good. And the welcome txt should have been changed to that as well. Awesome. So we're actually updating that information by using Terraform and. And grabbing that from Console. So if you make those changes in Console, you can have Terraform push that wherever you want. I just pushed it to welcome.
+
+[00:11:41] Txt. You know, originally our output was was this. You know, we get the value based on whatever that welcome message is. But now we're having Console actually push that information out. And that could go to a lot of different systems that can talk to all kinds
+
+[00:12:02] of systems, including databases and other things. We're just doing this with a basic welcome. Txt file to show how that works. All right, very good. So that's one of the ways to use Console. Why use Consul? With Terraform, you can do it for dynamic configuration
+
+[00:12:21] of values without modifying terraform code, especially for those services that you deal with within your network infrastructure and with databases that are. That you are sort of controlling. With console, it allows for centralized configuration. It allows for runtime updates without redeploying your infrastructure.
+
+[00:12:43] And you can share the state as well, and it can be very environment specific. All right, so there's a little bit of a Console lab for you with Terraform. Just wanted to show that real quickly. Feel free to mess around with that a little bit with your docker compose and make changes to it and make changes to your Terraform code as well.
+
+[00:13:03] You may hear of Console if you haven't used it in the past. And it's another good tool from Hashicorp and you may see the term on the exam on a question. So I really wanted to just show a real basic lab for that. So there you go. That is it for using Console with Terraform.

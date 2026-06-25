@@ -1,0 +1,73 @@
+[00:00:06] - So one of the features that is pretty cool in system D is the option to integrate it with Cgroups. So what are Cgroups? Well, Cgroups are offered by the Linux kernel and they allow you to limit the availability of resources.
+
+[00:00:24] And Cgroups perfectly integrate in system D services, and it means that you can easily define Cgroup functionality on your system D surface with a result that one process gets more CPU cycles,
+
+[00:00:40] that processes are limited to a certain amount of memory and more. To work with Cgroups, you are going to assign them to slices, scopes, and services. where the slice is a big environment, it's like a domain. A scope is a sub division of a slice and a surface is the individual surface
+
+[00:01:02] that you can be working with. And resource limitations in Cgroups can be set on CPU cycles, on memory, and also on block I/O. All right, let me tell you how Cgroup are organized. Cgroup all start with the root, but that's not what matters.
+
+[00:01:21] What matters is the slices. So we have system slice, there is machine slice, and there is the user slice.
+
+[00:01:41] And these slices matter for your resource allocation. So we are going to talk about resource allocation using CPU shares for instance, or CPU weight as you should call it in Cgroups v2. So if I use CPU weight is 100 in the system slice
+
+[00:02:02] and CPU weight is 400 in the machine slice and CPU weight is 100 in the user slice. What does that mean? Well, that means that machine slice is entitled to have twice as much a system
+
+[00:02:23] and user slice together. But it also means that if there is no activity in machine slice, then everything is for user slice and system slice. So these CPU weight really matters if the CPUs are going to be fully utilized.
+
+[00:02:40] Next, within these slices you can have a subdivision of scopes. You don't see scopes that often anymore, so I'm going to skip over the scopes. You can have your services. So let's say we have sshd.service and you have an httpd.service.
+
+[00:03:03] Then here also you can set your CPU weight. So we have a CPU weight is 100 is the default for your SSH and CPU weight is 400, for instance,
+
+[00:03:22] an adjustment for your httpd.service. Now in order to really understand how it works, we should involve user slice as well. So a user would have user 1000.slice and a user 1001.slice.
+
+[00:03:43] And on top of this user slice there is, let's call it proc1.service and proc2.service.
+
+[00:04:00] Now the interesting thing is that you can set CPU weight for these processes as well. Let's imagine that we have CPU weight is 800 right here and 100 right here. Now, how do all of these CPU weights relate to one another?
+
+[00:04:21] Well, what you should notice is that the CPU weights matter between sibling objects. That means that we have a relation between these two processes and process one in the user slice has eight times as much CPU cycles as process two in the same user slice. But the fact that here we have a CPU weight of 800
+
+[00:04:43] has nothing to do with CPU weight of 400 that we have in the system slice, because that doesn't matter. The slices don't compare user individual services to system slice individual services. The only thing that matters is how the system slice CPU weight
+
+[00:05:03] relates to the user slice CPU weight. And that is something that you should really understand and I will show you with an example what exactly the consequences can be from all of this. Now, when you work with Cgroup, there's a couple of parameters that is relevant.
+
+[00:05:20] Depending on the version, you might find the following: CPUAccounting, and CPUQuota, and CPUShares is all about the division of CPU cycles between your processes. There is MemoryAccounting and MemoryLimit which allows you to set a limitation to the amount of memory that processes can use.
+
+[00:05:41] And TaskAccounting and TasksMax allows you to set a maximum to the number of tasks that can be allocated by a process. And finally, there's BlockIOAccounting which allows you to work with BlockIOWeight and BlockDeviceWeight, which means that you can set priorities
+
+[00:06:01] on block device usage as well. Now the accounting parameters are just Booleans, you set them to on or off. By default, they are all on and I don't see any good reason to switch them off to be honest. That's why in Cgroups v2, which have been released quite a while ago already,
+
+[00:06:24] you don't find the accounting parameters anymore. You just find the settings that you can do, like CPUWeight and MemoryMax and IO parameters instead of BlockIO, so IO weight and IO device weight.
+
+[00:06:41] Now you should notice that both distributions offer good backwards compatibility and that's why I felt that it's useful to tell you about the version one as well as the version two parameters. Now let me demonstrate. Okay, for this demo, we need access to the git repository.
+
+[00:07:03] So git clone https://github.com/sandervanvugt/luth, which is short for Linux Under the Hood. And apparently I didn't have a git client yet, so I'm installing that right now.
+
+[00:07:21] And in the end, we will have the Linux Under the Hood git repository. Now, in this Git repository, there is two service files. I'm copying the service files into /etc/systemd/system.
+
+[00:07:41] and to make sure that systemd picks them up, systemctl daemon-reload. Now, what is in there? Well, let's go in etc/systemd/system and let me show you stress1.service where we have CPUShares is 1024.
+
+[00:08:00] That is Cgroups v1 syntax. That doesn't really matter, but what matters is CPUShares is 1024 on this surface which is the type simple. Type of simple is what you normally use to run a command, and this is the command that we are going to run. So /dd if=dev/zero of=/dev/null,
+
+[00:08:21] which is basically copying nothing to nowhere. Now the other one, the stress2.service has CPUShares set to 2048. So what are the expectations? Well, the expectations are that stress2 is getting twice the amount of CPU cycles.
+
+[00:08:41] So let me use systemctl start of stress1 and also of stress2 and then we can monitor in the top utility what is going on. And what do we see? Well, surprise, surprise, we have two dd processes that all have about 100% of CPU resources that is used.
+
+[00:09:04] How can we explain that? Well, from top you can quickly verify by pressing a one how many CPU course you have. And there, we see that we have two different CPU cores. So I need to get out of here and I need to switch off one of the CPU cores
+
+[00:09:22] using echo 0 > /sys/bus/cpu/devices/cpu1/online, which is doing what? Well this is offlining one of the CPUs
+
+[00:09:41] and we should be able to see the result in top. And now you can see that clearly one of the dd process is getting much more resources as the other one. Okay, now this is how systemd is dealing with these Cgroups, but behind it there is also the Cgroups pseudo mount.
+
+[00:10:03] And I would like to show you in sys/fs/cgroups and I would like to show you in sys/fs/cgroup/system.slice/stress1.service.cpu.weight.
+
+[00:10:23] And what do we see here? We see 100. And for stress2.service, we see 200. Now what is interesting here is that I have used CPUShares, that's the version one syntax and it has been written in version two syntax, which is the CPU weight.
+
+[00:10:41] So the idea is that 200 is twice as much as 100. Now can we change that from here? Well, let's try. I'm going to use echo 800 > /sys/fs/cgroup/system.slice/stress2.service
+
+[00:11:07] and oops, we were almost there, /cpu.weight. And next we are going back to top. And what do we see in top? Well, we see that apparently
+
+[00:11:20] directly writing to the Cgroup file system also works. As you can see, I modified the setting in the pseudo mount and that has been picked up automatically. For your information, it's cool that you can modify the setting in the pseudo mount, but this is not persistent. If you want it to be persistent, then you better make sure that it is in your unit file.
+
+[00:11:43] Okay, now we are good. So I'm going to kill all dd and I'm going to restore access to the CPUs again. We just switched off one of the CPUs by using this echo 0. I'm going to use echo 1 > /sys/bus/cpu/devices/cpu1/online
+
+[00:12:03] to bring it back online again. So this brings us to the end of this demo where you have seen how you can use CPUShares to manipulate the amount of CPU cycles that processes are getting.

@@ -1,0 +1,61 @@
+[00:00:06] Let's talk about aliases. In aws, an alias allows you to configure multiple instances using the same provider, in this case aws, to manage resources in different regions.
+
+[00:00:22] If you look down here, we have two provider blocks, one for US east two and one for US west two. So why should we use them? First of all, to deploy resources to multiple AWS regions, as we're about to do, or to manage multi region
+
+[00:00:41] infrastructure in one single file, which we're also doing. You can reference specific regions per resource. So let's take a look at this file. I'm in lab 15. AWS aliases and AWS alias TF.
+
+[00:01:01] So we've got a standard terraform block here again with the AWS provider plugin. And then we have the two provider blocks. Now, the first one is normal. It's the AWS provider and it says US East 2. And that's what we've been using throughout this course. But then we have another one here and we're using an alias.
+
+[00:01:23] The problem is this. You can't have two regions used by one provider. It will always default to the first one that's listed here. So any instances that I create would be created on US East 2. In order to create another instance on another region within the same
+
+[00:01:43] code, I would have to state an alias. So I would run that provider block again with AWS, but this time we use an alias, calling it Oregon, which is where US West 2 is. So we'd say the alias is Oregon, and then the region is US West 2.
+
+[00:02:05] Then it's how you actually apply it. So let's take a look at our resources. We'll scroll down here and we can see the first resource. AWS instance. This is a test instance, and it's using this AMI, that's the latest Debian 13 in US East 2 building
+
+[00:02:25] a T2 micro, and I've just named it Ohio Test instance. That's where US East 2 goes. Destroy me when done. Now, by default, if we list a resource, it's going to go to the first
+
+[00:02:40] provider configuration that's given the default region equals us East 2. Any other resources that I build would be built there, unless I specify a different provider. And that's what I'm doing for this second resource, another AWS instance.
+
+[00:03:00] But this one I'm calling Oregon Instance. And I'm saying, as another argument here, provider equals AWS, Oregon. That's how you refer to it. You would say aws.oregon and that would equate to US West 2. When it gets built.
+
+[00:03:21] So that's how we can refer to secondary and even third regions in one single terraform file. Now, for this one, we see another ID. This is also Debian 13, but this is the AMI that exists in Oregon. In US West 2, it's another T2 micro,
+
+[00:03:42] and we're saying Oregon test instance, destroy me when done right. So that's essentially how it works. So I've got to drive the point home here that if we build a resource, it's going to by default be built on the first provider that we specified.
+
+[00:04:02] If we want to use that second provider, we have to have the alias, and in this case aws.oregon, or it could be other regions, aws. Whatever. And then we refer to that within those other resources by saying provider equals aws.oregon.
+
+[00:04:21] now, this provider usage is considered to be a meta argument. That's a meta argument. This is essential when you have multiple regions, just like this code has, or if you have multiple accounts or multiple provider configurations. We're going to talk more about meta arguments
+
+[00:04:42] elsewhere in this course, but keep that in mind that this type of argument is actually a meta argument in Terraform. All right, so let's go ahead and go to our terminal. Make sure that you're in the AWS aliases directory.
+
+[00:05:00] And let's go and go through our workflow. We'll do a terraform init that'll initialize AWS as our provider plugin. Good. We'll run a Terraform FMT and that kind of fixed the file for me, so I'll save that and we'll do a Terraform validate.
+
+[00:05:24] Success. Very good. And let's go ahead and do a Terraform apply. Now, if we look at that, you'll see we have two to add two instances, one in Ohio, one in Oregon. Let's take a look at the names here.
+
+[00:05:42] AWS instance.oregoninstance and here's that AMI for Debian 13 in the U.S. west 2 region. And then we have our AWS instance test instance.
+
+[00:06:00] And here's that AMI for debian 13 in our Ohio U.S. east 2 regions. So two to create. Note that they are different AMIs. More on that in a little bit. Okay, let's say, yes, we're going to build these and we'll fast forward through the creation of these.
+
+[00:06:22] It starts with test instance, then it moves to Oregon instance, but it's building those both at the same time in the two separate regions of AWS. Okay, it's done. Only took 24 seconds to build both of those two added. Let's take a look at our console.
+
+[00:06:40] And I'm in the console now I'm in Ohio. That's US East 2. Let's refresh it. And we see it. Here it is. Ohio, test instance. Destroy me when done. It is running. Very good. Let's switch the region over to Oregon. US West 2, and that is also built, Oregon Test Instance. Destroy me when done and running. They're both
+
+[00:07:04] initializing, but I don't really care very much about these. Just want to show how the aliases will actually work. Very good. That was all we needed to do. So let's go ahead and destroy it. Now
+
+[00:07:22] we'll do a terraform destroy and we'll say yes and get rid of that. And while that's destroying, go back to our code here. Remember, we have these two providers. You can't reference two AWS regions in two separate provider blocks.
+
+[00:07:40] We can't just say region US East 2 and region US West 2. That won't work. It'll just default to the first one that's listed. We have to use an alias if we're going to have multiple regions in this single file. And that is complete to destroyed. Very good.
+
+[00:08:03] All right. So that's it. It worked. And our aliases lab is now complete. One other thing, though, we mentioned that we have different AMIs, and that is the case. You get different AMIs for the same operating system in different regions. They have different images for even the
+
+[00:08:23] same operating system in each region. But you can get around this and make things a little bit easier for yourself by using data sources. Let's look at this secondary code that I have here. It's just a text file.
+
+[00:08:40] And if you looked down here, we have the same providers, same terraform block. But if we look further, you'll see that I'm using a data block to refer to the instance instead of the regular resource block that we used before. And so in this case, I'm creating a data block called Awsami DebianOhio.
+
+[00:09:04] And I'm just saying most recent. True. And the owner, this is the official Debian AWS account. And then I'll filter it and say I want to install the latest Debian 13 and the virtualization type will be HVM. That's pretty much the
+
+[00:09:22] standard, the defaults, but the key is the owner. Instead of referring to a different AMI for each region, we can state that we're using the same owner in each of these regions. Data sources. So here we have the data source for Ohio, and here we have the data
+
+[00:09:40] source for Oregon, but you can see the number is the same for the official Debian AWS accounts. That owner number will be the same, and it will install the latest version of Debian 13 from the latest AMI on each of those regions without us having to refer to an ami. So using a data source like this is going
+
+[00:10:00] to be a lot easier for you. You don't have to go searching for AMIs, you just have to know that owner name and you'll get the latest image. All right, so that is it for this sub lesson.

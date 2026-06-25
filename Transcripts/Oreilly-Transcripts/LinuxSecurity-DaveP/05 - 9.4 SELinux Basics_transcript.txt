@@ -1,0 +1,73 @@
+[00:00:01] Previously, we worked with AppArmor, which is the Linux security module for Debian and Ubuntu. But for Fedora-based systems, we use SELinux. Security-Enhanced Linux or SELinux for short is a security architecture for Linux systems like Fedora, CentiOS,
+
+[00:00:21] and Red Hat that allows administrators to have more control over what and who can access the system. It works directly with the Linux kernel. We're gonna be working in lab-21 and this is "SELinux Basics". We're just gonna show the very basics of SELinux.
+
+[00:00:41] We'll show how to analyze SELinux on a CentOS system, and manage SELinux with a new SSH configuration, and then modify the Enabled SELinux mode. So I'm gonna be working in CentOS as root. So here's my CentOS server, and I will definitely now type things.
+
+[00:01:01] I'm not SSHing in because I'm gonna be making a change to the SSH configuration and I don't want to risk losing my SSH session. So instead, I'm working directly at the console here. So I'm working as root@centos-9 stream. First thing I wanna do is type in the sestatus command,
+
+[00:01:21] and that's all one word, sestatus. When we do so, we see the status is enabled. We see the mount directory and the root directory for SELinux, which is where the configurations would go, and whether or not it's enabled. So that gives you some basic information on SELinux.
+
+[00:01:40] We see that it is enabled and it's enforcing. It's in enforcing mode, and that's normally what you want. You can also check whether or not SELinux is enforcing with the getenforce command. If we do that, we see indeed, it is enforcing again what we want.
+
+[00:02:02] So that's a little basic analysis of SELinux on our CentOS system. Now let's show how to manage SELinux and work with SELinux with a new SSH configuration. So if you make any changes to an SELinux-protected system,
+
+[00:02:20] you need to notify SELinux about those changes. So we're gonna show how that works. We're gonna modify the SSH ports for our SSH server and then notify SELinux about the change. So let's take a look at our SSH server configuration. We'll clear the screen here
+
+[00:02:40] and we'll change over to /etc/ssh, and inside of there, you'll see the sshd_config file that we've configured previously. So let's go to that. We'll do a vim on sshd_config, and let's take a look at this file. Okay, around the middle of the screen,
+
+[00:03:01] you'll see Port 22, that's the default. We made a modification to that in a previous lab where we made it fail and caused the system to become degraded. What I wanna do now is uncomment this and change the port number so that the inbound port for the SSH server is different.
+
+[00:03:22] So we'll get rid of the number sign and uncomment it, and then we'll change it to Port 2222. Now if you look a couple lines up, it tells you if you want to change the port on an SELinux-based system, well, you have to tell SELinux about the change,
+
+[00:03:41] and it gives you an example of the command you need to type to inform SELinux about that change. So let's do that now. Now this is a three-part process. We're not gonna be able to do anything and SSH into this system unless we, one, restart the SSH server,
+
+[00:04:01] two, use that semanage command to inform SELinux about the new port assignment, and three, open up a port on a firewall if we're running one. So let's get to work. First, we'll save and quit the file.
+
+[00:04:20] Good, so that's written. Now we'll restart the SSH server. So we'll do a systemctl restart, and keep in mind that we're on a CentOS system now and they're still using sshd as the name of the actual service for the open SSH server.
+
+[00:04:40] So systemctl restart sshd, press Enter, and it says the service failed because the control process exited with an error code. So you are most likely going to receive this error. Don't think that this is something that we caused on purpose.
+
+[00:05:00] This is an issue with SELinux. It's because SELinux hasn't been notified yet, but it's basically the same error we got when we degraded the system and broke the sshd_config file. So we've gotta use the semanage command to tell SELinux about the change that we made.
+
+[00:05:20] All right, so let's do that now. Let's go to the top of the screen. So it's gonna be semanage, and then port 'cause we're making a change to a port number, a -t ssh_port_t,
+
+[00:05:41] and then -p for the port number and type. The type is TCP, this is transmission control protocol. That's the type of protocol that we use with SSH. That's layer four transport layer stuff in the OSI model. So it's a TCP-based port and protocol.
+
+[00:06:03] And then we have to specify the port that we're changing it to, which is 2222. So we'll press Enter for that. Good, no news is good news because you can make a lot of mistakes there or I could very easily. And at this point, we could try restarting the service again.
+
+[00:06:20] So systemctl restart sshd. This time, it works. No messages because now SELinux has been notified about the change. Very good, the last thing is we have to make sure that Port 2222 is open on the firewall. Otherwise, no one will be able to connect.
+
+[00:06:40] So let's go to a client system, and let's see if we can SSH in now. First, we'll do a ping on that system. I believe it's .61. And now let's try to connect via SSH. Okay, now that connection's gonna be refused
+
+[00:07:03] because by default, it'll use port 22. To change the port from the client side, we would use the -p parameter and state the port number 2222. But that's still not gonna work. It's gonna say no route to host because we need to open that on the firewall.
+
+[00:07:21] So let's go back to our CentOS system. That tells me that a firewall is running. Let's verify that. We'll do a systemctl status on firewalld. And yeah, so firewalld is running, and we're gonna show these in the next module and show exactly how to work with firewalld.
+
+[00:07:40] But for now, this is a default firewall in CentOS. It's active and it's enabled. So let's take a look at this here. When you work with firewalld, you're gonna use the firewall -cmd command to do all the work you need to do. And so what I wanna do is do a --list-ports,
+
+[00:08:01] and see what's open. Okay, nothing there. Let's do list-services. Okay, it has cockpit, DHCPv6, and SSH. But by default, if it shows a service name like SSH, it's only gonna use the default port
+
+[00:08:20] in conjunction with that. So that's gonna be port 22. We want port 2222. So we need to add that port to our firewall. So we'll do a firewall-cmd. We'll say --add-port = 2222, and then we have to state what layer four type this is.
+
+[00:08:41] It's TCP, and we'll make that permanent, and we press Enter and we get success, so that's good. Next, we'll do a firewall-cmd --reload to reload that firewall, and at this point, port 2222 should be open.
+
+[00:09:01] Let's check it from the client. Let's try to connect again. There we go. We'll say yes. "Welcome back! Type your password now." Such urgency. Okay, okay. I'm in, and I'm in as user@centos-9-server. So there you go, it should work for you.
+
+[00:09:21] Try to make that happen on your system. Remember, we had to do a couple things. We had to configure the file, then notify SELinux about the change, restart the service, and then open the port on the firewall that we want to use. So this is a common thing that you might do on CentOS
+
+[00:09:40] or Red Hat Enterprise Linux or Fedora. Now let's modify the Enabled SELinux mode. As you remember from before, we can run the getenforce command to find out what type of enforcement is running. And right now it's enforcing, which is the default,
+
+[00:10:00] and it's what you want. You want it to be working or enforcing, but we can modify that setting. And so we can do that with the setenforce command, and then change it to say permissive, or we could just do the number zero and press Enter.
+
+[00:10:21] That will change it to permissive mode. And if we do a getenforce command again, you'll see it is set to permissive. At this point, we could do testing and make changes to our system, perhaps install things that need to be installed in permissive mode, but ultimately you want to get back
+
+[00:10:41] to enforcing mode if at all possible. To do so, we'll do a setenforce once again, and you can say enforcing or you could say 1 for enabled. So we'll do that. Now we'll check it with getenforce again.
+
+[00:11:00] We see it is enforcing, very good. Now in rare cases, you might need to actually disable SELinux altogether. It's a very rare case. I don't recommend it normally, but if you needed to do that, you could go to /etc/sysconfig,
+
+[00:11:20] and inside of there, you'll see SELinux. So we could go to that file, and in there, you will see the SELinux enabled mode. Right now, it's set to enforcing. If you needed to actually disable it, you'd set it to disabled.
+
+[00:11:41] But you gotta be really careful with this. When you do this, you're gonna have to reboot the system. and it could very well break the system. So if you ever need to do this, do it on a test system in an isolated environment first. But again, generally I'd recommend against it. You wanna make sure that SELinux is in enforcing mode.
+
+[00:12:02] So that's about it for the sub lesson. You'll see there's some extra credit as well. If you wanna learn more about SELinux, you could do a man SELinux, and there's a couple links in the lab document as well. And that rounds out this lesson.

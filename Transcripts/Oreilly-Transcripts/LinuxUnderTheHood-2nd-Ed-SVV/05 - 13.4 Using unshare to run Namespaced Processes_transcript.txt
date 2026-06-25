@@ -1,0 +1,21 @@
+[00:00:06] - So the Linux operating system contains a firm command that allows you to run processes in new namespaces, even if you don't wanna use systemd. That's the unshare command. The unshare command will isolate or unshare new environment from the current namespace.
+
+[00:00:22] See it like this, by default, child processes are running in the same environment, in a shared environment. And now you want to unshare it to give it its private environment. And you would use a command like unshare --fork --mount-proc - p for PID namespace,
+
+[00:00:40] and -U for username space, followed by zsh to give it its own private environment. After running processes in their own namespace with unshare, you can use the nsenter command, which allows you to run commands from the host operating system inside the namespace. And that is particularly useful for analyzing containers.
+
+[00:01:02] See it like this, if you use nsenter on a container, you'll have access to all the utilities on the host operating system. Whereas these utilities are not always available inside the containers. Let me show you how this works.
+
+[00:01:20] So I'm going to use unshare --fork - -pid - -mount-proc zsh. So that is going to run Z shell in its own unshared environment. We don't see very much changes, only a little bit. I'm going to use echo $$,
+
+[00:01:42] and echo $$ is showing, hey, this is PID 1. Why is this PID 1? Well we are in a namespace environment, so ps aux is showing just the processes within this namespace environment. It's a little bit as if you are running inside a container, but we don't have a container here.
+
+[00:02:01] We just have the namespace. Now I'm going to open a second terminal. So from the second terminal I'm going to use ps faux | grep -b, for before. 5, I wanna see the five lines before on the ZSH process. So here we can see this ZSH,
+
+[00:02:21] which has its own process, 3974, and which is a child of the unshare command. Now we can use lsns -p on this specific process ID, the 3974. And there we can see an overview of all the namespaces that are currently used.
+
+[00:02:41] So now I'm going to use nsenter from the parent shell environment. So, outside of the namespace, -a -t 3974 ps aux. And what do we see? Well, we see the command run from the parent shell inside the specific namespace that was created by 3974.
+
+[00:03:03] In this command, -t identifies the process ID of the namespace process and -a is just a reference to all the namespaces that this process might be running. So you can run any command in this way inside this namespace. And that will be particularly interesting,
+
+[00:03:21] also if you are going to troubleshoot containers, which are using namespaces a lot.

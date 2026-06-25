@@ -1,0 +1,47 @@
+[00:00:07] - At this point we have a Ceph cluster. You probably also want to use it from a Linux box. That's possible. But before I can tell you how to do that, we need to understand the different components. So to access the Ceph storage, Ceph uses pools
+
+[00:00:22] as partitions of storage that are provided by the OSDs. And from there images are created, which can be used by the Rados Block device, the RBD. And the result is that you will get dev/rbd0 block device, which is addressable like an ordinary hard disk in Linux.
+
+[00:00:41] And that's probably the nicest way to integrate Ceph on a Linux box. Let me show you how that works. So we first need to install some software and on the CentOS box it will be centos-release-ceph-pacific.
+
+[00:01:03] I would recommend you check if a later version is available. It might be possible that by the time you watch this we are in a newer version. And then just use the latest version or this one at least it is verified. Next dnf install ceph and ceph-redosgw
+
+[00:01:23] which is now possible as I've just added the ceph repository to the CentOS system. All right, so now that the software has been installed, we can do the configuration and this configuration is actually happening in kind of a funny way. You are going to copy over
+
+[00:01:41] from the Ceph node the configuration file, which is /etc/ceph/ceph.conf and you copy it to /etc/ceph/ and actually need to copy another file
+
+[00:02:01] still from the /etc/ceph/ directory. That will be the ceph.client.admin.keyring file and you need to put it in the etc/ceph/ directory on the local machine. There we go. I would recommend to also copy over the etc/hosts
+
+[00:02:23] so that you can reach out to the Ceph hosts by name. That's copy over from the main Ceph node. So now we can modprobe the rbd kernel module
+
+[00:02:44] RBD Redos Block device. There we go. And then you can use a Ceph command line interface to use ceph osd pool create rbd 128 128 replicate it.
+
+[00:03:04] And that creates a pool with the name rbd. Next we need the rbd commands to initialize that pool. So rbd pool init rbd and then we can continue and create an rbd image.
+
+[00:03:20] So rbd create rbd image --size 10240 --pool rbd and we continue with rbd map rbdimage --pool rbd --id
+
+[00:03:45] admin --keyring. And that is where we are going to reach out to the Ceph cluster, /etc/ceph/ceph.client.admin.keyring.
+
+[00:04:00] And there we go and look at that. We have a device /dev/rbd0 ls -l /dev/rbd0 is giving me what? Well is giving me a major and a minor of 252. Now I'm just curious, grep 252 in /proc/devices is giving what?
+
+[00:04:22] Well it's giving the RBD and RBD obviously is the kernel module. The first 252 is a character device we are obviously looking for the block device. So now that we have this device, we can use mkfs. whatever you want on /dev/rbd0
+
+[00:04:41] and mkdir /ceph and we can continue and mount it. Let me show the procedure for that on the slides before I'm doing it. So what are we going to do? Well first let's manually mount it, mount /dev/rbd0 /ceph.
+
+[00:05:05] And when we are using mount on the last line, we can see that the rbd0 device is mounted on the Ceph directory and df -h is giving what? It's giving 10 gigabytes of available disk space exactly as expected. Now if you want to automate this then we need to make sure
+
+[00:05:23] that the rbd map rbd image command is automatically triggered before you are going to mount the device. Best way to do that is by using a systemd.unit file and to help a little bit in the course Git repository,
+
+[00:05:40] I have created the systemd.unit file with the name ceph-init.service. So what is in there? Well as you can see the type is simple. An exact start is RBD with the entire commands and we do want to restart it if it fails after 15 seconds. And it is wanted by in the basic target. So we want this this unit to be present early enough.
+
+[00:06:04] So let me copy this ceph-init.service to /etc/systemd/system systemctl daemon reload and then systemctl enable --now ceph-init.service.
+
+[00:06:26] And then we can go in fstab or create a systemd mount unit if you rather do that. And in fstab I'm going to use dev/rbd0.
+
+[00:06:40] We mount it on /ceph. The file system is ext4. The options are _netdev and defaults with mount options zero and zero. And then finally we are going to reboot to verify that it actually works.
+
+[00:07:04] All right, so now it's time to verify mount | grep ceph. And there we can see that the rbd device indeed is correctly mounted. Now you might notice when you observe the reboot procedure that it takes a little bit of time
+
+[00:07:21] for this device to initialize and systemd is just going to wait for it. But don't worry if you see any messages in red waiting for device to come up. This is a Ceph network device and it can take up to half a minute or so. But eventually it'll get there.
+
+[00:07:40] And as you can see, we have a Ceph client and anything that will be stored in this directory will be stored nicely in a distributed way as it is the case in object storage.

@@ -1,0 +1,35 @@
+[00:00:06] - In this video, we are going to talk about the options to access an early boot shell. Accessing an early boot shell is convenient for troubleshooting, and there's a few options. First, we have systemd.unit=emergency.target
+
+[00:00:20] and systemd.unit=rescue.target. You can pass them as GRUB kernel startup parameters to enter a systemd troubleshooting mode where emergency target is the very early troubleshooting mode. You just have the minimal functionality on your system, and that's all. rescue.target stops your system
+
+[00:00:41] before the loading of the services. And depending on the problems that you might experience, you select either of them. The other option is going a little bit deeper. That's your rd.break or init=/bin/bash. Pass them as a GRUB kernel startup parameter to enter a troubleshooting environment
+
+[00:01:00] even before systemd is started. And that's what you want to do if the problem is really very early in the boot procedure in the parts that is required by systemd to provide minimal operating system. There is also the option to enable the debug-shell.service.
+
+[00:01:20] That's a systemd unit, and you need to enable it so that you have access to a debug shell through the /dev/tty9 while you are booting. This /dev/tty9 is a virtual console. You can access it using console Alt + F9, Function key 9, while you are booting. Let me show you how these options can be convenient
+
+[00:01:43] on a problematic system. So here we have a system that is not doing well. As you can see, we have Timed out waiting for device and dependency failed, and it looks as if the system has problems accessing its devices. So the mission here is to restart the system
+
+[00:02:02] and to get into a state where we can fix the problems. Now, which of the different options do you think we are going to use? systemd.unit=rescue.target definitely is too late because that is started after you have minimal system. And here we can see problems
+
+[00:02:21] that look a little bit like as if something prevents the system from processing /etc/fstab. So the best option, most likely, is systemd.unit=emergency.target. I would always go for the emergency target, first, that is because you stay on your regular system.
+
+[00:02:40] Of course, you can use more minimal options, but then you are getting further away from your regular system, and that doesn't make troubleshooting easier. So in the GRUB boot menu, I am going to add systemd.unit=emergency.target, and we are going to see where that is bringing us.
+
+[00:03:05] And, as you can see, everything is well now. So that means that we can start troubleshooting. Well, how are we going to do the troubleshooting? That would be the topic of a different course, but I do want to test that we are in a read/writable file system.
+
+[00:03:23] I can write a file, so that's good. In case you are not, mount -o remount,rw on / will remount your root file system in a read/write mode, but that wasn't really necessary in this case. So what are we going to do next? So next, we are going to analyze what is wrong,
+
+[00:03:41] and what is wrong? Well, /etc/fstab, we seem to have a lot of problems related to /etc/fstab. And if we look right here, this is looking quite okay. We have these UUIDs and a disk image and an LV data and another UUID. How about block ID?
+
+[00:04:01] Block ID is showing what we are expecting. Well, block ID seems to be doing all right as well. How about systemd-udevd? Is that doing the right thing? Well, let's check in /usr/lib/systemd/system on systemd-udevd,
+
+[00:04:23] - udevd.service. And what do we see? Well, do you see the beautiful typo here, udevdd? Let's fix that and remove the second d. And, of course, I put a typo in here just for demonstration purposes.
+
+[00:04:41] You know, systemd is pretty solid system, so it's pretty hard to introduce a boot problem in systemd, but here we had a boot problem, and with this, we should be done. So I'm in emergency target. To get out of emergency target, I would recommend you use systemctl isolate graphical.target.
+
+[00:05:05] systemctl isolate is the most elegant option to switch from one target to another target. And here we go into the graphical.target, and that should get us a normally, fully operational system if everything is all right. So this seems to be taking too long,
+
+[00:05:21] and, you know, that might happen. And if that happens after troubleshooting, just restart the machine, and look how it is doing from the beginning. And, as you can see, this is looking so much better. No failing services in systemd.
+
+[00:05:41] Most of the things were green. We have the GDM, so we are ready to continue.

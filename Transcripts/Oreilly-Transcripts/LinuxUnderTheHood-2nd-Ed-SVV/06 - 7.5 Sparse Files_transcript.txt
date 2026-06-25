@@ -1,0 +1,45 @@
+[00:00:06] - Alright, now that we know about generic file system features, let's investigate some specifics. To start with, the sparse file. So what is a sparse file? Well, a sparse file is a solution
+
+[00:00:20] to use disk space in an efficient way when the file is partly empty. In a sparse file, blocks are only written to disk if the block contains real data. If it's an empty block, it's not committed to disk. And the result is that you can have efficient storage of disk images, snapshot, log files, and much more.
+
+[00:00:40] If sparse files are used, then the utilities must support it. CP has an option --sparse is auto and that's a default option. And this option keeps a sparse nature of files. That's pretty important because if you're 10 gigabyte sparse file being a sparse file only occupies 100 megabytes
+
+[00:01:01] and then you copy it over and suddenly it needs 10 gigabytes, you're in trouble. In rsync you need the option -S to keep the sparse nature of the file. So particularly with rsync, you need to pay attention. Let me demonstrate how to work with sparse files.
+
+[00:01:23] So just to be sure, df -h showing me available disk space. That's all right. 1 2 gigabytes available. That's good. DD if is /dev/zero of is /sparsefile.img bs is 1.
+
+[00:01:41] So DD you may have heard of it before. It's a utility that you can use to clone devices. IF is the input file dev zero, OF is the output file, it'll create an image. BS is 1 will use a block size of one bind. Then we use count is 0, which means that it's not going to allocate anything
+
+[00:02:01] and seek is 10G, which is doing what? Well it marks the file as a 10 gigabyte file, but it's a 10 gigabyte sparse file. Seek marks the end of the file and that's pretty cool. So in the output we now have a very big file.
+
+[00:02:20] If you use ls -l on sparsefile.img you can see it. It's a 10 gigabyte file. Oh boy. But let's drop a -h as well for human readable. And let's make that ls -lsh. And there we can see the actual size that is used on disk.
+
+[00:02:41] That's a zero in the beginning. So this sparse file is reported to be 10 gigabytes, but really it's using no disk space at all. Can we see that? Well df -h is still showing 12 gigabytes available in the root file system. And that is how sparse files can really be efficient.
+
+[00:03:00] And if you have a lot of sparse files, the actual size of all files that are reported by ls -l may be bigger than the actual size of your entire volume. Next I'm going to use mkfs.xfs - b size is 2048. So we create an XFS file system with a block size
+
+[00:03:22] of 2 kilobytes. /sparsefile.img. And now I'm going to mount this file system using mount -o loop on /sparsefile.img and we mount it on the mnt directory. I'm copying etc/hosts to mnt
+
+[00:03:43] and I'm using ls -lsh on mnt hosts, which is showing what? Well it's showing a 158 bytes file, but the size use on disk is 2 kilobytes. That's for the simple reason that we are occupying one block with this small file
+
+[00:04:02] because that's a minimal allocation unit. Now let me use dd IF is /dev/urandom OF is /mnt/bigfile. BS is 1M count is 10.
+
+[00:04:21] So here we are creating mnt big file. The block size is one megabyte and we allocate ten 1 megabyte blocks. So that's a 10 megabyte or better maybebyte file. If next I'm using ls -lsh on /mnt then what do we see? We see that a 10 megabyte actually is 10 megabyte.
+
+[00:04:42] That's because of the nature of the device dev urandom. The dev urandom device generates a random data and stores it in the output file. So that 10 megabytes is really 10 megabytes in this case. How about ls -lsh on sparsefile.img.
+
+[00:05:02] Well here we can see the sparse file occupying 75 megabytes, 75 megabytes. That's a shock. Well, is it really? No, not really because we have a sparsefile.img that is mounted as an XFS file system. When we created the XFS file system on top of it
+
+[00:05:21] XFS metadata has been generated and the XFS metadata occupies space. So we have 10 megabytes and 2 kilobytes for the real files and 65 megabytes of administrative overhead for the XFS file system. And that's what I wanted to show you about sparse files.
+
+[00:05:40] Now a bit related to sparse files, we now need to talk about file block allocation. When creating files, file systems that support the fallocate system call can allocate blocks without actually writing anything in these blocks. And by marking these blocks as occupied, the files can be written much faster
+
+[00:06:00] in particularly when a non-sparse file contains a lot of non-used space. The alternative would be to fill the allocated blocks with zeros and that's inefficient. If non-used space is allocated anyway, the fallocated command can be used to mark the occupied blocks as free. Let me show you.
+
+[00:06:23] So let's use dd if is /dev/zero, OF is /bigfile2.img. BS is 1M. And count is 1024.
+
+[00:06:40] That creates a 1 gigabyte file. ls -lsh on bigfile2.img is showing a 1 gigabyte file that really occupies 1 gigabyte. But hey, the problem is that is 1 gigabyte file is filled with zeroes and that's where fallocate can help.
+
+[00:07:01] So fallocate --dig-holes on /bigfile.img. And next I'm using ls -lsh on /bigfile.img And you see the difference. The file is still reported to be 1 gigabyte whereas the size on disk in the very first column
+
+[00:07:22] is now set to zero. Hey, can you see how sparse files and fallocate together can be used as a very primitive way to apply some level of compression? Isn't that cool?

@@ -1,0 +1,85 @@
+[00:00:01] Now let's use the systemctl command to show how to reduce the attack surface of a system and potentially limit the threats to that system and protect against vulnerabilities. So we're gonna be working in Lab 14: Reducing the Attack Surface.
+
+[00:00:20] So feel free to follow along with that, and I'm gonna be working on a Debian client system. Let's jump to that Debian client now and we'll run some commands. First of all, I'm gonna do a systemctl status and check one of the services that's running. Debian as a client will use the NetworkManager service
+
+[00:00:45] for all networking functions. Anything that you do with networking rides on NetworkManager in this particular distribution. So if we press Enter for that, we will see that the NetworkManager service is active and running and it's enabled.
+
+[00:01:01] So this section here is the unit section when we're dealing with the immediate. If we're starting or stopping a service that will show here, whether it's active or not active. And here where it says enabled, that's the unit-file section
+
+[00:01:21] where we're dealing with persistence and what happens with the service when the system actually starts up, enabled, disabled and so on. We see both are green and good. Active and enabled means that we are using NetworkManager. And everything in networking will build off of this,
+
+[00:01:41] whether you have an Apache server, or you're running SSH, or you're doing a ping or whatever, it's all gonna build off of NetworkManager. However, one of the interesting things in Debian client is it gives you another networking service, and this is the older networking service
+
+[00:02:01] which Debian servers use by default, and it's called networking. And you'll see that this is active as well and enabled. So which is being used? By default, NetworkManager is the main networking core service in Debian as a client.
+
+[00:02:21] But if it fails, it could fall back to the networking service. However, we're not using that right now so we can use this particular service to do some work. And what I wanna show is stopping and starting, and disabling and enabling this service,
+
+[00:02:40] so let's do that now. So first let's stop the service. We'll do a systemctl stop on networking. The full name of this is networking.service, but it's the only service named networking and so we can just say networking. We'll press Enter for that and look what happens.
+
+[00:03:00] It says Authentication Required. Okay, we'll type in our password, and don't forget that my user account that we're using here on this Debian client is a sudoer, so it can do anything. That should have stopped the service. Now we can just up arrow and go back to the status for networking and take a look,
+
+[00:03:20] and you can see it is inactive, it is dead. However, it is still enabled. So if we were to restart the computer, this service would restart as well and it would show as active after that restart. If you wanted to disable it altogether, you could do that
+
+[00:03:44] and we would do a systemctl and change that to disable networking. Now if you don't want the pop-up window in the GUI asking for authentication, we could just add sudo. Otherwise it'll keep popping up every time we run a command
+
+[00:04:01] that requires administrative or sudo permissions. So I'll run sudo for this one, press Enter, type in my password, and that should be good for at least five minutes. And look what happens, it disables the networking service, it synchronizes the state and removes any pointers for that.
+
+[00:04:20] Now if we do a status on that, once again, just by up arrowing, we'll see it's inactive and it's disabled. So now it is stopped, it is inactive, but also if we restart the computer, it will not start because it is disabled
+
+[00:04:41] and that is in yellow there, but it does say disabled. You'll see here it says loaded. That just means that it's installed. We could uninstall it altogether, which can further protect the system, but for now that should be good. You can do both stop and disable at the same time
+
+[00:05:04] by adding the --now parameter in there. That will stop and disable it at the same time. But I actually want this networking service, I want it as a nice little backup networking platform in case NetworkManager fails. So I'm gonna do a systemctl --now enable networking.
+
+[00:05:26] That should start it and enable it at the same time. Good. It creates a symbolic link, it synchronizes it and starts the service. Now whenever you do this type of work,
+
+[00:05:41] you should always check it, so I'm gonna do another status on networking and you don't need sudo for that. And it does show active and exited and enabled. All good. Now I just said, hey, you don't need sudo for that, however, if you don't show your sudo permissions,
+
+[00:06:03] it will not give you any log information. So for example, if we go back to our main networking service, NetworkManager, and show the status for that, look what happens at the bottom. It says Warning: some journal files were not opened
+
+[00:06:20] due to insufficient permissions. I didn't show my sudo rights. But if we run that command again with sudo, we will get all the same information, active and running, enabled and so on, but we'll also get the log. So this is the last 10 lines
+
+[00:06:41] of the log for the NetworkManager service. So if you want to see that, you've got to use sudo. Good. And if you see end at the bottom and you can't type anything, just press Q to get out of there. That'll bring you back to your prompt. All right, let's clear the screen and let's show all of the services and unit files.
+
+[00:07:02] We'll do a systemctl with a list-unit-files. list-unit-files. Press Enter for that, give it a moment and you'll see a list of all unit files and their current status.
+
+[00:07:21] So for example, the App Armor service is enabled, the Bluetooth service is enabled. Do I need that? Not really. First of all, this is a virtual machine, I'm probably not gonna be using Bluetooth with it. If we scroll down further, we'll see the networking service is enabled
+
+[00:07:41] and that's because we have re-enabled that previously. And here's our NetworkManager service that we're using for all networking. Go down a little bit further and we see SSH and SSHD. Now in some Linux systems, the SSH service is known as SSHD
+
+[00:08:00] and that is the common way to show that and historically that's how we've used it, but currently Debian is making that the SSH service. So you can see that SSH is enabled, SSHD is just an alias for SSH, but other systems like Fedora based systems
+
+[00:08:22] still show it as SSHD currently, so keep that in mind. But you can look through all these services and you could say, okay, do I need this one? Do I need this one? And disable the ones that you don't want or don't need. And you can filter a little bit as well.
+
+[00:08:40] If you don't want to see all of the different categories we could filter, we could say, okay, let's do a systemctl list-unit-files and filter with a --type service and then filter further with the grep command and filter for enabled services.
+
+[00:09:01] So we'll do that, press Enter and we'll see a little bit of a easier list to work with. You might also want to pipe that to less so it's easier to work with. Okay, and we can use the arrow keys to scroll down and see all of the enabled services
+
+[00:09:23] and get rid of the ones that we don't want. Who knows, perhaps we don't want nxserver. Who knows what that is? That's actually a program that I use on my local area network called NoMachine, which allows me to remotely control systems on the network.
+
+[00:09:41] Could be that we don't want that anymore for this particular system, so we might stop and disable that, or perhaps uninstall it altogether. We've got that networking service that we can get rid of. We have Bluetooth and others, maybe the cron service we don't want to use. So you can get this nice list
+
+[00:10:00] and start reducing the attack surface of your system by disabling things one by one. Now let's do another command systemctl list-units. Before we did list-unit-files and that dealt with the persistent side of things, whether or not the services are enabled or disabled.
+
+[00:10:23] Here we're gonna do list-units, which deals with units and the immediate side of things, whether things are started or stopped. So let's do a systemctl list-units, press Enter, and you'll see a whole list of all the units
+
+[00:10:42] and we'll scroll down through the different categories, and then we get to services. And so, for example, here's our apparmor service. We see it is loaded, meaning it's installed, it's active, meaning it has been started, but it's exited, it's not actually being used
+
+[00:11:00] and there's no Linux DAMON monitoring it right now. Or NetworkManager service, loaded, active, and currently running and monitored, and using memory on the computer. So this is how you can view whether something is running or not. So know the difference between list-units,
+
+[00:11:21] which shows whether it's running or not, and list-unit-files, which shows whether it's enabled or disabled. Another thing I'll do on computers quite often is check the ports and see what is open and used by services.
+
+[00:11:40] One command I might do is ss, you might have heard of netstat as well, that's the older command and sometimes I use it, but usually I'll work with the ss command to check ports and services. So, for example, ss-tulnw. This is a common one that I'll do. And when we do so, we'll see all of the UDP ports, TCP ports
+
+[00:12:04] that are open on this system. And so for example, we see here port 22 is open on all IP networks. It's listening on all IP networks, on IP version four and for IP version six.
+
+[00:12:22] We see that 4000 is open. That's actually that NoMachine program that I was talking about before that I use. And so you can get a lot of information with the ss command to find out what services are open and listening and what ports they're using. I'm seeing this numerically
+
+[00:12:41] because I used the n option up here within the ss commands. When you're ready to stop services, you can do it at any time, just like we showed, you can do a systemctl stop and whatever the service name is. If you want to disable it, disable service name.
+
+[00:13:04] If you want to do both at the same time, -now and the service name. You could do multiple service names within curly braces if you need to and just get it all done at once. The ultimate option after that is to remove the program.
+
+[00:13:22] So if you need to, you could do an apt remove whatever the program is. For example, maybe you want to get rid of openssh-server. I'm not saying to do that, I want that on this system, so I'm not gonna do that right now. But that's how you would get rid of a program altogether
+
+[00:13:40] from the system. Better yet to also remove the configuration files that are corresponding to that program, you do an apt purge on that actual program. So that's about it for this sub lesson. If you look in the lab, you'll see there's a Take It To The Next Level question. Definitely check that out, and also check out the help file
+
+[00:14:03] and the manual page for systemctl.

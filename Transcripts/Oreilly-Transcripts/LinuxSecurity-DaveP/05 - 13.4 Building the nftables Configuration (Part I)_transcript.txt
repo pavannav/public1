@@ -1,0 +1,51 @@
+[00:00:01] Now it's time to configure nftables. And what we're gonna do is we're gonna completely lock down the server so that no one can access it from outside, and so that the server cannot access anything outside from itself. So let's get into it now. We'll go to our Debian server and we'll start configuring.
+
+[00:00:21] Now you can do all of your commands with nft, but it's a lot easier to use the nft interactive shell. And to get to that, you can type nft -i and that'll open up that nft shell. This way we don't have to type the nft command every time, we can just omit that.
+
+[00:00:42] So the first thing we wanna do is create a new table. I'm gonna leave the table that we have here and create a wholly new one. The most secure table is the one that's going to take effect. So the most security is gonna be the one that takes precedence.
+
+[00:01:00] So let's start with the add table command. And if I was doing this just in the regular Bash shell, it would be nft add table. So again, we're omitting nft from this. So add table, and I'm gonna call this inet ports_table.
+
+[00:01:21] We'll press Enter and no news is good news. That should have created the new table. Let's go ahead and do a list ruleset. And when we do so, we now see two tables, the original table that we saw before and our new table inet ports_table.
+
+[00:01:44] Now remember we said that you want to have a table and then you can have chains, and inside those chains you can have rules. So we've created our table, now we need to create a chain, at least one, within that table. So we're gonna do the add chain command,
+
+[00:02:01] and then we have to specify the entire path. We have to give the entire path, starting from the table name on down, every time we create a chain or a rule. So the table name is inet ports_table, and then we need to name the chain
+
+[00:02:20] that we're creating right now. I'm gonna call this input and then I'm gonna set the policy for this input chain. And here's what we'll do. We'll do a { type filter hook input priority 0,
+
+[00:02:47] that's gonna be the highest priority, ;, and we'll give it a policy of drop. And if you remember from the previous firewall labs, we said that you have something set to drop,
+
+[00:03:01] that means that the firewall's dropping all packets and the computer that's trying to connect to that system with the firewall, they won't even know what is there, they won't get any response whatsoever. So this is a full drop policy and end it with a ;
+
+[00:03:20] and close it out with the }. So let's check that again. Add chain, the name of the table, inet ports_table, the name of the chain input, and then we have a type filter hook, input priority zero, ; policy drop ;, and close it out with }.
+
+[00:03:42] Press Enter and it looks good, it should have added that. Let's go ahead and do a list ruleset once again. And now if you look at the bottom of the screen, you'll see the table we created and the chain we created called input,
+
+[00:04:00] and on the end of it it says policy drop. At this point, no one should be able to connect to this server. So let's test that. We'll go to our client and we'll try pinging the server and look what we get. All packets are being dropped, we're just getting the blinking cursor,
+
+[00:04:21] no connectivity whatsoever. We'll try SSH-ing in, same thing. All packets that we're hitting that server with are being dropped. Awesome. Ctrl + C to break outta that, go back to the server. So let's quit out of the nft shell
+
+[00:04:41] to get back to the Bash shell. And let's see if we can do any type of connectivity to remote systems. We'll do a ping of example.com and we are getting nothing. Ctrl+ C to break outta that. Let's try a ping of just my local gateway.
+
+[00:05:03] Nothing. And that's what we want. This chain that we set up with the priority zero, which gives us the highest precedence of anything in the firewall, and this policy drop that we set, makes it so we have zero connectivity, inbound or outbound.
+
+[00:05:21] Even though I called this chain input, it doesn't matter, it's for input and output. So the system cannot be accessed from the outside. In addition, the system cannot make any outbound connections. However, normally we will want to be able to connect to the system in at least some way, to either transfer data or SSH in or what have you.
+
+[00:05:43] So we're gonna use the SSH concept again and enable that on the server and make sure that a client can connect. So let's show how to allow SSH now. We'll add a rule to our ruleset. So I'm gonna go back into my nft shell
+
+[00:06:02] and you'll notice that you can Up Arrow through the commands, even if you leave the shell and come back to it, it has a history all of its own. So if you need to use that, go ahead and do so. But for now, what we're gonna do is add a new rule that allows SSH.
+
+[00:06:20] So that's gonna be the add rule command. Then you have to go down the entire path for the firewall table. So the table name is inet ports_table, and the chain name is input. And then we set the rule. The rule I want to set is that inbound SSH will be accepted on port 22.
+
+[00:06:45] SSH is a TCP-based protocol, so we have to state all of that information. So it's a TCP-based protocol and we'll use the dport option, which means destination port,
+
+[00:07:00] but the destination is this server. So this is the inbound port, so to speak, and that port number is 22. You could also do it by service name SSH, but I like to go with port numbers usually, so 22. And we're gonna say accept, it's going to accept those connections.
+
+[00:07:21] Press Enter for that, that should add it to the list. We'll do a list ruleset. And now you can see our table has the new rule, TCP destination port 22, accept. So even though we have a policy of drop for everything,
+
+[00:07:43] now we're filtering and allowing port 22 to come through. Let's go ahead and test that from a client. So here's the Debian Client and we'll try SSH-ing in again. Press Enter and it's asking for the password. And just to prove that it works, type in the password
+
+[00:08:02] and we are greeted to Dave's Mega Debian Server. Awesome, and we're in as user@debserver. I'm just gonna Ctrl + D, get outta that, we know now it works. But if we were to try to ping that server, it's still not gonna function. Any other connectivity is gonna be filtered out completely
+
+[00:08:21] and those packets will be dropped. Break outta that. And now SSH is functional, awesome. So try to do that on your system and make sure that you can connect from the second system via SSH to the server.

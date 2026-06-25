@@ -1,0 +1,33 @@
+[00:00:06] - So we have previously seen the proc pseudo-filesystem. sysfs is also a pseudo-filesystem, but it's used mainly for hardware-related stuff. So you will use it to find runtime information
+
+[00:00:21] about your devices. And it's an awesome place to find more details about hardware devices, and even with limited possibilities, to manage some device properties. Apart from the hardware management, it's also used by other Linux subsystems, such as cgroups and SELinux.
+
+[00:00:40] After your hardware initialization, it can be used to discover several device properties. And I'd like to show you. So, lscpu, you know that command, right? That's showing the CPUs. So here we have, we have what?
+
+[00:01:00] We have the CPU information, threads per core, and cores per socket, and sockets. That looks like a two-CPU system. That's what we find right here. CPU is 2, and on-line CPU is 0 and 1. So this is a two-CPU system. That's what I need to confirm here. Now this two-CPU system is actually managed
+
+[00:01:21] in the /sys filesystem. You need to go to /sys. In /sys, you have these different subdirectories for different types of functionality. In this specific case, we need to go to bus. And in bus, you have different items. And the item that we are looking for here is cpu.
+
+[00:01:41] And in cpu, we have the devices. And when you use ls, then you can see the different CPU devices. So in cpu1, we have the files that maintain the current state of the CPU. And there is this file with the name online. It has a 1. Now what happens if you use echo 0
+
+[00:02:01] and redirect that to the file online? Well, let's check the result in lscpu. And as you can see, we still have two CPUs but one of the CPUs has just been off-lined, and that can be pretty convenient every now and then. Now I don't want it to be off-line,
+
+[00:02:23] so let me on-line it again, and now we have it back. There is another setting that you can manage through the proc filesystem. That's in /sys/block/. /sys/block/, you may have guessed it, is for your block devices. And every single device that you will find here
+
+[00:02:41] has a couple of settings. Now what we are looking for is the setting for the queue. And in there, you will find the scheduler. So what do we have in scheduler? Well, we have known none and mq-deadline and kyber and bfq. These are the disk schedulers, the I/O schedulers,
+
+[00:03:00] and you can tweak the I/O schedulers to try to improve performance of your disk channel. Now what I'm going to do here is a very, very much simplified test just to give you an impression of what this is about. So right now you can see that scheduler has mq-deadline. mq-deadline means that the I/O scheduler
+
+[00:03:23] maintains a deadline. It delays writes as long as possible. And I wanna know how that is working. So I'm using time dd if=/dev/zero of=/bigfile bs=1M
+
+[00:03:41] count=1024, which is doing what? Well, this is writing a 1024-megabyte file. And the time command is telling us how long it takes. So we can see that the real time was 1.649. I don't care about the real time. I care about the sys time.
+
+[00:04:01] That is the time that the kernel has been busy writing this device. So if you really want to do this the proper way, you need to do it a couple of times. And there you can see on the next attempt, it's faster. So let's say that we have a sys time of 0.4 seconds to write the one gigabyte file.
+
+[00:04:21] So now let's change the scheduler. I'm using echo none > /sys/block/sda/queue/scheduler. And the funny thing is that you would expect a file to be overwritten, but as this is a pseudo-filesystem, it works differently.
+
+[00:04:41] As you can see, it has selected the none scheduler, and the other options are still there. And now we can run the time command again and see how it is behaving. And the idea here is that this allows you to measure performance differences between one scheduler and another scheduler.
+
+[00:05:00] Now the test I'm doing here is really very simple because we are only testing how the scheduler behaves when writing big files. So this is not representative of a real performance test where you are going to benchmark disk performance, but it may help in giving you some impression on what the specific settings like this noop is doing,
+
+[00:05:23] and you will find it in /sys filesystem. And that's what makes the /sys filesystem pretty awesome.

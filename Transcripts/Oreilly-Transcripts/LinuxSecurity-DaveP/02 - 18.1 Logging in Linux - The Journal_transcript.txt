@@ -1,0 +1,65 @@
+[00:00:01] Let's start the lesson with logging in Linux, and we're gonna work with the journal. Now, we've already seen this a little bit, but I want to expand upon that somewhat within this mini lab. So in this sub lesson, we'll define logging in today's Linux systems. We'll demonstrate how to read Linux logs with journalctl,
+
+[00:00:22] and we'll show how to backup our logs. So let's move over to our Debian client and we'll work here with our user accounts. And first, let's review with the "systemctl" command, and we'll do a "systemctl status" on "ssh".
+
+[00:00:40] Now, when we did this, we were showing that the service was active, it was enabled, we found out lots of other good information about it, but we also saw that there was a warning. "Some of the journal files were not opened due to insufficient permissions." Well, in Linux, all of the logs are stored in the journal.
+
+[00:01:04] And the journal is a binary file that you can't really access directly, but you can access it indirectly with commands like "systemctl", and "journalctl". Now, to be able to see the last lines of the log,
+
+[00:01:21] we would have to preface this command with "sudo" as long as we're a sudo user, then we could see the last lines. And so this is the last information of the log file, and we can see that the SSH service was started and it's listening on port 22.
+
+[00:01:41] That's the last things that happened as far as SSH is concerned. Let's go a little further and we'll show the "journalctl" command and we'll do "-u" and "ssh", and once again, preface that with "sudo" 'cause we're gonna be looking at restricted information,
+
+[00:02:00] press enter, and we'll see the entire log for the SSH service. Now we're filtering for SSH here. If you were to just do "journalctl", you would see everything from all time for this system, for all services, the Debian kernel, the gnome-shell,
+
+[00:02:21] systemd, PackageKit, everything else. And I'm just holding down the page down key, you can tell that there's a ton of information in here. If we go to the end, which will take a while, even pressing the end key, we'll finally get to the end
+
+[00:02:40] and you'll see that there's tens of thousands of line items here and they're listing information about various services, the core of Linux, the kernel, systemd and all its processes and so on and so on. So instead, we normally filter and we can use "-u" or we can use "-xe"
+
+[00:03:00] or "-xeu" to see that information. And with "xeu", we get a little bit more information. You'll see some additional information about job identifiers and what was going on with that. So that's one of the reasons you might use that command. But generally, I stick with just "-u"
+
+[00:03:20] and whatever service it is that I want to learn more about. So again, "ssh", if we do that, we can scroll down here, eh, it's about maybe 200 lines of information, and if we were to do this on our server, we would see the error that we created earlier during the SSH lab.
+
+[00:03:41] When we're done looking at this journal, we can press Q to get out. Now you may say, "Well, that's a ton of information", yes it is. We can further filter that by using the "tail" command. So if we do a "|tail", that'll just show the last 10 lines of that journal log.
+
+[00:04:02] So these are the last 10 lines, the last 10 things that would've happened. Conversely, you could use "head" and that will show the first 10 lines of the log. Or maybe you don't want just 10 lines, maybe you want a little bit more, you could do a "tail -20" or something like that
+
+[00:04:22] and that'll give you 20 lines of information. And that's quite often what I'll do when I'm troubleshooting services that have failed. I'll go back 20 lines with that "tail -20" command. Let's go ahead and show some other logs and we're gonna change to "/var/log"
+
+[00:04:42] because that's where all the logs are normally stored. Once in there, when we take a look, you'll see all kinds of stuff. And the first thing I wanna point out is the journal. So this is a journal directory and this is where all these logs for Linux are gonna be stored. Let's change over to that now and look inside
+
+[00:05:03] and you'll see the main journal database. Change over to that and look inside there and you'll see the main "system.journal" file and then a bunch of older ones that have been backed up over time. Because the journal is huge, it's tens of thousands,
+
+[00:05:22] if not hundreds of thousands of lines of information. So this is gonna get backed up over time, but this is the current one. Now, if we were to try to view this, first of all, you're gonna see "permission denied",
+
+[00:05:40] and that's because I'm working as a regular Linux user. We'll add "sudo", but now what do you see? This is binary information. So this isn't something that we would normally go in to read, I just wanted to show this. Instead, you use commands to access and pull the data from the journal. So we'll get out of there,
+
+[00:06:01] go back up a couple directories and take a look again at what's here. Now there's lots of other logs. We have boot.logs, alternatives.logs, apparmor, APT has its own logs, auditing if you have it enabled and turned on, the installer, GDM dpkg.log, and so on and so on.
+
+[00:06:21] Let's take a look at the dpkg.log. You'll see everything that's happened with dpkg on this system. And so you can see what has been installed, what has been modified, unpacked, and we can see over here some updates, okay, it unpacked "gir1.2-javascriptcoregtk",
+
+[00:06:45] unpacked it, another version, and blah, blah, blah. There's tons of information here. So this is everything that happened with the dpkg program, which you can use manually to install programs, but it does it in the background on its own as well. So tons and tons of logs.
+
+[00:07:01] I recommend you take some time looking at "/var/log". Now you can make backups of your log. You don't necessarily have to with the journal because everything is being done incrementally, but in some cases it's recommended to make a backup of that. And so we can back up that entire directory,
+
+[00:07:21] we could do a "cp -r" on "journal" and back that up to wherever we want. Maybe we're using "scp" and backing it up to a remote location. Maybe I have my backups on the server, something like this. This is just an example,
+
+[00:07:40] but it's a good idea to consider backups. We talked about that in a previous sub lesson. You could also use cron to do automated backup. And so for example, let's take a look at "/etc/crontab", I'll do that with sudo.
+
+[00:08:00] And you'll see my cron tab here. This is what we use, or at least it's one of the tools that you can use that's built into Linux to schedule the automation of tasks. And so down here at the bottom, I have automatic updates. I actually added that, but I've commented it out previously on these templates.
+
+[00:08:26] I would do this and it says "@reboot", basically, do an apt update and an apt upgrade. So it would do a complete upgrade
+
+[00:08:40] when it first booted the system after I made a clone of the template. Nowadays I'm using Ansible and Ansible Playbooks to actually send the commands to do the updates once the templates are built and it's all automated in a bash script, but this is another great way to do it. And you could enter in your copy
+
+[00:09:02] or scopy commands, secure copy, so that you could have these things run automatically. And you can see here that this is designed to run things daily, weekly, and monthly. And these are separate areas of cron.
+
+[00:09:24] Escape out of here. And I'm not gonna keep the changes, I just escaped out. But if we change over to "/etc/cron.daily", and look inside there, you'll see a variety of things that can run
+
+[00:09:41] on a daily basis. And here's the bash script for the dpkg program, which runs and does backups automatically. So you can add that kind of thing here, and you could do that with your logs. So whatever logs you want to back up,
+
+[00:10:01] you could do this however you want. You could do it manually or you could automate it with things like bash scripts or with cron or Ansible or other tools. And you could back up your journal and back it up to a separate network attached storage or a server or whatever you like. So there's plenty of backup methods for you,
+
+[00:10:20] but definitely get into working with Systemctl and especially the journal. Work with the journal and learn more about the various services that are available to you, for example, NetworkManager, which is getting lots and lots of updates lately. And again, use the "tail" command
+
+[00:10:40] to see the last 10 or perhaps the last 20 lines if you need to, and learn more about those services and all the logs for those services. And that's about it for this sub lesson.

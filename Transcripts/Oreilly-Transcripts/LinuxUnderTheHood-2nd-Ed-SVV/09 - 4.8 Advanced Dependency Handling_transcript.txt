@@ -1,0 +1,33 @@
+[00:00:06] - So systemd does have a couple of interesting options for dependency handling. Let's talk about them. So the default option to deal with dependencies is the target. A target is basically used to group units.
+
+[00:00:21] And obviously, some targets can be used to start your system in a specific state. That's not what matters here. What matters here is that you can also define inter-unit dependencies, and you can do that within the unit files regardless of what you are doing in the targets. Now if you want, you can use systemctl list-dependencies
+
+[00:00:44] to show current dependencies. That is telling you where you are and how you actually got there. It's a nice overview of your current target and all the services that currently are loaded. But there is more, and that is what you can do using specific options to manage these dependencies.
+
+[00:01:03] We have Requires=. A Requires= means that if this unit loads, units that are listed here will load also. And if one of the other units is deactivated, this unit will be deactivated as well. There is a Requisite=. If the units listed here are not already loaded,
+
+[00:01:22] this unit will fail. And there is Wants=. This unit wants to load the units that are listed here, but it won't fail if any of these units fails. And there is Before=, which will start this unit before the unit mentioned with Before=. And likewise, there is After=, which will start this unit
+
+[00:01:42] after the unit that is mentioned with After=. Now let me walk you through a nice example of how you can use these. So in order to do this example, I need to install vsftpd. It's just a random service that I'm using here.
+
+[00:02:01] Feel free to use any other service. I really don't care. What matters here is that I want to create a dependency that makes it when httpd is started, it will automatically start vsftpd as well. Now we need to do that the right way, so using systemctl edit httpd.service,
+
+[00:02:22] and we need to include the Unit section. So in Unit, I'm adding a Requires=vsftpd.service and that should be all.
+
+[00:02:40] Just to make sure, systemctl daemon-reload. systemctl daemon-reload is an interesting command. It will update the systemctl database. In many cases, it's not required, but hey, it feels good to have told systemd that something has changed and at least you will make sure
+
+[00:03:00] that it has picked up the changes. Now, systemctl status httpd.service. Was it already running? If it was, we will need to restart it. And oh, it was not running, so I am going to start it right now. But maybe before we do that,
+
+[00:03:20] let's do ps aux | grep vsftpd. This is a Red Hat system. On Red Hat systems, if you install services, they won't be started automatically. On Ubuntu, that's different. You do an apt install of whichever service, it will automatically be flagged for automatic starting.
+
+[00:03:41] And let me grep, by the way, on the appropriate command. There was a typo in the previous command. So now I'm going to use systemctl start httpd. And next, systemctl status httpd, which is showing it as active and running. And what about the grep on vsftpd?
+
+[00:04:02] Now look at that. The Requires= has made sure that vsftpd is running as well. This is something that has worked at a systemd service level. So if we check the status on vsftpd, we can see that it is started as well. Now if you want to know
+
+[00:04:21] about dependency relations like this, use systemctl show vsftpd and grep it on RequiredBy. And there you will see that this service is required by httpd.service. Now there is one thing that I don't like
+
+[00:04:40] about dealing with dependencies in this way and that it is not so very obvious. If you define the dependencies through your targets, you can easily see everything that is in the target. If you define your dependencies in this way, it's very hard to have a generic overview of what exactly is started by what.
+
+[00:05:02] I mean, systemctl status vsftpd, where do we see that this has a dependency to httpd? We don't. The only way to figure it out is if you dig deeper using systemctl show. That's the ugly command that's showing all of the hundreds
+
+[00:05:21] of different directives that can be used on the unit file. So it might be cool that you can manage dependencies in this way, but you might wanna think about it another time before you are actually going to do it.

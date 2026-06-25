@@ -1,0 +1,53 @@
+[00:00:06] - In this video, I will tell you about Stratis. Stratis was introduced by Red Hat as an answer to ZFS and BTRFS, which is considered instable by Red Hat and for that reason not yet included.
+
+[00:00:20] So how does it work? Well, Stratis first adds volumes to the XFS filesystem. So, Stratis volumes always go together with the XFS file system, you can't use anything else. Stratis volumes are thin provisioned by nature. And volume storage is allocated from the Stratis pool.
+
+[00:00:40] The interesting thing is that the volumes themselves don't have a size. Now, each Stratis volume needs a minimal size of four gigabytes and because of thin provisioning, Stratis tools must be used to monitor available storage space. And that's in fact a little bit annoying about Stratis. Your regular tools don't work. You can only use the Stratis tools.
+
+[00:01:03] Now to work with Stratis, you will need the stratisd and stratis-cli packages to be installed. And next you can use a Stratis command to create pools and file systems. This command does have some very good tab completion, and while working with Stratis,
+
+[00:01:20] use stratis pool list to ensure that the pool has sufficient space remaining. To mount Stratis volumes, you use the UUID and not the device name and also you need to include x-systemd.requires=stratisd.service as a mount option. That is to make sure
+
+[00:01:40] that you have the appropriate dependencies that are loaded because Stratis volumes don't load if the Stratis service hasn't been started. Let me demonstrate how this works. Alright, let's start by doing an lsblk
+
+[00:02:00] to verify that we have SDD available. And SDD is the device that I'm going to use. So using dnf install stratis-cli as well as stratisd. And next we can use systemctl enable --now stratisd.
+
+[00:02:24] Stratisd is really required. Without stratisd, there's no Stratis going on in your system. Alright, next we can use the stratiscli using stratis pool create mypool dev sdd. So I'm putting the entire SDD device in the Stratis pool
+
+[00:02:42] with the name mypool. Stratis pool list is listing the pool and we can see it right here. This is the pool information. So it's giving information about the total size and reducing health at gigabytes. And 19.5 gigabytes currently is free.
+
+[00:03:02] So we have a pool. Now we can continue using stratis pool add-data mypool dev sde. Well that is we could continue if we would have another storage device that is available. In this case it doesn't make sense
+
+[00:03:20] because I don't have an SDE device, so it's obvious that we are getting an error here. Now how about stratis blockdev list? Well that is going to list all the different block devices and as you can see right here, nice overview of the block devices inside the pool and the exact physical size.
+
+[00:03:41] Now we are going to use it using stratisfs create mypool myfs. So that's creating the myfs file system. So stratis pool list is showing what? It's showing that well we have 20 gigabytes
+
+[00:04:01] and now we have one gigabyte that is used and 19 gigabytes free. And stratis fs list is showing the file systems and well look at that, one terabyte of file system. One terabyte is the default file system size that you will always get.
+
+[00:04:20] And this is the device but the device is not important. The thing that is important is the uuid. The uuid is what we are going to use if you want to mount the file system. So let me use mkdir/myfs to create the mount point and that next lsblk --output=UUID /dev/stratis/mypool/myfs.
+
+[00:04:49] This is printing the UUID and you can redirect the UUID if you want to, to the etc/fstab. Maybe we should use tail -n1,
+
+[00:05:01] so that we only have the UUID and append that to etc/fstab. So next you can edit the etc/fstab and in the etc/fstab, of course the line needs to start with UUID equals. So this is the UUID and we are going to mount it on the directory.
+
+[00:05:22] No stratis, /stratismyfs, I already created it and then the file system. Hey what is a file system? Well remember Stratis always comes with XFS, so you have no choice but XFS; then I wanted to type defaults but default is not good enough.
+
+[00:05:41] We need defaults, x-systemd.requires =strategyd.service followed by zero and zero and it's easy to make a typo. So let's double check. I think this is okay, let's save it, and let's you systemctl daemon reload.
+
+[00:06:04] I do need daemon reload here because I want it to be updated in systemd as well. Mount minus a is going to mount it. And what is df minus h showing? Well, df minus h is showing the actual usage.
+
+[00:06:21] And in the actual usage, we have one terabyte and 7.2 gigabytes in use and one terabyte variable. That's not exactly accurate but it comes close enough. You better use Stratis pulllist and Stratis fslist for a complete overview. And hey, what do you think of the lsblk output?
+
+[00:06:42] As you can see, Stratis has done some pretty ugly things to the output of your lsblk command. But yeah, we can see that the thin provision volume exists on top of some stratis metadata structures, which originate in the original 20 gigabytes volume.
+
+[00:07:02] But then we see another 20 gigabytes volume. Well it's kind of a mess and you shouldn't use lsblk to analyze your Stratis devices. Now there is one thing that I would like to do and that is the /run/systemd/generator directory,
+
+[00:07:22] where we can find myfs.mount. So what do we see in myfs.mount? Well let me open it with cat. Here you can see how exactly the Stratis thing is working. So we have a dependency that states that it should be used
+
+[00:07:42] after stratis.d service and it requires this stratisd.service. That is basically how systemd has rewritten the mount options. Strictly spoken, you can remove the xsystemd requires from the mount options here, but hey, systemd has automatically created it,
+
+[00:08:00] so this should be okay and Stratis is going to be working. We do need to check one more thing and that is systemctl status on stratisd. And there we can see that it is enabled and the preset is enabled as well. That's very important because if you do mount Stratis volume
+
+[00:08:21] and you don't have stratisd currently running, well, it's going to fill. Just to be sure, if you are going to play with Stratis, I would warmly recommend that you are going to reboot to make sure that everything is doing all right. And there we go, we do have the no display manager,
+
+[00:08:41] and if you see the no display manager, then you are in good shape and that means that the Stratis volume is actually working.

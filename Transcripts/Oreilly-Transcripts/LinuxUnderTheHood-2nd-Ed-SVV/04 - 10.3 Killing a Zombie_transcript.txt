@@ -1,0 +1,61 @@
+[00:00:06] - So in process management, you will occasionally encounter a zombie. Did you ever wonder how to kill a zombie? Well, let's talk about it. In order to kill a zombie, you need to understand how processes are stopped.
+
+[00:00:21] So processes can voluntarily stop. And when that happens, they use the exit() system call. Also, a process can involuntarily be stopped when it receives a signal, and signals can be sent by other users, other processes, or the Linux kernel itself. Now when a process is stopped,
+
+[00:00:40] it issues the exit() system call. And next, the Linux kernel notifies the process parent by sending the SIGCHLD signal. Upon receiving the SIGCHLD signal, the parent process executes the wait() system call to read the status of the child process, as well as the exit code. And while using wait(),
+
+[00:01:00] the parent also removes the entry of the child process from the process table. And then if all of that has happened correctly, the process is gone. Let me make a quick drawing so that we can see how that works. Okay, so how does it normally work when a process exits? Well, we have the parent,
+
+[00:01:21] and the parent has forked the child. And at a certain moment, the child is done. Then we need to consider the kernel as well because the kernel has a process stable, right? So what happens when the child is done? Well, the child is using the exit() system call,
+
+[00:01:42] and passes the exit() system call to the kernel. Next, the kernel is sending an alert to the parent, which is SIGCHLD. That's a signal. And that is like where the parent is going to say, "Hey, dude, your child is gone."
+
+[00:02:00] Next, the parent is going to wait(), which allows the child process to be removed from the process table. And if everything is going all right, then the child process is removed from the kernel process table and it's gone. All right, so now that you know how normally child processes are stopping,
+
+[00:02:22] we can talk about zombies. A zombie process is a process that has completed execution, but it still has a PID in the process table. So somewhere between the exit() and the child process being removed, something has gone wrong. Now the child process gets the status of zombie
+
+[00:02:40] when the communication between child and parent on the child exit is disturbed. And that may happen if the parent doesn't execute a wait() system call to wait for the child to be removed. It may also happen when the parent doesn't receive the SIGCHLD signal. So it doesn't know that the child is gone. In ps aux output, zombie processes will show as defunct.
+
+[00:03:03] So zombies are sometimes confused with orphan processes. Let's talk about orphans. An orphan process is an active process which parent process has finished. And that is problematic because upon termination, the child process needs to be able to send a signal
+
+[00:03:20] to the parent process. Now, upon termination of the parent process, active child processes are normally adopted by the init process, and that ensures that the child process is getting properly reaped when it exits and it doesn't become a zombie. Let's analyze orphan processes.
+
+[00:03:42] So I'm going to run two background processes, sleep 3600, number one, and let's also do a sleep 7200, and then ps faux | grep -B 5 sleep.
+
+[00:04:03] In case you don't know this option -B, it shows the five lines before the sleep process. In this case, it's very useful because it allows us to see parents. Now, what do we see? Well, we see that both sleep processes are a child of the bash process, 3554. So let's do a kill on 3554,
+
+[00:04:24] which doesn't work, which is kind of obvious because 3554 is the current bash process that I'm in. How about we use kill -9 3554. There you can see it has been killed. And I'm back in the parent shell, the one that was started by the student user,
+
+[00:04:41] the 3453 process. Now the big question here is what has happened through the child processes? Well, let's do the same again, ps faux, fuax does doesn't make a difference, -B 5 on sleep. And what do we see?
+
+[00:05:00] We see that the sleep processes have been adopted one level up. So you really need to see the entire hierarchy without a -B 5 to see that right now, the sleep processes are a child of systemd, the current init process. You can already see that because they're at the same level as all the other processes that show here.
+
+[00:05:22] So that is what happens with orphan processes. So orphans are relatively easy, the zombies are a bit more complicated, and the problem with the zombie is that the zombie cannot be killed because it is already dead. And there are a few workarounds, but these workarounds don't always work.
+
+[00:05:41] So you can try. Success is not guaranteed. First thing that you can try is to use kill -s SIGCHLD to the parent PID. Why would you wanna do that? Well, the SIGCHLD is what the parent needs to realize that the child has gone. So upon receiving the SIGCHLD signal,
+
+[00:06:02] the parents would check its children and it might be able to complete the procedure. You can also kill the parent PID, which will cause the zombie process to be adopted by init. And once the zombie process has been adopted by init, it can be reaped. Or you just reboot the system.
+
+[00:06:20] That's kind of a radical way to take care of zombies. But if you really need to get rid of them, it might be the only option. And let's not forget that on some occasions, zombies go away by themselves. If for some reason communication between parent and child has temporarily been interrupted,
+
+[00:06:40] then you get a zombie. And when a communication is reestablished, the zombie will go away. Now let me show you what you can do to kill a zombie. So in the course GIT repository, we have a zombie process. Here you can see the C code that is behind it,
+
+[00:07:01] in case you're interested, noticing that the C code is only sleeping for 10 seconds. So it puts a parent to sleep, and that will cause a zombie process. And then after 10 seconds, the parent wakes up again. That's only 10 seconds. To make this a little bit more impressing, let's put it to sleep more like five minutes.
+
+[00:07:24] I mean, what can you do in 10 seconds? Best thing would be to wait, right? So I am going to use gcc -o zombie zombie.c to compile the zombie. And next, we are going to run it, the zombie, ./zombie &, as a background process.
+
+[00:07:43] So ps aux | grep defunc is showing that we have the zombie process listed as defunct. Zombie processes normally are also between square brackets to indicate that something special is going on. Now how about we have a look at the process hierarchy
+
+[00:08:02] so that we can see the parent There we can see that the zombie is a child of the zombie process, process 3754. So can we kill the zombie? Kill -9 3755.
+
+[00:08:20] And well, let's verify 3755 still exists. And that's the idea there. So we actually need the parent process ID. So how can you get the parent process ID? Well, you can use ps with some fancy options, like ps -A ostat, pid, and ppid,
+
+[00:08:44] where ostat is giving the current status, and it'll show the PID as well as the parent process ID. And there we can see that the process with the status of Z, that's the zombie, the parent process is 3754. But, hey, we already knew that from the ps faux output.
+
+[00:09:02] So what are we going to do? Well, kill -s SIGCHLD on some occasion would work, 3754. Does it work? And let's try it again. And, oh no, it didn't work. So as I told you, success is not guaranteed.
+
+[00:09:22] So next thing to try is kill -9 on 3754. And let's verify. So we have just tried to kill the parent. And what is happening now that we have killed the parent? Yay, the parent is killed, so the child process is killed as well. So you don't get rid of the child,
+
+[00:09:41] well, just remove the parent. That's the idea here. And that worked in killing the zombie. In case this also doesn't work, well, there are two options, either you wait or you reboot. After a reboot, your zombie is always gone. But before you are going to do drastic things, you should realize that a zombie is not such a big problem.
+
+[00:10:02] It only occupies an entry in the process table. And current Linux systems have a maximum PID setting of 4 million. So does it really make a difference if you have one or two, or even 10 or 20 zombies? Probably not.

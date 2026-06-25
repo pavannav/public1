@@ -1,0 +1,29 @@
+[00:00:06] - All right, so at this point, we have the target up and running. We need to take care of the initiator. Here is the procedure. Let me show you. So first I need the IP address of the target. That is 29.1.40.
+
+[00:00:23] Then I'm going to create a Fedora machine as initiator. And let's start by using etc/iscsi/, initiator name. Does it already exist? No, doesn't exist. So I'm going to create it. That is, initiatorname.iscsi.
+
+[00:00:44] So now I need to define initiatorName=iqn.2023-11.com.example:server. It's important to do this before you do anything else, because it's initiator name.
+
+[00:01:00] It's the identity that will really be picked up. So now I can install the required packages, that is dnf instal -y iscsi-initiator-utils already installed, even better.
+
+[00:01:22] That means that I can use the iscsiadm command. So iscsiadm -m discovery. We need to start with the discovery so that we get the appropriate information and at the same time iscsiadm is going to create a kind of a database to write the information that was detected.
+
+[00:01:40] So --type sendtargets --portal 192.168.29.140 --discover. And here we can see the iscsi target name that was correctly discovered. That's good news because this means that the iscsi client
+
+[00:02:02] can make a connection with the iscsi target. So based on that information, I can now use iscsiadm -m node --targetname iqn.2023-11.example:target
+
+[00:02:22] followed by --portal on 92.168.29.140 --login. And that should make the connection. And you know what, it did. It's telling us that the login was successful. So how can we verify?
+
+[00:02:40] Well, the nicest way to verify is by using iscsi. So yes, I'm going to install the command. And what do we see? We see right here a new scsi device, /dev/sdb. And in the description of the scsi device, we see that it is LIO-ORG. And this LIO-ORG that indicates
+
+[00:03:02] that this is the iscsi device. So that is pretty important. And now I can just use this iscsi device. I can create a file system and I can mount it with the _netdev option. Let me show you. So fdisk on /dev/sdb, using n to create new partition.
+
+[00:03:21] Just one partition is good enough. And w to write. So mkfs.ext4 on /dev/sdb1, that will create the sdb1 file system, and I'm putting it in etcfstab.
+
+[00:03:41] So in there I'm using /dev/sdb1, and this /dev/sdb1, I'm going to mount it on iscsi or whatever you want to use. ext4 is the file system. And next we have the mount options, which is defaults,_netdev. This ,_netdev is pretty important,
+
+[00:04:02] because that has taken care of the fact that this device should only be presented when the network is already available. Mount -a, and, oh yeah, mount -a is giving information that the mount point doesn't exist. And let's be nice to system daemon this time as well,
+
+[00:04:22] and use systemctl daemon-reload. Now we can use mount -a again. Not complaining, it's always a good sign. And now if you type mount on the last line, we can see that /dev/sdb1 is mounted on iscsi with this _netdev mount option. So that means that anything
+
+[00:04:41] that I'm creating on this iscsi device, let's copy /etc/hosts to here, for instance, is written to the shared disc on the iscsi target. And that's all.

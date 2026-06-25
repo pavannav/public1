@@ -1,0 +1,57 @@
+[00:00:06] - All right, I would like to show you how to get rid of etc fstab. We have already learned that mounts are really taken care of by System D and not by etc fstab anymore. So you might as well throw it away. Let's do it.
+
+[00:00:23] To do it, we start in run system D generator where we can find the different mount files, so we have boot.mount. We have -.mount. What is the strategy in the mount file? Well, the mount file as the name of the directory on which you want
+
+[00:00:40] to mount followed by .mount. Boot.mount, that's easy. That's the mount for /boot. Dash.mount, that's for your root directory. That's because slash is a special character. You can't create a slash dot mount, so we need to copy them, and let's copy star dot mount to etc systemd system.
+
+[00:01:05] And, uh-oh, I am getting an invalid option. Now, I can tell you why that is. That's because of this -.mount. A file with the name -.mount starts with a special character, and we need to take away the meaning
+
+[00:01:20] of the special character, and you can do that by using your dash dash in front of it. Good. That's step one. Let's get into etc systemd. System, where we need to edit both of them. So let's start with boot.mount and in boot.mount,
+
+[00:01:41] we can see actually how the line from etc fstab has been transformed in a system D unit. It's interesting to see where fstab is using UUID equals. Systemd doesn't really work with UUID equals, and that is why it's using a file in dev disk by UUID.
+
+[00:02:01] All of the UUIDs are in this file and this file links to the appropriate device based on the same UUID. So nothing to worry about, this just works. The only thing that doesn't work is that we need an install section and in the install section, we need wanted by is local fs.target.
+
+[00:02:26] Likewise, we need to edit the -.mount. Well, vim on -.mount, that obviously is not going to work, but the generic trick is that you put a dash dash
+
+[00:02:42] in front of it, and there, you can see it mounts the root file system. And we are going to add here also, an install section with a wanted by is local.fs target. Finally, we are going to system CTL enable them.
+
+[00:03:02] So systemctl enable, minus, minus, minus .mount and likewise, for the boot.mount. And at this point, we are going to check what happens when we reboot.
+
+[00:03:23] It maybe smart before doing so. This system never had this grub modified. So I'm getting into etc default to edit the grub configuration file which still has the RHGB and quiet. If you're going to do exciting things while booting,
+
+[00:03:40] remove that RHGB and quiet. So we need grub2 mkconfig. Minus o/boot/grub2/grub.cfg to rewrite and then we can reboot, and figure out how it works.
+
+[00:04:08] And look at that. Well, is there a reason why this went so smoothly? Well, I think there's a reason. Did we ever remove etc fstab? I don't think so. So let's do this again, but this time, sudo rm.
+
+[00:04:25] Well, I'm not going to RM it because I realize that there's one thing in etc fstab, not really the most important thing, but we haven't considered it yet. So dev mapper root, dev mapper UUID
+
+[00:04:41] is these can be commented out, but we still need to keep our swap. We'll talk about swap later, and I just wanna make sure we keep it. Now, we are going to reboot again and then let's check if we are going to see something exciting.
+
+[00:05:05] And, uh-oh, that doesn't go well now, does it? We see failed and failed, and failed, and depend, and whatever, and yeah, why is that? Well, apparently, it's not working, but I think we can fix it. Let's restart the virtual machine,
+
+[00:05:25] and let's get into troubleshooting. In the troubleshooting mode, what do we have? Well, we have the Linux line in the grub boot manual. In this Linux line, we have a root, equals dev mapper cs root.
+
+[00:05:40] This is what initializes the root file system. But the problem is right here, it's RO. We need to make it RW for read-write. The thing is that grub mounted read only, and because we have taken the root file system out of etc fstab, it doesn't remount it in a read-write way anymore, but we can fix that.
+
+[00:06:01] First, temporary, by changing RO and RW, and let's start with it and then we are going to see that it works. And once we have confirmed that it works, we are going to make this modification permanent.
+
+[00:06:22] As you can see all going well, and we have the graphical boot prompt again, but we don't want to do this manually every single time the system reboots, right? So let's open the root shell again, and let's get back to etc default grub.
+
+[00:06:43] And there, I am going to make sure that we include RW to make it a read-write mount. So, once again, grub2 mkconfig - o/boot/grub2/grub.cfg.
+
+[00:07:05] After which, it's time for a reboot and now, everything should be working smoothly. So now, we are back at the boot prompt. And in this boot prompt, we see that everything is working
+
+[00:07:22] and that means that from this moment on, you don't need no fstab anymore. And, hey, in case you are wondering about a swap, okay, let me do a bonus, and let's take care of swap as well because, hey, this demo will be so much nicer if it ends with a complete removal of etc fstab.
+
+[00:07:42] Let's get back to run systemd generator, and in the run systemd generator, we have the dev mapper cs.swap.swap. What is that? Well, let's check it out. That is our swap file. What is dev mapper CS swap?
+
+[00:08:02] Well, I am going to move this or copy it. That will be better. So copy the dev mapper swap thing to etc systemd system, and probably you know what is going to happen. From etc systemd system,
+
+[00:08:20] we are going to edit the dev mapper swap device, and we are going to add an install section. Where do we want it? Honestly, I didn't check on it. Oh, boy. But hey, install wanted by is multi-user.target.
+
+[00:08:41] In general, if it's not an essential service, multi-user target will always work. So systemctl, daemon reload. And let's get into etc systemd system. And systemctl enable dev mapper cs swap.swap.
+
+[00:09:11] And there we go. And now, I'm going to remove my etc fstab. Bye-bye, fstab. Let's reboot and check out how it works.
+
+[00:09:29] So as you can see, I just removed etc fstab. It's still working. Welcome to the 21st century where systemd is taking care of everything.

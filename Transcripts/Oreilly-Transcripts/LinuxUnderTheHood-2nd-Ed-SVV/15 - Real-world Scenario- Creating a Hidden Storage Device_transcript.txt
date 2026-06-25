@@ -1,0 +1,33 @@
+[00:00:06] - Alright, it's a real world scenario. I want to get back to the hidden storage device. And this time we'll make it a little bit more complicated. For your convenience, here we can see all of the steps that I'm going to use and, well, let me just demonstrate.
+
+[00:00:21] And if you want to do it for yourself, this slide might be helpful. So let's choose lsblk You should check on the new device. There's new device sde and we are going to use sde so what are we going to do? So I'm going to start by creating a new 900 megabyte partition.
+
+[00:00:42] So fdisk /dev/sde and "N" for new and "P" for primary and partition number one and first sector default, and last sector +900M. Now the size that you are going to use doesn't really matter,
+
+[00:01:00] but I would advise before you fully understand what is going to happen, just make it 900 megabytes partition. "P" is showing that this partition is starting at sector 2048 and it ends at sector big number that we find right here. And this big number actually is what we are going to need later,
+
+[00:01:20] because I'm going to create a new partition, and this new partition doesn't start at big number plus one. I am going to have this new partition start a little bit further. So partition number two, first sector, well let's use 2097152
+
+[00:01:41] and then last sector, whatever +1G Alright, let me use "P" to print. Now what do we see? Well, we see there's a hole between this number and this number. And that's the hole that I'm going to use to create my hidden device. But first, we need to write the partition table
+
+[00:02:01] and then I can use dmsetup create hidden Of course, hidden is the name that I want to use, so use any name you want. - -table '0 204800 Now what is it? This is the virtual table that we are going to create.
+
+[00:02:22] So we create a table that starts sector zero up to sector 204800 which is 100 megabytes. That's enough for this demo. linear /dev sde because we are going to create this on sde and then we need to indicate where it should be starting.
+
+[00:02:40] 1845348 so the starting point is right after the sde1 partition. Pressing enter and there we can see that it was successful. So ls -lk /dev/mapper/hidden is showing that the dev/mapper/hidden exists and it's a symbolic link.
+
+[00:03:02] That doesn't matter, what matters is that it exists. So I can use mkfs.ext4 /dev/mapper/hidden and then I can create a directory /hidden and mount it, so mount /dev/mapper/hidden
+
+[00:03:21] on this directory /hidden and we have access to the hidden device. Well, almost, now we do. So this is how it works and I can touch /hidden/mysecretfiles or whatever this file to verify. But the thing is that we want a way
+
+[00:03:41] to make it easy for this partition to appear. So what do we need to do? Well, we need to make sure that we put it in the script. So I am calling it hidden-up.sh Maybe if you really want to hide it, you want to give it a different name,
+
+[00:04:00] but for now it's the idea that matters. So in the script I'm using dmsetup create hidden --table '0 204800 linear /dev/sde 1845248
+
+[00:04:21] and that will be command number one. Then command number two. mkdir /hidden that's the mount point. And mount /dev/mapper/hidden /hidden Now if you really want to hide it real well, then I would also create a .bash_logout
+
+[00:04:46] So what are we going to do here? Well, in .bash_logout let's do a umount /hidden and rmdir /hidden
+
+[00:05:01] So that we have it properly cleaned up after logout. So what are you going to do next? Well, a reboot, after a dirty boot it won't be there. Then you run the script so bash hidden-up.sh or make it executable, whatever you want, and then you logout and after logging out, it will be cleared.
+
+[00:05:20] And that's how you can create a hidden device.

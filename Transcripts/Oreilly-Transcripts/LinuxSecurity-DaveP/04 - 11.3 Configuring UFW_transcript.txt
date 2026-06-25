@@ -1,0 +1,61 @@
+[00:00:01] Let's go ahead and continue with our lab that we're working on in UFW. This is Lab 22 and we're gonna start with the heading, "Create inbound rules". Once again, I'm working on an Ubuntu system, so let's go to Ubuntu now. And here we are.
+
+[00:00:20] So first, the problem is, nobody can connect to the server. The firewall is working so well that no one can do any connections to it. Chances are you're going to want to be able to connect to it in some manner. And let's give SSH as the example. Let's say that my client system needs to SSH into the server, maybe to do some work with files or databases
+
+[00:00:40] or who knows what. To do that, we need to allow SSH on the firewall. To do that, we need to set up a rule. And the rules are really easy with UFW, we're gonna type "ufw allow", and you could just do "ssh", you could do it by the service name if you want to, or we could do it by port number.
+
+[00:01:01] And so if we do "22/tcp", that would be the equivalent, or you could pick another port number if you're working on a different port with your SSH server. I usually like to go by port number as opposed to service name, but it depends on the situation. So we'll press enter for that now
+
+[00:01:21] and it says "Rule added" and it adds it for IP version 4 and IP version 6. Now let's show the rule. We'll do a "ufw show added" and we can see the added user rules. "ufw allow 22/tcp". Very good.
+
+[00:01:41] So this should show that the UFW rule has been added to your list and that should allow inbound SSH. Let's test it by going to our client and see if we can SSH in. We'll do an "ssh user@10.0.2.53", that's the Ubuntu server.
+
+[00:02:01] And we get the fingerprint message. We'll say "yes", type in the password and we're in. So now we're connected via SSH. Previously we couldn't make any connections to this system. Now we can at least do SSH.
+
+[00:02:20] Very good. I'm gonna press control+D to get out of that and back to my Deb client. And at this point we can scan the system. We used NMAP before to scan the system, this time we can use Netcat if we like, let's use Netcat and it's gonna be "nc -v 10.0.2.53", space, and let's pick "22".
+
+[00:02:45] Okay, it says inverse host lookup failed, but it is showing that open SSH is indeed running on Ubuntu, and we see port 22 (ssh) is open right on that IP. So that worked.
+
+[00:03:01] Control+C to break out of that. Let's try another port, let's do port 80. Well, this time it's just going to blink the cursor because that particular port is gonna be dropping packets. The UFW firewall's not allowing any connections on 80. So this is working properly, it is what we want.
+
+[00:03:23] So we'll break out of that. Okay, now we'll move back to our Ubuntu server. In some cases, you may want to deny access to a specific port or service. You could do that with the UFW deny command. So if we do a "ufw deny" on "ssh" and press enter,
+
+[00:03:45] it'll update that rule, and now if we do a "ufw status", you'll see that the status of this is that SSH, or port 22, is now being denied from anywhere for IP version 6 and IP version 4.
+
+[00:04:03] So this is not going to work anymore. If we go to our client, we can try to SSH in again and it's just gonna blink that cursor because this is now being filtered out once again. Control+C to break out of that. Sometimes you may write a rule and you may say,
+
+[00:04:22] "Oh, I didn't really want that rule, we need to get rid of it." So let's show how to delete a rule. The first thing we wanna do is do a "ufw status" once again, but we want to incorporate numbers. Normally when you work with firewalls, the firewall rules will have an ID,
+
+[00:04:40] so it's gonna be number based in some way; It'll either be an ID number or a handle number or something similar to that. So we're gonna modify this command and do "ufw status numbered", and each of our rules gets numbers here. So we have number 1, which is denying SSH for IP version 4.
+
+[00:05:04] And then we have number 2, which is denying SSH for IP version 6. Perhaps we want to be able to connect on IP version 4, but not on IP version 6. We can do that, we could do a "ufw delete 1".
+
+[00:05:23] So we'd be deleting the rule that is denying access to SSH on IP version 4. Let's see if that works. Okay, "deleting: deny 22", yes, "rule deleted". Let's check it again with the "ufw status"
+
+[00:05:41] or "ufw status numbered", press enter. And now you can see there's only the one rule for IP version 6. The numbers got pushed up though, that's now number one. Now we want to allow IP version 4 SSH, so we can create a rule for that, and we can do that for just IP version 4
+
+[00:06:02] and not IP version 6. We would do that with the "ufw allow" and then specify the protocol is "tcp", use the "to" option and then the networks that we want to use. And I want use IP V4 networks, but have it listen on all IP V4 networks.
+
+[00:06:22] That'll be "0.0.0.0/0" and the port, which is "22". So we'll press enter for that now. That rule is added, and once again, let's do a "ufw status" and "numbered".
+
+[00:06:45] So now you can see we have our two rules again and IP version 4 is always listed first for a given service or port number. So we have rule number 1 is port 22 IP version 4, allow in from anywhere.
+
+[00:07:01] And then the second rule, port 22 on IP version 6, deny in from anywhere. Very good. So let's test this from the client and see if it works. We'll do another SSH in and it's asking for the password and we're good. We're into the Ubuntu server.
+
+[00:07:22] Fantastic. We'll close out of that. Now you may say, "We don't use IPV 6 at all", and you can disable that globally if you want to, we can go to "/etc/default/ufw" and edit that file.
+
+[00:07:43] We'll go down to IP V6 and change it from "yes" to "no". Save and quit. And then IP V6 will not function anymore. Then we'd want to reload the service. So we'll do a "ufw reload"
+
+[00:08:03] and the firewall is reloaded. At that point, we can check it and check our rules and look what happens, all IP version 6 rules that were in effect are removed because IP V6 has been disabled globally.
+
+[00:08:20] So at this point we can go ahead and bring everything back to normal. I wanna show how to disable UFW and delete the rules in one fell swoop and then disable the UFW service. So let's do that now. First we'll do a "ufw reset", that's going to disable UFW and delete the rules altogether.
+
+[00:08:42] We'll say "yes". Good. And now we'll do a "systemctl --now disable ufw". That'll stop and disable the service. At this point, UFW will not be running.
+
+[00:09:01] Let's check that from our client computer once again. This time we'll do that "nmap" that we did before on "10.0.2.53", but the report's gonna be really fast. That was in real time, it was 0.1 of a second. And so you're gonna get all the information right away because the firewall is turned off.
+
+[00:09:21] It is disabled at the server. And so we see here that it says "999 closed tcp ports". Not filtered, if the firewall was running, it would say "filtered" or "blocked" or "dropped". In this case, it's "closed" because all of these ports are actually closed
+
+[00:09:40] by default on Linux systems except for 22 because we have the OpenSSH server running on that Ubuntu server and it's running on most of my virtual machines. So SSH is running, port 22 is open, and NMAP gives us that information right away.
+
+[00:10:00] So that's it for this lab, if you wanna learn more about UFW, run a "ufw --help", or you could do a "man" on "ufw" to find out more, and the lab document has a couple links to the internet for more information on how to use that firewall. That's it for this sub lesson.

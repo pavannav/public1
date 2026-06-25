@@ -1,0 +1,57 @@
+[00:00:06] - So now that you know a bit what iSCSI is about, let's go configure it. Before we configure it, we need to talk about the different components. To start it, there is the target. So the iSCSI target is the software
+
+[00:00:20] that you install on the SAN or on the server where you want to provide access to its storage. And the storage that the iSCSI target is going to provide access to can be anything, can be disks or partitions or logical volumes or files and servers connect to this using the iSCSI Initiator.
+
+[00:00:44] So iSCSI Initiator really is the client part of the iSCSI setup. And after successful connection, the connected server will see newly added storage devices as if they were local devices. You can see that in the /proc/partitions file
+
+[00:01:00] or using lsscsi The lsscsi command is a convenient command that shows SCSI devices, but notice that it is not always installed by default. Now when you are going to work with iSCSI, you need to be familiar with the terminology. So let's go over the terminology. First there is the IQN.
+
+[00:01:20] That's the iSCSI qualified name. It's a unique name that is used for identifying targets as well as initiators and it's pretty important because you will need it to make the connection. There's the initiator, that's the iSCSI client that is identified by an IQN. And there's a target which is a service on an iSCSI server
+
+[00:01:42] that gives access to the backend storage devices. There's the ACL, which is an Access Control List that is based on node IQNS. It's important because if you don't provide access in the ACL, nobody will have access. Now we have the portal. The portal is the IP address and port that a target
+
+[00:02:01] or initiator uses to establish connections. And in iSCSI terminology it's also referred to as a node. Then in iSCSI we do discovery. Discovery is the process where an initiator finds the targets that are configured on the portal and based on the discovery, the iSCSI client creates
+
+[00:02:20] the entries that are required to make the connection. We have the LUN, the LUN is to block devices that are shared through the target. It stands for Logical Unit. And there is Login, Login is the authentication that gives an initiator access to the LUNs. And finally there is the TPG or Target Portal Group.
+
+[00:02:42] That is a collection of IP addresses and TCP ports to which a specific iSCSI target will listen. Now I'm about to show you how we can use the target CLI utility to configure the iSCSI target. So what do we need to do? The procedure overview, it starts with the creation or provisioning of the backing storage devices.
+
+[00:03:03] Then you need to create the IQN and the target portal group or the TPG. Once that has been created, you need to configure one or more ACLS to the TPG and create LUNs to provide access to the backing storage devices. Next, you create a portal to provide the network interface
+
+[00:03:21] that iSCSI initiators can connect to. And don't forget to configure the firewall to allow access to TCP Port 3260. This is the high level overview of how you are going to configure the iSCSI target. Let me show you, here we have the steps spelled out step by step and let me demonstrate.
+
+[00:03:41] So an iSCSI target needs storage. So let's start with lsblk to find the available storage. SDF, that's what we are going to use. You can put any block device in an iSCSI target configuration. I'm going for a complete disk here. Then you need to make sure that the target CLI package is installed.
+
+[00:04:03] Target CLI is a convenient command line utility that allows you to build an iSCSI target in a pretty easy way. Then you start it targetcli and that opens the targetcli prompt.
+
+[00:04:21] That is what you can see right here. This behaves like a shell prompt. You can use LS. It looks a little bit like a directory structure with directories and files. You can also use help at any point to get more help. And one of the best things is that it has pretty awesome tab completion.
+
+[00:04:40] Now back to the LS, what do we see? We see back source. I am going to the back source which is about the storage devices that are shared by the iSCSI target. So these are the block devices that you are going to present on the iSCSI network. In the back source you have block and file IO
+
+[00:05:00] and PSCSI and RAM disc. PSCSI is for physical SCSI, file IO allows you to share files and block is what we need here because I am going to do this for my SDF block device. If you press the tab key twice, you can see all the commands that are available. Well, I'm going to use create.
+
+[00:05:21] Here also, use the tab key to see your options that are available. So create, what do we need? Well I need dev=/dev/sdf because that is what we are going to present. And name is, well any name, let's just call it diskf. So there we can see that it created block storage object.
+
+[00:05:43] Type LS and you can see that it has created diskf and below the diskf it has created some other items as well. These are items that we can ignore. We need to go all the way up. You can still see that on the screen and we need to go to iSCSI. And in iSCSI also we are going to create something.
+
+[00:06:03] Now what am I going to create? Well IQN. and then in an IQN, it's common practice to use year dash month .reverseDNSdomain So com.example or whatever you want to call it. Colon, and then you have a unique identifier.
+
+[00:06:21] The colon is the name that you want to present here. I'm calling it Target. Again, you can use LS to see that it has created the item and a complete structure below. So I need to go in this IQN that I just created and next I can create the other items.
+
+[00:06:40] So what do we need? Well first, I need TPG. Everything is in tpg1, that's target portal group one. Theoretically you can have different target portal groups, but we just go for one. Let's just try to understand what this is all about. So TPG ACLs and in there I'm going to use create.
+
+[00:07:00] Oops, and what do we see? We see that we are missing a parameter. So what is the parameter? Well the parameter is the IQN of the server that is going to connect. And let's keep it pretty simple. IQN.2023-11.com.example;server
+
+[00:07:21] Now notice that this is an IQN that does not yet exist. We need to configure it later, but at least with this configuration we are sure that it is ready by the time that the server is configured as well. We are not done yet, we need to create the LUNs. So tpg1/luns in which we are going to use the create command.
+
+[00:07:41] Now in order to create your LUNs, you need to connect to the back source. And you can see I only have to type /b and it automatically completes to the available back stores. And as you can see, LUN0 has been created. Now before we are going to exit and write everything,
+
+[00:08:00] I want to show you what it looks like. You see the slash like in the file system use LS and you can see all of your configuration. So the essential parts are the diskf back store and this diskf back store is presented by this iSCSI target. The iSCSI target is giving access to this iSCSI IQN
+
+[00:08:23] and it presents the LUN, which is connected to dev/sdf and the portal has automatically been created. That is 0.0.0.0 for all IP addresses. Port 3260, which is the default iSCSI target port.
+
+[00:08:40] So talking about ports, we need to take care of that. So let's do systemctl start target to start the target service and oops, let me also enable it. And just a quick systemctl status on target to verify that we've got what we want.
+
+[00:09:02] And yeah, I have what I want. Just ignore the code is exited, that doesn't matter. What matters is that port 30 to 60 is now available. So I'm going to use firewall-cmd - -add-port 3260/tcp --permanent
+
+[00:09:23] That's a typo, let me fix the typo. And firewall-cmd --reload And then our job at the target is done.

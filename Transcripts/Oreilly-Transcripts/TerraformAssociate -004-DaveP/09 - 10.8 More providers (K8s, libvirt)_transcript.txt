@@ -1,0 +1,71 @@
+[00:00:06] Let's show a couple other providers. In this sub lesson, we'll focus on kubernetes and also libvert, which is used for KVM. Right now I'm in the code here in lab 14 in the Kubernetes directory and I've opened a file kubernetes tf.
+
+[00:00:23] So this is an example of code that you would use if you were working with Kubernetes on AWS and you had an EKS kubernetes cluster. So let's take a look at this. First we have the terraform block and this time we have two providers.
+
+[00:00:42] We have the AWS provider and we have kubernetes. Well, we need AWS because that's where our EKS kubernetes cluster is being stored. And we need kubernetes so we can talk to that cluster. So that is our terraform block. Two providers this time.
+
+[00:01:02] Now, this code's not actually going to work unless you have an EKS cluster running. So I'm just going to show the rest of this code afterwards. We have a data block. Now you can specify where the terraform state is. And normally what you would do is you would show this on the remote
+
+[00:01:23] system on the remote EKS cluster. But right now I'm just showing it here as local in test directory and terraform TF state. Okay, but this is the naming convention on AWS for how you would refer to terraform remote state on things like an EKS cluster.
+
+[00:01:44] So that is a data block. Then we have our provider for aws. And what this does is it retrieves the EKS cluster information. We need to know the remote state.
+
+[00:02:00] And if we have it set up properly and it is stored at the EKS cluster, it'll grab that remote state and it'll output information. For example, the region that we want to use like US East 2, that would be there in the state already after we created that EKS cluster.
+
+[00:02:21] Now you can create an EKS cluster with terraform as well. And if you look in Z more info in the repository and you go to extra labs, you will see a lab there. Lab EKs cluster on AWS. This is a more difficult lab. And so I left this separate, but it's
+
+[00:02:41] something you may want to look at and I have the code built in there for you. Also, the EKS cluster can take a long time to build, so you have to be very patient with that. But if you wanted to do that, that extra lab is there for you.
+
+[00:03:00] Let's go back to our code here and we have our second provider information, kubernetes, and we see that this is the cluster and our endpoint and we're encoding with base 64 the information for the certificate authority in the EKS cluster.
+
+[00:03:25] Very good. Also inside that provider we have a sub block, the exec block. This is where we can execute additional arguments like gettoken and cluster name.
+
+[00:03:40] And we need to know for those arguments the entire path to the cluster, whatever that is. All right, if we look a little bit further down, we see the actual resource that I want to deploy into my Kubernetes cluster. So here is the resource and it's called Kubernetes Deployment v1 and it's Nginx.
+
+[00:04:04] This naming convention is what deals with Kubernetes and their API. So I'm calling this scalable nginx. And here's the app that we're going to run. We have the specs for this replicas 2 for the containers that'll be
+
+[00:04:20] in there, we have our selector and we have a template and then the spec for the container. Here's the image again, nginx, just like we were running for Docker, but this time within Kubernetes. Open port is 80 for nginx, just so you can test it easier. And that's
+
+[00:04:40] going to be HTTP totally insecure, but just so you can test it easier instead of using port 443 and then the resources, half a CPU, half a gig of memory and our requests resources as well. And that's all built into the resource for that Kubernetes deployment.
+
+[00:05:01] Right, so that is our deployment here for nginx and that's all built into this terraform code based on our Kubernetes cluster, which again must have already been created on aws. And to do that, that lab is in the additional information at the end
+
+[00:05:20] of the repo. All right, so that's a little bit of Kubernetes code. The other portion for this is libvirts. Now libvirts will go here to the libvirtprovider tf. Libvert is a third party provider plugin that was created by DMACC Vicker.
+
+[00:05:41] Many thanks to the original creator. And this is used to allow Terraform to talk to kvm. Now if you remember in the beginning of this video course I said I use KVM as my virtualization system. It runs on Linux and it's really powerful, really works well with
+
+[00:06:01] resources. It's a great Type 1 hypervisor. So what I want to do is I want to be able to talk to that hypervisor and build virtual machines automatically. The libvert provider plugin for Terraform is what allows me to do that.
+
+[00:06:21] So you can see in the Terraform block we have the libvirt provider. Its third party comes from dmaccvickr libvert. And I don't know if I'm even saying this correctly, so my apologies if I'm not. But then we have the provider block and that's just Libvert.
+
+[00:06:43] Right? Just like this. And we're specifying the uri. So the Uniform Resource Identifier, you have to know the path to your kvm. If it's running locally, it's just going to be QEMU colon triple slash system. Or it could be service based, right?
+
+[00:07:03] To connect to a remote kvm, you do something like this. And I do that as well quite often. If you're interested in more information about the libvirt KVM provider plugin for Terraform, check out the Terraform registry at the link here in the file.
+
+[00:07:23] So there's a little bit about libvert and let me just show an actual virtual machine example. And this is something that can build a virtual machine in KVM from Terraform automatically. Now when you do this, you really need two resources for
+
+[00:07:41] each virtual machine. You need a volume, which is a qcow volume for the virtual machine. And then you need a LIVERT domain which is going to be the actual virtual machine, its specs and its connection and all of that. So it kind of
+
+[00:08:00] separates the virtual machine from the resource. But that's what we have here. And this is the naming Convention for the Libvirt provider plugin. Libvert_volume and libvert_domain. Lots of information here. This is something that I do.
+
+[00:08:20] So my names are lengthy and my source is pretty in depth. And I have my own custom network that I'm using in kvm. But this is just an example for that. So this is the volume, and it would create this volume called this. And I'm making a copy from this source, Basically a golden image,
+
+[00:08:42] a template that I've already created and configured. It's making a copy and calling it this. And then the actual domain to create the actual virtual machine is called this. So you have to differentiate between the storage item which gets a file
+
+[00:09:00] name and the virtual machine which gets a name. So this is Debian 13 server. It's using this IP, two gigs of RAM, two virtual CPUs. And then we show the connection information I want to connect with SSH and I have some keys that I'm using for SSH to connect.
+
+[00:09:21] I'm cheating. I'm connecting as root to this guy. But the reason I'm doing this is because it's for educational purposes. For a Linux webinar that I run every couple of months where I want to connect as root and I wanted to be able to do updating automatically as root, and there's a lot more here we've got a remote exec provisioner
+
+[00:09:42] which creates a basic file and echoes some information into it. Now, you haven't seen this block yet. This is the provisioner block and it's kind of recommended that you stay away from these. And in reality, my latest version of this software for kvm, I don't
+
+[00:10:00] use the provisioners anymore. Instead I use Cloud, init and Ansible, and we're going to show both of those as we move forward. However, in a pinch you could use Remote Exec. That provisioner will be able to install programs, create files, write to files directly from Terraform.
+
+[00:10:22] But I don't recommend it for big jobs because it can stall very easily. That's why it's kind of deprecated and recommended that you'd go a different route. But for creating basic files like this with the touch command, it can work fairly well. All right, then we have all the specifics for the virtual machine, the
+
+[00:10:42] cpu, the network interface, the disk console, graphics and video. And you can add lots and lots of stuff for that. Remember all of that, including the connection, the provisioner and all the specs, that's all part of the resource. Those are all sub blocks within that libvirt domain.
+
+[00:11:01] So this is something I use to build about seven different images at the same time and update them automatically utilizing Ansible and do lots of configurations utilizing Cloud Initial. In our final lab we'll show exactly how to do that kind of stuff, but we'll do that with AWS instead because not many people are watching
+
+[00:11:21] this, are going to have access to KVM if you're interested in it, definitely check it out. And I have a long article and a long video in depth video on KVM on my website at Prowse Tech. But most people won't be running that. Most of you will be running aws.
+
+[00:11:41] So we'll show all those additional tools on AWS later. All right, so just wanted to show a couple more tools here, Kubernetes and Libvert. So definitely check these out, check out the code, and that's about it for this sub lesson.

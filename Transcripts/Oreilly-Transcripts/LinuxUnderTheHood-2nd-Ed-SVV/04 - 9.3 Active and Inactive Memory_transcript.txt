@@ -1,0 +1,39 @@
+[00:00:07] - Another part to understand about Linux memory is active and inactive memory. So how does it work? Well Linux keeps track of active and inactive memory. Active memory is memory that has been recently used
+
+[00:00:22] and inactive memory hasn't been used recently. Easy like that. The exact algorithms have changed between kernel versions, so I rather don't make any statements about that because that might be different by the time you are watching this. The fact is that active/inactive statistics
+
+[00:00:40] are kept for cache, which is marked as file as well as application, marked as anonymous memory. And current usage statistics can be obtained from the file /proc/meminfo. And this is important because when memory shortage occurs, the kernel considers inactive memory. So how does that work?
+
+[00:01:01] Well, when memory shortage occurs, kernel will drop inactive file memory first. Inactive file memory, that's your cache. And the idea is why would you wanna have it in cache if you are not using it anyway? Makes no sense. So you might easily drop it. That is also explaining the difference between free memory
+
+[00:01:20] and available memory. Available memory considers inactive file memory as available. Now dropping inactive file memory is an automatic process and degraded performance will occur if active file memory is dropped as well. And for that reason, you should always make sure that you have sufficient cache
+
+[00:01:41] to keep all of your active file memory. I'll show you in a bit how you can monitor that. Also nice to know if you want to manually drop caches a value can be written to the CCTL tunable vm.drop_caches. The value one will drop page cache only.
+
+[00:02:00] The value two will drop dentries and inodes. So that's a directory entries and a file administration. And the value three will drop page cache as well as dentries and inodes. So value three will drop everything. Now that is about cache. Let's talk about the application memory, which is the anonymous memory.
+
+[00:02:20] Inactive anonymous memory shouldn't be stored in physical RAM. Easy, you don't use it. So why would you want to waste precious RAM on it. To deal with inactive anonymous memory the Linux kernel can use swap. Swap is emulated memory on disk. On memory shortage, inactive anonymous memory
+
+[00:02:40] will be moved to swap first. And on serious memory shortage, active anonymous memory will also be moved to swap and that is bad for performance as the system will lose significant time moving data to and from swap. Now let's analyze what is going on on one of my systems with this active and inactive memory.
+
+[00:03:02] So I'm on the fedora system here. Let me show you etc/os release as well as kernel version fedora 38 and uname -r is showing kernel 6.2. something. I'm showing you this because the actual memory statistics
+
+[00:03:20] might change between kernel version, so you better be aware and I would like to show you the file proc/meminfo. So what do we have? Well, this file has information about all of the memory usage and what we are looking at is right here. This is the statistics about active and inactive memory.
+
+[00:03:41] So we have active anonymous memory, 293 megabytes. That is application memory that is actively being used. We have inactive anonymous memory and that is 106 and that's the application memory that is not actively being used. So this is what you want to move to swap
+
+[00:04:01] in case you have a memory shortage, but there's also active file. That's the memory that is in cache, 224 megabytes in total. And inactive file is inactive cache. So that is just sitting in memory without being useful at all. So this is 581 megabytes and this 581 megabytes
+
+[00:04:25] that is your available memory. So let's keep that in mind. And let's have a look at free -m. What do we see in free -m? We see free. Free is 228 and available is 918. So if I would use
+
+[00:04:40] echo $((918-228)) then we get pretty close to the inactive anonymous memory that is used here. So this inactive anonymous memory is what can be freed at the moment there is a serious memory request.
+
+[00:05:00] Also interesting is that the system is already using swap. I'll tell you later why that is. It's because of the balancing on the swapiness, but let's talk about that later. For now, I'd like to show you echo 3 > /proc/sys/vm /drop_caches.
+
+[00:05:21] You remember this value of echo 3 will basically dump everything that is not really required, not only files but also buffers. And now if we use free -m again, what do we see? Well, we see available is a little bit higher,
+
+[00:05:40] but the significant difference is in free, 947. That's the effect of dropping all the inactive anonymous memory. That is also something that we should see if we are analyzing the contents of proc/meminfo. So active file and inactive file, you can see there is really not much remaining.
+
+[00:06:02] Nevertheless, already 24 megabytes of file memory has been allocated and marked as inactive. So this is a continuous process and the kernel will normally self tune and tweak so you don't have to do anything in order to get access to all of your inactive file memory.
+
+[00:06:22] It'll be dropped automatically.

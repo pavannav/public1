@@ -1,0 +1,83 @@
+[00:00:07] - I'm assuming that you are already familiar with the basics of partitioning disks. So let me demonstrate and show you some cool stuff about partitions. I'm using F disk for the simple reason that F disk is providing easier access
+
+[00:00:22] to advanced options than parted. Part that's a little bit oversimplified and that makes it not the ideal utility. So fdisk on dev/sda. When you use fdisk always start with p. And what do we see? We see that we have 30 gigabytes and last sector is 62914560.
+
+[00:00:44] And that means that we still have about 10 gigabytes remaining. About 10 gigabytes. Well to be precise, it should be 9 gigabytes. You want to calculate it exactly? Use the number of sectors, subtract the last sector that is used and you will have the remaining available sectors.
+
+[00:01:02] Well, based on this 62 million minus 44 million is 19 million times 512 bytes. We can call that 9 gigabytes. Did I say 19 million? 18 million of course, you get the idea, right? I would like to create an extended partition
+
+[00:01:20] and I want to show you fun demo. So I'm using E for extended. Partition number 4, I wanna use all the remaining disk space on partition number 4. That's because this is an extended partition and if you don't put all the remaining disk space in the extended partition after this it'll be unusable.
+
+[00:01:40] So I'm pressing enter and enter. And there we can see the extended partition with the size of 9 gigabytes. Now I'm using N for new, creating a new logical partition with the size of 1 gigabyte and one more logical partition with the size of 2 gigabytes. Quick p to verify that this is working all right.
+
+[00:02:00] And yeah, there we go. We have sda5 and sda6 within the boundaries of the extended partition. Now I would like to write W and create some file systems. So mkfs.xfs on dev/sda5 and let me do an mkfs.ext4 on dev/sda6
+
+[00:02:25] and I want to mount them. So mkdir/ext4/xfs and I'm putting them in etc/fstab and etc what? Yeah, etc fstab. Even if we made this an fstab less system for this demo,
+
+[00:02:43] I prefer putting it in etc/fstab just because it's easier. So dev sda5 is what we are going to mount on /xfs. The file system type is xfs. We need the defaults mount option and 0 and 0.
+
+[00:03:00] Then we have dev/sda6, we mount it on ext4, file system is ext4 defaults as the mount option and 0 and 0. And then I can use mount minus A to test and okay, it's telling us that we need systemctl daemon-reload as well.
+
+[00:03:20] Let me do that. Systemctl daemon-reload and another mount -a. And then when we type mount, we can see on the bottom two lines a sda5 and sda6 have now been mounted. Now I want to do something interesting. I am going to delete partition number 5.
+
+[00:03:41] So what do we need in order to delete it? Well, let's start with the umount dev/sda5. Then we are going to edit the etc/fstab. And in etc/fstab, well we don't need it anymore and that should be almost good.
+
+[00:04:00] Now we can go to fdisk, fdisk on dev/sda and I am going to delete partition number 5. There we go. Has been deleted w to write and oh, it's telling me kernel still uses old partitions. New table will be used at the next reboot. Okay, let's reboot so that we can see a result.
+
+[00:04:25] So here we can see the system is booting again and let's check if that works out all right, and hey, it's slowing down and what do we see? Oh no start job is running for dev/sda6 and it is waiting 11 seconds.
+
+[00:04:41] No limit. Well, no limit. I don't like it. My system isn't booting anymore. Oh no. What are we going to do about it? Well, I'm going to restart in troubleshooting mode and in troubleshooting mode, I am adding systemd.unit is emergency.target, control X to boot adoption.
+
+[00:05:05] The idea is that in emergency target, the route partition will be mounted through the kernel and etc/fstab is not processed and that is why it's dropping me in a maintenance shell and in a maintenance shell I can analyze what is going on.
+
+[00:05:20] Well, you know what's going on. It's what I told you. Logical partitions are numbered in order. I just deleted sda5. So the partition previously known as sda6 is now sda5. What are we going to do about it? Well, I would say mount by using the block ID.
+
+[00:05:40] So blkid, we have blkid and I need the uuid. So I am going to use awk and I want to look for lines containing sda5. And for these lines I want to print $2, which is a second field.
+
+[00:06:02] That's a uuid. Okay, that's a uuid of sda5 and I need to put that into etc/fstab. Now UUIDs have one inconvenience. They are not so easy to work with and that's why I'm going for this approach, block ID to generate a UUID and I append it to etc/fstab.
+
+[00:06:22] In this case, that's not really required because etc/fstab doesn't really contain anything. But in other cases where you do use etc/fstab, this might be a convenient way to change it. So sda6, we mount it on ext4
+
+[00:06:40] and ext4 is the file system. And then I'm using defaults and 0 and 0 and yeah, that will be it. And I can remove the other line. And with this line, well I can reboot to start my normal operational mode and that should be doing it.
+
+[00:07:07] So as you can see, it's already starting the network manager here. It is busy loading the GDM and that means that based on the UUID, it works. So we just deleted sda5 right?
+
+[00:07:22] Now, I want to show you something else related to that. I'm getting back into fdisk on dev/sda using p. And there we can see that sda5 starts at sector 46144 et cetera. Not at the beginning of the extended partition. I'm going to use N to create a new partition.
+
+[00:07:42] And you can see that fdisk wants to create partition number 6 and wants to start at the beginning of the extended partition. And you know what? That's okay. So first sector, last sector and hey, what do we see now? It created a new partition 6. Partition 6 contains an xfs signature.
+
+[00:08:02] What does that mean? Well, when you delete a partition, you only delete the partition boundaries. You don't really delete anything that is inside. So if you restore a partition according to the same boundaries, you get access to the file system that it contained before. So what it is saying here, it's telling us,
+
+[00:08:21] "Hey, I found an xfs file system, do you want me to remove it?" Well, if you say yes, then your file system is definitely lost. But if you say no, then you restore access to your file system. So I'm using p and what is p telling me? P is telling me partition tables are not in disk order.
+
+[00:08:41] Well, that's something that you can fix as well in fdisk. So how do we do that? Well, we need to go to the fdisk expert mode using X, and then I need m and there is the option f to fix partition order. That will make sure that sda5 will be the first partition
+
+[00:09:01] and sda6 will be the next partition within the extended partition. So now when I use p, we can see that, oh boy, that's a little bit unreadable. Hey, do you see that we even have cylinder head sector addressing? Even if this system doesn't use cylinder head sectors anymore. Maybe we should go use art to return
+
+[00:09:22] to the main menu there I use p. And there we can see that the partition order has been restored using W. And of course we need to reboot to activate the changes. There has just been too many changes and this can't be handled without rebooting. But before I'm going to reboot, I want
+
+[00:09:41] to show you one more thing. Mkfs.xfs on dev. On dev what? Which devices did I have again? I have an SDB, so I'm going to use mks.xfs on dev/sdb. Can you do that? Yeah, you can. Normally you would always create partitions on a disk,
+
+[00:10:00] but here you can see that the xfs mkfs utility allows you to allocate an entire disk as well. That's definitely not recommended, but it works. Alright, I want to show you one more thing and that's one more thing that actually I've been using a lot. For this time, we're on Ubuntu.
+
+[00:10:20] So what is it that I've been using a lot? Well, it has occurred that I ran out of disk space on my Ubuntu system, but this is a brand new system. So let me quickly set it up. There we go. So what do we have? Well, sudo fdisk -l on dev/sda.
+
+[00:10:42] It's showing that I have sda3 and sda3 is a Linux valve system. Now I want to resize my Linux valve system. I want sda3 to be bigger, but hey, it's a traditional partition. Can you grow a traditional partition? Well, most people say, "No you can't.
+
+[00:11:00] You need LVM if you want to make it bigger." Well I'm going to show you that that is not entirely true. So first step, I need to do power off to bring down my vertical machine. Then I need to go to the vertical machine properties and on my hard disk I'm going to make it 30 gigabyte hard disk.
+
+[00:11:27] And I'm starting my virtual machine again. So what do you think? Is the file system automatically resized to claim the entire hard disk? Well in case you don't know, let's check it out.
+
+[00:11:46] Fdisk -l on dev/sda is showing that we now do have a 30 gigabyte hard disk. We also see that there is a GPT size mismatch, but it'll be corrected by right
+
+[00:12:00] and we see that sda3 is still the old original size. Now I'm going to use sudo fdisk on dev/sda because I am going to delete my current partition number 3. Oh boy. Partition number 3. There it is gone. Now I'm going to create new partition,
+
+[00:12:21] partition number 3. Yes, create at the same start as my original 1054720 and last sector that needs to include the entire hard disk. Then it is telling me, hey, partition 3 contains an ext4 signature. Do you want to remove the signature? I do not.
+
+[00:12:40] If here I select yes, then my system is damaged and I need to restart it again. I don't want to remove the signature. Let me use w to write and we can see partition table has been altered syncing disks. Alright, so fdisk -l on dev/sda is showing what?
+
+[00:13:00] Well showing permission denied because this is Ubuntu and we need sudo privileges and look at that. What do we see? We can see that sda3 has now a size of 29.5 gigabyte, even without rebooting. That's kind of cool. But hey, sda3 is bigger.
+
+[00:13:21] How about the fail system? Well, df -h is showing that the root fail system is still a 20 gigabyte fail system, but fortunately there is resize2fs on dev/sda3. And what is resize2fs doing?
+
+[00:13:40] Well, we can see that it is now, oh boy, big number of blocks long. I don't understand this number of blocks. I do understand df -h where we can see that the additional 10 gigabytes has been added. So who says you can't resize a partition? You can.

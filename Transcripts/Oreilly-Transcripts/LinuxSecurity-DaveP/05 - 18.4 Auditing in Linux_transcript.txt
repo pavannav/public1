@@ -1,0 +1,61 @@
+[00:00:01] We've shown logging. It's also important to do auditing and auditing of your logs among other things. So here we're going to define auditing and general auditing rules. We'll install auditd and demonstrate how to generate Linux audit events
+
+[00:00:21] and create reports. So in computer technology auditing is an official examination of events. It's usually security related. For Linux-based systems, we use auditd, that's the Linux Audit Daemon. That's a service and it's a user space component
+
+[00:00:41] of the Linux auditing system. It's responsible for collecting and writing log information. So you may ask, well, what's really the difference with logging and auditing? Logging could be logging anything, but auditing generally has to do with security. So while Syslog and Rsyslog
+
+[00:01:00] is a general purpose logging mechanism, auditd specifically focuses on security related events. So let's go through this little mini lab here, and we're gonna do this at our Debian client and working as root.
+
+[00:01:20] So first I want to install auditd. So we'll do an apt install auditd. Okay, and that is actually already installed here, so that's good. I also want to grab some plugins if we don't have them already. So we'll do an apt install,
+
+[00:01:40] and it's gonna be audispd-plugins. Okay and we do not, so that's good, we're gonna grab that. That's gonna make our auditing experience a little bit easier and fun. And now let's check auditd, the service, we'll do a systemctl status on auditd.
+
+[00:02:03] Good, it's active and running. If it's not, you wanna do a --now, enable to get that up and running. So that is enabled and it is logging and ready to go. Very good. Okay, let's check the configuration file for auditd
+
+[00:02:20] and that's gonna be inside of /etc/audits. Let's actually jump over to that directory now. Just to take a look inside there you'll see auditd.conf that's the main configuration file. We also have rules in here that we can work with and modify, and then those additional plugins that we worked with also.
+
+[00:02:43] So let's take a look at auditd.conf. Let's do a sudo less on the file and so we'll just do that auditd.conf. Good so it shows you this file controls the configuration of the audit Damon.
+
+[00:03:02] Local events, yes. Right to logs, yes. Where is the log file? Well, it's /var/log, we've been there a bunch, but then it's gonna be inside the audit directory and then audit.log. Very good. And then lots of other options in here as well.
+
+[00:03:20] So let's go take a look at that now. We'll go to /var/log/audit and inside there we see the audit.log file. And we'll do less on that file to take a look at the entire log. Now this may be a little tough to read,
+
+[00:03:40] so you may want to filter this, make it smaller, et cetera. And you may wanna filter for it as well. And depending on what program you use, it might get displayed slightly differently. But this is gonna be associated by process ID
+
+[00:04:00] and by messages based on what is happening on the system. But this is the entire log and so it's more machine readable. It's not really very user readable or user friendly. So it's better to access it with tools. So we have a couple tools that we installed with our plugins
+
+[00:04:21] and with our auditd program. The first tool is ausearch. So if you wanna search through your auditing log files, you could do that with ausearch. For example, we could do it by -p and put in the process ID that you wanna work with. Or you could search for all logged options
+
+[00:04:43] by a certain user. So for example, the ID of user is 1000. So we could search for that particular user with ausearch, and we would do that with a -ua,
+
+[00:05:02] the ID of the user, which is 1000 and -i, and we'll get any information about that user and what they were able to do and not able to do. So success or failure messages. Right, another thing we could do is say search
+
+[00:05:21] for a failed login attempt. Now, I don't wanna do that locally. Let's try doing it from a remote system and have a failed ssh connection. So I'll go back to my server here and connect to the Debian client with shh, and we'll do user@10.0 0.2.52.
+
+[00:05:43] We'll say yes and we'll type a bogus password. Okay, permission denied, try again. Type in another bogus password. Well, we're having problems here,
+
+[00:06:02] so we'll just press control C. Can't connect. Now let's go over to the client and actually do some auditing. And to check for failed login attempts, we could once again use that ausearch command. We'll use the --message option.
+
+[00:06:24] And we'll say USER_LOGIN, --success. And we wanna say no, meaning there was no success, there was a failure and --interpret. So if we look through here, we see there was a process id 12555.
+
+[00:06:43] This was an ssh connection from a terminal from this IP address. And the person was trying to connect as this user and it failed. Okay, user login failed. Success, no. There was two of them. We tried twice, right?
+
+[00:07:01] Two bogus passwords. So we have two messages in there. So the ausearch could be used to find out if somebody was trying to do something they weren't supposed to do. And it happens all the time. So another command you can run is aureports. So if you wanna report on your findings, you could do that.
+
+[00:07:23] And so you can report about audit rules, about authentication attempts, logins, and so on and so on. So for example, to generate a report of all logged executable events, we could do a aureport -x
+
+[00:07:43] and that'll report all that information, all the events that happened with that, whether it was from ssh and so on. We could also write those reports if we wanted to. We could do something like an aureport >>
+
+[00:08:01] and write that to a file. And let's just create something new here. We'll just put it right in tmp. I call it 1.audit. And if we wanted to look at that, we could view it. /temp/1.audit.
+
+[00:08:22] There it is, there's our summary report. So we generated that really quickly. Very powerful stuff. We can also quit outta here and we can do more with aureport. In fact, there's tons and tons of options with this when it comes to auditing. We could just do a login summary.
+
+[00:08:43] So we could do something like this. We could say --login and --summary -i, and generate information or information about what users have connected or what users are working on this system.
+
+[00:09:02] We could do failed events for all users. And we could do something like aureport -u --failed --summary -i and make sure you type it correctly with the word summary.
+
+[00:09:21] Okay, so we have some failures here. 12 unset, 2 by the user and the 2 by the user are the failures to connect via ssh. If you wanna report on all audit files that are running, you could do a -t and that'll show you what the audit file is
+
+[00:09:41] and when it was actually running. And you can do start and end dates and times similar to this as well with the --start option. Okay, so that gets into a little bit of auditing, and that's a whole nother world of computer security that incorporates Linux and any other operating system.
+
+[00:10:02] So you one, want to be fluent with the log files on your system. Two, you wanna be able to grab log files from remote systems on the network. And three, you want to be able to audit those systems, especially for security related events. And that wraps up this sub lesson.

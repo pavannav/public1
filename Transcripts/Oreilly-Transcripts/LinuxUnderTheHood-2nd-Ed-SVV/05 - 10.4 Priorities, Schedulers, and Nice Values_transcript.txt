@@ -1,0 +1,65 @@
+[00:00:06] - So processes are scheduled and you can influence that scheduling process. And in order to do so, you need to know about priorities, schedulers, and nice values. Let's talk about it. So Linux uses schedulers at different levels.
+
+[00:00:22] The process scheduler runs processes in realtime or normally, and the IO scheduler defines how IO requests, disc requests that is, are handled. It's a completely different thing and you manage them independently. Current Linux, that is Kernel version six,
+
+[00:00:41] uses the complete fair scheduler as a default scheduler for processes. And within this scheduler, different policies can be used to define how tasks are handled. You can use the chrt for change realtime command to determine which scheduler policy to use, and the chrt on some occasions
+
+[00:01:02] can actually be pretty interesting. Now what are the options? Well, we have five different policies. SCHED_OTHER, it's a default Linux time-sharing scheduling policy, which is used by most processes. SCHED_BATCH is a non realtime scheduling policy that is designed for CPU intensive tasks.
+
+[00:01:22] SCHED_IDLE is kind of a cool one, it's a policy that is intended for very low prioritized tasks, it will only run the task if the system doesn't have anything else to do. And then there is SCHED_FIFO, which is a realtime scheduler that uses the first in first out algorithm.
+
+[00:01:40] And SCHED_RR is also a realtime scheduler that uses the Round Robin scheduling algorithm. Now if you want to use these policies, you can use the chrt command. To start it chrt -p on the pid, will find a current scheduler policy that the process is running.
+
+[00:02:01] Use it on any process to find which policy it uses. Next, chrt can be used with different options to handle a process by a different scheduler, like -o for SCHED_OTHER or minus -b for SCHED_BATCH, - i for SCHED_IDLE, -f for SCHED_FIFO and -r for SCHED_RR.
+
+[00:02:22] Let me demonstrate how we can use chrt to run a process in the IDLE scheduler. So to start it you need to have a look at chrt --max. That is because certain schedulers also allow you to set a priority. That is for the realtime schedulers,
+
+[00:02:40] as you can see here, only SCHED_FIFO and SCHED_RR allow you to set a priority between one and 99. All the other schedulers have a priority of zero. So I am going to use dd if=/dev/zero of=/dev/null, and I'm going to run that as a background job.
+
+[00:03:00] And there we can see 3869, I'm using chrt -i -p 0 3869. And now I'm going to use the top command, and what do we see in the top command? Well, in the top command we see a pretty busy dd process. And it makes sense that we have a pretty busy dd process
+
+[00:03:22] because currently nothing else is happening. Next I'm going to use chrt -r 50. We are using -r, -r is for the Round Robin scheduler, that's a realtime scheduler. dd if=/dev/zero of=/dev/null,
+
+[00:03:42] and we run that as a background process as well. of =/dev/null, and we run that as a background job, and there we can see what is going on. Using top again, and what do we see in top? In top we see two processes that both are running at 100%,
+
+[00:04:00] so we don't see any differences. Does that make sense? Yes, that makes sense because this is most likely a two CPU system. If you can see two processes fully occupying one CPU, that is what you see by the CPU stats, 95. something percent. That means that you have at least two CPUs.
+
+[00:04:20] So I'm pressing one within top and we can see CPU zero CPU one, but we can easily disable one of the CPUs using echo 0 > /sys/bus/cpu/devices/cpu1/online, and that will switch it off.
+
+[00:04:41] Oh, that took a while. (keyboard keys clacking) And why does my keyboard react anymore? Do you notice, it's really getting slow? And does that make sense? Absolutely, that makes sense. What do we see here? We see that the real time process, the one that runs with the priority of -51 is getting 95%
+
+[00:05:03] and the other dd process is getting next to nothing. That is because the other dd process can only run if the IDLE loop is active. And the fun thing about the Round Robin realtime scheduler is that it does leave a tiny little bit of CPU cycles for other processes.
+
+[00:05:22] Now in order to get back to a workable system, I am going to use K from top, and I need to be patient because my system is really reacting not very fast. I am going to send it signal nine for a SIGKILL so that we are sure that it's going away.
+
+[00:05:40] And let me also get rid of 3869. Notice that now that we have the 3869 it is running at almost 100%, but when I type K my system reacts immediately. And that is because this is using a normal scheduler policy and not a realtime scheduling policy.
+
+[00:06:00] The basic thing to understand about realtime is that it occupies 95% of all CPU cycles, so everything else is just getting 5% and that makes why realtime processes really make your system slow. And a process running with a very high priority in a normal scheduler is just not doing that,
+
+[00:06:20] so be careful while using these realtime processes. Now that you know about priorities, that is putting process niceness, the nice command, you know, in a completely different context. So how does it work? Well, when you are scheduling on the Round Robin or FIFO or realtime schedulers,
+
+[00:06:40] a priority between one and 99 can be set to determine priority within these realtime processes. So one realtime process can be more realtime than another realtime process is. And while you are scheduling using a non-realtime scheduler, the process nice value can be adjusted to tweak priority,
+
+[00:07:00] and the nice values have arranged from -20 to +19./ Negative nice values require root privileges and they set a higher priority, and positive nice values set a lower priority. Let me demonstrate. So I'm going to create some work again
+
+[00:07:22] by doing a dd if=/dev/zero of=/dev/null. And we are doing that three times. Let's first observe the output. Notice that on the slide I'm saying you may not see a result, but I never switched back to the two CPU system again
+
+[00:07:43] so we do see a result, and the result is that all of the dd processes are getting the same amount of CPU cycles. Now let's use renice, the renice command is taking the value -5. and I'm doing that to pidof dd | awk '{ print $1 }.
+
+[00:08:10] That's a geek way of doing it, the pidof dd command should give three process IDs, and here the awk print $1 is working on the first process ID that is shown.
+
+[00:08:22] And I'm going to do that again, this time on the second process ID, and I'm giving it a positive nice value. So we have a -5 and a +10. And then if you stop again, what do we see? We see some significant differences. So one of them has 71%, the other one has 23%
+
+[00:08:42] and the last one has 2%. That's because of these nice values that work within the normal scheduling priorities. Normal, meaning non-realtime. Now what is happening if you use chrt -r 50 dd if=/dev/zero
+
+[00:09:01] of=/dev/null, and we run that as a background job. Then you can see that immediately my system is getting very slow. I just typed top, but we don't see anything at all. (keyboard keys clacking)
+
+[00:09:20] Trying it again. And there we go. And what do we see? Well, we see the dd process, the realtime process, oh wow, at 99.9%. And good, so what are we going to do here?
+
+[00:09:42] Hey, we have weird top output, top can't deal with this at all. And, you know, if we have such a high usage in the realtime processes, I'm really worried about the state of my system. So, yeah, it did listen and sent pid 4018 signal.
+
+[00:10:02] I wanna send it signal nine. and let's see if that worked. And now we are back in the normal operational system where we only have the normal processes. Do you see how dramatic realtime processes can be?
+
+[00:10:22] So, really, you should be careful with them. Let me use killall dd to get rid of all these dd processes, and let me also repeat the last echo command to online the second CPU core again. And that is how nice values and realtime priorities are working together.
+
+[00:10:41] And, please, don't forget that there is also the systemd cgroups, systemd cgroups groups put everything in a completely different context again.

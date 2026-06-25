@@ -1,0 +1,25 @@
+[00:00:06] - In this video, I'd like to tell you about the virtual filesystem, also known as the VFS. It's a generic interface that is used by several specific filesystems to connect to the kernel, and it provides common system calls
+
+[00:00:20] that are needed in all of the filesystems. The virtual filesystem is used as an abstraction that hides differences between the specific filesystems, and it was initially introduced by Sun Microsystems in 1985 to allow the local UFS filesystem they used to work in the same way as the remote NFS filesystem.
+
+[00:00:42] Filesystem specific options that are not in VFS need to be set as a filesystem option or addressed when mounting the filesystem. You may have seen commands like mount minus noatime of a device on a directory. So the minus o noatime is addressing an option
+
+[00:01:01] that's provided by the filesystem driver and not by the virtual filesystem because otherwise, it would've been present by default. Let me demonstrate. All right, for this demo, I'm starting on the sda3 device. The sda3 device happens to have an Ext4 filesystem and I'm using tune2fs minus l on /dev/sda3,
+
+[00:01:24] pipe grep Default, which is showing the default mount options. These default mount options, in this case user extended attributes and ACL are options that are specific to the Ext4 module
+
+[00:01:40] and which are not in the virtual filesystem. And that is why they need to be set as default mount options. Now, another way of using these non-default mount options is by using mount minus o noatime of /dev/sda3 /mnt. So that is mounting again using an option
+
+[00:02:01] and the option is noatime. noatime means that the last excess time is not written to the filesystem. Now interesting is that if you look behind the scenes at the system call level, what the filesystems are doing, there you'll see there is no differences.
+
+[00:02:20] So I'm using strace to display system call information minus e trace is file, which is showing file operations, ls /mnt, and there we can see couple of system calls and these system calls are the same if you are doing it on the boot directory for instance,
+
+[00:02:41] which is an XFS directory. The real difference that you see is that the boot directory does contain files and the Ext4 directory does not contain any files. And that is because the system calls are provided by the virtual filesystems. All right, now let me make a drawing to show you
+
+[00:03:02] how exactly this virtual filesystem and filesystem drivers and kernel relate to one another. All right, let me make an overview of what this VFS is doing. So VFS is the virtual filesystem, and this virtual filesystem is an interface that is going to be used by the kernel.
+
+[00:03:24] Now, the benefit of the VFS is that from user space, some generic Ciscos can be used. It's all about Ciscos. No matter which filesystem you are going to use, you want to be able to use the same Ciscos in all cases.
+
+[00:03:43] And that is why the user space process application user is interfacing the VFS. And next, the VFS is going to get more specific by using filesystem drivers. That will be your XFS driver, your Ext4 driver,
+
+[00:04:00] or even your VFAT driver if you want to. So these are going to define what is further going to happen when your user is addressing the filesystems by using the kernel. And that's how it works.
