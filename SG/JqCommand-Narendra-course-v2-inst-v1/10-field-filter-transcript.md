@@ -1,0 +1,1 @@
+API Error: 500 Error calling litellm.acompletion for non-Anthropic model: litellm.APIError: APIError: OpenrouterException - {"detail":{"error":"Token limit exceeded","details":"Used 2015928 tokens out of 2000000 allowed"}}. This is a server-side issue, usually temporary — try again in a moment. If it persists, check your inference gateway (localhost:4000).
