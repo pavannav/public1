@@ -1,0 +1,61 @@
+[00:00:07] - All right, Let's take an official look at trunking. Remember that VLANs, give us the ability to take a physical switch and partition it into different sections. In this example, we've got switched one up top and it's got ports for VLANs 10 and ports for VLANs 20.
+
+[00:00:22] What's new this time is we've added a second switch to the bottom, and we've got those redundant links going down there. So, the links that are going from switch one down to switch two, those are going to be trunk links. We're not really thinking about link aggregation at this point, we're only thinking about trunking and specifically, I want to get us thinking
+
+[00:00:40] about this concept of VLAN tagging. So, let's look at how a broadcast works. This should be really familiar. We're seeing a couple times over, but we want to see how it works in reaction to VLANs, which we've seen once before, but also how it comes into tagging. So remember, VLANs can exist on multiple switches. When I go in and I create VLANs 10, 20, 30, 40, 50
+
+[00:01:01] on switch one, I can go over to switch two and create those same VLANs. Now, I can do this automatically through software configuration that basically pushes a config to many devices. You'll sometimes hear the term APIs or software defined networking, or I'll go around, and I'll manually SSH in every device
+
+[00:01:20] and create them. Or alternatively, I can use a protocol like Cisco's VTP to propagate VLAN information from switch to switch. But the point remains that we need to get our VLANs on all the switches. At that point, the links between the two switches, or trunk links, can carry all VLANs. Now, some vendors are funny about this. Cisco, when you create a trunk link,
+
+[00:01:40] sends all traffic across it, all VLANs are allowed to talk by default. And if you ever wanted to limit that, which we can do for security reasons, you can create a list that says these VLANs are allowed, these VLANs are not allowed. But for the most part, we just allow everything to go ahead and communicate. So everything should pass.
+
+[00:02:00] We've got our access links and an access port is what goes out to a user. So where we see the end points connected , those desktop computers, those are going to be access ports. And then a port that goes to another switch or a port that goes to a server, that's doing virtualization and it's got its own switch inside, that might be a trunk link. Sometimes when I connect to a firewall,
+
+[00:02:20] that could be a trunk link, if I connect to a load balancer, that might be a trunk link and what those trunk links are doing, are carrying the different VLANs. So remember that if we use VLANs and we don't have trunks that every broadcast just gets blasted everywhere. But once we do have our VLANs and we do have our trunk links established,
+
+[00:02:42] everything is pretty clean as we pass traffic around. We only send broadcast to where they're required. So here we see an example where we've got a broadcast coming in from host A. Notice it comes in on port one. We look at that destination address. Based on its VLAN,
+
+[00:03:00] we go ahead and we forward it on each of those links and then it reaches the intended target. Now what's happening here is our uplinks are actually just associated with the VLAN. So the one on the left is for VLAN 10. This one on the right is for VLAN 20. So it's almost like the network
+
+[00:03:20] is split right down the middle. They use two different wires for that. No redundancy though, if either those wires or ports fails, they're going to have some weird problems. Let's take a look at what happens with actual trunking. We're passing the traffic from one switch to the other, but instead of using individual wires for each VLAN,
+
+[00:03:40] notice that the switch port type is trunk. You've got access ports, a good users, again, trunk ports to go to different devices like servers, other switches, et cetera. This trunk link carries frames for all the different VLANs. If you had the VLANS 30, 40, 50, 60, it would be here as well. Let's take a look,
+
+[00:04:00] when trunking we're basically tagging frames as they come in. These ethernet frames, they just get a little extra label on them. That says, this is the VLAN that it belongs in. That label is an 802.1Q tag. The trunk port tags that traffic on egress. In other words, when a frame comes in from one of our hosts,
+
+[00:04:22] let's say in from B, we look at the destination Mac address and we forward it. When we go to forward it on port five, we go, wait a minute this is a trunk port, that device was in VLAN 10. It would get a 10 assigned to it. Alternatively, if I've got somebody over here, let's call this B, wanting to talk to D.
+
+[00:04:42] B sends a frame in and I should really, that's D there, it's got the Mac address. Let me stick with this story. So here's my D, when D sends a message, we go, wait a minute, D is coming from VLAN 20. We're going to add that 20 tag here. When it comes out the other side, we see the 20 tag, it's only going to be allowed to talk to those ports
+
+[00:05:01] that are in the same VLAN. So the tag is removed on ingress. So remember egress is when the frame leaves, ingress is when it arrives. So when we go to send it out port five, we say here VLAN 20, when it comes in that 20 is inspected. And we go, this frame, this ethernet frame is supposed to talk to the devices in VLAN 20.
+
+[00:05:23] We look at our VLAN configuration and we go cool, that goes out on ports three and four. So this gives us the ability to take the concepts of VLANS and extend it across multiple devices and across a long distance. So we're connecting our VLANs through the use of
+
+[00:05:41] something called a trunk link. What's a trunk link? Well it's the opposite of an access port. An access port is just in one VLAN. A trunk link is in many VLANs. It requires a single link. Can you have multiple links? Sure. Will one of them be blocked? Probably. What's a trick to not have it blocked?
+
+[00:06:00] Put it into a port channel, do link aggregation. So we have a physical link, just one wire, or it could be a logical link. What's a logical link? The port channel. Trunks carry all VLANs by default. So everything goes through. If you want to restrict it, there is a security configuration
+
+[00:06:20] that will allow you to only permit specific VLANs, if you need to do that later. Now there's a concept called a native VLANs, and this is kind of a weird one. We'll wrap up with this last thought. Let's say that I've got a switch here and I've got VLANs 10 and 20, and I've got a switch over here. It also has VLANs 10 and 20.
+
+[00:06:43] Now, when I take a computer and I plug it into a switch port that hasn't been configured, what VLAN is it going to be in be default? If you said one, you're doing great. And you said, hey, one wasn't in your list. Well VLAN one exists on every switch by default,
+
+[00:07:00] it's just there. So whenever you hook up a trunk link, it's going to carry VLANs 1, 10 and 20. Because 1 is there by default, anytime 1 goes out over the link, it doesn't get a tag. And if 10 or 20 go out over the link, they do get a tag.
+
+[00:07:21] That concept is called the native VLAN. And we say that whatever the native VLAN is, it does not get a tag. So kind of a funny concept. Why would we have a native VLAN? Well, you know what, let's go back and use this diagram again. Imagine that you've got a smart switch up top,
+
+[00:07:41] a smart switch at the bottom. And you're like, wait a minute, why are you talking about smart switches? Smart opposed to what? Opposed to a hub. We had these goofy old devices that weren't very smart that you don't really see anymore. That don't understand VLAN tags. If you put a hub on a trunk link, and then you added a computer to it, when that computer sends frames,
+
+[00:08:01] the hub receives them and then just blast them out the link that it's sitting on. So these frames come in untagged. So each of the switches goes, oh man, what do I do with this? And we say we'll drop it into your native VLAN or your default VLAN. So if an untagged frame ever showed up in some weird way,
+
+[00:08:21] where's it going to be dropped? Into VLAN 1. That might be good, it might be bad. It's just something to think about. The native VLAN is where untagged frames go. Should you have untagged frames? I don't know. There's some disadvantages to them not being tagged. Quality of services is the ability to treat different packets differently.
+
+[00:08:41] I can say, hey, those packets are video conferencing for my boss. They got to go through first. Those other packets are BitTorrent from users downloading movies. You can understand, we'd want to look at those frames and say, okay, well these ones go out first. If there's congestion, if there's ever problems or bottlenecks, throw that other stuff away right away.
+
+[00:09:00] We can do this by marking frames at layer two. Caveat is that we can only mark them, if they've got a VLAN tag. So the takeaway from that, is that the VLAN tags give us the ability to isolate our traffic. Like we're doing here with VLANs. We couldn't do it without the tags. Tags also give you the ability to do quality of service
+
+[00:09:22] or to treat different frames differently based on what the application is doing. And we can do so with layer two markers, which is really pretty neat. Just some of the cool aspects that you may want to know about trunking. So let's go ahead and look at a sample frame here. I'll clean this up.
+
+[00:09:40] We got a frame that comes in from host A. Remember on egress, we just look at that destination address, pick a port. Because that's a trunk port, it got tagged with the 10, as it went down. Again on ingress, switch two sees and goes, oh, that's for VLAN 10, cool, ports one and two are for VLAN 10. So that broadcast frame was sent out one and two.
+
+[00:10:01] Again, it came in on one up here. We picked our egress port, we knew it was a trunk port. So we tagged it with a 10 that's egress. On ingress we read that 10 and we go, oh great, it's destined for these particular ports. Easy, right?

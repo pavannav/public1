@@ -1,0 +1,71 @@
+[00:00:00] Hello and welcome back. Let's now discuss readiness probes. And for that, let's just make sure that we set the fail liveness to false so that it doesn't fail here. But now we're actually gonna work with deployments and services because I'm gonna show you what happens when readiness probes fail. Let's create a new file called API deployment here
+
+[00:00:22] dot YAML. We're just gonna copy the, the template here for from our pod and we're gonna paste it here and now we're just gonna use apps forward slash V one. The kind will be deployment. The name will be color API and you can just say color API labels. Let's use app here, color API.
+
+[00:00:41] Now the spec requires a few things here. Let's just add the template so that we can put the container here under the correct indentation that's looking better. And we also need to have a metadata with labels, with app and then color API.
+
+[00:01:01] And we also need a selector here, selector match labels and then that's gonna be a color API like so, and then we're gonna set a replicas' number here and we're gonna have six replicas. So now let's have a look here at our information. So the container is looking good.
+
+[00:01:21] The name can be color API container or color API like. So then we have, the image part is also looking good resources looking good. The environment here, we're gonna set the the delay startup in the failed liveness to false both. So let's add a new one here and we're gonna call this fail
+
+[00:01:40] readiness and this one we're gonna set to true. So we're gonna leave both the startup and the liveness probes defined here. Now, let's copy this and let's paste this here and let's define our readiness probe. So readiness probe here and then we're gonna query or we're gonna hit the ready end point,
+
+[00:02:00] the failed threshold here will be let's add a little bit less, let's say two and then a period seconds gonna be five here. That means that after roughly 10 seconds, a this this container here is not gonna be considered healthy and it will not receive traffic. So let's leave this as it is.
+
+[00:02:21] And let's observe how this behaves. We also wish to create a service. We can create the service here on the same file if you wish to do so. So API version is gonna be view one, the kind will be service so kind service and then we're gonna have here metadata color API
+
+[00:02:40] SVC. Let's just add this here or delete this here. And I believe that we're actually creating quite a few quite a few different objects here. I also want to use the traffic generator. So let's just create a folder here and then we will say readiness probes like so that's just gonna make things easier.
+
+[00:03:01] Let's move the deployment in here. And let's also then create color API SVC dot YAML. It will also create the traffic traffic generator generator dot YAML like so and let's just now take this information from here. Let's cut this information
+
+[00:03:24] and let's save this file. Let's paste in the service. The port is going to be port 80. The target port will also be port 80. The selector app here is gonna be color API. So we can just confirm that's exactly the same here that we have for the labels app color API.
+
+[00:03:42] So that is looking good. And now here for the traffic generator, I'm just gonna copy this and paste it here and I'm just going to change a few things. So it's gonna be traffic generator. The label name here will be traffic generator can also use app here. And now the name of the container will be traffic generator
+
+[00:04:03] and the image here will be traffic generator version 1.0 0.0. We don't need to advertise any ports. We don't need the environment variables. We don't need startup liveness probes. So I'm just gonna remove this from here and now we can set a couple of arguments, right. So args once again, the traffic generator takes two arguments.
+
+[00:04:23] The first one will be the endpoint we want to hit and that's just going to be the name of the service and that's gonna be name of the service. I'm just gonna copy it here. I'm gonna paste it here and we're gonna hit the, hit the forward slash API and then the delay, we're just gonna use half a 2nd 0.5 like so perfect.
+
+[00:04:43] So just once again to recap what we did here, we in the color API, we have created a new deployment with six replicas and then we have set the fail readiness environment variable to true. Now, remember from the implementation,
+
+[00:05:00] that means that there is a 50% chance that the pod or the container will end up in a not ready state. That means for six replicas, approximately three might be a little bit less, a little bit more depending on chance, right? But some of them should roughly or some of them should eventually not serve requests.
+
+[00:05:21] So we also set here the readiness probe to roughly fail after 10 seconds and we are hitting the forward slash ready endpoint. So let's save this here. Let's come back to the terminal. Let's confirm whether we have any pods up and running. I don't, if you do, you are free to delete them or not. I mean, that's up to you
+
+[00:05:41] and now let's just apply what is in the readiness probes directory. Oops, I think I forgot to add apps for slash V one. So let's just come back here to the ide and in our deployment just I think. No, that's correct here. What I messed up is that this should be spec here and then we should have the containers,
+
+[00:06:02] right? So, apologies for this. Just got a little bit mixed up. Let's save this and let's come back to the terminal and try it again in the terminal. Let's just delete everything that we have here and that's going to be the readiness probes. And let's apply this once again. If you want to delete this with force, it might be the case here.
+
+[00:06:21] If you get this warning message, just delete everything with force and then we're good to go. Let's apply this once again and I believe that now we're good to go. So let's get our pods. We can confirm that we have 67 pods and all the pods are up and running. And as you can see here, we have one pod that is considered unhealthy, right? So
+
+[00:06:43] we can see here that there is zero out of one ready pods. And if we were all ready containers here and if we were to copy this and let's now describe so keep cut describe pod, let's paste this here. We will then eventually find the message here that the readiness probe failed
+
+[00:07:02] with a status code of 503. So this is a pod that is considered unhealthy Right. So this, this has failed. If we scroll here a little bit, I believe that's a little bit at the bottom. Yes, we will find the conditions here and these conditions are interesting because they are saying
+
+[00:07:21] that the pod is not ready and the containers are not ready. So now here, let's try once again because I believe that only one is a little bit hard to see. So let's just delete everything here and let's see if we can recreate the the entire thing. So cube cut apply readiness probes and let's see if now we get a few
+
+[00:07:45] more containers here that are failing or a few more pods that are failing. All it seems I'm not very because now it seems like all the pods are failing. So let me just describe here and let's have a look. Yes. So this also failed and it seems like none of the pods is actually
+
+[00:08:02] working here. So what we can try is we can try to actually scale, let's scale this deployment and the deployment is the caller A P deployment and the number of replicas here will be zero. So we're just going to completely remove the replicas when we get replicas. When we get the pods, there is nothing.
+
+[00:08:20] And let's now scale back to six instead of deleting and recreating and now hopefully perfect. So now finally got something a little bit better. So three of these pods are considered unhealthy and three are considered healthy so much for 50% right? But again, that's probability. Um So now the traffic generator here,
+
+[00:08:41] if we were to have a look at the logs of our traffic generator, now, this should actually be receiving responses only from the healthy pods. So as you can see here, let's scroll up a little bit. Let's, we can actually maybe follow the logs here with dash F and let's have a look that
+
+[00:09:00] we are actually getting responses only from three different containers or from three different pods here. So it is NV for X and BF. So as you can see here, if we keep looking up and down, we're gonna find only these three pods returning or only these three pods receiving traffic.
+
+[00:09:21] And that's exactly what the role of a readiness probe is. It is to prevent sending traffic to pods which have containers that are not able to respond to this traffic. So if the containers are not passing the readiness probe, that's a great thing for us to avoid these containers. And then we should then go and see what's actually happening with them,
+
+[00:09:42] but they will not receive traffic. And that's great for us. Let's now stop following here the, the logs. And what I want to show you is what is actually done behind the scenes, we can describe our service. So let's describe the color A PVC here.
+
+[00:10:00] And the moment you do that, you should see that in the end points here, the endpoint section. This is where we can visualize that we have only three pods receiving traffic. So there are only three pods here and we could go and try to match here what we get. So let's see. Cube cut, get pod, I believe we do not have the, the IP here, but maybe with wide, we would get the IP.
+
+[00:10:24] Yes, perfect. So if we get the output here with the output wide flag, then we can get the IP and we can confirm here that the four XBF and the other one is the NV here. So that's gonna be 6768 and 63.
+
+[00:10:44] And we can confirm that these are the ones that are actually registered here. This is another very strong use case to using services because they handle unhealthy pods and they handle pods that are not ready to receive traffic in a very graceful manner,
+
+[00:11:01] right? So hopefully, this also clarifies why you should always set up in your containers so that there is already an automatic remediation here or there are some steps taken by Cnis to make sure that either the container is restarted and then hopefully the problems are solved
+
+[00:11:20] or if the container is really not ready that it doesn't get any traffic and it doesn't impact your end users that are hitting a certain service. Let's then just delete here everything. So cube cut, delete force, writing as probes. We're gonna delete everything here. Let's just make sure that we have a clean slate at the end of this lecture.
+
+[00:11:42] That's good. We have no resources in the, the default name space. I believe there are also no services here. Let's have a look. Yeah, there is only the ecore service. So that's good. This comes by default and it should not delete it. So I believe we are good to go to close this lecture. Let's take a short break and I'll see in the next video.

@@ -1,0 +1,51 @@
+[00:00:07] - All right, let's do a lab in which we are going to analyze some SELinux problems. So your colleague has just configured a vsftpd server for anonymous uploads, but it doesn't work. Fix it!
+
+[00:00:20] To install this lab, there's a script. The name of the script is lab95.sh. All right, so the symptom is that your FTP server doesn't seem to be working. So let's give it a try using lftp to localhost.
+
+[00:00:43] So we are connected to localhost and I can find a pub directory that has 777 as permission set. In this pub directory there is nothing so let's try to use put on etc/hosts to see if we can upload the file. And oh, no! We cannot create the file,
+
+[00:01:01] so let's start analyzing SELinux. Before we analyze anything, we need to make sure, of course, that this really is SELinux because it's too early to define the issue as in SELinux is preventing users from uploading files as anonymous users.
+
+[00:01:22] We don't have proof yet that it's Linux, it can be the FTP server as well. So I'm using setenforce zero and I'm repeating the last thing we did, lftp to localhost and cd pub and put
+
+[00:01:40] /etc/hosts, and now it works. So that is sufficient proof that SELinux is involved in this problem. So now we can use setenforce one again, and we can really start digging into this SELinux problem. Of course, we should not forget our methodology.
+
+[00:02:03] In the methodology, we need to define the issue, gather the information, and next, we need to form a hypothesis. So let's gather some information. What exactly do we have? Well, first as the configuration file of vsftpd.
+
+[00:02:21] I want to check it anyway because you know configuration files in some cases accrue useful information about what needs to be accomplished. So we can see anonymous enable is yes. We can see anonymous upload enable is yes, and that's basically what we need. We can also see that when SELinux is enforcing check
+
+[00:02:43] for SE bool allow ftpd anon write, allow ftpd full access. So ftpd anon write, that sounds like a good idea. Ftpd full access, that doesn't sound like a good idea. So based on the information that we can find here,
+
+[00:03:01] we can already set a hypothesis, and the hypothesis is anonymous users in FTP cannot write files. We can probably fix it using the Boolean allow ftpd anonymous write. Of course, I can immediately start fixing it,
+
+[00:03:21] but let's also have a look at some other information. So grep AVC from /var/log/audit/audit.log. So that we can see something like this, AVC denied.
+
+[00:03:40] This is for a series of system calls. There's a write, there's an add name, there's a create, there's an append. For command it's vsftpd, path is /pub/hosts, and that is not allowed. We can also see that public_content_t is set, and public_content_t, it's not public_content_rw_t, but should be good enough.
+
+[00:04:03] Let's do a grep on sealert in /var/log/messages, which also is a very valuable too for analyzing SELinux related messages. So here we can see SELinux preventing vsftpd from append access on /pub/hosts.
+
+[00:04:21] For complete SELinux message run sealert. Well let's do that. So a lot of output, we need to scroll up just a little bit, and there we can see that different suggestions are made.
+
+[00:04:41] Now look at this: Plugin restorecon with 84.5% confidence suggests that it's a label problem. If you want to fix the label, /pub/hosts default label should be default t, then you can run restorecon. Well that sounds like absolute nonsense,
+
+[00:05:02] and that can happen. After all, it's artificial intelligence that's involved and human brains are always smarter. For that reason sealert can help you, but by itself, it's not always the ultimate source of what you need to do.
+
+[00:05:20] Next there's this Plugin allow anon write at 8.9% confidence that suggests if you want to allow vsftpd to be able to write to shared public content, then you need to change the label on /pub/hosts to public_content_rw_t and potentially turn on the allow_httpd_sys_script_anon_write Boolean.
+
+[00:05:43] That's still not exactly what we need, but in here we can see setsebool -P allow ftpd anonymous write set to one. It's also talking about public_content_rw_t. Let's just start with the Boolean
+
+[00:06:00] and see if it works after that, and if it doesn't work, we can always change the context to public_content_rw_t. If we do that, we are not going to do it on /pub/hosts, we are going to do it on pub. So let's paste the command,
+
+[00:06:21] setsebool -P for persistent, allow_ftpd_anon_write one. Now let's do an lftp on a localhost again, and let's use put /etc/passwd, and oh no, we are getting Could not create file.
+
+[00:06:40] So apparently the public_content_rw_t is required after all, unless we I did it in the wrong location. We need to do this in pub obviously. In pub, also put /etc/passwd is giving Could not create file. Let's get out of there,
+
+[00:07:00] and let's see if we have anything new in the logs. So we can see new message. The previous one was five minutes ago, so this is a new message which probably means that we still need to set the public_content_rw_t.
+
+[00:07:20] So back to /var/ftp, ls -Z on . is giving public_content_t. We need semanage fcontext - a -t public _content_rw_t
+
+[00:07:41] on /var/ftp/pub and anything that we may find in that directory. That's a typo. Now we can use restorecon
+
+[00:08:01] on /var/ftp. Let's Rv to recursive in verbose. At this point, context should be set correctly as well. Lftp to localhost, back to the pub directory, and put /etc/passwd is now working.
+
+[00:08:22] Problem solved!

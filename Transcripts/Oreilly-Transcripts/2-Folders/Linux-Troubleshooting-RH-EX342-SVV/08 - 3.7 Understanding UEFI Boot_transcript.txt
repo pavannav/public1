@@ -1,0 +1,61 @@
+[00:00:06] - Let's try to understand how booting works on the UEFI system. UEFI is what you find on modern systems. It's the Universal Extended Firmware Interface. So in UEFI,
+
+[00:00:21] it all starts in the UEFI firmware. The UEFI firmware is comparable to BIOS. It's part of your computer hardware, it's not on your computer hard disk. And its UEFI firmware contains an operating system loader.
+
+[00:00:41] And that's an essential difference because, in an MBR system, you have to operating system loader on hard disk. On UEFI, you don't, you have it in the UEFI firmware. Because this is in the UEFI firmware and not on a hard drive, it must be very well protected. And that is why UEFI is protected
+
+[00:01:02] with a secure boot. Secure boot means that you cannot just put anything in the UEFI firmware. There needs to be an agreement between the hardware vendors and the software vendors, and parts that load your operating system need to be signed in the appropriate way.
+
+[00:01:22] On a Red Hat Enterprise Linux system, and also on CentOS Linux, in the operating system loader part of the UEFI firmware, you will find the shim.efi file. Now, what is this shim.efi file?
+
+[00:01:40] Well, shim.efi is a file that has been signed in order for it to be usable in all UEFI firmware, no matter on which hardware you are working. Now, the UEFI firmware and the operating system loader is only the first part of your boot procedure.
+
+[00:02:01] From there, you will continue onto the second part of the boot procedure in UEFI. And in the second part, there is the EFI system partition. This EFI system partition
+
+[00:02:20] is something that does exist on hard disk. You have probably already seen it on the Linux system by default. We are talking about a 512 MB FAT-based system. And in case you are wondering, why are we using FAT, which is a Windows file system, well, we are using FAT for the maximum compatibility
+
+[00:02:41] that is possible. And on this EFI system partition, you will find the kernels, and you will find the bootloader second stage as well. Now, the kernels that you are going to use on the EFI system on Red Hat system,
+
+[00:03:01] that would be the grubx64.efi kernel. This is EFI system partition on a Linux system is mounted, and you will find it integrated in your Linux file system,
+
+[00:03:21] typically that would be the slash boot slash efi directory. That means that an EFI system will always have one system partition that you cannot do anything with. There needs to be a partition, so it's very important to realize for your operating system what this partition is about.
+
+[00:03:42] So you will recognize this partition if you do gdisk dash l or whatever you do to figure out current partitioning. Don't throw it away because it's an essential part of the boot procedure on an EFI system. In order to define what you want to boot on an EFI system, if it's a multi-boot system,
+
+[00:04:02] on Linux, there is the efibootmgr utility. The efibootmgr utility will show you everything that is available, and it will present the different choices that you've got. And that is quite different
+
+[00:04:21] if you compare it to multi-boot in an MBR environment because, in MBR, you just press F10 or whatever for the boot menu. On an EFI system, you need to use, if it's currently Linux, you need to use the efibootmgr, or if it's Windows, you need to use the appropriate Windows utility to make sure that you get access
+
+[00:04:41] to the information that is in the EFI firmware, and then, you can switch and boot your other operating system. Now that we have a generic overview of what's happening on the UEFI system, let's go through some details on the slides as well. So, let's try to understand UEFI.
+
+[00:05:01] UEFI is the Universal Extended Firmware Interface. It replaces BIOS. And there's one important reason why we need UEFI, and that is that BIOS cannot address disks larger than two terabytes. So if you want to use a disk larger than two terabytes, you need UEFI.
+
+[00:05:21] With UEFI together, normally comes GPT. GPT is the Guid Partition Table, and the Guid Partition Table replaces the good old MBR Partition Table. In MBR, you can use four partitions. In Guid, you can address 128 partitions.
+
+[00:05:41] The important thing to know about UEFI is that booting from UEFI is totally different, as operating systems register themselves within the UEFI firmware, and that means that there is no more need to scan for bootable devices, as is the case in a BIOS boot sequence.
+
+[00:06:01] That also has consequences for GRUB. An EFI system partition is required to boot GRUB2 from UEFI. The system ID of this partition is set to a GPT UUID, which is the UUID that you can read on the slide, or MBR type EF. This partition has a FAT file system
+
+[00:06:22] and contains all bootable kernels, as well as the bootloader. By default, this partition is 512 megabytes in size, and on Linux, it's mounted on the slash boot slash efi directory. Notice that the GRUB file names and locations are also different on UEFI systems.
+
+[00:06:42] So if you are going to generate GRUB, you are not going to write to slash boot slash grub2 anymore. So let's zoom into GRUB2 installation and secure boot a little bit more. On UEFI, we have this feature called secure boot. Secure boot means that
+
+[00:07:02] you can only install from something that is trusted by the UEFI firmware. So secure boot denies writes to the UEFI firmware, unless a UEFI-approved key is used in what you want to write to the UEFI firmware.
+
+[00:07:22] On Red Hat, the grub2-install command will write a bootable target to UEFI with the name grubx64.efi, and this will cause system boot to fail, as the UEFI firmware should contain the shim.efi file. So you must be very aware of what you are doing
+
+[00:07:40] in your troubleshooting on a UEFI system. So if you want to reinstall GRUB2 on UEFI systems, you should use yum reinstall grub2 dash efi shim from a rescue system. Optionally, also use grub2 dash mkconfig dash o
+
+[00:08:01] boot efi EFI redhat grub.cfg to restore the GRUB configuration file. As we have seen clearly in the whiteboard explanation, the GRUB configuration on an EFI system consists of two parts: one part in the EFI firmware, and another part that resides on Linux.
+
+[00:08:22] Now, this shim.efi is a very essential component of what you want to do. It's the default UEFI boot target on RHEL7. And from shim.efi, which is protected with the appropriate keys, and for that reason, can live in the EFI firmware, the grubx64 EFI bootloader is loaded.
+
+[00:08:43] As I just mentioned, the shim.efi is signed with a key that is trusted by most UEFI firmware. Red Hat, of course, wanted to make sure that you can install Red Hat on UEFI systems as well. In order to select what you want to boot,
+
+[00:09:00] the efibootmgr tool allows users to manage the available EFI boot targets. So, on the UEFI system, you no longer have to press a key while starting to select the appropriate entry, but from within the operating system, you need to select what you want to do. So if you are on Red Hat,
+
+[00:09:20] and you want to select what you want to boot, you need efibootmgr. The efibootmgr makes managing UEFI boot targets possible. You can list current targets using efibootmgr, in which you can see the active boot entries which are marked with an asterisk, or you can use efibootmgr dash v for more details.
+
+[00:09:43] And you can force the system to boot into another entry the next time it is started using the dash n option, for example, efibootmgr dash n 2c, where 2c is the label of the operating system that you wanna boot the next time. In the next lesson, I will show you
+
+[00:10:01] how to work with UEFI on modern Linux systems.

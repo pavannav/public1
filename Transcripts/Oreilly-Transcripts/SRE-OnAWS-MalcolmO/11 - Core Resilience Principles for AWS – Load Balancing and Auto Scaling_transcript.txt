@@ -1,0 +1,39 @@
+[00:00:00] Welcome course taker to video core resilience principles for AWS where we're looking at load balancing and auto scaling in C two and Lambda. So this is a short video and we'll just focus a little bit more detail on load balancing and auto scaling for those technologies. So if you're ready, let's get started. So EC2 load balancing these days, it comes in two flavors.
+
+[00:00:21] Now there are the classic load balancers. We're not going to talk about those as they're being depreciated. So you have application load balancers and network load balances. Now, the main difference is application load balances are kind of aware of HTP and HTPS traffic. So they can do path based routing. So they're very useful for web based applications
+
+[00:00:42] if you've just got TCP protocols or UDP protocols and network load balancer is really just interested in the port and will forward the traffic on. So network load balancers tend to be much faster. Application load balances have a lot more functionality. Either way they both give four nines kind of availability calculated over a month
+
+[00:01:03] and either way they contain the same sort of components. So at the bottom, we have an autoscaling group. And we'll talk about that in the next slide, what that actually is. But basically, it's a set of EC2 resources that scale in and out there could also be functions as well in the case of an A or B.
+
+[00:01:20] And then we have the ELB instances themselves so that the elastic load balancer sits within each availability zone and you have to configure it within an availability zone, otherwise it won't see the instances and that's really your data plane. So you've got instances talking to EL BS in availability zones, the control plane, you have a target group,
+
+[00:01:40] which is a mapping of all your EC2 instances. This can be coupled with the autoscaling group. So as the autoscaling group changes and you have EC2 instances added or subtracted the target group changes, or you can just create a target group of set instances and you'll normally associate a health check URL port that can be pinged to validate if that EC2 instance is
+
+[00:02:03] available and healthy. And then sitting above that, you have the listener, the listener is really where you make the difference between application or network and then each of those services, each of those listeners is exposed really as an internal cname or as an internet facing cname
+
+[00:02:21] and Amazon. Basically, whenever you talk to a low balancer, you're talking to a name record and Amazon will handle the IP allocation underneath that. So if you want to go in more detail, then please look at the URL there, but effectively that's your load balance. So let's look at auto scaling in a little more detail and how it's handled differently in Lambda.
+
+[00:02:40] So here you've got a diagram on the left hand side, you've got C two and it's an autoscaling group. So autoscaling is not particularly complicated. What you say is I've got a minimum size and I've got a maximum size. So in this case, I've got a minimum size of one and a maximum size of four.
+
+[00:03:00] My desired capacity is actually what's running at the moment. So here's two instances and basically you'll scale in and out of that. So when demand or when you scale it manually, you can increase it up to a size of four or down to a size of one. Now you normally have a launch template that defines kind of the machine type and boot scripts and the ami that you're using,
+
+[00:03:22] that's the template for what you will launch. But all your autoscaling group is saying is, well, I want a minimum of one maximum of four and actually my running capacity is two at the moment. How you scale out varies. So you can use things like the A LBNLB to scale that based on the health check, you can scale it manually,
+
+[00:03:43] you can just maintain the current instances if you want. So that's two and the autoscaling group is really defines how you scale. Now in Lambda, it scales automatically. So Lambda is eventdriven. So if somebody's clicking on a web service, for example, you'll get one
+
+[00:04:00] instance. If 10 people are clicking on a web service, then you might get 10 instances. And it has a, a functionality, a process that it goes through. In terms of handling that initial burst, you can scale up to about 3000 instances depending on the region. And after that, you begin to scale in blocks of like 500. Now, that can be quite a lot
+
+[00:04:20] from a cost point of view. And if you're not careful, you'll suddenly rack up a massive bill with Lambda. So what they have introduced is concurrency limits to kind of help you stop the number of instances that get created. So this is a very important limit to impose because by default, Lambda will scale,
+
+[00:04:40] it will just execute lots of instances to handle the incoming load. So if you don't throttle the incoming load, you have to throttle the concurrency limit. And if you don't set that correctly, you'll end up paying a lot of money. Now, there are some nuances with Lambda. So the way that you receive events, it's kind of three ways you can do event source mapping. So you can have Lambda read from an SQSQ or kinesis
+
+[00:05:02] or dynamodb stream. In that case, Lambda is polling the stream pulling in all the data and handling all the retries for getting that data. You can also have asynchronous. So here you push an event to Lambda, you get an immediate response saying I've received that event. But all that's happened is it's sent to a queue
+
+[00:05:22] and then Lambda itself will throttle and pull and retry, pulling from that queue. If it's successful, you get a success message that you can send to SQS or SNS or even to another Lambda. If it fails, you can also output that. So you can do some troubleshooting later on. But in both the cases of event source mapping and asynchronous invocation.
+
+[00:05:42] Lambda handles the retries and the throttling synchronous, you actually send the payload and you wait for a response. It's the client code that's handling the retries and the throttling. So you therefore need to understand a lot more about what your system is doing. Now, the difference between the two, you can see that here's the command-line
+
+[00:06:02] in the white boxes. If I by default, I'll invoke Lambda in synchronous mode. If I add the invocation type event, then it's asynchronous. So it's important to understand the different types of invocation because then it kind of drives the scaling behavior and certainly
+
+[00:06:20] how retries are handled in the case of an event. So I hope that was useful, quick overview of auto scaling and low balancing when C two and some scaling in Lambda. Please join me for the next video using Kubernetes and the ecs on AWS

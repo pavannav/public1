@@ -1,0 +1,39 @@
+[00:00:06] Now let's talk about how to release software when you have dozens of clusters. So your infrastructure is growing, but your release process is fairly slow, right? So it's a common failure mode, it's something new, right? So your static pipelines with some sort of hard coded cluster names
+
+[00:00:21] in the endpoint, something that you would have that would become a problem. For example, you know, maybe you look at a YAML and you find that hey, there are like clusters by name. You have something like if you go look at some of the yamls you might have, you'd see like, okay, I have this deploy dev cluster one and then you have a staging cluster one and prod east one, right?
+
+[00:00:43] So how do you actually have a new cluster? Go and edit this file, right? I mean, so this becomes really cumbersome, right? It's a big bottleneck as you see it. So the idea here is that adding a cluster should mean editing that pipeline. For example, if you require some kind of a review, that becomes
+
+[00:01:01] another bottleneck, another thing that slows you down, right? So you can also see one of the problems here being this role specific logic is scattered and duplicated. So the role specific activity of like whether it is a dev or staging a prod, those things also duplicated. So there's this linear growth of complexity as you see this.
+
+[00:01:21] And let's say if you have 10 clusters in this case, what you might have is like 10 deployment strategies, right? Or 30 clusters mean like you might have 30 deployment strategies. So as your clusters scale, if you take this approach of a static pipeline, it becomes extremely difficult to manage. What you really want is the exact opposite of it, right? We want the
+
+[00:01:42] infrastructure to be completely elastic, easy to add, easy to remove. So static pipelines make this super hard. So what's the solution? So this is what we are actually going to be trying out in our exercise 2 in our demo 2. So the solution is this idea of dynamic pipelines. So you're going to treat your cluster as inventory,
+
+[00:02:02] cluster inventory as data and not code. So that's been a consistent pattern in this course. As you can see from the beginning, we always saying that abstract out the code, do more data driven activities. And that is precisely what we are going to do. So what you'll have is like a central data store, a YAML or a JSON file,
+
+[00:02:22] something like this and that lists all your clusters with their metadata. And then you have your name, role, region and any other attributes you need. So when you need something, what happens is that you would actually go ahead and add One line to that inventory. So a new entry being added, go ahead and add that as a cluster, add that, you know, the kind of
+
+[00:02:42] any other metadata that you want to add there. Once you do that, you send that to a pipeline generator. So this is a component that sort of reads that cluster inventory that you have on the left side on the central data and then it sort of generates a deployment pipeline dynamically.
+
+[00:03:00] So it fetches the current list of clusters, whatever those list is going to be at that given point of time, groups them by role, generates deploy stages for each of them, and applies those role specific strategies. So this leads to a situation when you have a generated pipeline where actual workflow is essentially dev staging, production goes through all of that and all the regions.
+
+[00:03:22] So naturally your development clusters would deploy first, then staging and then production or whatever environments that you have there. It just goes through that process. So now adding a new cluster is fairly trivial. So add an entry to that inventory of the file, your central data, and then in the next
+
+[00:03:40] pipeline run, it'll sort of generate that whole thing and go through the process. So you're not really having any code changes itself and you also don't have like an unmanageable YAML with like hundreds of lines for one for each cluster. So as you can see, this sort of inverts that relationship, right? Instead of pipeline defining the clusters first, what you are having
+
+[00:04:01] is that the cluster inventory sort of drives the pipeline. So your infrastructure is becoming, and I hope you understand this, how simple that it is to do and to think of it from a dynamic pipeline point of view. The other thing we should be talking about is that, yeah, so dynamic pipeline solves one problem, but there is a deeper issue here, right? The
+
+[00:04:22] centralized orchestration also is something that's going to scale well. So what do we do? So I'm sure you all have heard of GitOps, some of you are using GitOps. With GitOps, clusters sort of pull their own configuration from a declared source of truth. That is the beauty of gitoch, right? So instead of a central system pushing configuration to clusters, each cluster pulls its
+
+[00:04:43] configuration from git. So good thing is that if you look at the diagram, you can see that there is no central pipeline bottleneck. There is no single orchestrator, if you can see that, that has to coordinate deployments across these 30 clusters that we are talking about. And each cluster is responsible for itself. So you also see that each
+
+[00:05:01] cluster sort of reconciles independently. And this is one of the beauty of GitOps anyway, right? I mean, GitOps agents on each cluster, as you can see. So there is like Flux or an Argo agent running on each of the clusters. You know, it basically watches the git repository, applies the changes when it detects the drift.
+
+[00:05:21] And the clusters don't really wait on each other because they are independently. They can actually check and make that updates. Self healing on drift detection is also important. So if someone makes a manual change to a cluster, those things happen. We see this all the time. The GitOps agent at that point can detect the drift and sort of revert it. So because it can really make sure that it's reconciling and configuration
+
+[00:05:43] stays consistent without that human intervention. Right, because otherwise saying, hey, somebody did something bad, I need to go back and fix it. No, instead of that, it sort of ensures that it does it automatically. This idea sort of scales to hundreds of clusters because there is no central coordinator. We have seen enterprises where those things happen
+
+[00:06:01] with hundreds of clusters in the thousands in some cases. And each new cluster just needs a new GitOps agent pointed at the right repository path. So this is the pull model replacing that push model. So earlier what we were talking about was that push model. Now we have a pull model because push model requires an orchestrator to know everything about
+
+[00:06:23] the cluster and coordinate with each other. Pull model is like let the clusters be autonomous and let that do what it's supposed to do.

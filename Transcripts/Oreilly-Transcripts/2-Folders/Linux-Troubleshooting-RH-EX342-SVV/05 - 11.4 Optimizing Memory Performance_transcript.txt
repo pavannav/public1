@@ -1,0 +1,65 @@
+[00:00:06] - A very important area for troubleshooting performance related problems is memory, because memory needs to be used by everything. Roughly spoken, you will use it for two purposes,
+
+[00:00:21] for loading applications, and for caching files. The problem is that there's only a limited amount of memory, and sooner or later you may run out of memory. If you run out of memory, it helps understanding how memory is used.
+
+[00:00:41] So, in memory you have physical RAM pages and this physical RAM for a large part can be used by the cache. Cache in fact is a system that is used to optimize the performance of your system because in cache
+
+[00:01:00] you will store files that recently have been accessed. And if you don't do anything useful with your memory you will allocate a lot of cache, and that is why a Linux server that has been up and running for some time will always have almost no available memory, and a lot of memory allocated to cache.
+
+[00:01:20] If a lot of memory is allocated to cache, then that's good. At the other end, there is swap. Swap is memory that is emulated on hard disk, and swap is like an overflow buffer. So, if you run out of RAM your Linux kernel can start allocating swap memory.
+
+[00:01:43] Using swap on Linux is not bad by itself, because Linux is using this concept of inactive anonymous memory, and inactive anonymous memory is basically memory
+
+[00:02:01] that has been allocated by programs, and has been used once only. Inactive anonymous memory doesn't need to be in RAM. If it's in RAM it only takes away from the availability of caching files, which may be much more useful if the files that are cached in RAM
+
+[00:02:20] are accessed frequently, and that is why on a Linux system you may benefit from using swap if you can put all your inactive anonymous memory in swap. Let's go to the command line so that I can show you how that works. The next thing that I wanna have a look at is memory troubleshooting.
+
+[00:02:40] So, in order to do memory troubleshooting there are two things to consider. First, it's the overall memory usage picture. So, free dash M is showing you quite some details that are interesting. So we can see in memory we have a total of two gigabytes. 676 is used and free is 553.
+
+[00:03:03] That's not very much, but that is because I am rebooting this system all the time. Then we can see 593 in buffers and cache, and if you consider the inactive buffers and cache, the available memory is 939. To optimize memory performance on a system
+
+[00:03:20] that has memory pressure optimization of swap space is an important consideration, and to understand that you want to grep on active in proc mem info. Here is what you wanna know. The kernel distinguishes between memory that is actively used, and memory that's inactively used.
+
+[00:03:42] Inactive means it has been loaded once and never been touched since. Now, this distinction exists for anonymous memory, which is program memory, and file memory, which is just data that has been read. Program memory is essential because it needs to be available in RAM.
+
+[00:04:01] File memory is not so essential because if it's not in RAM it can be fetched from disk again. The file memory is what you find in buffers cache and the anonymous memory is what you will find in the used parameter. Now, what can we do with this anonymous memory?
+
+[00:04:20] Well, active memory just needs to be in RAM, and you wanna have it in RAM chips. The interesting part is the inactive anonymous memory, because that is memory that needs to be allocatable from the current memory table, but you don't need it in RAM because it's inactive, and inactive memory is something that you can put in swap.
+
+[00:04:42] So, the bottom line for swap usage is that your swap should be big enough to hold all inactive anonymous memory, and if you only put inactive anonymous memory in swap, then you are good. Then there is the inactive file memory as well.
+
+[00:05:00] That's a different story. This is memory that is sitting in cache and at the moment that you have a shortage of memory the Linux kernel will automatically clean up the inactive file memory. So that doesn't require any optimization, but inactive anonymous memory does. So make sure you have sufficient swap space. If you do use swap space you should also observe VM stat.
+
+[00:05:22] I'm running VM stat with a two second interval five times and the parameter I'm looking at is swap, SI and SO. This is showing us swap activity in pages swap in and swap out. So, you can see there's no swap activity at all. On a system that is using swap you should always
+
+[00:05:41] observe how the swap activity relates to normal IO activity, and if it's becoming too high, then you should try to avoid swap and there is only one solution, and that is add more memory. There's one more thing that can be interesting in memory optimization, and that is huge tables.
+
+[00:06:00] That's a sysctl tunable. If we use sysctl dash a grep huge then we can see the VM number of huge pages. The idea is that a huge page is a two megabyte memory page, and if you address two megabytes of memory in one page
+
+[00:06:20] you only need one entry in the memory table. If you do the default which is four K you need 500 entries and for that reason using huge pages may be useful for applications that can benefit from it. Let me show you how you can allocate them. I'm using free dash M, and now I'm using echo 100
+
+[00:06:41] redirect to proc sys and VM number huge pages, and another free dash M, and we can see that actually we have less memory available, more memory that is used.
+
+[00:07:00] If you allocate 100 huge pages then you need 200 megabytes of memory and the 200 megabytes of memory won't be available for anything else anymore. Applications like databases will benefit a lot from using huge pages, but you must make sure that you still have sufficient memory available for other purposes, like buffers and cache.
+
+[00:07:22] And that ends my five minute explanation of memory optimization. Let's do a lab. So, in our memory optimization lab you need to make sure that a server is configured for large database loads. Make a recommendation for the best possible memory performance for this workload.
+
+[00:07:40] All right, good luck. So, if you say memory databases you need huge pages. So we have just allocated the huge pages. If you are configuring your server for large databases then probably all the memory that the database needs needs to be allocated as huge pages, and you need to make that persistent.
+
+[00:08:00] So, what was it again? Sysctl dash a pipe grep huge. It is VM number of huge pages, currently set to 100. Let me copy that and let's put it in etc sysctyl.conf. So, for database optimization
+
+[00:08:24] you might want to put that to 400, for example, all depending on the memory needs that you database is going to have. Let's do something weird. Let's do something wrong. Let's set it to 1,000 and see what is going to happen
+
+[00:08:40] if we reboot the system. All right, you can see that after setting the huge pages too high we have an issue. We are getting lots of error messages and it ends with failed to start,
+
+[00:09:00] configure read only root support. So, what's happening? I only have two gigabytes of RAM, and by setting huge pages to 1,000 it looks as if it has allocated all the available RAM and nothing else can happen anymore. So that's some interesting additional troubleshooting. Let's reset the virtual machine
+
+[00:09:22] and let's get into a mode where we can fix this problem. So, systemd.unit is emergency.target would be my first attempt. That's looking better.
+
+[00:09:44] Let's type free dash M and we can see 1823, 45 used. So, apparently nothing happening yet. Emergency target, I'm looking at the line before the last line, mounts the root fail system to read only, so let's choose mount dash O remount
+
+[00:10:03] comma R W on slash, and let's edit this etc sysctl.conf to make sure that we don't set the huge pages parameter too high. 400 will be nice. We have just seen if you go beyond on that
+
+[00:10:20] and you do it in sysctl.conf you'll be in big trouble. So, now that I have modified this parameter we can use systemctl isolate graphical.target to get back in the normal operational mode. And at this point it should work.
+
+[00:10:40] And that brings us to the end of the lab, because databases and memory performance, it's all about huge pages.

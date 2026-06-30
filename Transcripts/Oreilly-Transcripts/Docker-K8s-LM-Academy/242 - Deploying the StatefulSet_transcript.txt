@@ -1,0 +1,57 @@
+[00:00:00] Now that we have both the necessary credential secrets and the script as well as the service here to communicate with our state foret pods. Let's now define our state for set here. So we're gonna call this file Mongodbs, S for statefuls dot eo I will use the autocomplete here with kind state for
+
+[00:00:24] then let's start filling out the information. So the name will just be Mongodb state for set or SS here for short, the label here will be Mongodb as we have also used this as the selector for our service.
+
+[00:00:40] And let's then have a look here at the other fields. So the service name, this is an important part of the definition here. It does need, as already mentioned, it does need to match the name of the service here under metadata dot name. So let's copy this exactly as it is here and let's then paste it here. We're going to deploy a single replica for now,
+
+[00:01:03] let's then match the label here to have to also be called Mongo DB. And now we come to the container definition. I'm just gonna call the container here, mongo and the image that we will use here will be Mongo colon 8.0 0.0.
+
+[00:01:21] The parts that we will advertise here is just the port 27,017 as this is served by or and this is where the Mongo DB listens for connections. I'm gonna remove here the volume mounts for now. And let's adjust the volume claim template to create here.
+
+[00:01:41] A new volume claim with or persistent volume claim with the name Mongo DB data. The access mode will be read, write once the storage class name here, the storage class name is just gonna be the standard class or the standard storage class that is provided by minicube for us so
+
+[00:02:01] that we can dynamically create host path volumes. And instead of using one GB byte here, let's increase this to five or 10 GB bytes because it has already happened to me that when we set this to too low of some space here, then actually the system data from MongoDB already consumes most if not all of
+
+[00:02:21] this storage and then we might end up running very quickly into errors. So I'm just gonna leave this to a healthy value here of 10 GB bytes. If you don't have 10 GB bytes, then you can set this for a little bit less. But I would say like maybe at least four or so would be good to go. If you start seeing some errors here, then you can also try to increase the storage request all right.
+
+[00:02:43] So that's it for the initial definition of our stateful set. But now we also need to add a couple of environment variables here as well as volume mounts. So let's start here with the environment variables and some of these environment variables will take values from our credentials here.
+
+[00:03:01] So let's start with an EV key that's going to be a list of objects and the name here of not the value but the name of our environment variable is going to be called mongo underscore initd B underscore root underscore username. And it has to be named like this.
+
+[00:03:20] Otherwise mongo will not pick this up. So it's expecting a an environment variable with this name here to set up the root user name for our database. The value will come from a secret key ref so value from secret key ref and we're gonna reference here the MongoDB root credentials. The key is username.
+
+[00:03:41] So I'm just gonna copy this and paste it here. And the name of our secret is let's come once again to MGO B root credentials here. Let's copy this and let's paste this here as well. So the secret must exist before we actually create the stateful set. And that's why we already created the other parts of our infrastructure.
+
+[00:04:02] That's it for the username. Let's then add another entry here for the password. So let's use here now, password like so and the secret will be the same name. The root credentials. But now the key here is going to be password instead of username. So let's just copy the password here.
+
+[00:04:20] Let's paste this here. And then we have already set up the root user name and password for our database. We now also need to pass a couple of additional environment variables for the initialization script for our call db. Namely we need to provide the db name, db, user and db, password environment verbals.
+
+[00:04:41] So let's start with the db name. And that's just gonna be a very straightforward key value pair here. So the name of the environment verbal is db name and the value will simply be color db like. So now we could actually put this here in our init color db configmap. But as you can see here, this is a fairly general or generic script.
+
+[00:05:03] It's not really coupled to the color db database. So we could also reuse this script. And if we were to let's say, add here the db name for example, like so and then say color db, then we would probably also be led to removing this line and then this would not be as reusable as before.
+
+[00:05:22] I understand that the name here is tied to color db. But then once again, that's just the name. And if you intend to reuse the script, you could make this name also more general for the db user and the db password environment variables. Here, we will follow the same path as or the same pattern here as we did with the root credentials.
+
+[00:05:42] Let's just copy this here. That's going to be the password. And let's also copy the username here and let's paste it here. So the name of the environment variable is db underscore user and this one here at the bottom is db underscore password. And the key here is username, but now the name of the secret is different.
+
+[00:06:04] So now we are looking at the Mongo DB color db credentials here. So let's just copy this and paste this here and here. So as you can see the username and the password keys, they are the same, right? So we have user name and password here. That's looking good,
+
+[00:06:21] but the name of the secret is different. So now we are looking at our call db credentials so that we can get the information from the correct secret. Perfect. So that's it for the environment variables here. I'm just gonna have a look at whether we have any typos, but no, I believe that's all looking good.
+
+[00:06:40] Now, the last part of the configuration that we need to set up is a couple of volume amounts under our container. So let's add here, volume mounts. So volume mounts and there will be two volume amounts. The first one will be the volume mount that refers to this persistent volume claim here
+
+[00:07:00] and it will store the temporary or it will store the persistent data actually of the database. So not temporary but persistent. So the mount path for this volume mount will be forward slash data slash DB, which is the default directory here whenever Mongo is started and the name of the volume it just needs to map to.
+
+[00:07:22] So it needs to match the name of the metadata dot name key here. So it needs to match the same value. And then the stateful set will take care of mapping this persistent volume claim to this volume mount here. The second volume mount that we need to to define here is actually a volume
+
+[00:07:41] mount that will contain this script for the initialization of our database. So before we do that, we actually need to create a volume here also under the spec section of our template and as a sibling to the container here. So notice the indentation there are containers here. We're just gonna define volumes as well
+
+[00:08:02] and we will define a single, not volume mounts but volumes and we will define a single volume here. The name will simply be let's say MongoDB in it. Config and the config map, the config map here will then have a name of and let's just come back here,
+
+[00:08:20] let's copy the name here and let's paste this name here. What this is doing is then defining a volume that will look for the contents of this config map and then it will map the keys as files and the contents as or the values here. So basically the key will be the name of the file and the contents of this key here.
+
+[00:08:40] The value of this, this key will be the contents of the file. We can now reference this volume here. So let's just copy the name of the volume and let's define the second volume mount here. And the mount path of this volume mount is very important. So mount path, we're just gonna fill this in a little bit. And the name here, I'm gonna paste the MongoDB in it config
+
+[00:09:02] OK. Now, to the mount path and there is a, this is a little bit long. So just make sure that you don't have any typos here. It's gonna be Docker dash and three point initdb dot D. It needs to be exactly this path here. Otherwise, the mongo process will not identify the initialization
+
+[00:09:22] scripts and it will not run them. All right. So that's, I believe that's all that we need to do for the configuration. It's fairly long here. But hopefully, it is clear what each part of this configuration is doing. Let's save this. And before we create our stateful set, let's just take a short break and I'll see you in the next lecture.

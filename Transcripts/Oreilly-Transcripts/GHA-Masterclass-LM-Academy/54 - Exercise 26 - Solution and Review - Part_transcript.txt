@@ -1,0 +1,125 @@
+[00:00:00] Welcome back. Let's now wrap up our javascript custom action by doing some small refactorings on the code as well as implementing a little bit more robust debug functionality. Let's start with the refactorings. And the first thing I would like to do here is to extract the git configuration into its own function. So simply say await
+
+[00:00:21] set up git and then we'll create this function here on the top to simply say constant setup git is equal to an async arrow function here that will just execute these two commands for us. Now, I do just find it a little bit better practice to set this up separately here.
+
+[00:00:40] In case we want to implement a little bit more robust setup, then we know where exactly we need to go to. The next step here that we can improve is the naming of our target branch. Remember that in the previous lecture we have mentioned, this is actually better called the head branch. And then we can also get the input here head branch.
+
+[00:01:00] Now the moment we change this input head branch here or from target branch to head branch, this would be a breaking change, right? Because the moment we change this definition, if we open our workflow file, we will see that here at the bottom, the workflows still use target branch. This would be then a breaking change which would increase the major version
+
+[00:01:22] of our action if we were deploying it in its own repository. But in our case here, we would have to go through all of the workflows and change them to reflect this change. There is a better way for us to do that, that's called the expand contract pattern. And we simply say the target branch will simply be here, target branch like so
+
+[00:01:41] and then we would say the head branch here is going to be co dot get input head branch. And then here we are not going to mark this as required to begin with. So we're gonna simply say card get input head branch. And if this is not defined, then we're gonna default this to the target branch, right.
+
+[00:02:00] So basically what happens is every workflow that is using target branch will still be, be fully functional because this target branch will be set here to the target branch. And then as workflows migrate to using head branch, we start taking the values of head. And once all the workflows have migrated, then we can just remove here this target branch
+
+[00:02:23] and you can remove this target branch here as well. And then we can mark this as required. So this would be the expand contract pattern where we would support both versions of our API let's say, quote unquote here of our contract would accept both the target branch and the head branch.
+
+[00:02:40] And then once all the workflows are migrated, we would remove the target branch. Since we are dealing with a single workflow here, I'm just gonna implement this and then directly change the workflow here so that we don't need to add too many commits or unnecessary complexity here in the commit flow, right? I just wanted to discuss this because I find it's valuable knowledge,
+
+[00:03:01] updating API S and contracts interfaces of interaction is something that we do all the time when we are developing software. So it's good to know how to implement this. What this pattern is about. We do need to have a look for target branch here and we need to change this or basically just target, right? We can have a look for a couple of targets here and then just replace that with head and then we can just start pressing enter here.
+
+[00:03:23] You'll see that it will replace and it will advance to the next one, right? If we scroll up a little bit here, you see that it has replaced the head branch here and the head branch here. So we can now just continue with this here at the bottom, the head branch is head branch. So we'll check out the head branch,
+
+[00:03:40] target branch and then head is gonna be head branch. And then here on the on the on the comments, we don't need to change that because we just remove these comments. This was just some guidance for us at the beginning so that we know exactly what we were implementing. Now, there are no matching results anymore. So I believe the Refactoring is all done.
+
+[00:04:00] You could also use the facilities of the IDE or if you are developing with typescript, you could use the type checking to make sure that there are no variables here left. But since this is a simple file, single file here, just so replace is enough for us. Let's also not forget that we need to implement this here in the or to change this here in the action file.
+
+[00:04:20] And that would just be now head branch instead of target branch. And if you, if we were implementing the expand contract pattern here, we would then add the head branch next to the target branch. And we would probably have the exact same description, exact same default and the exact same required.
+
+[00:04:40] And then once everything is implemented here or every all the workflows are migrated, then we can remove the target branch from the inputs. Now we have migrated already our workflow file. So that's all good from our end here. And now let's move on to the last part which is to implement a little bit better debug functional. So we will receive a debug flag which is going to be of type boolean here
+
+[00:05:04] and description will simply be um or rather we can just add a default to false here. And basically, this just allows us would we would use this as a flag to allow us to print debug messages to the console. We can then pass this debug flag as a
+
+[00:05:21] input here debug coming from our inputs dot debug. And then this is captured here by by our debug on the action dot YAML and retrieved by our, by our function by our custom action here via the get boolean input.
+
+[00:05:40] And if we hover over this, you'll see that it will always return a boolean. So we can, we can basically just take the input here. If we pass a truthy value, then we will assume that this will return true. If we pass a false value based on this definition here based on the YAML definition, then this will be false, right? So now we have the bug here.
+
+[00:06:02] And what we can do for us to actually avoid having all these messages spread around here using our core.info is to actually set up a simple logger. This is also something very useful here. Why do we need to set up a logger? And this is basically just a an additional layer of abstraction here.
+
+[00:06:22] We don't need to make anything fancy we can just add a set up logger like so and this is going to be a function that simply returns an object in the end, right. So we can also wrap up the object here and this object is then returned and we can use it afterwards.
+
+[00:06:40] And then as a parameter to this function, we can provide some debug or the options to set up this logger and I will already directly um destructure them and we can pass here some default values, right. So this will be an optional parameter. Debug will be set to false if nothing is provided
+
+[00:07:00] and the prefix is going to be an empty string. Why do I require the prefix? Because we are using this all over the place, right? We are using adding this prefix here all over the place. So we can also pass this to our logger. Our logger will have two methods. It will have the debug method which will be a function and it will have a warn method which will also be a function. We I believe we are also
+
+[00:07:25] using here. Let's have a look, we're actually using the error. We are not using one. Let's see if there is any warn here, but I believe not. So if we do a quick search for warning, we have no results. So we only need debug and error for now, for both of them, this will receive a message, right? And then here
+
+[00:07:44] the error will just use our core dot error function and we'll simply log here the prefix that we pass the prefix. And then here we will also would use another scenario operator.
+
+[00:08:01] If there is a prefix, then we would add here column. If there is no prefix, we would just add nothing, right. So we add the prefix and then if the prefix is populated, we would like to add a column to separate it from the upcoming message. Otherwise we have nothing. And then here we can just add our message.
+
+[00:08:21] And so what this is doing is just formatting a little bit nicer so that we have this printed. And for the debug here, we would simply say if debug, if debug, then we will simply say core dot debug the message. And actually here we should first parse this here. So we can just
+
+[00:08:41] add the same thing so that the prefix is also taken into account. Now the core dot debug is there and we could use that here if we were to print some very specific debug information. But I'm not a huge fan of this debug function here, this method because it requires us to set a repository variable to true
+
+[00:09:05] and then rerun the workflow. I do prefer to actually receive this as a parameter. But if we do that, we cannot really leverage the debug here and activate the debug by ourselves. So what I normally do, I just use the info. OK? So just use the info
+
+[00:09:22] um method here and we can also add a debug for example, after the prefix, if we want to. So we could say like prefix like so and then here, if there is the prefix, we can add a dash debug, right? Or maybe even better, we can say debug before the prefix.
+
+[00:09:41] So debug and then the prefix and this is clearly that this is clear that is a debug log. Now, why do I use the setup log or maybe now it becomes a little bit more clear to you is that we the co.info and the co dot error, they are just one way of printing information in the workflow.
+
+[00:10:01] It might be the case that you want to print this information somewhere else that you want to send this to a third party logger analysis tool or a logger storage tool. And you, you want to have this information logged to other places as well. So you can just extend this here for with as many tools as possible.
+
+[00:10:20] So or as as necessary, you can extend the login functionality functionality and you abstract this behind two very well behaved and simple methods, the debug and the error. And you can also of course add one method here if needed. But this pattern of creating setting up a logger and then just using this and exposing a simple interface is a very,
+
+[00:10:42] very powerful method in software development. And I do like to follow that even though here it's a thin abstraction layer, you can see that it's already doing a little bit of work for us by deciding whether to print debug messages or not. And also by formatting the messages in a more user friendly way.
+
+[00:11:00] So we can just come here to our logger. I will simply say set up logger where we will pass here that the debug is going to be set to our debug function or to our debug variable here. So we don't need to pass it. We're just since they have the same name, right in javascript, if they have the same name, then you can just add the shortcut like so
+
+[00:11:22] and then here the prefix is going to be our Js dependency update. So now we can use this logger instead of directly calling the core.info and we can also add a few more messages here. The first thing we will say is just logger dot debug
+
+[00:11:41] and we will say here um validating inputs, right? So validating inputs and we can also add then here base branch head, branch, working directory, right? So we're just validating inputs based, branch head, branch and working directories.
+
+[00:12:00] The first thing, the second thing that we can do here a little bit more at the bottom is we can now replace this with logger dot debug. Since this is just um debug information, we don't need to print this all the time that we want to execute this also because we can retrieve the inputs, right? We can see with which inputs, a certain action was called.
+
+[00:12:22] So we can just use this here and then remove this prefix because that will be taken care of by our logger. We can then also add a logger dot debug. Here, I will simply say checking for package updates. Now a little bit more at the bottom. Let's once again use our logger here
+
+[00:12:43] debug. There are updates available and then inside of our setup kit function, we can once again use our logger. But here actually, we cannot because the logger is actually created within our our run function. So we would have to pass it as a parameter here.
+
+[00:13:01] I would just rather keep it simple for now and just create it here, right? So logger, logger dot Debug setting up git credentials or just setting up git here. And then we will say now below here, we simply say logger dot Debug committing
+
+[00:13:20] and pushing changes of a package. Let's let's all the let's add the package dot or rather the package are chosen here is dependent on this being an npm project. But I do believe that this is a fair assumption since we are executing npm update, right? So um committing and pushing package chase on changes.
+
+[00:13:41] And this is good enough. If you were doing supporting here, more than one a package manager, then you wouldn't print such a message, right? But here for us, we are working with this assumption. We can also add the logger dot debug here, fetching, do it API
+
+[00:14:02] and then last year but not this log dot debug um creating pr two, let's say creating pr using. And then here we can use the back takes once more to actually
+
+[00:14:21] using head branch, our head branch. Perfect. So now here we also have the error, we can change this directly to logger dot error and just remove here the the the prefix and then here called error. We also use logger
+
+[00:14:42] dot error, but we could also add a wrapper around the set field. But since the setfield here has more functionality than just printing a message, I will just leave it as it is for. Now, we still have another message here. And this one, we would actually leave at the info because we don't want to, we always want to print it independently whether the bug is on or not.
+
+[00:15:02] So we're just gonna create a new method in our logger called the info method. And that is going to be just gonna do the the printing of the message using the co.info, right? So now here we will simply say co.info I need to add a comma here.
+
+[00:15:20] There is a message here and we will always print that and we will not add the debug um the debug variable or the debug string here before. So this just prints things on the screen and now we can use that here at the bottom. Perfect. It's looking better now, there could be also other options for us or other things for us to improve.
+
+[00:15:40] For example, here, if the pull request is already created, this is going to return an error for us and we could actually maybe implement a nicer way for us to fail this so that the action doesn't have a set failed here and it doesn't fail. If the pr just updates, right? Or if the pr already exists,
+
+[00:16:01] we could check for that and then just do a get push to that pull request. If it already exists, there are other opportunities for improvement in this workflow. But once again, you are free to play with it. I just believe that we have to bring this to an end. Eventually, there are always opportunities for improvement. But I think we have played a lot with javascript custom actions.
+
+[00:16:21] We have played a lot with these packages here to add actions, packages. And hopefully by now you get a very good understanding of how we can implement some fairly complex functionalities here by leveraging javascript and by leveraging custom actions in github actions. Let's then add all our files to git and let's commit with whatever message we receive it.
+
+[00:16:41] This would be a breaking change, just a remark, right? This would be a breaking change because of the change of this input here. And so ideally, if we were using semantic versioning to release this, we would add a breaking change in capital letters to the commit message so that our semantic versioning engine
+
+[00:17:00] identifies that the major version should be bumped. When I'm going too much into details. We're not using that here. We're just going to add this as a breaking change. So rename, rename, input to head branch, I will simply say rename, target branch, input to head branch plus called Refactoring,
+
+[00:17:20] right? So um if we were to actually implement or if we wanted to add a body to our commit, we can just here run a git commit without the message. And now we can enter our message here in a more user friendly way, right? So now we have this would be the head of our message. And if we add, for example, new lines and we would add a breaking change
+
+[00:17:43] like so here renaming of input requires um requires migrating existing workflows, right? So this would then indicate to whatever semantic versioning engine you were using that this would be
+
+[00:18:00] a breaking change and then this would cause a major version increase. So here it's more about if we are managing our action and other people are using it by referring to a specific version, right? If you open our workflow file here, then you will see this is the case. For example, we check out version version four and this is basically a
+
+[00:18:21] major update would be from version four to version five. And this is what is breaking change message here at the bottom should do for us. But once again, we're not using that. So we don't need to go that deep into details. Let's just then quit and commit this with our message and we can then push this to the remote repository and go back to github.
+
+[00:18:41] Perfect. So within github here, before we run our workflow, let me just mark this pr here as closed so that our workflow runs as expected. And within the actions here, let's now come here to our custom actions, Js let's run this and let's mark the bug to true
+
+[00:19:00] just to see that everything is working or to see whether everything is working as expected. Perfect. So everything executed as expected, you can see that there is a new pull request here. And now if we expand this check for dependency updates, we can see that we have a few debug logs, right? This is then a little bit easier for us to visualize maybe we want
+
+[00:19:20] to filter that in whatever log analy analysis tool that we are using. And then here after our NPM, we also have a few more debug logs, right? So if we were to try to rerun this, let's then have a look here at our actions. Let's try to trigger this. Once again, we can trigger without the debug just to see the difference.
+
+[00:19:40] And let's see if everything will pass or if there will be problems whenever we try to create the request as expected. And already as mentioned earlier, this fails. And here you can see that there are no debug logs anymore, right? So this is a little bit cleaner now, except for the npm logs. And if we scroll down a little bit, you will see that there are some validations here.
+
+[00:20:03] And you can see that a pull request already exists for emi or Miller update dependences. So this already exists. And we could actually use this error message here to simply say, OK, if it contains this already exists a message here somewhere,
+
+[00:20:20] then we're not gonna set the workflow to fail. We simply print a message and say for request already exists. A branch was updated successfully and then exit gracefully here. We don't need to fail this right. Um This would be a more resilient setup, but this once again remains as as an exercise. If you would like to do that
+
+[00:20:40] for me here for us, I believe we have done a great progress and our custom javascript action is ready. So let's take a short break and come back in the next lecture.

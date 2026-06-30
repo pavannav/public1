@@ -1,0 +1,35 @@
+[00:00:06] Now let's talk about how platform components communicate at scale. The first thing we should be thinking about is that event driven architecture is a key enabler for scaling platform operations. Let me explain why it sort of decouples the services. Meaning like
+
+[00:00:21] producers don't need to know about the consumers. When your CI system completes a build, it publishes that event. It doesn't need to know that the deployment system or maybe the notification system and the metric system all care about that event. So it doesn't really have to have all those things communicate with each other, right? So they can independently do those things. The three systems I
+
+[00:00:42] talked about, the producers don't typically care about the consumers either, right? So producers can actually work independently and components sort of process at their own pace. That is another big thing, right? So if one component is slower than the other, it is not holding anything back. It sort of process at its own space.
+
+[00:01:03] And if the example is typically the notification systems could be slow and it doesn't block your deployment system. Your consumer handles events independently. The other one is the standardized interactions, right? So if you are thinking of like a more of a point to point integrations between every
+
+[00:01:20] pair of systems, you have one single event bus and every system knows how to publish and consume events. That's the only integration pattern anyone needs to understand. I think that would be supremely valuable here. Enabling third party integration without any of the core platform changes is very important because if you want to add a new monitoring tool, it's subscribed to that event stream and no changes to any existing components.
+
+[00:01:42] So this is how you sort of avoid that architectural pattern that we are all familiar with. Big ball of mud, where everything is connected to everything else. And this is the real beauty of. So let me also paint a little bit of a picture on what happens without event driven architecture, right?
+
+[00:02:00] With like dozens of services and tools, direct point to point communication, you have this tangled web of dependencies, right? So you have your CI system calling your deployment system directly and your deployment system calls your notification system. The notification system could call maybe your metric system. And every new integration adds more and more connections
+
+[00:02:20] and they becomes very, very complicated. And when that becomes complicated, it directly percolates into your developer world. So it sort of starts stifling the innovation. And every time you want to add a new tool, it becomes like an integration nightmare, right? So that integration and a burden, sort of, at least in this example I was giving you, grows maybe, I don't know, quadratically, right,
+
+[00:02:40] with the number of systems. So a truly scaled platform is an ecosystem with very, very decoupled services. So when we talk about decoupled architecture, that is absolutely applicable from the point of view of the communication between these systems. So event driven architecture basically provides that asynchronous backbone
+
+[00:03:02] for the whole system, right? So again, components can communicate without really needing to know much about each other. Let's look at some very specific examples here. Right? So if you look at what you have on the left side, you know, your CI system communicating with your Jira or Slack or a metric system, you can see when that event, event communication is happening.
+
+[00:03:23] Every new integration requires that core code change, right? Everything has to change everywhere. Instead, if you're running it through an event bus, it's so easy to add a new consumer there because new consumers just subscribe to the event and no code change is needed from the producer. So that producer continues to be the same, because that's the way it should be.
+
+[00:03:44] So let's talk about this idea of adapters and consumers, because this is something that we'll be looking in our code exercise. An effective event system relies on basically two patterns. So first is what we call as the adapters. So these are like adapters sort of normalize those inbound events, right? From diverse sources.
+
+[00:04:01] We saw multiple sources there. And those things all come into the standardized platform schema. For example, GitHub sends webhooks in one format, GitLab sends in another one. And JIRA has its own format, maybe PagerDuty has its own. And so adapters are the stuff that actually translates all of these
+
+[00:04:20] things into a consistent internal event format. And that consistency is what brings that standardization in this thing. You might ask, why does it matter? Because consumers shouldn't need to understand every source system's idiosyncrasies. So they subscribe to say something like deployment completed events. That's what they should be doing, right? They can't say that. Did GitHub
+
+[00:04:42] deployment status webhook complete with the right action? Right? That is way too complicated from the point of view of being able to consume that data. Goes back to the fundamental principles of APIs. Now why do you create APIs to have that level of standardization? So that is precisely the same idea. If you look at the consumers.
+
+[00:05:01] What happens here is that consumers sort of subscribe to this normalized stream to automate the actions. So let's take a slack notification, for example. Slack notification. Consumers sends messages when the deployment is complete, right? I mean, so that is one standard way a lot of organizations do a metrics, consumer updates the dashboards, a compliance consumer maybe logs audit events.
+
+[00:05:23] And each consumer is very simple in this case, because it only handles one type of action, it doesn't have to think about everything else. Right. So this overall separation you see here is very powerful because adding a new source system means writing one adapter. Adding a new automated action means like writing one consumer.
+
+[00:05:43] Right. So neither of those things impact the existing customers or existing components in this case. And that is really the idea of having these adapters and consumers. And we'll look at this in detail when we look at the code so that it becomes more obvious.

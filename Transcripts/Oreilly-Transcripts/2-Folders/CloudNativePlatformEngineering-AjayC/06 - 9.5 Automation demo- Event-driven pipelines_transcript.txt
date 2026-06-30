@@ -1,0 +1,91 @@
+[00:00:07] So in this lesson you saw how modern platforms use event driven pipelines to sort of decouple the system scale automation and sort of that tight integration between tools. The demo here will show you a single deployment event
+
+[00:00:20] that can sort of trigger multiple automations. We'll also include some automated issue creation part of it. So the core idea here to think about is like your CI becomes the slack, CI becomes a JIRA CI observability CI it doesn't matter, right? It just keeps going to that custom scripts. That is the thing that you should really try and avoid.
+
+[00:00:41] So each integration will continue to increase that coupling and fragility. So you should never be really trying to do that. Instead what you should be looking for is a process that scales really cleanly. And that is what we look at, which is we introduce the concept of the producers as well as the consumers, as well as the adapters and the consumers.
+
+[00:01:02] So what you'll see is that how the producer will actually call the adapter which sort of normalizes the event and then going to the consumers which actually do not know who produced those events and then the platform sort of owns that overall contract and how to do this. As always, we will actually look at the code a little bit and then we
+
+[00:01:22] will get into the step by step demos that we'll be looking at here. So I'm going to go into my. And we're looking at is first we'll start with my events. So first thing that we are really going to look at is the two sample
+
+[00:01:40] events simulating what a CICD system could be GitHub actions would emit. Right, let's start with a GitHub Deploy completed JSON. So what you have here is a case in which a version 1.2.3 of a deployment to PROD happened and it sort of runs on some kind of URL. Then we'll also look at a failed deploy.
+
+[00:02:02] This is completed one. Yeah, let's look at a failed one where you have a version 1.2.4 deployed to produce and the reason for the failure was that health checks failed in US East 1. So these formats as you can see are quite vendor specific, right? I mean
+
+[00:02:20] as you can look at it, these are all very vendor specific activity. So let's now look at the overall schema. This is what sort of defines your platform event contract. We talked about the platform event contract. So that is already defined here. This sort of normalize that event format and that every consumer can
+
+[00:02:41] understand. So basically it has got what, seven fields here, right? We have the type that basically says what happened, deployment completed. We have a source that says that. What is the actual source? Where it came from? In this case it came from GitHub. GitHub Actions. Third one is like what service was affected.
+
+[00:03:02] You see that the service affected was the order service. The environment here is like prod. We looked at the version, it is 1.2.3. Then there is this correlation ID that tells you like which events are tied together. So essentially this says that okay, multiple events are tied together here. Then we look at something like a payload payload,
+
+[00:03:21] like the details that are flexible, that are something that you might want to add to it. So think of this like that contract where consumers only depend on the schema where and not on the stuff that you looked at from a GitHub or a GitLab or Jenkins specific formats kind of thing. So that's the idea of the schemas here.
+
+[00:03:42] Now let's look at our adapters. So we have this thing called GitHub adapter. So what it does this think of this like the translator. So it takes a raw GitHub JSON file and converts into a platform event. Right? Let's look at the key logic here.
+
+[00:04:00] So it first reads the deployment status, status here and then it sort of maps. So in this case, let's say it's success. It sort of maps to you know, some kind of an event type which is like deployment completed. So event type. So status gets mapped to that and failure goes to event type called deployment, deployment failed.
+
+[00:04:21] So it also pulls out the service here, the environment. What else is it the version we have? Yeah, I think, yeah, the payload, right. The extras, the ones that we had described last, those all these payloads activities gets pulled out. So the good thing about it is that we know that in this case we are
+
+[00:04:40] using GitHub. But what happens if you use GitLab to mode? You write a new adapter, right? So none of your consumers change, but the platform sort of can avoid that vendor lock in this way. So that's how the adapter would look. Now let's look at the event bus.
+
+[00:05:01] So this is a very simple event bus implementation. It's like a pub sub system and you could be using in reality, in production, you could be using a Kafka or if you're on AWS, EventBridge, maybe if you're on Google you might be using Pub sub. You know any of those ones, right? So it's got a couple of functions in here. You look at subscribe.
+
+[00:05:21] This is where a consumer sort of registers interest in an event type. You can also subscribe to Star for example, to maybe say I want to receive all events. Then you also have a publish function here that sort of sends event to all the matching subscribers. So this would be like an exact match here plus a wildcard for the all.
+
+[00:05:42] So think of eventbus as the part that is decoupling everything. So you're producers, publish, consumers, subscribe. But neither of those things need to know that because you are sort of decoupling that. So this is that decoupling layer that you saw earlier that fits in between. Now let's come to the consumers part. There are a few things in here.
+
+[00:06:01] Let's start with the notify consumer part. This is where you're subscribed to all events. It just prints a notification for every event. This is like I think if you're using Slack, this is where you might actually replace this with Slack because or your teams whatever you're using.
+
+[00:06:21] And this sort of simulates sending that message. This one is interesting, the deploy marker. So this is another one that you have here, another simple Python script. So this is sort of subscribe to the deployment completed or deployment field. Remember we are actually trying to set that when we were actually mapping the GitHub adapter. This is how it actually maps that.
+
+[00:06:41] So it sort of emits sort of like an observability deploy marker in real life maybe this could be your Grafana or your datadog dashboards so you can correlate the deploys with your metrics changes. So that correlation is something that happens here. See that for your observability consumer you say okay,
+
+[00:07:02] this is how it sort of maps. Now comes the issue consumer. So issue consumer is sort of what you have here is something that is subscribed to a deployment failed only. So it automatically creates a tracking issue with the service name. Service name, service name. Then you have what else you have here.
+
+[00:07:22] You have your version, yes, Event version. Then you have what else would you have here? Correlation id Then your extras here, the URL and the reason. So you basically have those things as the issue consumer. Now we looked at all of these things. The key insight here again is think of it from the point of
+
+[00:07:43] view of on a successful deploy, the issue consumer does nothing, right? What we are really looking at doesn't do anything. But on a failed deploy it activates automatically. So because there's no human needed it, because this is the when it's deployment fail it is not doing anything and it's exiting out.
+
+[00:08:03] But if it's, you know, basically gets Automatic, you know, automatically triggered and moves through that. So now that we have looked at those ones, let's look at the next one which is the last one we look at. Run demo so this wrapper, what it does is that it first creates an event
+
+[00:08:22] bus, then it sort of subscribe to all consumers. Creates even bus subscribe to all consumers, all the different consumers here. Then calls the adapter as the third step, then prints a normalized output,
+
+[00:08:40] then publishes it on the bus. Right, Everything gets published on the bus. So that way you get all the consumers to fire there. So that's the demo that we are really going to look at. So feel free to as always use these scripts to test this out, learn this more, adapt it or make it better. You see fit within your organization.
+
+[00:09:04] Right. So let's actually look at terminal exit these guys. Okay, so where are we? We are actually going to run the script Python.
+
+[00:09:23] So since we have a wrapper here, we can just use a wrapper for everything. We don't have to call one by one. So we can just look at this, run this over and over again. So let me start with this. Run demo events GitHub deploy completed JSON so let's look at what happened. So this is a successful deployment. So deploy completed.
+
+[00:09:44] Look at what it did. Adapter sort of converted that GitHub JSON to platform event. Then we had the type as deployment completed, it notified the consumer, then it deployed. That marker consumer sort of got fired. Then let's
+
+[00:10:00] see, issue consumer doesn't fire, it's just the marker one that is getting fired because as I said, it'll fire when it fails, right? So then it goes ahead and notifies the consumer. So essentially the deployment can complete it, it gets notified. So this is all good. Now what if we actually try
+
+[00:10:23] and run the failed one. So when I ran the failed one you can see what happened is it's the same flow, right? Nothing really changed from that point of view. But your type it picked up is the deployment failed and that is exactly what we want.
+
+[00:10:44] And it the notify consumer gets fired. But the difference here is that your deploy marker consumer also is fired. Says that yes, health checks failed in East 1.
+
+[00:11:01] So the takeaway here is that the issue was created automatically. No human ticket was needed. The RHYSN and the CI link are already attached, right? It is all part of it. So you have the same consumer, same adapter, but different consumer behavior. Think about it. Same producer, same adapter, but the consumer
+
+[00:11:21] behavior is different. So now another thing to look at here is that can we try with a new consumer? Right, so let's try and see if we can run that. So let's see. I'm going to run Condemo events, GitHub Deploy, we'll do the completed one for that and enable a new consumer.
+
+[00:11:44] So what happened then? So when I ran this one, if new consumer, where was it created? Let me look at that. RS Publishing, we get that right? Let me just take a look at this one. Yes, you look at that. It went through the same process
+
+[00:12:00] but in this case a new consumer got added. So essentially you have your everything same as step one but that extra summary gets added saying that one event is creating this like a new. So essentially that new automation gets added without really touching your producer or the adapter.
+
+[00:12:22] So the git webhook that you have did not change the event format didn't change because everything looks the same, right? But you just subscribe to that new function. So this is how I would say that event driven systems scale, right? I mean new capabilities, sort of additive, it's not like an invasive one, it sort of just gets added on top of each other. So one last demo that we will look at here
+
+[00:12:40] would be something very similar. But we want to see like what happens in the fan out. So let's say if I run this same thing on the GitHub deploy completed fan out, what happens? So similar to the earlier case, what happens here is that that extra
+
+[00:13:00] summary gets added at the end. So essentially saying that your one event becomes multiple independent actions. So I think that is what we are really looking for. So as you look through this, a few things to think about is that events decouple producers from consumers. Now that is the whole takeaway here and you can play around with it to figure out how those things really work. You know, modify the code as you see fit, your adapters protect against vendor lock in.
+
+[00:13:23] And we looked at GitHub example and talked about hey, what will Happen if the GitHub becomes GitLab? When we looked at some of the observability if you could just change that and so like that for everything, right? So you have your one event driving many automations. So you can have
+
+[00:13:41] your notification, your mark, your create issues, anything else you subscribe can all happen from one event. And your new automation almost always requires absolutely no producer changes. And if you get your failed deploys, we looked at that as the second example here. It sort of get those issues creation. So essentially you
+
+[00:14:00] didn't have to do any manual ticketing or Complete with some kind of context around like a recent link ID and all that. So that sort of works well. So in real life this would sort of make a little bit of sense too, right? What will happen? Is that the question that sometimes I get when I talk about this is like okay, you talked about all these demo concepts. How do I map this to real life?
+
+[00:14:23] Because I'm not using all these simulated python scripts that let me do that. Right. So your in memory event base would be more like kafka pub sub eventbridge kind of thing. Your GitHub adapter could be like any webhooks or the connectors that you would have your platform event schema that we
+
+[00:14:40] looked at the schema PY that would be like your cloud events. It could be also be your internal event standards. Your consumers are typically any kind of automation services, your workers or your lambdas and all that. Then your issue consumer would be typically Jira for most organizations. It could be also GitHub issues or whatever you're using and your deploy
+
+[00:15:00] marker consumer. That's why I said it's interesting. That's something that we have done a lot of research in. It's around like things like your Grafana datadog and all those kinds of deploy annotations. So I hope this gives you a general idea of how this all works and thank you for watching.

@@ -1,0 +1,41 @@
+[00:00:06] - All right, another lab fixing more loading problems. So nobody can login anymore. Fix it. Good luck. So to install this lab run lab126.sh,
+
+[00:00:23] reboot, and go fix it. Oh no, do you see that? My screen is blank. Nothing is happening. Help. This has been taking a while.
+
+[00:00:41] So I am going to reset the virtual machine and start in one of the troubleshooting modes. As I have no clue what's happening, and I did have the impression that the screen went black while switching to graphical mode, I'm using systemd.unit
+
+[00:01:01] is rescue.target. Rescue.target is starting a sufficient amount of services, and I wanna see rescue.target because while starting these services we may see errors as well, and I don't. I see most of the things are green.
+
+[00:01:21] So give root password for maintenance. So what do we see? We see that in rescue mode we can login as the root user. So that's nice. Now how about we change to multi-user target, systemctl isolate
+
+[00:01:42] multi-user.target. Oh, and there we've got a problem. I'm typing in root, and immediately after typing root login incorrect. User, login incorrect. Doesn't prompt for anything. So multi-user target doesn't give it to me.
+
+[00:02:02] Rescue target does give it to me. So the problem is somewhere in the middle. I need to restart again because I cannot do anything in multi-user target, but fortunately rescue target does bring me enough. So systemd.unit=rescue.target.
+
+[00:02:23] We need to get some more information before we can form a hypothesis. So what exactly is different between a login in multi-user target and a login in rescue target?
+
+[00:02:42] Well, in rescue target they use this sulogin, and in multi-user target they use the normal login command. So the login command is different. Now if one login command does work and the other login command does not work,
+
+[00:03:00] then in fact that's telling us something. It's telling us that at least there's nothing wrong with the root account. Probably the configuration files are okay as well. I would be interested in knowing what exactly is the difference between a regular login and an sulogin, and I think that PAM is going to tell us.
+
+[00:03:23] So I need to see pam.d. What do we have? We have no sulogin. Okay. That isn't really helpful. We do have the regular login, but I don't care too much about it. Now how about ldd on which sulogin.
+
+[00:03:44] I would like to know what sulogin is using, and here we can see the difference. Sulogin is not using PAM. If you compare that to ldd on dollar which login then we can see which login is showing, only PAM.
+
+[00:04:00] So the problem must be PAM related. Now, if the problem is PAM related, then the next step would be to analyze the PAM configuration files, and that might be a nice hypothesis. Something is wrong with the PAM configuration files. So let's have a look at the PAM configuration for login.
+
+[00:04:25] So that would be vim login, and what is happening? Well, it immediately goes wrong, right? So do we see anything odd in here? We can see auth pam_securitty.so is looking okay. We can see auth substack system-auth.
+
+[00:04:41] So system-auth is taking care of everything else, and we can see auth include postlogin. I think the first thing to analyze is system-auth because system-auth is really very important. So system-auth. Hey, I'm typing system-auth and I'm getting system-auth-ac.
+
+[00:05:02] So what's that? We don't have a system-auth? Well that might be a reasonable explanation. Let's have a look again at what we can see in PAM, and we can see system-auth-ac, no system-auth. We can see password-auth and password-auth-ac.
+
+[00:05:20] That looks like almost the same. So let's do an ls -l to figure out what's happening. We can see that password-auth is referring to password-auth-ac, and system-auth-ac exists, but system-auth does not exist. So what exactly is happening in system-auth-ac?
+
+[00:05:43] Well, that looks like a regular configuration file, and you know what I feel like doing. I feel like ln -s. Let's create a symbolic link. So the symbolic link will be system-auth-ac,
+
+[00:06:02] and we call it system-auth, and was that all right? Well, at least we have a system-auth now. So the consistency of PAM is restored. So that might be the fix. So let's go and verify the fix.
+
+[00:06:21] How are we going to verify the fix? Well, systemctl isolate multi-user.target should bring us there. Start multi-user.target with a regular login prompt and no longer sulogin, and if I can type root and it's asking for a password
+
+[00:06:41] and it's logging me in, then yay. We have fixed the problem. That's all, folks. We are done.

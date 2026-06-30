@@ -1,0 +1,67 @@
+[00:00:06] - Now that we know how grub is organized, let's do some grub troubleshooting. Let me create some trouble. (keyboard clacking)
+
+[00:00:21] This command will override the boot checker, the mass boot record, the part that contains the grub configuration. Look, if you do an xxd -l 512 on dev/sda, there's nothing to boot from. Notice that I did not wipe the partition table.
+
+[00:00:40] That would bring me a completely different range of problems Now I'm going to reboot, and first we are going to see what's happening. So, this is what's happening if you don't have a massive boot record anymore. The system cannot boot from your hard drive
+
+[00:01:01] and the power on self disk will look for the next bootable device. And the bootable device, in this case, is the installation disk. Which is nice because this is the only thing that I can use to get out of this situation. We need to boot a rescue system.
+
+[00:01:21] So, I'm selecting a rescue sent to a system. And we'll start booting from there. We need to give it a minute to load the entire rescue environment. So, we need to select step one, which will look for the partition or logical volume
+
+[00:01:41] containing the root file system. And yes, we want to mount it on mnt/sysimage so let's press RETURN, the old way to press ENTER. And now we can use chroot/mnt/sysimage
+
+[00:02:00] We need to do that anyway. Now we need to type mount to figure out what is mounted. And very nice, we can se that /devmapper/centos-root is mounted on xfs, it's a root file system. We can also see that /dev/sda1 is mounted on /boot which is a requirement, as well, because that is the boot partition.
+
+[00:02:22] And we need to reinstall grub and in order to reinstall grub you need access to the contents of the boot partition. So, how are we going to reinstall grub? Well, that will be one of the grub2 utilities. You can see that grub2 has many utilities.
+
+[00:02:42] Most of them you will never use. But in this case we are going to use grub2-install on /dev/sda Obviously, you have verified the name of your disk device before you do so. And here we can see that it has installed. Installation finished, no error reported.
+
+[00:03:02] So, let's see if we can do xxd -L 512 on /dev/sva And that looks like boot code. This is the good old grub boot logger as we have seen before So, from here we can type exit and next we can reboot and verify that the grub recovery was successful.
+
+[00:03:24] We see a grub boot menu again. So, this was successful. Another thing that you need to know about is manually booting from the grub2 prompt. I've summarized the procedure on the slide. So, let's walk through the slide before I will tell you how to do this
+
+[00:03:43] from a live system. So, in the grub2 prompt, first step is that you need to load the required modules. These modules provide access to your storage. Typically that will be xfs, lvm, and ext4. Then you will use the ls command to check the current disk layout.
+
+[00:04:00] And based on the current disk layout, you can prompt for the contents of the /boot directory. For a change in this slide, I've used ls on hd0,gpt1 which is a gui partition number one. In my demo I will do it on a bios system so we will have hd0, MSdos1.
+
+[00:04:23] Next, we will look for the kernel, the initramfs, as well as the root partition. And we will set the root like this. set root is lvm/fedora at -root And then we can declare the kernel. So, the kernel is linux which is on hd0,gpt1
+
+[00:04:41] And which has the name /vmlinuz whatever Use Tab completion to make that name complete. Following that there is root which specifies the root volume to, in this case /dev/fedora/root And then you continue by loading the /initramfs
+
+[00:05:00] Once you have loaded kernel as well as /initramfs you can type boot. And if you like what you have just done, once you are in the operational system again, you can type grub2-mkconfig -o /boot/grub2/grub.cfg And then your system will be fully functional again. Let me show you how to do this.
+
+[00:05:21] So, if you want to manually boot grub, from the grub menu, provided that you see it, you can type C In some scenarios, you will automatically drop in the grub shell. The help command is useful, and it's giving you an overview of all that is possible from the grub shell.
+
+[00:05:40] And as you can see, there's quite a lot of commands. Now, what we are going to do is insmod. So, insmod xfs to start it. Then insmod lvm And well, I don't really need it, but for completeness let's include it, as well: insmod ext4
+
+[00:06:01] Oh, we don't have an ext4 module. Alright, let's do it without ext4. Depends on the system configuration, of course. Next, you will use ls. ls is quite important because it will reveal the current disk layout. So, we can see that bios recognizes one drive: hd0
+
+[00:06:21] And another drive: hd1 And it shows us the partitioning that exists on the drive. So hd0 MSdos1 and hd0 MSdos2. That's probably what we're going to need in order to boot. If you are not sure which one you need,
+
+[00:06:40] then just use ls to figure out what is available. So, ls hd0, MSdos2/ It's giving us unknown filesystem. So, that's probably not what we need. Or, maybe you haven't loaded the appropriate module. Let's try the same on MSdos1 and on MSdos1 we can see the contents
+
+[00:07:02] of this filesystem. And if you look carefully, you can recognize this as the contents of the boot directory. So, we need to look for initramfs and vmlinuz. You can see them in the list of files listed right here. So, that is what we are going to access.
+
+[00:07:20] But also, before going there we need to set the root filesystem. So, set root = set root = what? Well, look a couple of lines above in the result of the ls command. We need to specify the lvm logical volume.
+
+[00:07:40] In grub compatible notation. So, lvm/centos-root That is going to be the root filesystem. And now we can specify which kernel we want to use. So, the kernel is going to be on hd0, MSdos1
+
+[00:08:00] / vmlinuz I'm using tab completion because it's way more convenient. 3. Most recent version is 21 and that is the kernel. You know that the kernel can be loaded with a couple of different arguments. There is only one argument that is really required,
+
+[00:08:22] and that is the specification of the root filesystem. So that will be root=/dev/centos /root Notice that at this point there is no tab completion because the kernel hasn't been loaded yet.
+
+[00:08:41] And the root that we specify here is a kernel name. Press ENTER and if it doesn't complain then hopefully it will be happy and you can continue. Now that the kernel has been specified we can specify the initramfs initrd, which is the old name for initramfs,
+
+[00:09:01] its initram drive. So, hd0, MSdos1 / which brings us to the root of the contents of this last boot directory. initramfs TAB So, what do we need? We need the 3. whatever image
+
+[00:09:22] subversion 21, and press ENTER to initialize that, as well. And if all was successful at this point you can type boot. That looks like a booting system, so probably we're good. And now I'm sure that we are good because you can see that right now it is processing the different system, the unit files.
+
+[00:09:48] So, as we have manually booted the system now, I can log in and finally open a root shell to make the new configuration persistent.
+
+[00:10:08] (keyboard clacking) So, to make the new configuration persistent, use grub2-mkconfig You know what happens if you don't specify the -o?
+
+[00:10:23] It writes to the standard out. So, it has just written the grub configuration to your screen. That might be very interesting to see, but it's not useful. Because you cannot boot from a screen. In order to boot, you need to write the output to the configuration file. Which is -o for output /boot/grub2
+
+[00:10:43] /grub.cfg Now it has created the grub configuration file and at this point you are ready to boot from this new configuration. Which brings us to the end of this section. I have a lab for you, a lab without a solution this time. The lab is to use the grub2 prompt
+
+[00:11:01] to start your system manually. If you want to verify it, it's the procedure that we have just discovered. Good luck!

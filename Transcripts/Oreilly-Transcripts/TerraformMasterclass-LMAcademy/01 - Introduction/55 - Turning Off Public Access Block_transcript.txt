@@ -1,0 +1,65 @@
+[00:00:00] Hi and welcome back. Let's continue with our implementation of our project. We have already created our S3 bucket. So in this video, we wanna continue configuring the static website part of this S3 bucket. The first thing we need to do here is to actually enable public access to the bucket because we want people to be able to reach out to
+
+[00:00:20] this bucket and retrieve certain files from this bucket. Later on, we will store HTML files here and then people should be able to access this HTML files. So let's create a resource here and that's gonna be an aws underscore S3 underscore bucket underscore and there's a lot of things here.
+
+[00:00:40] So I'm just gonna say bucket underscore public access and here you cannot see it, but it's public access block. And most simply say here disable access block, right? So we could say this like this or we could also say just static website so that we also know that this public access block refers to our static website.
+
+[00:01:02] The bucket here is going to be our previous bucket, AWS S3 bucket dot static website dot id. And here we have a couple of options that we need to pass. The first one here is block public ACLS. We're gonna set this to false. We then have the block public policy. We'll also set this to false.
+
+[00:01:22] We will have ignore public ACLS, we set to false and then we also have restrict public buckets and we'll also set this to false. You might be asking yourself where do I get all these values? And basically that's from the documentation. So let's inspect a little bit our aws S3 bucket public access block documentation.
+
+[00:01:42] I will copy the name of this resource or the label or rather the type of this resource here. And let's jump into the dataform documentation. I mean the Terraform registry and that's where you're going to find all the documentation for the aws provider that we are using. Let's click on browse providers. The first one is going to be
+
+[00:02:02] aws. You can also search here on the top aws or you can also directly, I'm not sure if that. Yes, that finds it here. You can also directly put the name of the resource, the type of the resource. And as you can see, there are oops. And as you can see there are two, there is the official one and there is another one which I have no idea where it comes from.
+
+[00:02:21] We definitely wanna use the official one. Once we click here, then we scroll down a little bit, we will see all the options that we have here, right? So this is an example of usage. If we scroll down a little bit, this simply means manages or what it does is it manages the S3 bucket level public access block configuration.
+
+[00:02:40] You can click on this link to understand a little bit more what it does. And here at the bottom, we also see all the arguments that this, that this resource receives. This is the best source to understand how we can configure our our AWS public block. So the S3 public access block here,
+
+[00:03:00] it's always going into the documentation and looking in the argument reference to understand all the arguments that it can receive. Sometimes this can be very overwhelming. There are lots of arguments, especially if the resource is a is a complex resource or, or it has many options. So let's give an example AWS instance here,
+
+[00:03:20] I believe that this. So whenever you look for this, we have multiple different sections here, right? To see that there are quite a few things. And what we would like to look into is just we are gonna look for the for the service that we are interested in AC two here and then under AC two, we have the AWS instance, right? So here, once we click here,
+
+[00:03:41] you can see that this is already a much, much longer page and there are actually many examples of different usages of this resource combined as well with other things that we could use, for example AWS subnet, a network interface. And then our AWS instance, the documentation is also very good in providing examples
+
+[00:04:03] of how we can then use our resources. And then here we have the argument reference and you can see the list is much, much, much, much longer than the one that we saw before. Great. So back to our project check, this should then enable the bucket to be publicly accessible. And we also want to create a policy that will allow only reads on this bucket.
+
+[00:04:25] We don't want people to be able to write to this bucket. We want them only to be able to read from this bucket. So let's create an S3 bucket policy that's going to be AWS S3 bucket underscore policy. And this will simply say
+
+[00:04:42] static, static website public read, right. So we are both here qualifying that this bucket policy refers to our static website and that it allows public read. So the bucket here is going to be equal to the AWS S3 underscore S3 bucket
+
+[00:05:02] dot static website dot id. And the policy here, we will leverage something called JSON and code in in dataform. And this allows us to provide here to declare the policy in A, in an HCL format and then terraform behind the scenes is going to convert this to
+
+[00:05:21] JSON. So our policy here is going to be like so statement is going to be equal to or actually the version here, let's start with the version. The version that we are interested in is 20 12-10 dash 17. And then we have here a statement and the statement is going to be a list
+
+[00:05:41] and this list here will contain a single object where the si is going to be. We're just gonna say public read, get object. And then here we have an effect. The effect is going to be equal to allow the principle here is going to be everyone.
+
+[00:06:01] So everyone is able to read from this bucket. The action is going to be just S3 colon, get object. And this will allow people to get specific objects from the bucket, but not for example, to list the object. So whenever they access a specific HTML page,
+
+[00:06:22] if that HTML is present, then only that object will be retrieved. And that's exactly what we want. And the resource here that we're interested in is our aws bucket. So here we will say AWS S3, aws underscore S3 underscore bucket
+
+[00:06:42] dot static website dot A RN. So this has our A RN and forward slash star. So this gives this gives basically access to all the objects under this bucket. Let's see if this works. I believe that I have worked with a different version where we define here. A RN
+
+[00:07:02] colon, AWS colon S3 and three times the colon. And then here we would use the ID instead of the A RN. This works. Um I'm, I have tested this in the past. I'm also curious about the A RN if it gives the fully qualified one. So let's save this here and then let's run a terraform format
+
+[00:07:22] and then a terraform plan and let's see if everything will go through. Great. So everything goes through. No problem. And if we scroll up a little bit here, we can already confirm in the plan that the A N of our bucket was correctly retrieved. So I believe this is a cleaner solution than
+
+[00:07:41] manually building with AWS colon or A N here. A RN colon, Aws and so on and so forth. I believe this is not a pretty solution. It's much easier if we just retrieve the full A N because this is also one of the benefits of terraform, right? So we just create the resource here and we have
+
+[00:08:00] all the options that we can then retrieve this information in the way that best suits us. So we have our statement here and this statement will be converted afterwards to JSON when applied to, to the bucket and to the remote resource. This is connected to our S3 bucket and that's correct. And then here at the bottom
+
+[00:08:20] as well, we can see that our, that our public access block is also associated with our S3 bucket. So let's go ahead and let's run a dataform apply and let's see what's gonna happen. Let's type. Yes. And as you can see here, we get an access denied. I also got this error previously
+
+[00:08:41] and funnily enough, if I run terraform apply again, then we should see that this will go through, right. So sometimes you'll get this error and this might be due to some race conditions or due to some implicit dependencies here. It's, it's not directly straightforward why the API call is failing. And the first time with an access denied
+
+[00:09:03] while in the second time, it's going through this type of error here just to clarify a little bit this type of error regarding access denied, it happens whenever we are missing a certain permission to change the resource. However, the user that we are using here, it has full admin permissions,
+
+[00:09:21] it has the bucket policy, the put bucket policy permission as well. If you are curious about trying to find a solution to this, you could also try to add an explicit dependency here depends on AWS S3 bucket static website, for example, or you could also add a even more explicit dependency here to also the public accesslog
+
+[00:09:42] dot static website. It might be the case that this error is happening because both of the resources are being created at the same time here. And maybe there is some race condition happening behind the scenes. So that's great. We have also observed that sometimes data form gives us an a
+
+[00:10:00] permission error even though we have the permission. And in these cases, sometimes trying to rerun the data form, apply command can be one way of identifying whether this was some unexpected race condition. And if everything goes through, then it means that our configuration is correct and that our permissions are also correct.
+
+[00:10:23] Great. In this lecture, we have set up both or we have disabled our public access block as well as set up a bucket policy which enables everyone to read our objects from our bucket. Let's take a short break and come back in the next lecture where we finish the setup
+
+[00:10:41] of our static website and upload some files to it and check if everything is working correctly.

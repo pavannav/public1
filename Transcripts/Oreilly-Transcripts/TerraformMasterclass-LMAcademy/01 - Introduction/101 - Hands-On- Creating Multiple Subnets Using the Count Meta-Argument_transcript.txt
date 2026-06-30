@@ -1,0 +1,69 @@
+[00:00:00] Hello and welcome back. Let's start exploring creating multiple resources with some actual code examples. Let's create one new folder here. We're gonna call this 11 dash multiple dash resources and within this folder, we're gonna create a new file here. We're gonna call this provider dot TF.
+
+[00:00:20] And in the provider dot TF, we're gonna get our traditional data form configuration. The required version here is going to be the tilda greater than sign and 1.7 and then the required providers, we will once again be working with AWS, the source as you already know, it's Hashi Corp forward slash AWS
+
+[00:00:41] and the version is going to be the version to the greater than sign 5.0. Let's then configure our provider provider aws. And we'll say that the region here is just going to be eu West one or whatever region is relevant for you. Let's change into this directory, run a terraform format and then a terraform init
+
+[00:01:05] if you are in a new terminal, don't forget to source from the dot M file so that your authentication credentials are loaded in the terminal. Great. So let's start by creating a new file here. We're gonna call this variables dot TF.
+
+[00:01:20] And that's where we start passing some variables. And the point here, the first example that I would like to show you to create multiple resources is how we can use count to create multiple identical resources. Let's start here with a motivation before we start adding our variable. Let's create a new file networking
+
+[00:01:40] dot DF. And in this file, we're gonna create a A VPC. So we're gonna say resource oops resource AWS underscore VPC. And then here we just say that is the main VPC. The Cidr block we will use is gonna be 10.0 0.0 0.0 forward slash 16. And the tags here, we're just gonna add here a name.
+
+[00:02:02] So this is gonna be name and this is gonna be equal to 11 dash multiple dash resources. Let's make this a little bit cleaner. Let's add a locals block where we're gonna store our project and this is gonna be the 11 multiple resources. And then we will use this here local dot project,
+
+[00:02:21] right? So we can also pass the project here and that's gonna be once again the local dot project. And it's OK if they are duplicated here, I just want to also have the name tag here so that we can see this clearly in the AWS console data form format once again. And now that's the first motivation here.
+
+[00:02:40] The first motivation is I would like to create two subnets within this VPC. So if I were to code this subnet explicitly, we would have to create an aws subnet here. And then we will say let's just call this main once again. And this here, we would have to provide a V PCI D. This V PCI D is gonna be our AWS VPC main dot id.
+
+[00:03:04] And the CIDR block here is gonna be, let's say 10.0 0.0 0.0 forward slash 24. And the tags here will also include both our project and name, right? So now for the project, it's gonna be this one and for the name, we're gonna use the local project. So we're gonna say local
+
+[00:03:23] and here is gonna be with a dollar sign local dot project. And then here will say Subnet one or since we know that this is a subnet, we don't need to include it here. That's great. However, if I wanted to create another subnet within this same VPC here, I would have to copy and paste this subnet
+
+[00:03:43] here and I would have to come and change the Cidr block and I would have to come and change the name as well. Let's put this one here, zero so that we start counting at zero. So we have zero and then one and as you can see these resources, they are very similar. What if I want to create five subnets? What if I want to create 10 subnets?
+
+[00:04:02] There is a lot of duplication going on here. And there is of course a better way for us to handle that in Terraform. So let's start with the simplest way of doing that. And that's by creating a count here. So by passing a count meta argument, we can define how many copies of this resource we want to create,
+
+[00:04:23] we can hard code the count. Let's say now here for our purposes is gonna be two and this is gonna just create two aws subnets and now we can remove this second block here. However, if we were to try to apply the Terraform configuration as it is, you will see that we have an error.
+
+[00:04:42] Let's understand what happens. So first of all, let's run a Terraform plan. We will see that the Terraform plan does not fail, it goes through. So it is actually a little bit not of a good indicator here, but you will see that there is already something different. Let me scroll down a little bit. You see that we will add three resources
+
+[00:05:03] even though here we are declaring only two resource blocks. And if we scroll up a little bit more, we will see that under the AWS V, the AWS Subnet, the main here we have the square brackets one. And if we go up a little bit more, we have the square brackets zero. Let's now try to apply this configuration. So the plan went through.
+
+[00:05:23] But I can tell you that the apply is gonna result in an error and you can already try to identify what's the problem here. But if you're not sure, let's just run the terraform apply and see what dataform tells us in the console. We're gonna say data form apply, auto approve and then we're gonna press enter. Perfect.
+
+[00:05:43] So here is the error in if that is what you imagine would happen, then congratulations. Basically, we cannot have Cider, we cannot have overlapping Cidr blocks, right? So this Cidr block, they are exactly the same for both of these subnets and this causes a conflict that is not allowed in
+
+[00:06:02] aws. Now, it's important to highlight that there are some resources which were created as a result of our operation. So let's come to the AWS console, let's type VPC here. And in the VPC section, we will see that we actually have here. Let's click on vpcs.
+
+[00:06:20] We have our multiple resources here and we also have under the subnets. We actually have one subnet here. This resulted in basically a partial creation of our resources. But Terraform was not able to complete the operation because of the error that it got while it was creating the other subnet.
+
+[00:06:42] So let's update our configuration here to dynamically createid a block based on whether we are creating the subnet zero or the subnet one. And we also want to update the name here. So the way for us to do that in dataform is by using a count dot index.
+
+[00:07:01] Now this returns the actual index of the resource that is being created whenever we use the count block. So basically there is gonna be zero for the first resource one, for the second resource and so on and so forth. And since we are doing, we are using a forward slash 24 here, we ensure that the first three parts of this IP address are fixed. That means
+
+[00:07:22] if we increase the third number here, the the the third number from left to right, then we are gonna be on the safe side that there will be no overlapping addresses. Let's also copy this count index and let's add this here to our name tag. Now, once we run a terraform plan, let's have a look at the proposed changes by terraform.
+
+[00:07:42] And as you can see here, it has two resources to add and one to destroy. So because the let's scroll up a little bit here, you will see that the AWS Subnet main one must be replaced because this is this change in the Cidr block here requires the creation, right? If you have a look here at the line
+
+[00:08:01] where the Cidr block is changing, you will see that there is a comment that says forces replacement. We're good with this plan. Let's then run a data form, apply dash auto approve and let's wait for the changes to complete. Perfect. And just let me scroll up a little bit here. If you get this error once again with a conflict,
+
+[00:08:21] then this might again be some issue with, with some race condition or trying to create resources a little bit too quickly. Just run, try to run the data form, apply auto approve command once again. OK. Here, basically in the configuration, there is nothing that has a mistake. It might happen also that as we are applying things with Terraform,
+
+[00:08:41] there are some race conditions or some API calls that might lead to such errors. But then rerunning, the Terraform command should solve the problem. And if we go back to the AWS console and you click on subnets here on the left, then now we have both our subnets. And if we scroll down a little bit to the right, you will see that the IPv4
+
+[00:09:01] Cidr blocks, they are non overlapping. Just a small comment. If you come to this page and you still see an entry for the old subnet that was created before we got the error, just give it a few seconds and try refreshing the page. And if you were to actually try to delete it manually here by selecting it and don't do that here. But if you were to select that here and click on delete Subnet,
+
+[00:09:20] then you would see that you would get an error, it wouldn't be able to delete it and it would give you a message that that Subnet doesn't actually exist. So it's probably some caching or some um eventual eventually consistent problem here within AWS. Congratulations. You have just completed one of the ways that we can use in data form to reduce the application and create similar resources.
+
+[00:09:43] Before we wrap this video, let's create a variable here. We're gonna call this variable Subnet count and we're gonna say that this type here is of a number and the default value here is going to be two, right? So now if we were to use this information within our networking here,
+
+[00:10:00] let's say V dot Subnet count and we were to run a dataform applied. What do you think is going to happen? Let's have a look, dataform apply. And once we run that, we will see that actually everything is still in order there is nothing to change our infrastructure matches the configuration.
+
+[00:10:21] So if we move from a hard coded value to a variable and then pass the same value, then this is virtually the same as using the value directly here, right? So there are no changes for terraform. However, if we were to actually add here a Subnet count and action not here. But in a let's create a new file here, let's create a terraform
+
+[00:10:43] dot TF VS. And we will say Subnet count is equal to three. And then we want to run a data form apply without the auto proof because I just want to have a look at the plan here. But you will see that we will add another subnet and this will also have a cidr block of 10.0 0.2 0.0 forward slash 24.
+
+[00:11:01] So it's also not going to overlap with the existing ones. Let's type no here and I believe that's good for us for this lecture. Let's remove this variable from here. I'm gonna leave the file because we will create a few other variables. But now if we were to run a data form apply or a data
+
+[00:11:20] form plan, we should see no differences in the console. Perfect. So let's take a short break and come back in the next lecture.

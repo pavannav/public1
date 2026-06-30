@@ -1,0 +1,63 @@
+[00:00:06] - Now that we have an understanding of setting up remote authentication, let's do some troubleshooting of remote authentication. First, it's useful if you know how to analyze ldap. In order to do so,
+
+[00:00:20] let's start with the central configuration file, which is etc/openldap/ldap.conf. Be aware that in some situations, you will also find an etc/ldap.conf, which may be nicely conflicting to one another. In the ldap.conf file, you will find a search base, which is defined as the base DN and that is where to start the search.
+
+[00:00:42] And if you want to analyze what is available then you can use the LDAP search command. It looks like this, ldapsearch -x -ZZ -LL, uid is ldapuser cn homeDirectory, so what is that doing? Well -x is for simple authentication.
+
+[00:01:01] - ZZ enforces TLS, and then uid is ldapuser specifies what you are looking for, so we are looking for LDAP user. Cn homeDirectory will show these properties. This utility is quite useful because in order to get access
+
+[00:01:21] out of the LDAP directory, you just need simple authentication and a TLS certificate. You don't need full authentication to be set up. So if you want to analyze what's available in the LDAP directory, ldapsearch is quite convenient. Now about troubleshooting ldap.
+
+[00:01:40] First of course you should check that LDAP server port 389 is accessible. That's the default port. In the past there was also 636, but that's not used anymore. Previously, 389 was for unencrypted traffic, and 636 was for encrypted traffic. Now LDAP is using start TLS,
+
+[00:02:00] so you make a connection on 389, and in the negotiation the LDAP server will tell you that you should use a TLS certificate, and then you continue using the TLS certificate. In order to do that, a signed LDAP certificate must be available in etc/openldap/cacerts.
+
+[00:02:20] And you should check that it has been signed with the cacertdir_rehash command. This is what has actually happened. When in the previous demo we ran off config tui and we saw that after copying the LDAP certificate and after finishing the auth config tui,
+
+[00:02:40] certainly there was a symbolic link that was available. That all has to do with the signing of the certificate that you want to use as an LDAP client. Also for troubleshooting, you should check the search base. The search base is what is in ldap.conf, and what is telling your LDAP server where to find LDAP user information,
+
+[00:03:00] and if that is wrong, you will never be able to authenticate. If Kerberos is involved, you also may have to do some Kerberos troubleshooting. First and foremost, check time synchronization. Kerberos is very time sensitive. As we have just discussed, there is a two minutes' delay, and if there is a bigger difference than two minutes,
+
+[00:03:21] your Kerberos authentication will fail. A good check is kinit username. If kinit username works, which means you enter a password, you get a Kerberos ticket, then there is a PAM-related authentication issue and the problem is not related to Kerberos.
+
+[00:03:41] After kinit username, I would advise that you type klist, because klist will show the current credentials of your Kerberos principal. Obviously you need to check the default realm and the domain realm sections of etc/krb5.conf and make sure that these realm sections are there,
+
+[00:04:04] or in krb5.conf, you find that the DNS server is consulted. And if that still doesn't bring you anything, you can go to the Kerberos server itself, and verify that the DNS server records exist. Also check the krb5 realm
+
+[00:04:21] and krb5 server settings in etc/sssd/sssd.conf, that is, if your authentication procedure is using sssd.conf, which is not always the case. That was about troubleshooting user related Kerberos problems. In Kerberos there are services as well.
+
+[00:04:41] If for example you have integrated NFS services in Kerberos, that requires specific troubleshooting. First, every Kerberos integrated host, every Kerberos integrated service, needs a Kerberos keytab. The keytab has the name etc/krb5.keytab
+
+[00:05:00] and you can check the contents using klist -k. It should show you a principal for the host as well as the services that are integrated in the Kerberos environment. It's also useful to check that the most recent version of the password is stored in the keytab. You can use klist -ek to verify
+
+[00:05:21] and check the KNVO column for the password version. As principals are added, new random passwords are generated automatically, and on the KDC server, you can use kadmin getprinc PRINCIPAL to view the KDC password version. Obviously that must match
+
+[00:05:41] what you can find in the keytab that's available on the local machine. If they don't match, your server will never be able to connect to Kerberos. Obviously, you also need to make sure that you are using the appropriate security settings on the service. That depends on the service and is different for every single service you may be working with.
+
+[00:06:03] And you may want to analyze and see if the server needs help with services. Now with this in mind, we can go back to the demo environment. We don't have a specific lab in this section, but we did have a problem as a result of the previous demo in the last lesson.
+
+[00:06:20] So with this in mind, let's see if we can fix this problem. So here we are back on the LDAP client, and the test su ldapuser1 is giving me ldapuser1 does not exist. The big question of course is why. Well let's have a look in var/log/messages.
+
+[00:06:41] What do we see in var/log/messages? We see something strange. There is an nslcd message. So that is useful, nslcd apparently is involved which is telling us that the passwd is ldapuser1 failed to bind to LDAP server, and the LDAP server is on 127.0.0.1.
+
+[00:07:02] That's wrong. So we need to check nslcd, systemctl status nslcd. And we can see that the service is running and is generating lots of error messages. No available LDAP server found.
+
+[00:07:20] Server is unavailable, resource temporarily unavailable. So does nslcd have a configuration file? Well one way of figuring out is by doing an rpm -ql on nslcd. Assuming that nslcd is the name of the rpm package,
+
+[00:07:41] and unfortunately it is not. Let's see if we can get some information out of the rpm package. So rpm -qf on usr/lib/systemd/system/nslcd is telling us that this is coming from nss-pan-ldapd.
+
+[00:08:02] So if you use rpm -qc on nss-pan-ldapd, we query for configuration files, and we can see that there is a configuration file which is nslcd.conf. And that's kind of confusing. The LDAP server itself can work with etc/openldap/ldap.conf,
+
+[00:08:22] then there is the etc/krb5.conf, and also etc/nslcd.conf. And if you have configured it slightly different, you might have to deal with etc/sssd/sssd.conf. As I said, quite confusing. Let's have a look at nslcd.conf
+
+[00:08:41] to see what we've got. So there is a uri ldap labipa example.com, base dc is example.dc is com. That's all looking good. So may there be something else in this configuration file?
+
+[00:09:01] So lots of comment, and then we can see ssl start tls, tls cacertdir etc/openldap/cacerts. That's kind of strange. Now, the big question is, where does nslcd get the information from that it needs to go to local host?
+
+[00:09:21] Because nslcd.conf looks alright. Do we have any other configuration that might mess up? Like an ldap.conf in the etc directory, we don't, so let's go to etc/openldap and have a look at the ldap.conf
+
+[00:09:41] that is right there, which also looks alright with the uri ldap labipa example.com and BASE dc is example, dc is com. So how does it get to this 127.0.0.1? Well do you remember when we started off config tui, there already was some configuration in place.
+
+[00:10:01] I have overwritten that, and it almost looks as if the overwriting was not successful. And if that is the case, there might be a very simple solution. Systemctl stop nslcd, and systemctl start nslcd.
+
+[00:10:20] And now let's use su - ldapuser1 again, and yay, look at that, it worked. It is telling us cannot change directory to home/ldapuser1, that's just because I didn't configure that, but ID is showing me that currently I'm logged in as ldapuser1. So we fixed the problem.

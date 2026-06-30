@@ -1,0 +1,79 @@
+[00:00:00] Hello and welcome back. And first of all, congratulations on completing this project. This was a fairly advanced project in terms of terraform features we have used. So I want to dedicate a couple of minutes just to review everything that we have implemented and summarize this for us. And I also want to test the things that we have deployed and to ensure
+
+[00:00:23] that each user is able to assume only the roles that they are assigned to. First of all, let's summarize everything. We start with a Yamo file which has a single entry here users. And this entry is a list of objects. Each object has two keys, one of them is the user name and the second one is the row.
+
+[00:00:43] And what we do in our project is we create these users and we assign the roles to these users based on what they have here listed in their roles list to create the users. We first of all load the file and then we decode it with the
+
+[00:01:00] mode code which then makes this file workable or usable within terraform by using the object syntax. So we just access and from within this file the user key. This leads us to having the users from Yamo local here storing our list of objects, a list of user objects.
+
+[00:01:21] We then create multiple aws I user resources based on the user names that we receive. Here, we use the plat expression to map this list of objects to a list of strings that contain only the username. And then each of these users will have the name equals to each
+
+[00:01:40] value that changes here. With each iteration of this. For each loop, we also create for each of the users, a login profile which contains a password with length eight. For now, we are out putting things in the console. And then once again, as I already said, this should never be done in a production in a real world environment.
+
+[00:02:01] You should send this password securely to the users that are created. Once we have our users created, we can then proceed to assigning different roles to the users. So we define the roles, the possible roles here by having read only admin auditor and developer as well as the AWS managed policies that are attached to each of these roles.
+
+[00:02:23] So before the user can actually assume any of these roles, we must make sure that these policies are properly attached to the roles. So if we scroll down a little bit more, we will see that we create the roles here. We provide an assume role policy, we will come back to this later on.
+
+[00:02:40] But here we also load the different policies from AWS by providing the ARN of each of the policies. And we are just iterating over the policy here in our roles, policies list. So if we scroll up here, we will see that we manage or we map here our policies, our role policies object to
+
+[00:03:03] a list of objects here that contain a single row and a single policy. And this is important because when we look here in our row policies object, we might actually have more than one Aws managed policy under the same role. So we need to transform this
+
+[00:03:21] map here with a key and a list, we need to transform this into a list which contains actually multiple objects. So let's have a look at the transformation that we do. So we transform from developer and the list like so to a list that contains multiple objects where we have here role is equal to developer
+
+[00:03:41] and policy is equal to Amazon VPC full access, right. So this is one entry, then we also have another entry here where we have Amazon E two full access. And then we also have an entry here, Amazon rds full access. And so we are just transforming into a list
+
+[00:04:00] of objects so that we can iterate over this. And then for each pair here, we will create a policy attachment to that role. So this is the transformation we are doing here with this role, policies list in our locals. We then use this here to load all the policies that we need to create an
+
+[00:04:20] Aws I policy manage policies here. And then we use this Aws I policies later on here when we created the role policy attachment. So once again, we create here the number of entries that we have in our role policies list and then we iterate over it. And for each of them, we pick the role and the policy A RN
+
+[00:04:42] for the role, we are accessing the specific role that was created under our AWS IM role. And for the policy A RN, we are accessing the specific policy that was created under this data, AWS IM policy dot managed policy is object. Wonderful. Now we have the roles associated with their own permissions. However,
+
+[00:05:03] what is still missing is that we should allow the users to assume these roles and we should restrict these users based on where these roles are mentioned. So John should be able to assume only read only and developer Jane should be able to assume only admin and auditor and Lauro should be able to assume only read only.
+
+[00:05:24] And we define this in the assume role policy entry here whenever we are creating the role. So we create here we use a data which is called a WSIM policy document. And then we iterate over our role policies.
+
+[00:05:40] We take the keys from this object here on the top and we iterate and create four different policy documents for each of the policy documents. We are gonna get the username from the users that we have created using the aws IM user dot users object here. We're gonna get their keys and then we're gonna
+
+[00:06:00] check in our user's map and we're gonna get this username here which will lead us to a list of roles that is assigned to this username. This transformation here is done within the user file as well. So it's here and all we are doing here is we are mapping over this list of user name and rows and transforming this into
+
+[00:06:21] an object that would look something like this. So John will actually be assigned this rows, Jane will actually be assigned this rose and Lao will actually be assigned these roles like so right. So Laro would have this role. So this is the shape of the object that we are generating
+
+[00:06:41] under our users map. Now, why am I adding it as an array or as a list of checks? And that's because whenever we have this format here, we can extend with additional properties. So if we want to add prop one for example and say whatever, then this is very easy to do whenever we have a list of objects.
+
+[00:07:01] If we had of the shape here, let's say this John and then just a column here uh to grows right? This is not extensible. We cannot add any other property here under the John username. So that's why I'm also using the list here. I just wanna give the reasoning. There is always a reasoning for the choices I'm making here.
+
+[00:07:21] So we create this mapping from the users from Yamo. Here, we just iterate over it. We create a mapping where the user name is then mapped to the roles. And then we use this here to access the roles here and to check whether these roles contain the specific role that we are now creating the policy documents to
+
+[00:07:41] if they contain, we're gonna add the this username ARN here to our list of identifiers. And this is how the username will be able to access or to assume this role in AWS. And that's pretty much it, it was actually a lot of things that we did here and we worked with a lot of different telephone features.
+
+[00:08:01] So let's jump over to the console and let's put everything that we did. Now for a test I am in a W console and let's try to log in with the user Lauro. If you don't remember the password, you can also come here and say, let's have a look at where we output this, we output this here with password.
+
+[00:08:20] So we can say tele form, output passwords. And once we do that, we get all the passwords, right? So very insecure never do that, but I'm just going to copy this and paste it here and then click on sign in the moment we do that here, then we should come to our account. Lauro has no accesses whatsoever. Everything is access denied to Lauro. However,
+
+[00:08:40] Lauro can click here and then he can click on switch role and then here we need our account. So maybe I can actually come back and copy the account because I didn't and then click on switch row, we're gonna pass the account here. And the only role that Lauro should be able to assume is the read only row. So let's try with a role that should not be working. That is the admin role.
+
+[00:09:00] The moment we click on switch row, we get an error infor information, invalid information in one or more fields, check your information, contact the administrator. So Laro cannot assume the admin. How about the developer? Can Lao assume the developer? No, Lauro cannot assume the developer. That's great. How about the read only? Can Lauro assume the read only?
+
+[00:09:20] Perfect. Yes, Laura can assume the read only. And then we see that also the errors here are going away. How about Jane? Let's sign out here from this account and let's log in once again with Jane here and we know that Jane should be able to assume the admin role. So back in the ID, let's now copy the password for Jane
+
+[00:09:41] and let's log in here in our console. And let's try to here, we will see that Jane itself as a user, right? So I just want to highlight this before we switch the role, Jane itself as a user has no permissions. However, the only permission that she has is to assume certain roles and these roles, they have permissions.
+
+[00:10:00] So Jane can come here, click on switch role. And once again, I need to go back because I need to copy the account ID. Don't forget to copy the account ID. Let's paste it here. Now, Jane cannot assume the read only role. Let's try to do that. That's perfect. She cannot assume it even though she can assume the admin and by extension, the, the admin should also be able to do readonly stuff.
+
+[00:10:21] However, here for demonstration purposes, she cannot assume it. So let's say now and let's see if she can assume the admin role and that's perfectly working. So we can see that Jane can assume the admin role. And now she's able to see the information here. She will be able to actually do anything she wants here. Let's come to
+
+[00:10:41] Im. And let's see. For example, here we have the roles right. In the moment we see the admin role here and we see the permissions, then we see that she has admin access, which basically allows everything in every resource. And if we click under trust relationship, we will see that the only principle that can assume this role is the user,
+
+[00:11:01] Jane from this account we could also allow users from other accounts to assume this role. That would also be possible. However, for us here, Jane, from the same account is the only entity that can assume this role. When we are assuming roles within our AWS account, then we get a maximum session duration and we can set this,
+
+[00:11:24] it can be longer as well, but there it it normally stays only within a couple of hours. So the user will be asked to assume this role again or to re log into the account after a certain period of time. That means the credentials that the user is getting by assuming a certain role,
+
+[00:11:41] they are short lived, which is much more secure than using your user name and password to login into the account. So if by any chance somebody gets a hold of the token that is used here to authenticate as an admin and to assume this role, they will have these permissions quote unquote only for a very limited period of time.
+
+[00:12:02] So I just thought it would be worth discussing this because this is, this also has an impact, a positive impact in the security perspective in the security posture of the AWS account. That's great, isn't it? So, with everything done here, now, we can actually come back to our console and we can just clean up after ourselves. So I'm just gonna say terraform destroy,
+
+[00:12:21] let's have a look at everything that will be destroyed. Here and you will see that there are quite a few resources that will be destroyed. There's 16 resources in total to destroy. We're just gonna type yes here and we will destroy everything. Isn't it amazing? Now, we come back to the console. Let's try to give a refresh here and basically we just have to reauthenticate. Everything is gone.
+
+[00:12:43] All the accesses are gone. We cannot really log in with, with uh Jane anymore, nor with Lauro, nor with John. If we try to switch back, we get a bad request. So all the accesses are gone with a single command. Wonderful. Congratulations. Once again on completing this project,
+
+[00:13:00] I'm sure you learned a lot about the form by doing this project with me. So let's take a short break and come back in the next lecture.

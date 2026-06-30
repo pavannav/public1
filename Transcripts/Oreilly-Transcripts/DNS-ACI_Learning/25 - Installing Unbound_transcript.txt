@@ -1,0 +1,163 @@
+[00:00:00] Welcome to ITProTV, I'm your host- &gt;&gt; [CROSSTALK] [MUSIC] &gt;&gt; You're watching ITPRO.TV. &gt;&gt; Welcome to another DNS text skill show. I'm your host, Cherokee Boose. In this episode, we're gonna be taking a little look at another DNS utility called Unbound.
+
+[00:00:21] Today, we have Don Pezet in studio to go ahead and help us with this concept. Thank you for being here today, Don. &gt;&gt; Thanks for having me, Cherokee. Now just ready to dive to Unbound. Now, if you've never heard of it, don't feel ashamed, or anything like that. It's not the most popular DNS server in the world, but it is actually one that's gaining a lot of steam, especially in the BSD world. What you're finding is that Open BSD and free BSD, and those guys are starting to
+
+[00:00:42] shift with Unbound enabled by default instead of BIND. And so it's really replacing that functionality, and we're seeing it grow more and more common. It's not as flexible as BIND is, so some people will stick to BIND and they should. But it does serve a particular purpose. The idea behind Unbound is that BIND is really old.
+
+[00:01:01] It was written over 30 years ago, and it shows. Right, it just wasn't developed to hit some of the scales that we hit today. So, Unbound is newer, it's sleeker, it's smaller, it's faster, and it's written in a modern method. So, it's got a lot of good things going for it, but it's got some negatives, too. One of the ways that Unbound achieves its speed
+
+[00:01:21] is that it doesn't support all the stuff that BIND does. So, what Unbound really does is it's primarily a DNS caching server. So, if I just want to have a local DNS server that's caching records to speed up lookups, Unbound does a great job. It does better than BIND. But if I wanna start hosting a bunch of zones, and reverse lookup zones and
+
+[00:01:42] all these records, well, I'll start to hit a few little problems. There's things that are supported under BIND that aren't supported under Unbound. So, often times, we'll deploy Unbound in conjunction with BIND, so you're actually running both. Unbound is your primary DNS server, and its doing all the acceleration and
+
+[00:02:01] caching and stuff. But then the moment you need a zone, you'll put a forward entry, and Unbound forwards over to a standard bound server. So, it usually gets used in tandem, but Unbound is very powerful, and I'm gonna show you right here in this episode how to get it installed, how to get it set up. And we'll see how to create zones and things in Unbound without forwarding to a BIND server. But if you do need to set that environment up,
+
+[00:02:22] we've already done a couple of episodes on BIND. You can check that out, and see how that works. They do work together really well. All right, so let's get started. I'm on a CentOS 7 box. So, what I'm about to show you works on CentOS, RedHat, and Fedora. If you're on a Debian based system like Ubuntu or Debian, then installing it is just a little different.
+
+[00:02:42] You'll have to use apt-get instead of yum, but otherwise, the rest of the steps are all basically the same. Each distro has its own little installer. But I wanna do is I wanna get Unbound installed, and it couldn't be easier. The command that we used to install it is gonna be yum install unbound.
+
+[00:03:00] Now, you do not need to be an administrator for this. Actually, the majority of what we do in this show, you're gonna need to be an admin. So, I could do pseudo yum install unbound, and do then do that for every command that I run, but that's gonna get old really fast. So, what I'm gonna do is I'm gonna run su, and elevate my privileges, so that I become root. And so now, I don't have to type that every time. So, I'm gonna do yum install unbound, all right?
+
+[00:03:23] It's gonna reach out, it should find those packages and get them installed, and then I've got Unbound. I mean, I need to start it and enable it, I need to do a configuration, well, that word need might be an overstatement. If I'm just trying to set up a caching server, the default configuration is actually fine. I can stick with my defaults, start the unbound service, and
+
+[00:03:44] I'm now a caching server. I can go and configure all my work stations to point to this server. This server will then forward up to the root pin servers. And the rest of the DNS hierarchy, and it will start caching and keeping a record of all the look ups. So, we get faster DNS look ups and push that out. So, this could be the shortest episode on record if I just stop right here.
+
+[00:04:01] &gt;&gt; [LAUGH] That's it. &gt;&gt; Pow, Unbound this cache and server, done. &gt;&gt; That's not fun. &gt;&gt; No, it really isn't. &gt;&gt; [LAUGH] &gt;&gt; So, we are gonna have go a little further. We're gonna have to add some more to it, right? So, let's start dive into its configuration and see what we need to do if the server's set up right. And then we'll jump into the zones and records and all that other good stuff, probably in the next episode, to see all that. &gt;&gt; All right.
+
+[00:04:20] &gt;&gt; Now, whenever I turn on Unbound, by default, it's ready for people to query against it, and it's set to do recursive queries. So, if I ask you a question that doesn't know the answer, it will go and find the answer for me. Which means it's perfectly set up as a caching server, and it's perfectly set up to be the target of DNS reflection attacks. So, if I were to put this on the Internet,
+
+[00:04:41] I would be a participant in a denial of service attack in very short order. So, it's really a bad situation. We definitely wanna change that and secure it a little bit. &gt;&gt; And we saw what happened with the DynDNS disaster, so I can only imagine that we're gonna see more of those types of attacks in the future. &gt;&gt; Absolutely, if this were a local-only server, so it's caching, and it's on my LAN, I might not worry about that.
+
+[00:05:01] But if it's exposed to the Internet, you've gotta secure who's allowed to query it. So that's what I'm gonna do next. And Unbound keeps all of its configuration in /etc/unbound, that folder right there. And so, if I take a look in there, I'll see a couple of different files, the neat part about Unbound is really everything we do is gonna be right here in this folder.
+
+[00:05:20] Remember, if you watched our BIND episodes, a lot of it went into /var/named and all that. Unbound pretty much keeps everything right here, unless you manipulate it. There's some logs and things that can go into /var. So, what I wanna do is I wanna take a look at this file right here, unbound.conf. So, I'm gonna edit that, and when you go into it,
+
+[00:05:41] it's a very well commented file, right, so it's got tons of information in here. And what you'll notice is that most lines have a little pound symbol, or hashtag at the beginning, and that means it's a comment line. It's not processed, anything with that little pound symbol gets ignored. So, I see I'm starting a section here called server, and then under it, verbalcity is set to 1, statistic intervals set to 0, and so on.
+
+[00:06:03] And it explains what that means. What is statistic interval 0? Well, set to null or 0 to disable. I'm not doing statistics. But if I bump that up, it's a interval in seconds, how often it updates the statistics. So, I may need those frequently,
+
+[00:06:20] I may not need them frequently, this is all something we can tweak. But the majority of this, we're gonna leave be. It's not until we get down to this interface section were we see the first thing we need to modify, right? These are the interfaces that unbound is listening on, and by default is listening on, all of them. I mean, it kind of looks like none, but it is actually listening to all of them, which would correspond to this interface 0, 0, 0, 0.
+
+[00:06:43] But what you wanna do is you wanna tie it to the interface that's going to be the one your clients connect to. So, I'm going to add another line here. And there's different people who have different thoughts on how to do this. A lot of people like to stick their changes all the way at the bottom of the file. The problem with the unbound file is that it's divided into sections, so
+
+[00:07:00] you'd have to go to the bottom of each section, which gets messy, so I usually just interject right in along the other stuff. I'll be able to spot my changes, cuz it won't have a hashtag before it. And so, I can say interface: and then the IPv4 or IPv6 address of the interface. It's nice that it's an address, cuz I can move that address to other interfaces, and they'll automatically be enabled.
+
+[00:07:20] So, I just need to put that in. And the interface I'm doing is 10.0.222.103. All right, so now, I'll be listening on that one. Notice you can override the port number, that normally, DNS runs over port 53, but you could move this to another port if you want. Why would I do that? Well, remember how I said I might be using Unbound in conjunction with BIND?
+
+[00:07:41] If I'm running both on the same server, they can't both be on port 53, can they? So, I might have one on port 53, and another one run on port 53,000, or something like that, so they don't overlap. So, I can override that. Normally, we override BIND support- &gt;&gt; Okay. &gt;&gt; Because people are talking to Unbound. And Unbound is talking to BIND for us, right?
+
+[00:08:00] But if we're just running Unbound, I can leave it the way it is, it'll be on port 53, and that's what I want All right, after that, now I've got it kinda listening on the right interface. Any other interface, because I put one in, any other interface, it will not listen on. So, if I've got other things, it's not going to be there. Some people do like to add in interface 127.0.0.1.
+
+[00:08:23] You don't technically have to do that, but if you're testing from the server which your not really supposed to do, then that's a nice thing to have. You could also go from these IPv6 side of things. Actually, I could just uncomment the one up there but we could say. No, actually I don't have to loopback for that one.
+
+[00:08:40] So ::1 is a loopback for IPv6. So I could through those in and I'll be ready to listen for it, sorry. I saw this ::0 which actually means any IPv6 address, that would enable unbound on all the interfaces. All right, if we continue down in this file, there's a bunch of other options, and I don't want to spend a huge amount of time on each of them.
+
+[00:09:03] You can override the port numbers for the entire server if you want, we got port to answer queries on. I'm gonna leave that be. What I'm looking for is there's a section in here that enables protocols. And with DNS, it can use TCP, it can use UDP, it can use IPv4, it can use IPv6. And so, if we keep scrolling down we'll find the section where
+
+[00:09:23] it addresses which protocols it's missing. And honestly, it'd be faster. And, no there it is, sometimes it's faster to search, but right here we've got do IPv4, do IPv6, right? Yes or no? And then we've got do UDP, do TCP. We can pick what we wanna support.
+
+[00:09:41] DNS typically uses UDP, unless a response is too big to fit in one packet, then it switches to TCP. Maybe I not always wanna do TCP, maybe I always wanna do UDP to prevent big queries that creates some interesting issues. Maybe I wanna do IPv4 but not IPv6. I can manipulate these values to determine which one I wanna do.
+
+[00:10:01] Now I want to do IPv4, so I'm gonna remove the little pound symbol before that. I don't wanna do IPv6. So I can leave it commented out or I can change it to no, right, do-ipv6: no. &gt;&gt; Would you need to go ahead and remove the hashtag? &gt;&gt; Yeah, it won't process it while that hashtag is there, so I'd have to change it. Well, actually, it kinda comes down to what's the default, and
+
+[00:10:22] I don't remember what the default is on that one. Better to set it [LAUGH] and not have to worry. But I believe the default is yes. Usually I put the default in the notes and so usually that's gonna be the default. So I had do IPv4 yes already, so I probably haven't actually changed anything there. Same thing when it comes to UDP and TCP.
+
+[00:10:42] I wanna do those,and I'm just gonna remove the hashtag whether they're default or not. Now I know that those are gonna be turned on, all right? And for IPv6, if I wanna know for a fact that I'm not doing it, I can just change that to no. All right, so now I've got that set to. I still haven't really secured my system very much, so I need to deal with that.
+
+[00:11:01] And to secure the system, there's two things I do. One, I enable logging. Unbound doesn't log by default. By default, it just looks at this config, it runs in RAM and that's it, no log files are created. If it crashes, you'll see logs in your systemd journal or in your syslog. But otherwise, you don't really see anything.
+
+[00:11:20] So I like to turn that on. Turning on logging is really easy, you just have to tell it a path. And so, I'm gonna look through here, there's an option in here called logfile and if I try and find it on my own, it'll take forever. So I'm just gonna search for logfile. And it says that it found it, but it didn't actually find it, there we go. So I've got this section right here, the log file, :: means log to stderr, right?
+
+[00:11:44] So that means if it's empty, which it is, it's gonna log to standard error, which means it would log to syslog or whatever, or really just log to memory in the screen output. But I'm not gonna have screen output, this as server. So I'm gonna override that and
+
+[00:12:02] I'm gonna point it to /var/log/unbound, right? So now it's gonna generate that log and it's gonna save it into that folder so I'll have access to it. That's really important cuz when I'm troubleshooting a crash I need to be able to see what the error was. &gt;&gt; To debug properly. &gt;&gt; Yeah, cuz I'm not gonna be logged into the server watching standard error,
+
+[00:12:21] it's not gonna happen. So this'll make sure that I'm able to see it. All right, so I’ve got that in place. The other thing that I wanna do is I wanna restrict access. If this is a caching server that’s exposed to the Internet, I don’t want anybody on the Internet using it, I want my people using it. So I need to approve their IP ranges. And so we can allow them in by using access-control.
+
+[00:12:42] So I’m just gonna do a quick search for access-control, and here we go. So here they give us a couple of examples of access control. See how they're refusing some ranges? Right here, they're refusing everything. &gt;&gt; Everyone. &gt;&gt; Yeah, [LAUGH] we're not gonna allow anybody. And then they turn around and they allow the loopback, or
+
+[00:13:00] they refuse all IPv6, they allow the loopback for that and so on. This is what they're allowing. And the default is they're just allowing the loopbacks. I can change that to meet whatever my needs happen to be. So I'm gonna say access control, and then I specify if I have a local network of 10.0.222.0/24, I can punch that in.
+
+[00:13:21] Or here in the studios it's actually /16, so I can punch that in. If I have an individual host, I can say access control 192.168.0.100, right? Now the key thing is, you specify the range, and then whether you allow or refuse, you kinda need to type that in.
+
+[00:13:44] So I'm gonna allow these two. If I stop right here, what happens to everybody else? &gt;&gt; They get blocked. &gt;&gt; They get denied, yeah they get blocked. So I'm just approving these. That's gonna stop somebody out on the Internet seeing my caching server, seeing it as recursive, and starting to proxy queries through me to create reflection attacks.
+
+[00:14:02] They won't be able to to it. Now an employee on my own network can do it, but I'll see that and we can fire them, right? &gt;&gt; [LAUGH] &gt;&gt; But if it's somebody on the Internet, there's not really not much you can do. It's your own fault for not blocking it. So I'm gonna put access control over that. I could use my firewall to do the same thing. The thing about the firewall, though, is it doesn't differentiate between whether
+
+[00:14:21] or not you're doing a recursive lookup or an authoritative lookup. So if I have authoritative events on here that I want people on the Internet to get to, the firewall won't be able to differentiate that. Versus here where it's saying this controls which clients are allowed to make recursive queries. If they make an authoritative query, one that I can answer, it's still allowed in,
+
+[00:14:41] even though they might be blocked here, they're still allowed in, right? So I have to be careful of what I choose. I usually use allow and refuse but you'll see there's other options like deny. Deny means they wouldn't be able to do an authoritative query either. Refuse, refuses with a proper, polite error but it still refuses them.
+
+[00:15:00] Allow, lets them recurse, allow_snoop does recursive and non-recursive. You got a few different options what you'll wanna specify there to choose how we react to that. And again, it's a well documented file, it's easy to- &gt;&gt; Polite there, reply. &gt;&gt; So- &gt;&gt; Is that customizable? &gt;&gt; Well, so what happens is if somebody's trying to break into the system and you do, run queries are not allowed to.
+
+[00:15:20] We can just drop it and never respond- &gt;&gt; Respond? &gt;&gt; To them. And so they just sit there waiting for a response and nothing happens. Polite just means we immediately tell them, hey, we dropped it because you're not allowed. And I don't think you can tailor the message. &gt;&gt; [LAUGH] &gt;&gt; But I'm sure in Linux you can edit anything. &gt;&gt; Don't say no bueno. [LAUGH] &gt;&gt; But I don't normally bother with the polite side, because what you're doing is just telling them, hey, you're not allowed.
+
+[00:15:41] So they can move on to their next target that much faster. I'd rather they waited on me. It's not costing me anything, so that's why we have that deny option. All right, so I've got that setup, everything's pretty good there, that should be about all I need on this file to get it up and going. I have manipulated the file, and as a result I could have put that Don Pezet spin on and screwed it up.
+
+[00:16:03] So I need to check it, and just like with Vine, we have a neat little utility. Which is the unbound-checkconf, and it'll check my configuration file to see if there's any errors or anything like that. Now, the first time you run it, you're likely gonna get the error that I just got.
+
+[00:16:22] I haven't configured DNSSEC, so I don't have security on this just yet. And so I'm getting a fatal error telling me my server key file doesn't exist. The server key file is created the first time that unbound starts. I've never started it. So, I need to do a systemctl start unbound.service.
+
+[00:16:42] So I'm gonna start it. And if I've got an error, I'll spot it right there, right? But it should've just generated that key that was missing. And then I can stop it. I guess I don't really need to stop it, but I'll go ahead and stop it. But that file that was missing, this /etc/ unbound whatever, that file should be created now.
+
+[00:17:01] &gt;&gt; Similar to the check in Bind, would we have to go ahead and run this utility for each individual error, or will it compile that together? &gt;&gt; You have to run it over and over. So it found that one error, and then it stopped. It didn't look at the rest. I might have other errors. So, I'm gonna verify that that file got created. Yeah, there's the unbound_server.key, so it did get generated.
+
+[00:17:21] And now I can rerun it and there may be other errors that it just didn't see the last time. So I'm gonna run it. No errors. &gt;&gt; Wow. &gt;&gt; Honestly, I was just changing comments that, &gt;&gt; [LAUGH] &gt;&gt; Were already in there. It's pretty hard for even me to screw that one up but we're good on this one. All right, I kinda knew it was gonna be okay too because I didn't get any errors when I started it. So, I'm gonna start that back up.
+
+[00:17:40] Now, on systemd systems I started Unbound, it's running right now but I need to tell it to start when the system boots up. So I'm gonna add one more entry here and say systemctl enable Unbound.service. That's gonna link it so that it'll start when the system boots. So now when I turn on the system and I go into multiuser mode,
+
+[00:18:00] it's gonna launch Unbound, so every time I boot, it's gonna come up. All right, technically Unbound is done. It's turned on, it's secured and it's acting as a caching server right now. But if I'm running a firewall, I need to open it up on the firewall. So if you have IP tables, you'll go and add a role for IP tables to allow port 53 to come in.
+
+[00:18:22] I'm on a CentOS system, so I've got firewall d and I need to allow those ports to come in through firewall d. So I'm gonna add a little bit to it. I'll do firewall-cmd --add-service=DNS. I'm using add service instead of add port.
+
+[00:18:42] If I do add port, I would have to add port 53 for udp and tcp. It's easy to forget. By doing add service, it's gonna add both. I also only have one network adapter in here. Since I only have one network adapter, I don't have to specify a zone. Because it's gonna be using the public zone by default. If you have more than one network adapter, you may have more than one zone.
+
+[00:19:01] So if that's the case ,you would need to add a little to this, do a --zone = and whatever your zone happens to be. The default is public unless you've changed it, right? So I can add that in, but that's really gonna be the same command you were in before so I get this warning already enabled. Right, so it's already done. The other thing is I just modified the firewall as it is right now.
+
+[00:19:22] But if I reboot, I'm gonna lose that. It's not written into the config files. So I need to re-run the command one more time and I'm gonna add --permanent. &gt;&gt; So we see a lot of similarities here with the syntax, so that's definitely a plus. &gt;&gt; It is, although it is a little misleading because some people will say, well, why don't I just run the permanent command in the first place, right?
+
+[00:19:43] I want it to be permanent. This modifies the config files, not the running firewall. So it would open it up the next time I rebooted. So I really need to do both, I need to run it with the permanent and without the permanent. &gt;&gt; Good to know. &gt;&gt; So it modifies the running one and what's there. Or I could do it with a permanent, and then restart firewall D, but
+
+[00:20:01] that's gonna tick off anybody who's using the server right now. &gt;&gt; [LAUGH] &gt;&gt; So I try not to do that one. All right, so now we're allowing that stuff through the firewall, we should be good there. Unbound is up and running. It's running as a caching server. So if i wanna verify it, it's a little hard to verify but we can kinda poke at it a little bit.
+
+[00:20:21] For example, there's a utility we have called unbound-control. And that's the utility we're supposed to use to manage Unbound if we wanna flush the cache and other things like that. If you pull out the man file for it, there's a ton of options. But I'm gonna add status to the end. And that'll check the server and let me know what it's doing.
+
+[00:20:41] I can see that it's running version 1.4, verbosity is 1, threads are 2. Very, very exciting stuff, but more importantly Unbound is running. It's up and it's running and it should be doing its job. &gt;&gt; So Don, we have a really good question in the chat. It says how does using a different port number like 53,000 for DNS go ahead and affect the clients that would expect a communication to transpire on port
+
+[00:21:02] number 53? &gt;&gt; So that is a good question. It would break the clients. It wouldn't work. But if the clients are going to unbound on port 53 like they expect and on the back end, Unbound is talking to bind and bind is on port 53,000, the clients never see that, the clients don't actually talk to it.
+
+[00:21:21] But otherwise, if they needed to, if the clients needed to talk to that server directly, we would have to set the clients to use that port number. And if you've configured a network adapter in Linux or Windows or MacOS, they don't ask for a port number when you configure a DNS server, so it's not gonna work. It's gonna break it, right? So that's the thing is you wouldn't normally do it when you're talking about
+
+[00:21:42] a client connecting to whatever they're connecting to, but on the back end, that's where we can use that. &gt;&gt; Perfect. &gt;&gt; And I'm trying to, I'm running through my head real quick to think about it. If I've ever seen a client where you can override the port number and I don't think that I have, so it might not even be possible. But I hate to say something's not possible and then you get an email the next day like, I do it every day &gt;&gt; [LAUGH]
+
+[00:22:00] &gt;&gt; On xyz system. I'm running the OS2 and I override that all the time, true story. All right, anyhow, so. [LAUGH] &gt;&gt; [LAUGH] &gt;&gt; So we should be up and going. I can test the caching, though. If I do a name lookup against the server, it's got no zones. So it's got to rely on other servers to get the answer.
+
+[00:22:20] So if I fire up MS lookup and I switch my server to me, all right, so I'm now connected to myself. And I do I lookup for something like www.google.com, all right. It doesn't have a zone for Google, does it? Cuz we haven't made any zones. But there it goes, it finds an address for Google, all right? Now, it reached out to the root hand server and said who controls com?
+
+[00:22:43] It reached out to the com TLD servers and said who controls Google? It reached out to Google's servers and said, hey, I'm looking for www, and Google got a authoritative response back to us saying, here's the IP address. Now when all that happened, Unbound cached it. And so now whoever else comes and
+
+[00:23:02] does a query, as long as that cache value is still active, cuz the cache expires, then they'll look up against this cache, they'll get a faster response. Bind does that as well, Unbound just does it faster. So when it comes to a pure caching server, Unbound is better than Bind. But when it comes to hosting records and zones, Bind has a lot more power under
+
+[00:23:22] the hood, and that's the one you're gonna want to go with. So while Unbound is pitched as a replacement to Bind, they actually do both have a real-world use example right now. And a lot of people use both of them in conjunction. So you've got Unbound handling your cache and Bind handling your records.
+
+[00:23:40] Personally, I hate splitting stuff between services. So I usually run Bind over Unbound if I have to make that decision. But this one's up, it's running, it's doing it's job. And we're pretty much in business. I'm trying to think if there's anything else that I wanna mess with on this one. That unbound-control command that I used a moment ago,
+
+[00:24:00] it has a lot of different stuff that it can do if you pull up the man file for it. And so you'll can see where you can feed all sort of different things into it. You can start, stop the server, you can pull up the logs, the statistics. The stats are kind of nice, my stats are disabled in the config file, but that's where you can see how your cache is working, are you getting a lot of cache hits or not.
+
+[00:24:21] You can query local zones if you got them. That command is pretty powerful. Usually, what we're going for are things like dump_cache. And my highlight is completely ineffective on pink text. But if you want to dump the cache or flush out a particular name out of the cache, you've got those options. So that utility, if you're running unbound,
+
+[00:24:40] you're going to become really good friends with this utility. It's how you'll interact with that to do things and avoid having to restart the server or whatever. And if we look in /var/unbound, wait, where am I. Or /var/log, there we go.
+
+[00:25:01] /var/log/, well, actually, where did I stick that log? Did I go to the wrong folder? /var/log I've got a little bit of a problem. So when I configured the logging, I pointed to a folder /var/log/unbound. It doesn't exist. That's going to be a slight issue for me,
+
+[00:25:20] because that means unbound can't write to a folder that doesn't exist. &gt;&gt; It won't generate its own file? &gt;&gt; It'll generate the file, but it won't generate a folder. &gt;&gt; Okay. &gt;&gt; In this case, I don't have the folder in place, so I need to make that folder. So I'm going to make the folder that I pointed to. I probably should have just pointed it to /var/log instead. But I'm going to make that folder. Now, the problem I'm gonna have when I make that folder is, if you look at it, the permissions on it, root and root.
+
+[00:25:42] Which the majority of everything here has root and root. So that's okay for most things. But I'm gonna double check, /etc/unbound. Actually, let me just pull up the main directory here. And I'm going to double-check and make sure, there we go, that's root and root also, okay.
+
+[00:26:01] I'm trying to make sure that the Unbound process would to be able to write to that folder. And now that it has permissions to that folder, as it generates logs, they'll end up here, okay. So there's not really much going on in the system right now for me to see that. But if I restart unbound, we can do that. And then if any errors occur, if other events like that occur in the system,
+
+[00:26:24] it'll start to log those entries right here. So they'll show up eventually. I turned off my statistics and a few other things, so there's not gonna be a lot that comes out anyway. But make sure you create that folder. It will not create the folder for you. It'll create the files inside of it, but not the folder. &gt;&gt; All right.
+
+[00:26:40] So now we were able to go ahead and take a look at how to install Unbound. And I'm only assuming in the next episode you're gonna go ahead and show us how to utilize it and configure those zones. So stay tuned, guys, we have a lot more headed your way, don't go anywhere. I'm gonna go ahead and sign off for this episode as your host, Cherokee Boose. &gt;&gt; And I'm Don Pezet. &gt;&gt; See you next time here at ITProTV.
+
+[00:27:05] [MUSIC] &gt;&gt; Thank you for watching ITProTV.

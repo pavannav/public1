@@ -1,0 +1,33 @@
+[00:00:00] Welcome course taker to video number six application analytics. So in this video, we're going to have a quick look at how we pull out analytical data from our application. We'll look at one particular technique which is change data capture. We'll talk about why it's important. Then we'll look at the different technologies we have to support that.
+
+[00:00:20] And finally, we'll look at the solution we've put in place to do this. So if you're ready, let's get started. So we mentioned change data capture in previous sections. It's becoming quite an important design pattern for Microservices, particularly if there's a compliance or regulatory aspect as
+
+[00:00:41] well where you need to track what's gone on within a particular data store. So with change data capture, you have a microservice that is publishing data to a persistent data store, just like we already have done with our pim and our Pyar. So in this case, we're publishing into postgre
+
+[00:01:00] R DS, then you have something that extracts that data or handles a stream and we'll push that into an event cache which just has a time series view of that data store. So what happened when with what? And then a set of Microservices can read that data store. It might be for compliance reasons to check what was going on.
+
+[00:01:21] It might be to handle data events and trigger off that. So almost decoupling and using cues for your data. So equivalent to kind of using queues in your application space to decouple your application here, you're decoupling your data triggers from the actual database itself.
+
+[00:01:43] Now we probably need something in the middle. So in technology like Dynamodb and Microsoft SQL server change, data capture is built in, you can have events when data changes in tables. But for Amazon R DS and post in general, you can't really do that. It doesn't have the technology.
+
+[00:02:03] What it does have is logical replication slots. So we've had to build a little bit of code that allows us to monitor the changes through replication slots and we'll have a quick look at that now. So here we have our main code. So we have a couple of consistent
+
+[00:02:20] uh functions we've used before. So get the configuration, create a client. In this case, it's the kinesis client and this is where we can create it, then we connect to our database and then we establish a couple of replication slots. And then based on each message coming through, we consume it, we turn it into something that's useful for kinesis and then we send it to kinesis.
+
+[00:02:45] So let's look at our application. So if I look at dynamo DB, we've got a table here called data change. There are no items in it. If I go back to here and I look at our Lambda function,
+
+[00:03:00] we've got our Lambda function connected kinesis. And then inside of here, it's quite simple. It will try and create the dynamodb table. Once it executes, if that already exists, it will just pass by, then it handle the event. And what it's looking for is any event that in the data section, it has got the table and then it will basically create
+
+[00:03:21] an event based on that table with a timestamp. So let's see this in action. So here's my post cars, I'm just gonna create a new car. 72 got my 200 in the bait space. I'm going to create another one 73.
+
+[00:03:41] So that's in the database. If I go back to my Lambda function and look at monitoring. If I look at my monitoring, I could see things like the number of invocations, I can even go and see the cloudwatch logs and look at exactly what's happening within the application itself.
+
+[00:04:01] This is all the debug. Now, one thing to remember is Lambda does not execute straight away. So we wanna make sure that we're actually getting or groups three. And then if we go into dynamo DB, what we should see the some items. So we have a number of inserts
+
+[00:04:21] into cars and cars availability for car 72 and 73. And if I actually order those on time, we can see 72 we make an insertion into cars and then to car availability and then same for 73. So I can process those events. And if I wanted to replay those events
+
+[00:04:43] for testing, if I wanted to replay those events for fraud detection or any kind of analytical capability to see how people are making changes, I can do that. It provides me with all the information I need that is separate to the database itself.
+
+[00:05:01] So I don't need to query the database and add any load onto that database. Now, all the analytics are near real time um but they're held in a separate database and because we're using NoSQL, in this case, it's quite easy. If I want to add another fit set of columns or attributes, I can do that quite easily. So I hope that was interesting.
+
+[00:05:21] Please join me for the final video in this section Aurora and its advantages over my SQL.

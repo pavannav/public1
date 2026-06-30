@@ -1,0 +1,47 @@
+[00:00:00] Hello and welcome back. The bulk of both the notes backend and the notebooks backend functionality is already implemented, but there is still something missing. And this is actually allowing the user to save or to link a certain node to a notebook. In this lecture. I would like to explore this concept with you by adopting a very simple approach.
+
+[00:00:21] So this is one of the simplest approaches. It's just going to communicate from the nodes backend with the notebooks back and synchronously. And it's gonna send a request to check whether the provided notebook ID actually returns a notebook for us. We could tackle this in many different ways,
+
+[00:00:41] interservice communication here in distributed systems, which is really what we have here. We have one service for notes back end and one service for notebooks back end and they need to talk to each other. There are many ways we can approach this and I will keep it to the simplest form which is just an API synchronous API call
+
+[00:01:00] from the nodes backend to the notebooks backend for us to be able to execute this call. We need to install a dependency here. Let's stop our service and then let's change into the nodes backend and let's install here. Save exact as well. The Axio dependency, it's gonna be Axio
+
+[00:01:20] at version 1.7 0.2. If you prefer to use another client, for example, the fetch library, then by all means, go ahead, you will just need to write the code following the standards and the conventions of the library you use. I'm going to use AXIOS here. So let's now come back to our root directory. Let's then run Docker
+
+[00:01:41] compose up build dash dash watch here. And this should rebuild our nodes container so that the axios dependency is now available back at the ide. Let's scroll up here and let's then import axios. So axios is equal to require axios and now we can use this to perform an HTTP request to our notebooks backend.
+
+[00:02:06] Let's scroll down here. Now let's extract our notebook ID from the request body. We will start allowing for users to provide notebooks, notebook ids. And remember we are already provisioning a field notebook id in our schema.
+
+[00:02:23] So we can just start saving this field here as well. When we create a new note, let's just confirm that everything is working as expected here. I will wrap the axios API call around a try catch statement here because axios
+
+[00:02:40] will throw an error in case the notebook id is not found if we make an HTTP request and that request returns a 404 for axios, this will actually raise an error. So I just want to catch this error here immediately and continue with the processing of my request instead of entering here in our outer catch block. So let's just run here.
+
+[00:03:03] We're going to say 08 axios dot get and the URL here. Let's use our reverse proxy, http colon forward slash forward slash in our compose file. The name here is reverse proxy. Let's copy this. Let's paste it here, reverse proxy. It is listening on port 80.
+
+[00:03:23] So we don't need to specify the port here. I'm gonna say forward slash API forward slash notebooks. And now here we need to pass back TS because we would like to interpolate the notebook ID. So I'm just gonna say here, notebook ID like so and then here if we get any errors,
+
+[00:03:40] let's just console the error, the error that we get. Let's not make any other changes here. Let's not use our notebook id later down the road. I just want to inspect whether this communication to our notebooks back end is working as expected before we actually test this in postman.
+
+[00:04:00] Let's just wrap this around an if condition here that checks whether the notebook ID field is defined. It doesn't make sense for us to issue this API call if we do not have a notebook ID provided. Now, back in Postman, we can then send a post request. Let's say here, we're just gonna call this my note once again.
+
+[00:04:20] So we're gonna start duplicating some notes. Let's send this and let's confirm that this works as expected. Let's now provide a notebook ID here, notebook id. And this will just be, let's say 123. And the moment we send this request, we get the result back here because remember we are catching the error from axios.
+
+[00:04:41] But if we jump to our logs, we will actually see that we are printing here, the response that we got back from our API. So if we scroll up a little bit here, we will see a bad request. And if we scroll down a little bit, we have information about the request. We have the URL that we were hitting when we send the get request and a little bit more here at the bottom,
+
+[00:05:03] we're gonna get eventually the response here is the response. Here is the status of the response and here is the status text. So it just says not found. And then at the very, very bottom here, we have data error notebook not found. This is amazing. So we were just able to communicate from
+
+[00:05:21] the nodes backend to the notebooks backend via our reverse proxy. The reverse proxy however, is not the only host that we can use to reach out to our notebooks. API Remember if we open our compose over, right? We have the notebooks and the notes service in the same network.
+
+[00:05:42] That means that we could potentially use also our notebooks here, the notebooks, the name of the service and Docker will work. As expected, it will be able to resolve this because they are in the same network. Let's then save this and come back to postman to give it a try.
+
+[00:06:00] If we send this request once again, then we can see that we get a response back and switching to the logs and scrolling up a little bit. We will also see that we get the same response from our notebook service before we move any further. Let's extract this to an environment variable. So let's just copy and remove this here and we will add a variable here.
+
+[00:06:22] We're just gonna call this notebooks API URL and then we're gonna define this at the top here. We're gonna say const notebooks API URL is equal to process dot env
+
+[00:06:40] dot notebooks underscore API underscore URL. Let's then come in our compose dot override here because we can then also add another environment key. So let's add it here, environment key. And then we can pass our notebooks API URL and we can set this at the moment for just HTTP notebooks API notebooks.
+
+[00:07:06] We can also use the reverse proxy if we wish to use it here. But really for us, this doesn't matter. So let's just save this here and confirm that we are retrieving this here. That's correct. So the name of the variable is the same
+
+[00:07:21] and then we are using the notebooks API URL in our terminal. Let's stop the running containers. Let's wait for everything to stop. Let's take our Docker compose project down here and then let's bring this up again with the build and the watch flags. This should be a very quick operation since everything is already cached in Docker.
+
+[00:07:43] Great. So we are back up and running just a couple of seconds. And in postman here, we can confirm that things are still working by just sending one or two post requests to our notes end point.

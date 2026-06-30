@@ -1,0 +1,69 @@
+[00:00:00] Welcome back in this and the next couple of practical exercises, we'll explore many aspects of creating custom actions in github. The first one is we'll work with the basics of composite actions, which are actually the most straightforward type of custom actions that we can create. The first step for us to start creating a custom action is to define where we want to
+
+[00:00:22] create this action. It could be in any directory here in our current repository or it could also be in repository of its own. If you are creating this to be used within a single repository, then you can create this within the repository where your other code, for example, the application code lives.
+
+[00:00:41] But if you are creating this to share among more than one repositor, then you would need to put this in its own repository when creating in an already existing repository. A good practice is to put this under the github actions folder. So under the kit here and I'm clicking not in the workflows, but in the
+
+[00:01:03] github, we will click on a new folder and we'll simply say actions for our composite action. We also create another folder here and we will say just composite cache dependencies, right? So this folder here will contain all the files that we need for our composite action.
+
+[00:01:22] And in fact, the only thing that we need for a composite action is just one file called action dot YAML little Typo. Here, I'm just going to rename this. There should be action not actions. You can see if you are using the github actions extension then vs code already recognizes here at the top that this is
+
+[00:01:42] a composite action file or rather a action do the definition file. And this is going to already provide us with some schema validation. The composite action is simply a group of steps that we can execute altogether. We can group them under a composite action
+
+[00:02:00] and then we can retrieve and use this composite action instead of having to repeat this set of steps over and over again. One good example for us here, let's open the 13 caching file with our workflow. And we will see that there are a series of steps here in our installed dependencies. For example, checking out the code setting up node,
+
+[00:02:22] calculating the cache key and then downloading the dependencies from the cache. And if there is no cache hit, we are going to install the dependencies. And then here later on when we have our linked test, we have the same things we have check out code setting up load, then downloading the cash dependencies. So all these steps here, they are shared. We have to set up node,
+
+[00:02:42] we have to download the, the cache dependencies and we need to repeat them whenever we want to install and use npm module. So this is a good candidate for us to create our first action. Let's come here and let's define a couple of parameters. The first one I would like to define is the name
+
+[00:03:00] and the name is simply cache node and NPM dependencies. And as soon as we create the name, we can see here that there are some missing properties, we'll provide these properties in a little bit. The second one is the description that we would like to provide. And this, we can provide a one liner. For example, this action
+
+[00:03:21] allows to cache both node and NPM dependencies based on the package lock dot JSON file, right. So very straightforward um description here doesn't need to be anything fancy, at least for us. Since that's the first step, if you are creating a an action to be shared to be used by others, then
+
+[00:03:43] you would have a more comprehensive description. And it's also recommended that you would have for example, a readme file that would provide comprehensive documentation over how to use this action. Let's now define our runs option. And it's very important here for the runs.
+
+[00:04:01] If we are creating a composite action, then we should simply say using composite. So this here defines a composite action. Remember there are three types of actions. The composite one, the javascript one and the Docker one. And the using key here, the using configuration is what defines which type
+
+[00:04:21] of action this action actually refers to. We can now define our steps. And the first step here that we will define is we're gonna say set up node JS version. And then here we will open up a little configuration on an expression here.
+
+[00:04:40] We're going to populate this in a little bit. And this, what we will do is we'll simply use another action. So we can definitely nest composite actions within or we can use other actions, we can use custom actions within composite actions. So this one is going to be the setup node at version three.
+
+[00:05:00] And then we need to provide a keyword configuration here with a node version. And then here we are going to once again pass our inputs dot node version. We haven't defined the inputs yet, but I would like to use it both here and here as well, right. So this is the first, basically this is already a valid composite action as soon as we define this input.
+
+[00:05:24] So let's do it here. We're gonna define inputs here. This is very similar to how we have defined inputs. For example, here where we have use cache node version and so on and so forth. So basically under the workflow dispatch, the difference is that here we do not have so many varied types to use from.
+
+[00:05:43] And basically they will be stored as environment variables by github actions, which means that string is the is the type that will be used here, right? So let's define the node version input. And we can provide a description. This description is going to simply say
+
+[00:06:01] node Js version to use. We can provide a default value if we want to so that the parameter or the input here is not required. And then we can provide a keyword required of false. For example, now if required here were set to true then because we are providing a default value,
+
+[00:06:21] this would always be satisfied. That means if whoever is using our action does not provide a node version, then the default value will be applied and the required set to true will also pass. But if we were not providing a default value such as like this and the person did not provide or the workflow did not provide a value for node version,
+
+[00:06:42] then the execution here would fail. Let's re add our default to 20 dot X here. And now we can use this inputs, node version as we are doing here. So as it is now this is a valid custom action definition and we could already use this in our workflows.
+
+[00:07:01] Once we have set up the nodejs version here, then we can set up our or we can retrieve the files from our cache. So we will simply say cache dependencies. And then here this will once again use another custom action. This is the actions forward slash cache at
+
+[00:07:20] version three. And here we can also pass an id. So we're gonna call this cache. And then under here, we will say width and we have to define both the path as well as the key for the path. Here, it is very important that our action is customizable enough so that we can work with different directories.
+
+[00:07:40] So we can actually pass here another input, which is called working there or working directory description is going to simply be the working directory of the application. And the default can be the current directory and we can mark this as false, right? So it's not required if we do not provide this,
+
+[00:08:02] then this would default simply to the root of the of the repository. We can also wrap this around single strings, single codes if we wanna make it clear, but it doesn't really matter, right? So we can just leave it as it is. And here a little bit more at the bottom, then we can use this within our path.
+
+[00:08:21] So we can say inputs, not working there. And then here just checking that the name is correct. That's correct. And then here within our key, we would say node modules dash and then here we would like to use the hash files
+
+[00:08:40] and then within the hash files, we would once again, use our inputs dot working there forward slash package lock dot JSON. So what this is doing once again is checking if there is already a cache for this calculated key here. If there is, it will restore the cache, it will be a hit and it will restore the cache.
+
+[00:09:03] If there is no cash for the provided key, then this would be amiss. And that means that there will be no cache to be restored. Here, there is still something missing here. That is the inputs dot work in the forward slash node modules, right?
+
+[00:09:20] So it is very important because this is the the folder that we want to cache the folder that we want to store in the cache, right? So this then provides us everything that we need to download the the the cash dependencies or if they are not provided to give us that there was a miss. So we can now here install the dependencies
+
+[00:09:41] and the dependencies will be installed if and only if we have then here under the steps dot cache dot outputs dot cache hit is different than true, right? So if there was no hit, then we will execute this step. We do not need the special expression syntax here.
+
+[00:10:02] And what this will do is it will run NPM C. As you can see here, there is a little still squiggly red line here. And that's because whenever we use a shell command, whenever we use the run command here in a step when we are within a composite action, we need to provide the shell option. And the shell that we will use is bash
+
+[00:10:23] and this is something of the composite actions configuration. Remember when we are defining our, our workflows, we don't need to provide the shell. But if we are creating a custom action, we do need to provide the shell. And another important configuration is that we do need to provide the working directory as well because this is
+
+[00:10:42] um something that will be run without awareness of where our application is, right? So if we run just npm CI this will be run at the root of our repository. And if the application is not at the root, then we need to provide the possibility of customizing the working directory. Perfect. Our action is looking pretty good.
+
+[00:11:02] It is actually ready for its first usage. So let's just commit the code as it is now add first version of composite action and we're gonna push this to github. Nothing will happen when we push, we also do not have any new workflow to run as of now.
+
+[00:11:22] But I would like to just commit this so that we can take a short break and come back in the next practical exercise.

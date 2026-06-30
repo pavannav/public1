@@ -1,0 +1,53 @@
+[00:00:00] Welcome callers to video designing and resilience with Microservices. So in this video, we'll begin to look at how you build resilience in cloud native applications that rely on the Microservices design pattern. So we'll think about infrastructure and how we assess infrastructure reliability and
+
+[00:00:21] how that impacts the application reliability. We'll begin to consider the broad areas that you need to look at for your microservice architecture. And then finally, we'll focus on how an app mesh helps a lot of this. Finally, we'll focus on how a service mesh and in particular appmesh can help you with some of these challenges,
+
+[00:00:40] can help you with some of the challenges you'll see in a Microservices architecture. So if you're ready, let's get started. So here we have our reference architecture for our microservice, our four layers user interface, Microservices, data store and event streams. Now, what I've done is I've just overlaid the Amazon sl A on top of the technologies.
+
+[00:01:02] So remember, the Amazon S A is not a guarantee that your service will not fail. It's simply a guarantee that they'll pay you money if it does fail. So no matter what you see here, it doesn't necessarily make your service any more reliable from a user perspective. So the lowest sla for any of the services is 99.9%. So three nines
+
+[00:01:25] and that roughly translates to 43 44 minutes of downtime a month. Now, we can look at some of the technology like a LB and Aurora that have a higher SL A and we can therefore make some choices, some technology choices that say, well,
+
+[00:01:41] let's use those components. So instead of using API gateway or dynamo DB, we'll use a LB or Aurora, but we do have to consider the application. So there may be some very good reason for using API gateway where we wanna do throttling or we wanna do manage our API S through a service development life cycle.
+
+[00:02:02] The other thing to consider is dynamodb streams and appmesh don't have any sla so how do we cope with that? Because those are two technologies that we probably do want to use in our microservice architecture. So we can look at the slas and it can help guide us as to what technology we want to use.
+
+[00:02:20] But ultimately, we have to make some decisions within our microservice architecture to build more reliable services to cope with either slas that aren't quite right that don't exist or are not gonna give us the designed slo that we need. So when we begin to consider reliable Microservices, the most important thing
+
+[00:02:41] to consider is that they are an ecosystem and as an ecosystem, they do build up dependencies. So in this example, we have a flow of traffic coming into microservice A which talks to microservice B which talks to microservice D and there are other flows in here. But let's just consider that one. Now, let's assume that each one of those Microservices has
+
+[00:03:03] three nines availability. So cumulatively 99.9 to power three only gives us 99.7 reliability because it's cumulative. Now, if we have an issue with microservice D, which is at the end of the chain,
+
+[00:03:20] which means its reliability, its ability to handle requests drop down to 99%. So two nines that's going to inversely affect our overall reliability. 99.6. And if that has a cascading effect onto microservice B, that's gonna further reduce down the availability to 99.3.
+
+[00:03:40] So you can see that understanding your dependencies and trying to manage those dependencies more effectively is a key aspect of any kind of microservice design or architecture. So how do you do that? Well, the first thing is to look at applying communication standards across the entire ecosystem.
+
+[00:04:00] So you can use things like a service mesh, a broker load balancer or queues to kind of decouple your service. You can look at using standard protocols, GR PC restful interface designs, swagger, those sort of things to describe the contract and your API and you can use standard libraries or create your own libraries.
+
+[00:04:21] So Netflix's hysterics was a good example of that. It's a little outdated these days. However, if you look at that link that's below, you can see what they were trying to achieve with this standard set of libraries. Now, that's the communication. The other thing to do is to look inside your microservice and look at standard cloud design patterns like health endpoints,
+
+[00:04:41] circuit breakers, CQRS and those kind of patterns to help you build a reliable microservice. And we'll cover some of these things in more detail. Later on in the videos. There's a good references from Amazon where you can see the link there that give a good description of a lot of these patterns.
+
+[00:05:00] And the final thing of course is CICD. So this should come as no surprise to anybody. CICD allows you to test and release your code reliably and is an absolutely key part of any kind of microservice development strategy. So how does a service mesh help us with communication standards?
+
+[00:05:20] Well, some of you might be aware of a service mesh and it does four things effectively. And the first thing it really does is embed a proxy inside of your pod. Now, if you remember we said a pod could have one or more containers. And here's an example where it has at least two your app container no longer talks directly to the network.
+
+[00:05:41] Instead it talks through this sidecar proxy, this proxy sets up communication between itself and other pods and it uses a service discovery. So in this case, service A wants to sell to service B, the sidecar proxy will talk to service discovery engine and actually find out where service B is and then talk to a pod within service B.
+
+[00:06:02] Now, normally this communication is secured using something like mutual TLS. So you also have some kind of certificate, management, certificate signing capability within your service mesh. Because you have an endpoint that controls all network communication. You can apply policy and custom routing to your sidecar proxy
+
+[00:06:22] and your app doesn't need to know anything about it. So your app can simply say, well, I'm I'm I know I'm talking to the network, it's going through the sidecar proxy, the proxy has all the access control, the policy control. Now, of course, the other aspect is a sidecar proxy sees all the network traffic so it can push all the telemetry information, the logging
+
+[00:06:42] the trace information back into your telemetry service. So with one component effectively, you get a way to control and manage your network flow in a secure way. You can configure policies, you can have service discovery and you can collect all your telemetry information. So you can see that a service mesh
+
+[00:07:01] is a very important part of your microservice architecture. Now, Amazon have a service mesh, it's called appmesh. It's quite new. You basically deploy that into ecs, cks or C two running Kubernetes, we'll focus on Kubernetes for the time being. So Kubernetes has a mechanism called custom resource definitions
+
+[00:07:23] that allows you to build custom resources inside of your API layer. So by deploying the app mesh crds, you basically create some controllers which can then create some additional objects within your Kubenettes A P. So you have virtual nodes that correspond to the, the services.
+
+[00:07:40] So in this case, we've got three virtual nodes, one for node A or service A and then two for the different versions of service B service B is exposed through a virtual service. And then the virtual service service B uses a virtual router to load balance traffic over the two versions of your
+
+[00:08:00] service B service running within Kubernetes. So this level of distraction means that appmesh can fit across multiple different container platforms, which makes it very powerful. It also provides, you know, through envoy all the same service, discovery service control service policy management
+
+[00:08:20] that you get with other service measures like sto so the fact that you can run it across Amazon technology as well as Kubernetes, both on premise. If you want as well as EKS means it's a very powerful proposition and it provides all the features that we've already discussed in terms of telemetry and logging
+
+[00:08:41] and service control. So it allows you very much to begin to embed and control the access that your services have without having to change your application and embed policy controls within your application. So I hope that was interesting. Please join me for the next video managing state.

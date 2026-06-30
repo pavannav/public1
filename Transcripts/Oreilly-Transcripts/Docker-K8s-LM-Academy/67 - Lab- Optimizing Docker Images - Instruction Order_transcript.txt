@@ -1,0 +1,49 @@
+[00:00:00] Hello and welcome back. Let's continue talking about optimizing images in our Docker build process. Right now. I would like to talk to you about the ordering of our instructions in our Docker file. Let's just take a Docker history here and just to keep in mind, I did not clean my setup here. So I still have our old or the images that we built in the previous lecture.
+
+[00:00:24] Let's run a Docker history. Let's use the vanilla example here. We're gonna see quite a few instructions. I'm not gonna adjust the zoom because hopefully by now you're already familiar with this. But I just want to remind refresh in our memory that the Docker build system here, it relies on the order of these instructions.
+
+[00:00:46] So if at any point in time, any of these intermediary instructions here change, then the hash of the subsequent images or the hash of the subsequent layers here, it will also change.
+
+[00:01:00] That means we should always aim at putting the more stable commands towards the beginning of our Docker file and putting the things that are likely to change towards the end of our Docker file. Let's come here once again, to the ide, I'm gonna create a new Docker file and I'm gonna call this Docker file
+
+[00:01:20] dot order. And so that we just play around with the order of the commands. I'm just gonna copy exactly the same thing that we have from the Docker file size, copy paste into our dockerfile dot order. Hopefully, that is also helping you understand why we are copying the package Jason and the package lock Dotson
+
+[00:01:40] and installing our dependencies. Actually, before we copy our source code. That is because our source code is much more likely to change or it will change much more often than the dependencies of our application. The dependencies are likely to change at the beginning of the development life cycle where we are still figuring out the things that we need to install
+
+[00:02:00] and it will also change whenever we do regular updates for patching or for any version bumps. However, they will change much less often than the application code itself. So if we were to simply remove this line here and copy all the files from our current directory into the new container here,
+
+[00:02:20] let's once again, add just a dockerignore to ignore the node modules. So let's save this. And if we were to copy all the files here, that means that we would reinstall dependencies even if they haven't actually changed. And we would reinstall these dependencies whenever our index dot Js file,
+
+[00:02:43] whenever our application code changes. Let's see that in practice back to the ide. Let's clear the console and let's run a Docker build here. And now we need to change a few things. We're just gonna say image order and we're gonna put a column here. Not so good, not so good order.
+
+[00:03:01] And the file Docker file here they want to use is the Docker file dot order. Once we run the build command, you will see that the NPM C command here took roughly three seconds to execute. This is not a huge installation time. But once again, we have four dependencies here, right? In real world applications, you could have dozens of dependencies.
+
+[00:03:21] And this can take, I don't know, it's 30 seconds to one minute to even more depending on how many dependencies you have. So let's say that now I come here to my application code back in the IDE. Let's just change this and put an exclamation dot At the end here, we didn't change any of our dependencies. They are still the same package. Log file is the same. All the contents are the same.
+
+[00:03:43] However, we have added, we have changed something in our application code. Let's then go back to the ide and let's rebuild our image. I'm gonna keep the logs here on the screen because I want to show you this once again. Let's just build the image once again and you will see here that immediately we get the NPM C command is running once again.
+
+[00:04:05] We are actually installing the dependencies once again, even though we have not actually changed any dependency. The problem here is that we are copying a different file with this copy instruction.
+
+[00:04:20] So Docker is not able to leverage the cache because and you can see here that this is cached. But after we copy our index, our new index dot Js, the hash of this layer is gonna change. Therefore, Docker is not able to leverage caching for the npm CI command. So let's go back to the id here
+
+[00:04:41] and let's change the order now for our Docker file. So we're gonna once again, let me just undo the changes that we need here. And now we are copying both the package dot Jason first. So this is the first version, right? This is already kind of optimized for this order aspect. So we first copy our dependency files. If the dependency files do not change,
+
+[00:05:04] that means that this instruction here will have the same hash and Docker can leverage caching here for both this copy instruction as well as the NPM C instruction. Let's come back to the terminal here. Let's run our image order once again with our Docker file order.
+
+[00:05:23] And here we should actually see a much faster build. And you can see here the Docker is actually leveraging the cache. You can see that the cache is here for npm CI and this cache is coming from our previous lecture. When we were exploring the image size.
+
+[00:05:40] We already had the instructions in this order here and we did not change any of the dependencies. That means Docker already has these layers cached locally. So it's just gonna leverage them. And as you can see the instructions here for the npm C the time is really negligible. It's almost nothing. And this is very different from when we actually
+
+[00:06:02] copied our source code before installing the dependencies. Now, I did scroll up a little bit here because I tagged this with the not so good and this is not true. So let's revert the changes in our Docker file here. I'm just gonna undo everything. This is the not so good. I'm gonna save this. Come back to the to the terminal.
+
+[00:06:21] Let's rerun this here. Then we will still be able to actually leverage the cache because we did not change our source code. But hopefully, it's clear that this is only leveraging the cache because we did not change our index dot Js. So this is the not so good version. Let's now come back here to the ide. Let's revert back to the good solution. Let's save this here.
+
+[00:06:44] And now we're going to run it once again, Docker and now we're gonna tag here with good, right? So this is the good solution. So let's just clear our console here and let's run our Docker images. We should now have a look at the good and at the not so good.
+
+[00:07:02] You will see that in terms of the image size, this has virtually no impact. And that's just because we are executing the same instructions, but the order is different and this has a big impact or it might have a big impact in the build time, but it will not make a difference in terms of the size, nor in terms of security concerns of your image.
+
+[00:07:22] And that's because in the end, it's the same thing that is there. It just so happens that by reordering the commands, we can leverage Docker's catching mechanism and we can then reach or achieve faster build times. Amazing, isn't it? So the bottom line here is once again, just to summarize this,
+
+[00:07:41] put the things that change the list towards the beginning of your Docker file and the things that change the most towards the end or towards the bottom of your Docker file. That's all you need to keep in mind. Normally, things that come towards the beginning are things related to dependency management and things that come to
+
+[00:08:00] the towards the end of the document while they are more related to source code building and so on and so forth. Amazing. Congratulations. I am sure you're super exciting to learn how we can improve our structure, improve our Docker images. Let's then take a short break and come back in the next lecture.

@@ -1,0 +1,53 @@
+[00:00:06] - Well, we can't talk about iBGP without talking about eBGP. So eBGP is a bit different, right? Let's go through this list real quick. First off, we're connecting to a different autonomous system. There's a requirement, that we have to be directly attached.
+
+[00:00:22] You can't be more than one hop away. So if you've got a router, that's doing BGP. And you say, you know what, for whatever reason, we put a firewall here and now I've got another router, that's doing BGP. If these are iBGP neighbors, you're okay. If they're eBGP neighbors, meaning this is AS10
+
+[00:00:42] and this is AS20, they need to be directly attached. That's the rule. And when you go well they're not, we put a firewall here. There's a workaround I'll show you, but the actual BGP messages you send out has a TTL of one.
+
+[00:01:01] So it's not going to get there unless we tweak it a little bit. The next hop has to be reachable, or we won't accept the route. The advertising router, performs something called AS-prepending. There's something called an AS path set
+
+[00:01:20] that's included in your route. What's that mean? Remember that BGP is just a collection of autonomous systems. One connects to another, connects to another, connects to another. And all we're doing is performing calculations to find the fastest way to get somewhere. If these have numbers,
+
+[00:01:40] two, three, four, and there's a network over here, I'll just put N for network, when that network is advertised from two to three, it says this network is available, come to two. Well, when three advertises it to four, it adds it's AS number. So it says, "Hey, I got this network over here,
+
+[00:02:00] if you want to come to it, come to three and we'll pass you to two." Well, four gets that and that looks pretty good. But when four advertises it out, let's say to five, say that it went like this, it's going to add the number four here. So this is the AS path set. In BGP, we look at the attributes and we go, "Oh, there's a network that's available."
+
+[00:02:20] "How do I get there?" You go through four to three to two. And then we're finally at the network where the source of that information is. Now what's so cool about this, is it ensures a loop-free topology. 'Cause see, five could tell three, and three is going to be like, wait a minute, I'd have to come through myself to go there. So this AS path makes sure that BGP
+
+[00:02:41] creates a loop-free topology. Remember that BGP when performed like this, eBGP between different AS numbers, it requires directly attached peers. So we're going from this physical interface, to that physical interface. From this interface to that. EBG packets, if you looked at 'em with Wireshark,
+
+[00:03:00] are going to have a time to live of one, as they can't go any further. There's a feature called eBGP multihop. Means I want to have an eBGP neighbor, that's just another router running BGP, that's in a different autonomous system. And I want it to be more than one hop away. If you turn on the feature of eBGP multihop,
+
+[00:03:21] you can have intermediate devices between your eBGP neighbors. That's how we break the requirement. All of the metrics for BGP are highly tweakable. It's very, very tuneable algorithm, and we tweak it on a neighbor by neighbor basis. So a lot of times we'll connect to different service providers.
+
+[00:03:40] Here in Tampa I've got, what do we have here? Spectrum and Frontier. So if I was doing BGP to each of these, I'd say, "Okay, well here's the rules that I want to use, to influence my traffic to select Frontier instead of Spectrum, or vice versa." In your environment, you'll have two providers who are typically not equal. There's one that's a little faster, a little better.
+
+[00:04:01] So we can say, "I know there's two equal paths from a hop count perspective, but I would prefer you use this particular path." And we set up attributes and we can tweak and tune the heck out of BGP. And we do so, like it says here on a neighbor by neighbor basis. There is no manual neighbor discovery. We hardcode it.
+
+[00:04:20] So I have to go into each router, say router A, router B is your neighbor. I go to router B, I say router A is your neighbor. If they're not pointing at each other, they will not form an adjacency. Additionally authentication is supported for BGP, so you can set a key on this and make sure that the device that you're connecting to is actually the correct peer. Here's an example, using eBGP multihop.
+
+[00:04:41] Notice that we've got firewalls in between the routers. If these firewalls decrement TTL, not all of them do. But if they do, it would break our eBGP relationship. By enabling eBGP multihop, we'd have the ability to go through an intermediate device because we have a TTL that's greater than one.
+
+[00:05:02] The concept of AS path prepending, if I advertise this network, 10.1.1.0 through BGP, I say 10.1.1.0 is the network, it's available through AS 79. And I tell my neighbor. He installs that route and he goes, "Wait a second, that network is available at 79, let me tell my peer over there in AS 47."
+
+[00:05:22] So he sends his router out, or he sends his routing advertisement out, says, "Here's the network address 10.1.1.0, and if you want to get there, come to AS 23." We'll send you to AS 79. You can look at that AS path set and you can read it and go, okay, I'm going to go here,
+
+[00:05:40] and then here and then here. Each autonomous system within the path is collected. This is what I was talking about is going to give us that loop-free capability, and it's also kind of like the, de facto thing that we look at for choosing a path. What is the fewest number of hops that we're going to go through to reach a destination? BGP assumes that all of the links are very, very high speed.
+
+[00:06:02] So it doesn't consider hop count to be a major influencer that said, it may be. There's lots of preferences that we can tweak and tune in BGP to decide how path, how package should flow, over which particular paths. So we don't need to get into all the nuances of BGP,
+
+[00:06:20] definitely not at the Network Plus level. When I took Network Plus, we didn't really have to know about it. Even in CCNA, they barely touch BGP. In CCNP, they want you to know about it a little bit. But it's just one of those things where you either work with it all day, every day, or you have very little reason to touch it. A lot of people in service provider environments use BGP.
+
+[00:06:40] It's powerful, it's it's heavy, but it's not necessarily any better than EIG or Pirellis PF. Those are what we use internally, right? Externally for global network, we use BGP. So just some balloons there kind of calling out the way that the networks work. You see that prepending?
+
+[00:07:00] How in autonomous system 79, we announce, "Hey, to get to this network, come to 79." And the next device is like, "Well, come to 23 and we'll send you to 79." If this was connected, it would say, "Come to 64 and we'll send you to 79." And again, if AS 47 was to advertise it to someone else,
+
+[00:07:21] they would just prepend by adding their number to the beginning of the AS path set. I think it's a pretty easy concept, but it's just good so you know what you're looking at, if you look at BGP tables. Remember that there's a BGP looking glass for you to try this stuff out. The Type One is the web interface, the Type Two is a CLI interface.
+
+[00:07:40] If they don't work right off the bat, it's okay, try another one. Again it's a free service, people aren't the best about keeping these up all the time. Sometimes they get abused. But with a little bit of effort, you'll be able to log into a router and you'll be able to see tons and tons and tons and tons of routes. So it's kind of neat to see this stuff in action and understand how the internet works. This is just an example of a route server,
+
+[00:08:01] and it was specifically routeviews.routeviews.org, and I issued the command, show IP BGP summary. You can see here, the local router's identifier. We can see the version of the BGP table. We can see the local autonomous system number. Down below, we see a lot of the details about how much memory is being utilized,
+
+[00:08:22] how many routes or what we call prefixes. We don't use the word route we say prefixes. How many BGP prefixes or networks that we've learned about. Here you see the actual neighbors. Here you see their AS numbers. Here's the number of messages received. Number of messages sent. Our uptime or downtime, et cetera. So just high-level information, it's a summary.
+
+[00:08:43] Beyond that, you can actually get into the nitty-gritty details of individual neighbors, as well as individual prefixes or networks.

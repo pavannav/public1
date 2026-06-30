@@ -1,0 +1,55 @@
+[00:00:00] Another very cool thing we can leverage and customize is the creation, the generation of both configmaps and secrets based on different sources of information. So I'm just opening our customization dot yo file inside of our DEV overlay. Let's move the resources here to the top so that we can
+
+[00:00:20] quickly have an overview of which resources are included in this customization. And let's now here at the bottom, create a field called config map generator. This field can receive a list of generators that means we can generate multiple config maps by defining a single generator here. And we can also customize their behavior individually in each entry of our list.
+
+[00:00:43] So let's just say that this going to be our, let's say feature flags, config and then here one option that we can create our config map is based on literals, right. So the literals here is one option for us. And then we would specify once again a list of key value pairs here.
+
+[00:01:02] So let's say use db for example, and this will be equal to true in the development environment. We could also add here some other feature flag, let's say expose metrics and also set this to true. So it is just one example here, our applications, they are not expecting this kind of config maps.
+
+[00:01:21] But the moment we do that and save this, let's now come back to the terminal and let's run cube cut, customize and let's pass our DEV overlay here. And when we do that, you will see that we have here created in our file, a config map at the very top here where we have the data exposed metric set to true and
+
+[00:01:42] also set to true. Now, naturally, both the common annotations and the common labels are added to this config map. You can also see here that the DEV name prefix and the alpha name suffix were added as well as a content hash here, which will be used to determine whether any of the key value pairs here,
+
+[00:02:03] whether any of the data in our config map has changed. So if we were to come back here to our, to our ide and then we add a third flag here. So some other feature and we set this to true once again and we come back to the terminal, we rerun our overlay here. Then we will see that the hash at the end of our config map, it actually changes.
+
+[00:02:24] This can also help us identify whether there were any changes that we need to act on in the config maps. We can also disable this hash by coming here under the same array or the same list entry here and set an options field. And then we will say disable
+
+[00:02:40] name suffix hash. And we'll simply set this to true. If we save this and come back to the terminal and rerun this, then you will see that the name suffix here or the, the hash suffix is actually now removed. That's great. Let's now come back to our ide and let's create here an example file. So let's say DB
+
+[00:03:00] init dot Js here. And then we're just going to say a very simple console log initializing DB and then we will have here console log, performing some operations. And then we have also here another console log. And we're just gonna say here successfully initialized.
+
+[00:03:20] So if you remember from our previous project and discussions, then this script here, it could actually be a javascript script to reach out to Mongod B and then create our user and database and our credentials as well as the role to be able to work with that database. So this would be one example. And now let's say that I want to create a config map based on this file.
+
+[00:03:44] So we can actually create another entry here in our config map. And then we say, let's say here db in it config and then we can simply specify the files here and then we can pass once again a list of files. So let's say DB
+
+[00:04:00] init dot Js like so And then if we come to the terminal and we run our customized command, once again, we will see here at the very top, let's scroll up a little bit more that it has also generated another config map for us with a single key value pair here. And the key is the name of the file and the value
+
+[00:04:20] is the contents of the file in a multi line string. So this can be extremely helpful to actually have the files with an extension here that our id can process. And we can even execute some tests on these files. They are basically scripts, right? So they are not part of any config map Manifest that we are coded in cos
+
+[00:04:44] config map type. They are plain scripts that can customize actually loading and processing into a config map. So this also gives us more flexibility here to work with them as actual scripts to test them and to make sure that there are no syntax errors.
+
+[00:05:01] So the files is another possibility here and we can also customize the name of the file or actually not the name of the file, but the name of the key that will be used in our config map. So if we want to say some other key, for example, and then we pass this equals to the file here. Let's then come back to our terminal, let's
+
+[00:05:20] run the command once again. And if we scroll up all the way to the file here. We will see that this was now saved under the some other key key here and the content is still the same. They are the contents of the file, right? So now we can also generate here from ENV file. So let's say that we have a dot ENV file here.
+
+[00:05:40] And let's say that's going to be dot en NVT local for example. And then this will contain environment and that's going to be local. And we're going to also add here, let's say db post for example. And that will be HTTP colon forward slash forward slash localhost, right? So there's something very local here and let's save this now.
+
+[00:06:01] And let's now come to our config map generator. So now we're going to copy this entry here, we're going to paste it here and now we're going to have this, let's say local config. And now we're going to use here an environmental MS key which will enable us to generate a config map based on these keys.
+
+[00:06:22] So now if we were to just run or pass the key here, that's going to be en NVT local like so then what will happen is that each key value pair here will be mount will be created, basically will be output in our configmap as a new key value entry in our data object.
+
+[00:06:41] So let's save this here. Let's now come back to the terminal. Let's execute this once again, let's see the result here at the top. And as you can see here, we have our data with db host and environment. Now, what is the difference from using the envs like so and the files like so well, the difference is that this ENV files here,
+
+[00:07:02] they are expected to follow this exact format where in each line, you have a key value pair separated by an equal sign. If we were to pass this here as just a file to say here, files as well, this is gonna work, but it's not going to generate multiple key value pairs in our config map.
+
+[00:07:21] Instead, it will create one entry with dot E NVT local. And the value for this entry will then be the entire contents of this file. So let's save this here. Let's regenerate it. And if we scroll up here, you will see that that's exactly what happens, right? So we get one entry dot E NVT local
+
+[00:07:40] and then the entire contents of the file are dumped here. So there is no processing of this file and we don't have access to the individual keys here from our ENV file. That's where the ENVS format here can actually be more helpful because it does provide this kind of processing of ENV files based on this expected structure.
+
+[00:08:03] We can also add some common options to all our generators. So let's say here we have this disabled name suffix hash set only on the first one. And if we have a look here, we can confirm this is not having any suffix hash, that's good. But the other config maps, this one here that the
+
+[00:08:21] bit config it does have. And the other one here at the bottom from our EV file, it also has this hash. So we can disable this globally by setting the generator options key here. And then we're gonna say disable name suffix hashh, we're going to set to true here.
+
+[00:08:40] And this will apply to all the generated config maps and secrets, right? So if we save this here and then we rerun this, then we will see that none of our config maps will actually contain. Now the name suffix, right? So this is one way that we can set global options here. We can also set labels to be applied to all of our config maps
+
+[00:09:04] and annotations as well. I'm going to leave just the disabled name suffix hash here. So we have discussed config map generator in this lecture. I would still like to discuss the secret generator with you which has a very similar behavior. But before we do that, let's take a short break and I'll see you in the next lecture.

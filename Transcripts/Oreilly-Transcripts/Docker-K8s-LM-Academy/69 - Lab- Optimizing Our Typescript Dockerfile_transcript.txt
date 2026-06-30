@@ -1,0 +1,51 @@
+[00:00:00] Hello and Malcolm. I thought it would be a very interesting exercise for us to revisit the Docker file that we built here during the multistage builds section of this course, we have also learned in the previous lectures, how we can optimize the overall structure of a Docker file. So let's revisit this here.
+
+[00:00:20] Since we are already using multi stage builds here, let's revisit and let's see how we can optimize this even one step further. We already have quite a good structure here. So let's just go through this Docker file and see what is out of place and what is already working well, what is already working well is that we are copying the files that do not change very often,
+
+[00:00:43] namely the dependencies of our application closely to the beginning of our Docker file. So this is good or actually not closely to the beginning of the Docker file. But closely to the beginning of this stage, we then copy this dependency files here and then we install our dependencies. That's great.
+
+[00:01:00] And then here we copy the source folder and some configuration files. The configuration file here is also not likely to change. So we can also copy this more towards the beginning of the Docker file if we wish to do so. But this is not going to make that big of a difference here because we are just copying a file.
+
+[00:01:20] What is important here is that we are actually running a command in P MC at the beginning of the Docker file or at the beginning of the stage in a way that it is able to leverage the cache from the previous instructions. If none of the files change, we then run the NPM run build command, which is gonna output our dist folder
+
+[00:01:41] and then we copy this dist folder from our build stage into our final distroless image here. Now, the main thing that we have here are the main problem. So this file is already looking relatively. OK? Right. So it's not too bad. It's actually leveraging multi stage builds and it's
+
+[00:02:00] running the commands in an order that is cache friendly to Docker. So that's also good. The problem here is just with our node modules folder. So we are copying this from the build stage. And as it turns out the build stage is installing all of our dependencies, both runtime as well as development dependencies.
+
+[00:02:22] So let's change that a little bit here. And we're gonna introduce yet another stage we're gonna say here from node colon 22 alpine dependencies or depths here if you wanna call it. So we will, then we can set the work directory, we can copy the package and the package log files here.
+
+[00:02:43] So let's just add these two and we're gonna run the NPM C only equals production. So remember this is from our section where we discussed installing only the production dependencies or the run time dependencies. We are not going to change anything here at the top.
+
+[00:03:01] And that is because the source code here inside of the source folder as well as the typescript configuration files, they are necessary for the build command. The only thing I want to change here is that I do not wish to copy the dependencies from the build stage anymore. I actually wish to copy the dependencies from the dependencies stage.
+
+[00:03:25] So now we are combining the files or combining information from two different stages. So look at it from this perspective, Docker is gonna start up two stages here simultaneously. It's gonna start the build stage and it's gonna start the dependences stage.
+
+[00:03:42] The build stage is gonna install all the dependencies is gonna get our source code, it's gonna get typescript configuration and it's gonna build the project. It's gonna output here just our index dot Js file, right? So this here is the only thing that we need in terms of application code.
+
+[00:04:01] So we're gonna copy from the build stage. We're gonna copy the dis folder here into our target folder inside of our distroless stage. Now, this is one side of the puzzle, right? One side of the puzzle is to really build and output the javascript code that we need to run. The other part of the puzzle is to make sure that we have
+
+[00:04:23] only the dependencies that are needed at runtime inside of our container. You see here that this requires express. So we do need to install Express. However, we do not wish to install everything and copying everything as we were doing in the past.
+
+[00:04:40] So for us to tackle that, we're gonna create yet another stage, a dependency stage which is gonna copy our package and the package log Jason and it's gonna install only the productions necessary for runtime. We then copy from this stage here. So the dependencies here is matching the dependencies here.
+
+[00:05:00] That's the name of the stage. We're just going to copy the node modules from this stage here into our node modules of our distroless image or of our distroless stage. And that's really everything we need to do to actually optimize this Docker file. So let's save this and let's come to the terminal,
+
+[00:05:20] let's then run a Docker build command. And now I would like to tag this as let's say express TS and we don't need to add any tags for now. So let's just build with the current context and see what happens on the screen. You will now see here that there are quite a few stages happening here. So you will see
+
+[00:05:41] that we have a build stage. And we will also see that we have a dependencies stage and you might not get printed here on the screen all of the different steps of our dependency stage. But just keep in mind that this is actually also leveraging the cache. Since these instructions here, they are exactly the same in both stages.
+
+[00:06:03] At the end, we are copying from our dependencies. So from this here, from this installation, we are copying this into our final container and then or into a fin final image and then we are copying from the build. We're actually copying our application code. So if we now have a look at Docker images,
+
+[00:06:21] we should see that we have this Express Ts and let's now run just this container. We're gonna pass a dash dash RM here, let's pass or let's start in detached mode. And here the image that we're interested in is express dash TS. So if we do that, we get our container here and if we were to run a core command here,
+
+[00:06:43] so just clean the console and run a core command. Um This is actually not gonna work and now I just realized I forgot something on our container when we are running. So let me just stop this container. I'm gonna kill the container. So kill and then once again here I have nothing else running.
+
+[00:07:00] If you do have something else running, please don't use this command and use a more friendly version. We're just gonna use the container ID. So I forgot to map the ports, right? So here we do need to map the ports. Let's map port 3000 on localhost to port 3000 on the container. And now our co command should actually return hello from express. Perfect.
+
+[00:07:21] So we were able to actually package only the runtime dependencies inside of our final image in our multistage Docker file. Super amazing. So I believe we were able to actually incorporate lots of concepts here. This is a very solid Docker file. It's relatively straightforward. There is nothing fancy going on here.
+
+[00:07:40] We're just using node images and running typical npm and build commands. This can get more complicated as your project grows as well. And as you might have to run other commands here to actually generate the final source code for your application. But here for us, this illustrates the main concept
+
+[00:08:01] and it also incorporates many of the good practices regarding splitting both build as well as installation of production dependencies and shipping everything with a secure distroless image, for example, at our final stage. That's amazing. So congratulations on completing this section of the course.
+
+[00:08:20] There are actually many, many learnings here and I'm super excited to share them with you. I hope that you take them with you and that you leverage them to build amazing Docker images, but we're not done yet. So there's still more to come. Let's take a short break and come back in the next lecture.

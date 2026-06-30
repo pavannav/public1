@@ -1,0 +1,61 @@
+[00:00:00] Hello and welcome back in this lecture. We will start importing all the AWS infrastructure we have created into terraform this, there are a few points that we need to import. The first one is the identity provider. The second one is the role and we also then need to ensure that the role has the correct policies attached to it.
+
+[00:00:20] Let's start with the identity provider. If we click here, we will see that we have a few pieces of information that we need to in port that we need to mention in our identity provider. The first one is the URL. The second one is the client list and the third one are the thumb prints. The client ID list is basically also the audiences here,
+
+[00:00:41] maybe that's not very clear. So audiences are also known as client I DS and they are values that identify the applications that are registered with the open ID connect provider. So we all also need to mention this. There are three pieces of information that we need to mention. So let's jump into the IDE and start populating them
+
+[00:01:02] in the IDE. Let's create a new file here. We're gonna call this O I DC dot TF. And the first thing that we will do here is we will say resource, we will say AWS underscore im underscore open ID connect provider like so and then we will say here, Dataform
+
+[00:01:21] cloud and then here we will have the URL that we need to reference. We will have the client ID list that we need to reference and we will have the thumb print list that we need to reference. Let's start with hard coded value. So we will simply the URL here will simply be HTTPS colon forward slash forward slash
+
+[00:01:42] app dot Dataform dot IO. The client list ID here will be the one that we have in AWS. So that's gonna be AWS workload identity. Let's copy this and paste it here and the thumbprint list will be this thumb print here. Let's copy this and let's paste this here.
+
+[00:02:02] This is the first step. Now, of course, we don't want to recreate this resource, we actually want to import it. So let's add an import block. And I will simply say here two, that's gonna be AWS im open ID connect provider dot Terraform cloud. And we also need to pass an ID here
+
+[00:02:21] for us to know which ID to use. Let's copy this. Let's come to the Terraform documentation here. Let's open a new tab and let's scroll down to the import section as you can see here. This is very similar to what we have in our IDE. So let's click import and you can see here that what we need is the A RN of this identity provider.
+
+[00:02:42] So this is the entire A RN. Let's come here. We can find the A RN here. So let's just copy this, come back to the IDE. Let's paste it here. Let's save this. And now let's run a terraform format and we should also be able to run a terraform apply successfully.
+
+[00:03:01] As you can see, we have successfully imported it and we actually want to remove the tag because we have not added this here in our resource. Instead of removing the tag, let's actually copy this and let's add this here. So we're gonna have the tag. The name here will be equal to Terraform cloud. Let's then remove this. This is not looking very good. Let's type no here.
+
+[00:03:24] Let's then run dataform format once again and let's run Terraform apply. We can also add a dash auto, approve if we want to, but let's just run the apply once again and make sure that there are no changes to our infrastructure. Perfect. So as you can see, we have now just one resource to import.
+
+[00:03:41] There are no changes here. Let's type. Yes, let's wait for the operation to complete. Imports are very quick. It's no problem. And once we have completed this operation, then we can also start working towards removing these hard coded values. The resource was successfully imported into our Telecomm project.
+
+[00:04:00] So now let's start removing here this hard coded values, we can create a new file. Let's call this variables, variables dot TF. And let's already create a terraform dot DF vs file. So in the variables, the first one we would like to add here is the Dataform cloud hostname.
+
+[00:04:22] And the default here will be, so the type will be a string. The default here will just be our app dot Dataform dot IO. This will be useful for us because we need to use this information at both the O I DC provider as well as the trust policy
+
+[00:04:42] that references this hostname here in both the audience and the subject. So let's add a default here. A description will be just Dataform cloud hostname without HTTP colon forward slash forward slash
+
+[00:05:01] right. So now we can then refresh this or change this here by using it like so, so the URL here would be V dot Terraform cloud hostname. We can also create a variable for our audience. So let's copy this and paste it here. Terraform cloud audience and the default here will just be the value that we have here. Let's copy this,
+
+[00:05:25] let's paste it here. And we will say here audience, telephone cloud audience used to authenticate into AWS. Let's save this. Let's now change this here instead of client id list, we're gonna say V
+
+[00:05:41] dot Dataform cloud audience and the last piece of information that we need is actually the thumb print list. So we need this thumb print here. We could create a new variable and then use this as a string. However, there is a more efficient way for us to do that. And it is to actually leverage the TLS certificate data source
+
+[00:06:03] that the TLS provider allows us to use. I already have the TLS provider here open. If we type TLS underscore certificate certificate, then we will see that we have this data source here TLS certificate. If we click here, then it tells us that it enables us to get information about the TLS certificates,
+
+[00:06:25] securing a host. We can use this to get information such as the sha one fingerprint. And this is exactly the value that we want. If we scroll down a little bit here, we should see that we have, let's scroll down. We have this sha
+
+[00:06:40] one fingerprint and this will enable us to retrieve that fingerprint value without having to hard code it. I want to make sure that we are using the correct version here. So let's click on version 4.0 0.5. We can then add this to our telephone project by first coming to provider dot TF and then adding the TLS provider.
+
+[00:07:01] Let's copy this, paste it here. We're gonna see TLS and then we say source hasicorp TLS and the version will be at least 4.0. We can now use this here inside of our O I DC file. So let's say data, we're gonna say TLS underscore certificate and I will say here, data form cloud
+
+[00:07:22] and all we need to do here is we need to pass the URL and the URL will actually be this URL here. So let's copy this, paste it here like so and then in our URL here, we can reference also our TLS certif dot TL dot Terraform cloud
+
+[00:07:41] dot URL. And we can then also reference this here in the thumb print list. So we're gonna say data dot TLS certificate, Terraform cloud and then we need to get our certificates here. So dot certificates and before we go any further, I just want to show you here in the in the documentation,
+
+[00:08:01] we have a read only here certificates, right? So this is an attribute that we can refer to and we have then a nested schema for certificates. So basically, certificates are a list of objects here and then each object will then have our sha one fingerprint properly. So we do need to go via the certificates properly and then
+
+[00:08:26] get the first certificate and then within that certificate, get the sha one fingerprint. Let's then retrieve the first certificate here and then say dot sha one underscore fingerprint, right? So now here I believe that we have all the information
+
+[00:08:43] and let's save this file. Let's run a Dataform format. Let's now run Terraform apply. And let's see whether there are any changes. As you can see here, I ran the Terraform apply without running the terraform in it before. If we open this dot Terraform here
+
+[00:09:02] and open the providers, we just have the AWS provider. If we were running this locally, this would throw an error. However, since this is run in the Terraform agent, there are no issues. There is no because we always initialize here. We always initialize the plugins and the modules. So we have successfully migrated from using hard coded values here to
+
+[00:09:24] using a variable or two variables to customize the hostname and the audience and then fetching the remaining information via the TLS certificate, data source. Let's just run a dataform in it here for the sake of having everything correctly installed locally.
+
+[00:09:42] However, for us, this is not strictly necessary. Congratulations on importing the O I DC provider. This was already quite a bit of work to import it and make sure that we get all the information correctly while also following some good practices around designing our terraform code. So let's take a short break and come back in
+
+[00:10:01] the next lecture to continue importing the other resources.

@@ -1,0 +1,81 @@
+[00:00:07] - All right, now that we are at the end of lesson one, let's do the warming up lab in which we can practice what we have just learned. So this lab is about troubleshooting FTP issues. In this lab we are going to troubleshoot FTP server issues.
+
+[00:00:22] The symptom is that anonymous users can download files but cannot upload files. You can install the lab scenario running the lab14.SH script which is available in the resource section with this class. Good luck. So let's install the lab, lab14.sh.
+
+[00:00:49] As you can see, it's doing a couple of things and now the lab should be installed. So think about the methodology. What are we going to do? Well we need to define the issue,
+
+[00:01:00] we need to gather information, form a hypothesis, test the hypothesis, and next fix the problem. So let's start defining the issue. So the problem seems to appear when anonymous users who have issue uploading files.
+
+[00:01:20] The best thing to start with is to try to reproduce the issue. So I am going to install lftp, which is command line ftpclient, oh it's already there. All right, let's try to reproduce the issue by logging in using lftp localhost.
+
+[00:01:40] So I'm now apparently connected to the FTP server, so I'm try typing ls to figure out what's happening. And what do we see, ls is delaying before reconnect and it's already taking almost 10 seconds. That's way too much. Something's odd here.
+
+[00:02:00] So this is a mini gather information phase, and based on the information I have gathered, I can make a hypothesis which is, well the FTP server might not be running. So let's get out of the FTP client and let's test
+
+[00:02:20] the hypothesis by using systemctl status vsftpd. And there we go, vsftpd indeed is not currently running. So that is problem number one. Let's start it and let's test again. So in the second test, we can repeat the methodology.
+
+[00:02:42] So I am using lftp localhost again, ls this time, and now we can see there is pub directory. And in this pub directory am I capable of uploading files, well put is what you can use from lftp to put anything in there.
+
+[00:03:01] So I am putting /etc/hosts and I'm getting a could not create file. All right, so now we can clearly define what is wrong and that's step one. What is wrong is that as an anonymous user I cannot upload files.
+
+[00:03:21] So we have defined the issue and now we can gather information. So what kind of information do we need to gather? Well gathering information, you may dive into the log files but if it is something that you are familiar with, then you may also start by verifying the configuration.
+
+[00:03:41] So what do I want to verify? Well I have just tried to upload something to the pub directory and in order to do that, we need the FTP server to allow us. So I'm starting by having a look at vsftpd/vsftpd.com.
+
+[00:04:01] And what do we see? We see anonymous enable or local enable, write enable, and anonymous enable is yes and anonymous mkdir write enable also is yes. So that's interesting. The FTP server by itself seems to be okay.
+
+[00:04:21] Now next you need to know what is going to happen if you try to upload files. Well, there's an FTP user in /etc/passwd and this FTP user is used for anything that's anonymous. And from a Linux file system perspective, the FTP user needs to be able to upload files.
+
+[00:04:42] Upload files to what? To the FTP document route. We can get the FTP document route from the FTP home directory as well, which is /var/ftp. So I'm going to /var/ftp and doing an ls -l and we can see that there's a pub directory which owned by a root root and has permission mode
+
+[00:05:01] seven five five. That obviously is wrong. So if in gathering information you find something that very obviously is wrong, it's time to jump to the hypothesis. The hypothesis is that the FTP user doesn't have any location where it can write files.
+
+[00:05:20] So anonymous uploads must fill. So now we can test the hypothesis by creating an environment where the anonymous user can upload files. Let's created mkdir uploads. It is nice to separate downloads and uploads,
+
+[00:05:42] of course you don't have to. And let's use a very elegant chmod 777 on uploads. Now that we have created this directory, I would recommend you restart the vsftpd server.
+
+[00:06:00] And you can test the hypothesis. So how are we going to test the hypothesis? Well lftp to localhost again and ls is showing that there's an upload directory.
+
+[00:06:20] And let's try using put /etc/hosts and it still could not create file. Hmm, that brings us to a different situation. All right, so we are at the end of the second cycle of troubleshooting and we need to start all over again because still it doesn't work. Now if it is not because of the FTP server,
+
+[00:06:44] we have seen the FTP server parameters I set correctly, we have seen the file system permissions are set correctly, it must be something that is external. So we need a new hypothesis. And the new hypothesis is based on what?
+
+[00:07:00] Well on gathering information. So can it be a connectivity issue, no because we are on local host. Although I guess it could have been a firewall, but as we are on localhost, it is not the firewall. So it must be something else. What can be the something else? Well security settings for example.
+
+[00:07:20] So that brings us to the next hypothesis. As this is a center wave system, this SELinux by default. So the next hypothesis is this must be due to SELinux. So let's test the hypothesis. In this case we can clearly test the hypothesis by using getenforce which is telling us
+
+[00:07:42] that SELinux is in enforcing mode. And now we use setenforce Permissive and we can test again. This is not a fix, this is just a test. As we have seen often, the fix and the test fall together. In this case, the fix and the test don't fall together
+
+[00:08:02] because we have temporarily switched SELinux to a more permissive mode. So we can repeat the lftp to localhost command. And cd to uploads and we can use put of /etc/hosts and 249 bytes transferred.
+
+[00:08:23] So have verified the hypothesis and we have found that SELinux really is blocking what is happening. So now we can work on the fix of the problem. And the fix of the problem is going to involve the SELinux troubleshooting.
+
+[00:08:42] So in SELinux we need to make sure that SELinux won't be blocking any longer. Let's do this quick and let's just gret on sealert in /var/log/messages. At this point, I don't wanna give you a full explanation
+
+[00:09:01] of SELinux troubleshooting, we'll do the shortcut and we'll talk in more detail about SELinux in the lesson about security. So here we see that sealert has logged that SELinux is preventing vsftpd from append acces of the file /uploads/hosts.
+
+[00:09:21] For complete SELinux messages, this is the command that we can run. So we copy the commands, we run it. And here we can see that plugin restorecon with 84.5%
+
+[00:09:41] confidence suggests if you want to fix the label /uploads/hosts default label should be default_t then you can run restorecon. /sbin/restorecon on -v /uploads/hosts. Now this is interesting
+
+[00:10:01] because it doesn't make sense at all. And if you know a little bit about SELinux, why doesn't it make sense? Well /uploads/hosts, it's not about /uploads/hosts, it's a relevant directory, it's about var ftp uploads hosts. Default_t, no, no, no doesn't need to be default_t.
+
+[00:10:25] So this solution definitely is wrong. Then we have another plugin, allow anonymous write with 8.9% confidence, so it's not so very confident, but let's read anyway. If you want to allow vsftpd to be able to write
+
+[00:10:41] to shared public content, then you need to change the label on uploadhosts to public content_rw_t, that makes sense. Potentially turn on allow httpd sys script anon write Boolean, that doesn't make sense. Here we have the se manage f contents commands,
+
+[00:11:01] that's something I wanna try. Then after setting the SELinux contacts, we need to try this as well and we need to set the Boolean. Setsebool -P allow ftpd anon write. What do you think of that? Let's use getsebool -a | grep ftp.
+
+[00:11:23] And what do we find? Ftpd anonymous write is already on. Okay, so that is not the solution. So it must be bound to the context. So if we have a look at the contents of this directory
+
+[00:11:42] and we can see that uploads is public content t and as suggested by sealert, we should set it to public content rw_t. Semanage -a -t public_content_rw_t
+
+[00:12:02] to /var/ftp/uploads. And anything that may be included in this directory. Oops I forgot semanage fcontext.
+
+[00:12:26] Now we can use restorecon -Rv on /var/ftp/uploads once more. And now that we have applied this fix, we can test the fix.
+
+[00:12:40] So lftp localhost. Hang on, aren't we forgetting something? Getenforce, getenforce we are still in permissive mode, let's do setenforce, enforcing to switch on SELinux again
+
+[00:13:00] and test again. So lftp localhost, I'm going to uploads. I'm typing lf I can see that hosts already exists so that means we need a different file to be uploaded. So let's try put on /etc/passwd and we get 2,430 bytes
+
+[00:13:23] transferred, so we have fixed the problems. In our lesson three different ruins. Sometimes in troubleshooting you need to apply the scientific method over and over again until you finally get there. And this is how it gets fixed.

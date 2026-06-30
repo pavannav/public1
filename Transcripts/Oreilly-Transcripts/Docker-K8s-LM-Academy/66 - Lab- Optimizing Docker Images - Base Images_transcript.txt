@@ -1,0 +1,109 @@
+[00:00:00] Hello and welcome back. I think I've mentioned 1000 times during this course that there are ways that we can improve our Docker images and that depends on several factors. There are a few things we can keep in mind while we write our Docker files so that we create better, faster, smaller and also more secure Docker images.
+
+[00:00:20] Overall, I am not a huge fan of premature optimization. And I think like OK, we need to write the absolute smallest possible Docker image from the beginning. However, these best practices, they are useful, we can follow them when building our images because well wanting it or not the size of the images and also the build time.
+
+[00:00:42] They are important, right? If you take let's say 10 minutes to build a Docker image, then that's gonna discourage you from building multiple times this Docker image and that kind of goes against the direction of the whole DevOps movements and a continuous integration called delivery. So we do need to have a
+
+[00:01:02] solid fast process that we can quickly obtain feedback from. But I wouldn't really go crazy about having the absolute fastest build or the absolute smallest image if this is not really adding some clear roadblocks that being said throughout this and the few upcoming lectures,
+
+[00:01:21] I would like to discuss four things that we can keep in mind. In order to optimize our Docker images. In this one, I will just summarize the things we already discussed about using smaller base images just before we get started, make sure that you are in a new clean directory here. I always like to keep the files separated because I am often
+
+[00:01:41] focusing on different points and the Docker files that we create. They are also tailored to these explanations, right? So let's just create a new directory, clean directory, nothing inside and make sure that you have both your terminal and your id in this directory. For our example, I'm just gonna initialize once again a type typescript, no, sorry,
+
+[00:02:02] a javascript and an npm project here. We're gonna go with the very simple setup here. So I just initialize it with NPN npm in it dash Y. And now let's just install a couple of dependencies. We would like to install express at version 4.19 0.2.
+
+[00:02:20] And let's just save exact here. Once that is done, I just would like to also install a depth dependency and it's just gonna be just and the version here is 29 dot 7.0 and we're gonna save exact and we will save this as a development dependency. Remember we already saved typescript as the development dependency.
+
+[00:02:42] We could actually go ahead and install typescript here if you wish to do so. The version is 5.5 0.3 if I'm not mistaken, and we can also install, why not add types forward slash express? And the version is gonna be 4.17 0.21. And you're like, wait, wait, wait, wait, wait, what the
+
+[00:03:00] are you doing? And don't worry, I will not use any of these things for any active development. I just want to have some development dependencies and some actual application dependencies. And this is something that's very important when we talk about optimizing images is that when we ship our final image, we normally 99% of the times we do not need development dependencies.
+
+[00:03:23] So I'm just installing them here so that we can differentiate between the two in the near future. Ok? So this just don't get confused. Just you can follow my lead here and install just typescript and the types forward slash express. We're not gonna do anything meaningful with this and let's save exact and save DEV here.
+
+[00:03:43] So same process just a few different packages here. Let's wait for the command to complete and let's jump to our IDE. Well, you might get some deprecated warnings here and that is totally fine. The important thing is that we have just completed adding almost 300 packages
+
+[00:04:00] and we are good to go. So if we were to just here, say cat, let's clear the console. Let's just say cat package dot JSON. Then we should see that we have our express dependency and our three development dependencies. Great. So let's jump into the IDE and let's write our first Docker file. I'm then in the ID,
+
+[00:04:21] make sure that you are once again in the same directory where you install the dependencies, we can confirm this by opening our package dot JSON and just having a look at our dev dependencies and that's looking good. Awesome. We are not going to work with dev dependencies now, so we can forget about this for now, let's create a new file here. We're gonna say Docker file and an interesting thing here
+
+[00:04:41] is that we can of course call this Docker file. However, we want, if we just pass the Docker file name here, Docker is gonna look for this file when building. However, we can of course call this Docker file size or Docker file dot size for example. So let's just use this Docker file here to illustrate the image size.
+
+[00:05:01] So let's call this Docker file dot size. We will need to pass this file explicitly to the Docker build command. Whenever we execute it. Let's just keep that in mind. So let's discuss once again base images here and we're going to start with a node. So let's say from node column 22
+
+[00:05:20] that's our typical node image, right? So that this is just the base node 22 image. And what we would like to do here is we would like to copy both our package and our package into the current directory. Probably. We also want to set the working directory and we're just gonna say forward slash app.
+
+[00:05:40] And then here we copy both the package dot JSON and the package lock. We run npm CI we can then copy our index dot Js into index dot Js and this doesn't exist as of now. So let's just create this file here. We're gonna say index dot Js and once we do that, we can just say a very nice console dot Lock. Hello
+
+[00:06:02] world. I'm not going to start an express application, not gonna do anything fancy here. I'm just gonna call log Hello world because the point is not about developing applications. So I'm just gonna copy the index dot Js and the command here is just gonna be comment will be just node
+
+[00:06:20] index dot Js. Perfect. So this is our vanilla node version, right? Let's save this and let's go back to the terminal and build our Docker file back in the terminal. We can confirm here. I'm starting with a clean slate. So I have no Docker containers created no running. I also have no Docker images. So everything is clean here, we are starting from scratch.
+
+[00:06:42] Let's then run our Docker build command. We would like to tag this and we're just gonna say size or let's just say here instead of size, let's say image size and the tag here, we can just say vanilla, right? So just vanilla tag and here if we were to try to pass just a dot
+
+[00:07:00] That is not going to work for us because you will see that Docker will simply say failed to read Docker file. It try to look for this Docker file, this name and it could not find it. So for us to pass a Docker file custom one, we're just gonna pass the dash F Docker file dot size and we are good to go now. So once we do that here, you can see that Docker is able to identify our Docker file,
+
+[00:07:24] run all the commands here. And at the end, we get the Shap. So if we were to run Docker images here, we will get the image size vanilla. Awesome. So you already know you're already familiar with the history command. And if we were to say image size colon vanilla,
+
+[00:07:41] so let's just write with image size here and you will see that that's not gonna work, right? Because we do not have a latest tag here. We would have a latest tag if we ran for example, Docker build and then we would not pass anything here in my size like so then we would have a latest tag by default. However,
+
+[00:08:00] if we do not pass this, then we do not have the latest tag. We have just the vanilla tag. So let's run here, Docker history. Oops Docker history and the image size, we press a column here and we say vanilla and now we get all these very nice lines which are not looking very good. So I'm just gonna reduce a little bit of zoom here.
+
+[00:08:21] Hopefully, this is looking better. Yeah, that's looking better. So let's just take a pause here and remind ourselves about the different commands that are shown here. We already touched upon Docker history and we have identified that each instruction in our Docker file corresponds to a layer to an additional image or an intermediary image here that is built by Docker
+
+[00:08:44] and that is added that is composed in the end to our final Docker image we can see here. And if you remember from the previous lecture that up to these instructions here, these are coming from the node 22 image
+
+[00:09:01] and these are coming from the base image used by the node 22 image. So basically this is like these are coming from the very very vanilla image that node 22 is building upon. Then the Docker file of node 22 adds these files here up to here and then our own image it adds or our own Docker file. It adds these commands here.
+
+[00:09:24] And just out of curiosity, maybe you're interested in this or maybe your eyes caught some very, very little thing, right? This work directory here forward slash app, it is part of our Docker file. However, in the created column, it's actually saying it was created six days ago
+
+[00:09:40] while the next command here, this copy command was actually created 58 seconds ago. But this is actually in our Docker file, right? So this is a little bit weird. It's actually not weird at all because this is how the Docker caching mechanism works. As it turns out during this course, we have already created a Docker file
+
+[00:10:02] that uses node 22. So these are cached here and that issues this exact instruction work the forward slash app. So Docker is just getting and looking at it and say, hey, this is exactly the same as what you have already done in the past. All I'm gonna do is I'm just going to use the things I have cached already.
+
+[00:10:23] And I'm not going to create new intermediary images. I'm not going to create new layers to your final image. So Docker is really leveraging the cache here and this is one example that you can see, OK, if we actually keep the commands, the same Docker is going to reuse this cache here that is already stored.
+
+[00:10:42] And this can speed up the build, right? Because if this was for example, an installation command or some command that we would build something here and it remains the same, then Docker can reuse that cache and that's going to speed up our build time for the working directory command. I don't think that this makes any sensible, any noticeable difference in practice.
+
+[00:11:03] But I just thought it, it is interesting to discuss this aspect with you. Even though this command here is part of our very recently created Docker file. Docker is still reaching out to the cache and getting a cached version that is equivalent to what it was six days ago.
+
+[00:11:21] Awesome. Now jumping to the size column here, you'll see that most of the image size is actually added at the very beginning of the life cycle of the image. And so this is really coming from the base image that is used by our base image not. And this is really probably accounting for, I don't know 90% roughly of this 1.17 gigabytes good.
+
+[00:11:43] So we spent some good time here exploring the different commands, just a good refresher for us. Let's now jump back to the ide and let's change our base image. We're not gonna use the node 22 anymore. We will actually use the node 22 dash slim. So let's use the slim version here.
+
+[00:12:01] This is supposed to be a trimmed down version of node 22. Let's save this. And let's go back to the ide to build our Docker image back in the ide. I will just keep the zoom as it is because we want to explore the history. Once again, let's run the Docker build command I'm just pressing up here so that
+
+[00:12:20] we can copy the command or just our field based on the history. Let's add a tag of slim. Now, instead of vanilla, you will see that I do not have the slim version locally here in my machine. So Docker will download that and before it actually goes forward with the other comments, so Docker had to download this image from
+
+[00:12:40] the registry and that took roughly two seconds. Nothing more, nothing less. So let's just clear the screen and we should now see that we have a new image called slim. And that's amazing. We were able to reduce this roughly to 1/4 of the size of the original node image size.
+
+[00:13:00] And so now here, if we were to actually run the Docker history with the image size column slim, we will see that the size here that is added by the actual the first base image is much, much less than the previous one. We still have some instructions here that are added from
+
+[00:13:21] the Docker base image from the node based image here. And these are roughly the same. So let's just have a look here at the vanilla one. So Docker history vanilla and you will see that these are roughly the same, right. So if we scroll up a little bit here, we have some architecture and um stuff. Comment here. So you will see 100 and 31 megabytes
+
+[00:13:41] and for the equivalent one, which is, this one is 100 and 75 megabytes. So it's roughly the same here. The really big difference is on this first base image, which has a considerably smaller size. Another interesting point here that now I'm looking at it at this here as you can see now, our work door forward slash
+
+[00:14:01] app here, it is not actually taken from the cache. You see that this cache here was created six days ago, but this work, the forward slash app is just 48 seconds old. And once again, that is because all the different layers here. So this layer and this layer and this layer
+
+[00:14:20] they all build upon each other, right? So they have to have basically the whole chain here needs to be stable. If any instruction in between here changes, then the hash of that intermediary image, the hash of that layer will change and all the subsequent hashes will also change. So the
+
+[00:14:40] caching of Docker really relies upon us having stable instructions one after the other here, we have changed the base image. So these instructions here, you will see that they are slightly different than the ones at the bottom. Even though they are fairly similar. There are some differences here,
+
+[00:15:00] especially if we were to dig a little bit deeper and actually open the Docker file. That means that at this point in time here at this point where we have the comment node from our node 22 base image here. This has a different hash than this comment node at the bottom. So Docker cannot really cache these or cannot use the work
+
+[00:15:23] appcache because the hashes are different and then Docker needs to rebuild this. Awesome. So we were able to cut the image size to 1/4 of this vanilla one. Let's go back to the ide and see if we can use another version of our node based image. And another very common version that we
+
+[00:15:41] have already discussed is the alpine version. This is really based on one of the most minimalistic Linux distributions. And it's often praised for having considerably fewer security vulnerabilities. So let's save this and come back to the terminal and build our image back to the terminal. Let's clear everything.
+
+[00:16:00] Let's run once again our Docker build. And now instead of the slim, we're gonna use the alpine tag. Let's save this here or let's run this command. And after a few seconds, once this is completed, we can then run Docker images and we can see that we have our vanilla, we have our slim tag and we have our alpine tag.
+
+[00:16:20] The alpine is the smallest one here. So that's amazing. We have managed to reduce this to actually 1/6 roughly 1/6 of the original size. Now, this also has an impact on the build time, right? Because the build time really relies on caches and it realizes if it doesn't have a cache hit here. It's going to download this image from the network.
+
+[00:16:41] So further run Docker history. Once again, let's use the image size vanilla here. If we do not have these base images cached in our Docker host, then the Docker host needs to download them from somewhere. That means we are transferring roughly one gigabyte over the network. And if there is some slowness in the network going on,
+
+[00:17:01] then that's gonna make the build process considerably longer. Awesome. So we, I've covered how changing the base image can actually lead to an impact not only on the size but also on the build time. Because of all the downloads we need to do over the network. In case these images are not cached. Always keep in mind that different versions here are different base images, right?
+
+[00:17:22] So just the node 22 or the node slim version or the alpine version, they do have their advantages, but they might also have some drawbacks, maybe they don't have some of the dependencies that your application relies upon. So just keep that in mind that when choosing the basic image, we are once again, not looking for the absolute smallest version,
+
+[00:17:42] but we are actually looking for something that gives us what we need and offers us a good solution here in terms of the size, if we could get, for example, the alpine and then just use it and in one or two dependencies additionally and get the application working, then why not? That's a good choice.
+
+[00:18:00] But if we're going to work with alpine and we need to install 30 different dependencies. And then in the end, our application is actually or our Docker file is huge, then maybe using another node based image could solve the problem in a more elegant way. Just some thoughts and notes that I thought could be useful based on my experience. Awesome. That's it for this lecture. So let's take a short break and come back in the next one.

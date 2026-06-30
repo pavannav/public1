@@ -1,0 +1,61 @@
+[00:00:00] Minicube also offers a very simple storage driver and a storage class that allows us to dynamically provision persistent volumes. I would like to dedicate a few minutes to explore this with you because the mechanics here, the process will be very similar to whenever you are working with dynamically provisioned persistent
+
+[00:00:20] volumes backed by different providers. So the way for us to see what Minicube offers is to start with cube cut get storage class and the storage class that is created by Minicube by default. Here is this storage class called standard. This storage class is then used by Minicube to create
+
+[00:00:42] or to dynamically provision a host path backed volume. We have discussed in the past that host path is not really the best option. And the recommendation from Kubernetes is to use local instead of host path. However, local does not provide dynamically dynamic provisioning and host path. Thus, so Minicube offers this option to us.
+
+[00:01:02] It is good enough for us to explore. It will give us enough things to play around. So let's describe this storage class to begin with and we'll simply run cat, I describe storage class standard. That is the name of the storage class here. And then once we do that,
+
+[00:01:20] we will get some information and what we can see here that this is the name and then there is this is default class. This is mark two. Yes here. And this is coming from the annotations. Let's have a look here. There should be somewhere perfect here. Annotations. Storage class, Cnis is default class true.
+
+[00:01:41] That means that whenever we create a persistent volume claim without a storage class, it will default to using this storage class here, you can see now that there is a provisioner here and this provisioner is responsible behind the scenes for dynamically creating our persistent volume.
+
+[00:02:01] So all we need to do here is to create a persistent volume claim which either does not specify the storage class name altogether or that it specifies the storage class name as standard. We then create this persistent volume claim and we will see that the persistent volume will be created behind the scenes and automatically for us.
+
+[00:02:22] So in our id under the same folder storage persistence, let's create a new file here and we will say dynamic dot YAML. So now here we're just gonna create a simple persistent volume claim. So I'm just gonna copy this actually from something else that we already have here. I'm opening the local volume example,
+
+[00:02:41] let's copy this persistent volume claim and then let's paste this here. So remember from our previous discussions, we have always specified the storage class name here to match the storage class that we have defined in our persistent volume. So we create a storage class name here that was called local storage.
+
+[00:03:03] And then we used the same storage class name here in our persistent volume claim. And that's how we were able to bind the claim to the respective volume. Now, we are not going to specify this. We will simply leave this configuration as it is. And let's change the name here. We're gonna call this
+
+[00:03:23] dynamic example like so or dynamic PV example. And let's save this. Let's come back to the terminal now and let's apply our file. So cube cut apply dynamic dot yamo and you will see that the persistent volume claim dynamic PV example has been created,
+
+[00:03:42] we can now get our persistent volume claims and we will see that it is already bound, right. So before it used it to stay in a pending state if it did not find a matching persistent volume. However, you can see that this one here is already bound and there is already a volume that has been created for us.
+
+[00:04:01] So let's inspect this volume that was created for us. Let's run cube car describe persistent volume and let's paste the volume id. And as you can see here, we get all the information. So it was created or it was provisioned by here, the Minicube host path provisioner that we have seen
+
+[00:04:22] and it also has which path it is mounting behind the scenes in the host. So any data that we save into this into this persistent volume here, whenever we mount a volume mount inside of a container, this data will be available for us inside of this directory.
+
+[00:04:41] I'm gonna split the screen here just for us to SSH into minicube. And let's have a look at this directory. So let's change into temp host path, provisional default like so and then once we list the directories here, we will see that our directory is present here.
+
+[00:05:00] Now, the question is what happens when we delete this persistent volume claim. So let's scroll up a little bit here. You will see that the reclaim policy is set to delete. That means whenever we delete the persistent volume claim, the persistent volume itself will also be deleted.
+
+[00:05:22] So let's run the delete command cube cut, delete with dynamic dot emo file. The persistent volume claim has been deleted. Let's now run cube cut, get persistent volumes. And we will see that the volume is not available anymore. If we list the directories here under our original path,
+
+[00:05:41] we can also see that our data is gone, right. So the the idea here is that the delete reclaim policy, it is deleting everything including the persistent volume and the path that was saving the data. So this is a destructive operation. That means if you are storing some data that should not be deleted.
+
+[00:06:02] You should not use the delete, reclaim policy. You might also be wondering why is the reclaim policy delete here because as we saw before, the default value that was best for us was retained. Whenever we were using the statically provisioned persistent volumes.
+
+[00:06:20] As it turns out with dynamically provisioned persistent volumes, the default policy is delete and that makes sense because we run into the risk of creating a lot of volumes and of having a lot of storage not used afterwards. If we do not delete these volumes, let's clear the screen. And if you wanted to change the reclaim policy here,
+
+[00:06:40] then what you would have to do is you would have to touch the storage class. So let's let's get the storage class standard here and let's have a look, the reclaim policy is here. So if we were to also get the storage class standard and then output as AM O then you will see that the reclaim policy is set to delete.
+
+[00:07:00] If we were to change this to retain in the storage class definition, then all the volumes created dynamically via this this storage class, they would have the reclaim policy also set to retain. I'm not going to change that here because this is not something that we are managing actively, this is something that comes with minicube.
+
+[00:07:20] So I'm just gonna leave the default values, but just keep that in mind that if you want to retain your dynamically provisioned persistent volumes, then you need to set the reclaim policy to retain at the storage class definition level. Coming back quickly to the idea, just to reiterate, we have been able to create the persistent volume dynamically
+
+[00:07:41] because we did not specify the storage class name, but we could also specify the storage class name standard like so and this is the name that we get here, right? So that's the name here and that's the one that we should use whenever we want to use this storage class. If we were to then run here once again, cube cut,
+
+[00:08:00] apply and then let's apply our dynamic file, then we should also see that immediately, our folder is back and we can also confirm that the persistent volume has been created and is bound. Perfect. So let's then delete and by the way here, just to just as a highlight or just as a small comment,
+
+[00:08:20] if you do try to delete the persistent volume and the name of the persistent volume is this one here. If you try to delete the persistent volume, you will see that it's not gonna work until the persistent volume claim is deleted. So let's exit here from Minicube and we can confirm that let's have a look here at the persistent volumes that we have
+
+[00:08:42] and you see that it is stuck in terminated if we were to describe this persistent volume and the name of the persistent volume here, it is quite long. So I'm just gonna copy paste. There are no events and there are no information here informing us that this is waiting for the persistent volume claim to be deleted.
+
+[00:09:01] So let's just come to the folder here. This is a new directory. So I'm just gonna change into the storage, persistent folder. And then from within this folder, we're just gonna delete here our dynamic file or the the resources created. And the moment we delete the persistent volume claim, then you can see here that the process has already completed at the top.
+
+[00:09:21] So it's just important to keep in mind that if you do wish to delete a persistent volume, you do need to delete the persistent volume claim that is bound to it before you are able to delete that volume. Awesome. So great discussion here around dynamic provisioning. This is useful in many cases so that we also don't need to SSH into minicube and create the folders beforehand.
+
+[00:09:44] So Minicube is taking care of all this for us. It does make our lives easier. And this is also normally the path that you would follow, not with a host path provisional, but rather with any cloud based or any third party provisional to actually create your volumes and and store the data behind the scenes.
+
+[00:10:03] But that would normally be the path that you would follow when working with CORS in production environments. Let's then just confirm here that we have deleted everything so we can get persistent volumes and persistent volume claims. There is nothing in our cluster. We're good to go. Let's then take a short break and I'll see you in the next lecture.

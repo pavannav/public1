@@ -1,0 +1,71 @@
+[00:00:00] Hello and welcome back before we continue with the development of our whole application and with the configuration of our reverse proxy, I just want to discuss in a few minutes how we can actually leverage multistage builds here to place all the workflows or all the steps that we need for both development and production images in the same Docker file.
+
+[00:00:23] Before we go ahead, let's just stop both of our Docker Post project in case you have not stopped at the end of the previous lecture, I forgot to stop. Maybe you remember to stop. So if you did remember to stop, then you can skip this step here. But if you forgot like me, then just stop both of them.
+
+[00:00:42] Once the services are stopped, let's come back here to our ID. And the first stage that we have here, remember in a multistage Docker file, a stage is basically anything that starts with the from instruction and we can leverage the keyword here to provide a name for that stage. So this we're just gonna call development,
+
+[00:01:02] gonna remove the white lines here just so that we can group the stages a little bit better. And this development stage will stay the same. Basically, what we want to do is we just want to install all of the dependencies, copy all the files and then start our DEV server. We would also like to define here the production steps. And actually for the production steps,
+
+[00:01:21] we have two stages and we're gonna say here prod dependencies. And what we would like to do here is to literally just copy the package and package Lolo JSON. And in the npm C we would like to install here only equals production. That means that no demon in our case here will not
+
+[00:01:41] be installed because it is listed under the DEV dependencies. This would also be the case for testing frameworks like J or mocha and any typescript or other development dependencies that we might have for our project. Let's then come back to our Docker file dot dev. And now we would like to copy the production
+
+[00:02:01] dependencies from this product dependencies stage to a distroless stage. So we're gonna say here from GRC, this is the distroless base image here that's gonna be forward slash distroless forward slash node 22. And I believe that's actually node JS 22 and we can just define the working directory.
+
+[00:02:22] So work there is gonna be forward slash app. And then we're gonna say here, copy dash dash from the stage will be prod dependencies and we would like to copy the forward slash app forward slash node modules under our current node underscore modules folder. We would also like to copy the source folder into the source folder here.
+
+[00:02:44] And if you have any test files, then remember, you can always come to the dockerignore folder or the dockerignore file here to specify how we can skip this test files. Since we don't have any here, I'm just gonna skip this step. So we're gonna copy the source folder into the source folder inside of the
+
+[00:03:05] app directory. And then our command here is just gonna pass the name of the file and that's gonna be source forward slash server dot Js. Perfect. The last thing I would like to do here is to differentiate between the development and the production stage by naming this here as production.
+
+[00:03:23] Since this Docker file contains all the instructions for both the development and the production stages, we can then rename this and change from DEV just to Docker file just before we move forward. Let's fix a few typos. I was just going through this file again. This should be GCR not
+
+[00:03:40] GRC sorry for that. And here it should be node modules instead of just node module. Perfect. So what does this mean for us? We can actually take this Docker file here and build just using the Docker build command to inspect how we can differentiate between development and production
+
+[00:04:00] within the nodes backend here. We can then run the Docker build command and let's just pass a tag. We're just gonna say here, nodes backend dash and let's pass the tag here DEV. And now what we would like to pass here is to use the option target. And this option target allows us to specify
+
+[00:04:21] any of the stages of our multistage Docker file as the final target for our build. So we can just specify development here. Let's copy this and let's paste in our terminal and let's pass the current directory as the context. The moment we do that and we run this Docker build command,
+
+[00:04:41] you will see that it will execute only the instructions from the development stage. We can then check this image, we can check the history of this image by running Docker history and then notes back and colon dev. And if we have a look here a little bit more towards the top, we will see that we have our commands as specified in the
+
+[00:05:04] development stage. So we were able to target a specific stage of our multistage Docker file as the outcome as the final stage here to be created in our image, we can do the same for production. We can simply say Docker build and let's pass a tag here.
+
+[00:05:23] So I'm just going to change a few things. Let's pass the tag broad here and the target will be production. And once we run this, we will see that the steps that will be executed are actually slightly different. You will see that we are now downloading our distroless image here
+
+[00:05:40] we are then running our product dependencies step and then we are running our production steps if we scroll down a little bit more and we simply run the Docker history. But now with the notes back and colon pros, I'm just gonna copy this and paste it here. We will see that we have a very different history here.
+
+[00:06:00] Now, we can see that we get the information from the production stage of our Docker file. This enables us to have really just a single Docker file that can have all the logic and all the steps that are necessary for both starting up our application in development mode as well as in production mode, whether you wish to separate this into multiple Docker files or just leave
+
+[00:06:24] a Docker file with multiple stages that really depends on the requirements of your project. But for us here, I thought it would be worth it to explore this concept. We can now open our compose dot YAML. Let's change the Docker file to Docker file like so
+
+[00:06:40] and then we can add an option called the target here and the target will be exactly the same as before. So we can either define a development target or a production target. We can also define product dependencies target. But for us here, it just really doesn't make a lot of sense except if we want to just debug some of the dependencies that are installed
+
+[00:07:01] because as you already know in a distroless image here, we do not have shell so we can just run LS or have a look at the directories. Great. So let's save our Docker file here. Let's come back to the terminal and let's see what is going to happen. Once we run the Docker compose up in the terminal, let's clear the terminal.
+
+[00:07:21] Let's then run Docker compose and let's run down here to remove whatever is already available. Let's run Docker compose up with both the build and the watch flag. Let's also split our terminal so that we can send a couple of crow requests here.
+
+[00:07:40] So the crow request is gonna be to port 3001 localhost port 3001. We got the message back. Hello from notes. Let's now change our code and we will just come to source and then server dot Js and let's just add an exclamation mark here. Let's save this, come back to the terminal
+
+[00:08:00] and we can confirm that the server was restarted due to changes. Let's see. Yes, here are the logs. We are just restarting the Nodemon process and if we were to crawl once again here, then we will get back the exclamation mark. Great. Let's stop our running containers here and while they are stopping,
+
+[00:08:20] let's come back to the ide and let's open our compose file. Let's change from the development target to the production target. Remember the target here needs to match the name of the stage. Once we do that, we can then come back once again to our terminal. Let's now try to run once again the Docker compose up build watch here.
+
+[00:08:42] And this will leverage the disc for less images. So if we scroll up a little bit more until we get the results here, let's see. We got the pro dependencies and the production. That's perfect. Let's scroll down here and let's come back to the id and let's try to change a command or let's try to change our source file here.
+
+[00:09:03] The moment we do that and save this, we actually get an error when trying to sync our files. And that is because we are not. So this get command here is not available. It's not found. This is a distroless image. There are no executables except from node
+
+[00:09:21] and the minimal dependences that node needs. Therefore, we are not able to have the hot reloading feature here because this is not really a valid command. Even if this was a valid command. Even if this was valid in our container, we would not have hot reloading
+
+[00:09:40] because we are simply starting our node process with node SRC servers. Remember the distroless image does not start any Nodemon processes. It just runs a simple node process just to confirm, let's run the cURL here and we can confirm that we're still getting the old code back. Remember we removed the exclamation mark here,
+
+[00:10:02] but we are still getting the older version. So this is a great way for us to actually confirm that we are able to alternate between both the development and the production targets by just changing one attribute in our compose file. Let's then stop our running containers here. Let's clear. Or actually let's close this additional terminal.
+
+[00:10:22] Let's then come back to the idea. Once again, let's open our compose. We would like to have the development target here. Let's actually have the same logic that we have from this Docker file. Let's copy this paste inside of the Docker file of the notebooks backend service.
+
+[00:10:42] Let's then rename this Docker file here. Let's just have the standard Docker file and then decompose the, we're gonna change from Docker file dot dev. Let's just change this to Docker file and let's add a target here of development. Since we are using the standard Docker file name,
+
+[00:11:01] we can omit this Docker file option here. We can just remove this. Let's remove this other one here. This is also this can also go. And then once again, this is an alternative way for setting up the project. It doesn't mean it's always the best way. Sometimes if your do file gets really,
+
+[00:11:20] really big and it's hard to understand what's going on. Then separating the Docker file and splitting it into multiple Docker files might actually help to understand and manage the project. So I'm just showing you alternative ways of actually achieving the same thing. Perfect. That's it for this little Refactoring. Hopefully it also introduced a new concept to you that can be useful in the future.
+
+[00:11:42] Let's then take a short break and continue in the next lecture.

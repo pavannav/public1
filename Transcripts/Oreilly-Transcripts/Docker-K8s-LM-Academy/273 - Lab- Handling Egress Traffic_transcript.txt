@@ -1,0 +1,69 @@
+[00:00:00] All right, let's now discuss egress policies here or network policies. And similarly to what we did with ingress, we can also deny all the egress traffic. That means our pods would not be able to reach out to the external world under any circumstances. And we can simply apply this as the default policy as well. Let's save this here.
+
+[00:00:25] Let's come to our terminal. Let's apply the deny all policy. So policies forward slash denyall dot YAML and let's now create a pod here. So keep cURL apply. Let's use the crawl dot YAML file and let's now exact into our row
+
+[00:00:43] pod crawl and let's get a show running and let's try to reach out to Google. And the moment we do that, we are immediately blocked, we are not able to reach out to Google here because no traffic is allowed to leave our container. Let's then exit the shell here and let's now try to actually start
+
+[00:01:04] setting up some egress rules here in our crow pod or that target our crow pod. So similar to how we set ingress rules, we can also set egress rules. I'll just copy the allow profile and I'm gonna say allow color A P
+
+[00:01:20] Alex. And the idea here is that now I will be targeting the pods that are labeled with an app key and the value of row. So what I want to enable is the traffic to flow out of the crow pods if and only if they are targeting the color API pods.
+
+[00:01:41] So we will set the policy type here to egress, we'll then define an egress key here and instead of from that's gonna be two and we will then also have our pod selector like. So and the target here will be the color API pods, right? So this is how we define the egress policy.
+
+[00:02:03] And I can tell you there is a gotcha here. I'm not going to implement it right now. We're gonna come back to this, but let's just save this here. And the second element that we need to do, let me just rename this file from allow crow to allow color API like so, and the second thing we need to do here is we
+
+[00:02:20] also need to allow the ingress traffic coming from our copod. So I'm just gonna copy this here. Let's copy this, let's paste or actually let's just copy the pod selector and then let's paste this here in a new item on this list. And let's say that it will allow traffic coming from the row pod. So just to summarize here, what we did, we have denied all the egress traffic.
+
+[00:02:44] We have then allowed traffic to flow into color API from the pods which have a, an app label set to the value cURL. And we then also have allowed traffic to flow out from our cURL pods.
+
+[00:03:00] If and only if it's targeting our color API pod. Let's then come back to the terminal here. Let's delete our color A P our sorry, not color API, but our cURL pod. So delete force and we can then actually delete all the pods here. Let's also delete our color API. Since we will change the network policy here,
+
+[00:03:23] let's now apply our policies and we can apply the entire directory so that we configure all of them. And let's now apply once again our color API deployment and then let's also apply our chro pod like. So, so now before we exact into our pod,
+
+[00:03:43] I just want to get the private IP address of our deployment of from our color API pod of our deployment. So let's describe this here and I will soon, soon tell you why I'm doing that. So let's just get the the private IP address here of our pod.
+
+[00:04:01] Let's copy this here. And now let's exact into our chro pod. So now from within the cord, we can reach out to the private IP address of our call API pod without any issues, this connection is perfectly going through
+
+[00:04:21] what happens. However, if we actually try to reach out to the caller SVC service here so that we can reach out to the underlying call API. And the moment we do that, we see that this request is actually hanging and it's gonna actually time out and it's not gonna be able to go through the service.
+
+[00:04:41] So this is something that might seem a little bit curious, a little bit cryptic to begin with. But the answer to this is that this service here in order to resolve the final IP, the target IP of our pod, the cURL pod needs to communicate with the cube DNS application
+
+[00:05:00] or pod that is running in the cube system, namespace. It basically needs to reach out to the DNS. It needs to wait for the DNS resolution to actually return the IP of the pod and then it can actually connect to the pod. So because it is not actually allowed to leave the traffic when the traffic is targeting anything other than the color API,
+
+[00:05:22] then the traffic that is leaving, trying to reach out to the DNS is actually not allowed to leave. So we also need to customize this in our configuration file. Just before we do that. I want to show you how we can actually confirm that the egress is also working for other non call API
+
+[00:05:40] P addresses. Let's split the terminal. Let's just quickly here. Ping google.com, we get back an IP address here. If you copy this IP address and you paste in your browser, it will open the Google page. So we to just crawl this IP address, you will get the answer back here.
+
+[00:06:00] So it is able to get connected to Google. And now if we were to actually try to send a request to not WW dot Google, but to this IP address here, then we will see that this is actually not able not allowed to go through. Right. That's because this IP address here does not resolve to a pod that
+
+[00:06:21] is marked with the app label with the value of color API. All right. So let's cancel this. Let's exit this here. And let's now adjust our network policy before we do that. Let's delete our pod, adjust the cURL one here. And let's now come back to the ID and let's allow egress traffic to actually go to our Cube DNS service.
+
+[00:06:44] How do we do that? We add a new entry here and now we do need to select the name space. We're gonna go with name space selector and this will be match labels. And now let's get the label here. Let's come back to the terminal. Let's describe our name space cube system.
+
+[00:07:02] We're gonna get the label here that we can use to actually reach out or identify this this name space. And then we're gonna add it here. And now within this name space, we actually want to allow our application to communicate only with the cube DNS system.
+
+[00:07:20] So let's come back once again here we can describe. So let's get our pods within the name space cube system. And now we're gonna see we have here our core DNS. That's the one we are looking for. So let's describe our pod CO DNS with the name space of cube system like so and then here if we scroll up a little bit,
+
+[00:07:42] you see that we have a label that says perfect. That's exactly the label. I'm looking for K eight S app cube DNS. So let's copy this label and now let's paste this label here, right? So now it means that traffic is also allowed to leave our pod.
+
+[00:08:00] If it is targeting the cube DNS K eight app label within this name space. Let's save this here. Let's now clear the console. Once again, let's apply our policy. So the policies forward slash allow dash color API like so and then let's apply once again our cURL dot YAML file.
+
+[00:08:22] If we now exact into our pod once again and we send a request to call or dash SVC, then bingo no problems, we get a response back. So you can also, and potentially you actually would want to do that here. So you'd probably split this
+
+[00:08:40] into, let's right here. Allow egress DNS dot YAML and this would be its own policy. So let's just copy this here. Let's paste this here. And we would probably like to allow all the pods and I'm being very permissive here. So we would like to allow all the pods to communicate with our Cube DNS system.
+
+[00:09:01] And so any pod here will be able to communicate with the Cube DNS system. And now here, we can be more explicit regarding how we are setting the rules. And that's basically because we might have other pods that also wants to reach out to pods by using services. So it does make sense that we have this as a more general
+
+[00:09:21] as a separate policy so that we can extend the pod selector here independently of this one. If we had it in this policy, and then we needed another pod here with different labels, then we would either start to have to tweak these selectors here in a very specific way or to duplicate a lot. This allow egress DNS policy here
+
+[00:09:43] before we switch to the terminal. Let's just change the name here. So this name is mirroring this one here and that can lead to conflicts. Let's then change this to allow egress DNS like. So let's save this here. Let's come back to the terminal. Let's now apply our policies.
+
+[00:10:01] So I would like to apply the policies allow color API. And the other one is policies allow egress DNS. And then we can confirm here that the allow color API has been configured and that the allow egress DNS has been created. Let's now delete here our cURL
+
+[00:10:21] pod. So let's see if this is up and running. Let's delete this that has been deleted. That's perfect. Let's now apply once again our cURL dot YAML and let's exact into our pod if we were to now try to send a call request to call SVC. That's perfect. That is still working as expected,
+
+[00:10:41] right? So now we were just able to split the grass policy into two in a way that makes it more maintainable for us because this refers really to application specific traffic while the egress DNS allow here is more general and can potentially be applied to many pods.
+
+[00:11:00] Perfect. So let's save this. This wraps up our discussion in around egress in in network policies. Let's delete everything here from our policies and let's delete everything as well. So keep Carro delete, let's delete everything from our current directory. And then if we get the pods, let's see if everything has been removed. Keep Car
+
+[00:11:21] get pod, the crow one is still terminating. So we can wait a little bit here, but we can confirm that the services have been deleted. And if we were to also get the network policy, we can confirm that there is nothing in the default name space. Great. Let's then take a very well deserved short break and I'll see you in the next lecture.

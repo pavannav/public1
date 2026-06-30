@@ -1,0 +1,57 @@
+[00:00:01] Welcome course takers to video number two creating our container with codebuild. So in this video, we're going to build a basic C process that takes the source code that we created in code commit in the last video and basically turns it into a container in ECR. So if you're ready, let's get started.
+
+[00:00:21] So let's quickly review what we're going to do. Step one B, we're basically adding a basic C continuous integration capability. So we're going to have a quick look at the doc file that we've created to containerize our application. We'll then build out our cloud build project using terraform. We'll create our sync, which is our image
+
+[00:00:41] repo an elastic container industry. We need to add in some controls and some commands into a build spec YAML file and add that into our repo and then we can run the build. And what should pop out at the end of it from the source code is a tagged container with our application in it. So if you're ready, let's get started.
+
+[00:01:00] OK? So let's start with having a quick look at what we have. So we know that we have a repo called Pson if we look in our container registry, we don't have any images in here at all at the moment. So that's fine. And then if we go into our build environment, then we don't have a project to do the build.
+
+[00:01:22] So let's have a quick look at our Docker file. So we go back into our application and here's our Docker file. So we're not going to spend too much time looking at Docker files. There is a bit of an art to it. The idea is to keep it as small as possible. Ideally, you kind of use multistage builds as well, but this is quite a straightforward one.
+
+[00:01:41] So we, we start with a Slim Python image. So we're using slim Buster here. We put some information in here from widgets.com. We do an update, we install some basic pieces of code. So GCC, if we need to compile anything, we then take our requirements dot Text, add that in and run the requirements dot text.
+
+[00:02:00] We copy our application code into app exposes port 8080 we run Python with a main dot py command. So that's pretty basic. We haven't tried anything too fancy here as a rule of thumb. The things that change the most are your source code should go last and the things that change the least should go at
+
+[00:02:20] the top and that's all we really need to do. So we already have that Docker file in our repo. So we don't need to add anything more to that. What we do need to do is create a build project. So if we look at our code build a bit more complicated, some of the
+
+[00:02:40] some of the commands here. So the first thing we need to do cloud build basically takes a source and then configures does some work and configures an output effectively. So that might be a set of tests or it might be in this case a an artifact. So we need to specify what the source is. So here's our URL for pim
+
+[00:03:01] that we created before. And we also need to specify what branch we're going to work from. So it doesn't need to be a branch, it could be a commit as well. So we've specified, we're going to use the master branch, then we create our project. So we have to give it some information. We have to give it a role and that's been pre created. Here's where we say which branch we're going to fire off.
+
+[00:03:21] Here's our environment we're creating. So we have a set of Linux containers that we're gonna use and use standard two for a Docker build. We give it some environment variables. So which default region, which account what's the image version and what's the tag version. And then we log all these things and then here we specify
+
+[00:03:40] the source and how deep we want to go and we just give it some tags So it's pretty straightforward. You can get quite complicated for our purposes. We're just going to output a Docker file. So it's quite straightforward. So if I now we go into two code build terraform, apply spelt, right? What this is doing obviously is calculating all states, we're going to add one.
+
+[00:04:01] So yes, and it creates a build project. So quite straightforward, if we go into our build projects, I've now got my p simple build project. And if you look in detail and see all the relevant information here, OK? So here's our source service, roll
+
+[00:04:22] and logs. Now important thing to mention it's been configured. So it's going to get its instructions on what to do from the build spec dot YAML file in the source code directory. So we'll need to add that file in order for all this to work. So the other thing we need to create now is the actual sink.
+
+[00:04:42] So where do we want to put containers? So I create a repository, but let's do that through terraform. So we'll have a quick look at the Terraform. So ECR which is quite similar to our codecommit library. It's a very simple two line configuration. So we basically say AWS cr posit,
+
+[00:05:02] give it an internal name for Terraform and then we set up its name so I can just run that supply. OK. So if you go back to container registry, click on that.
+
+[00:05:20] OK. So now we've got our pi simple container registry. OK? No images in there. Great. That's what we want to see. So we've got our source which is co commit. We've got our build project which will spin up the resources to create the elements. And then we've got our sync, which is our cr repository.
+
+[00:05:40] So what we need to do is tell the job the project what to do. And we do that with our build spec dot YAML file. So let's have a look at our build spec YAML file. Here we go. So basically, we've got our version, then we've got some phases. So the first phase is really just to log on to ECR. So your service account that you've got given as a role needs to have cr privileges,
+
+[00:06:02] then we have a standard build process and we've got some tags in here. So repo name, image tag, which are passed into it and then the account IDS and then basically the AWS account and where to push it to which repo. So there's nothing specific about this project.
+
+[00:06:20] Everything, there's nothing specific about this build spec file. Everything is passed in through image through environment variables so that we can use this as a standard template for all of our code that we build. But what we have to do is copy that and then what we wanna do is paste it into
+
+[00:06:40] here. So we've got build spec dot YAML and then I'll need to commit that. So if I go into, let me just push it into a repair,
+
+[00:07:03] OK? So we can go back into our co commit. And what we should have in our master branch is the build spec YAML and there we go. Perfect. So now I just need to build. So if I go into codebuild,
+
+[00:07:20] I want to start the bills. Nothing more. I need to add in here. The only thing I'm going to do is override the image tag and we're going to stick it at 0.0 0.1 and start a build. Now, this can take a little bit of time. So I'm just gonna pause the video while this runs through and here we go. So it's completed,
+
+[00:07:42] it's successful. And if we look through the logs, which are also by the way, pushed into cloud watch logs, we can see all the code coming back for pulling the various modules, creating the layers, all the things that are defined in our Docker
+
+[00:08:00] file. I close this. When is that back to him? Got succeeded. And now if I go back to taking the registry should have an image and I do have an image here. I can trigger that manually. If we go into
+
+[00:08:21] to build, I can look at using build triggers as well. So I can create a trigger to do this on a regular basis. For example. And I can also use web hooks where some of the limitations you'll see and we'll talk about this in the final video. It's very difficult to kind of link these things together. And what you need is a pipeline that sits over the top of
+
+[00:08:43] the build and the test features, the build and the test runs that you're doing. So, so this gives us the basics of a CI platform in that we can take some code and we can programmatically convert that into a container and we can use versioning and tagging on the container to make sure we have the build pieces.
+
+[00:09:01] So what we've got so far is the source code. We've got the artifact that we're going to use. We've built the artifact in the next video. We're going to look at how we build the rest of the sporting infrastructure and then final technical video, we'll look at how we actually deploy the application. So I hope that was interesting. Please join me for the next video where we look at deploying ecs and R DS.
+
+[00:09:21] Thanks very much.

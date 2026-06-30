@@ -1,0 +1,75 @@
+[00:00:00] Hello and welcome to this lecture. Managing storage effectively on Linux servers is a critical skill to ensure optimal performance by default. The root disk also known as the boot disk is dedicated to running the operating system. However, it's not ideal to store application data here.
+
+[00:00:24] Why? Because application data can consume significant disk space and IO resources which may slow down the operating system and critical system processes. Additionally, mixing application data with system files increases the risk
+
+[00:00:43] of accidental modification or exposure of sensitive system files. In this lecture, we will focus on understanding how to manage storage effectively and all the nuances involved
+
+[00:01:00] in the next lecture, we will dive into the practical steps and see them in action. Now, let's talk about our setup. We will be using our two A W server for the demonstration. As you know, every E two instance comes with the boot disk, which is the primary storage volume attached to the instance when it is launched,
+
+[00:01:25] this disk is responsible for running the operating system. Instead of overloading the boot disk, we will take the advantage of AWS elastic block store or EBS for application data.
+
+[00:01:42] Aps allows us to create separate scalable and high performance storage volumes that can be attached to our instance by keeping application data on EBS, we not only reduce the load on the disk but also improve the performance and reliability
+
+[00:02:02] of both the OS and other applications. To achieve this, we will create an EBS volume and attach it to our EC two instance. Once attach this volume will appear in the Linux device tree typically under the
+
+[00:02:21] slash DEV directory. But here is the key point. Just attaching the disk isn't enough to make it usable. Several steps are required to configure and prepare the volume for the use. These include partitioning formatting it with the file system and mounting it to a directory so that it's accessible.
+
+[00:02:44] We will explore all of these steps in detail in this lecture. So you can understand the theory behind each process. The first step after attaching the disk is partitioning partitioning is the process of dividing the disk into
+
+[00:03:02] smaller logical sections to make it more manageable and organized in Linux. There are two types of partitions, primary partition and extended partition. Here is the key limitation. You can only create up to four primary partitions on a single disk.
+
+[00:03:25] So what happens if you need more than four partitions? That's where extended partitions comes into play. Let's consider an example. Imagine we have a 500 GB disk and we need to create five partitions of 100 GB each.
+
+[00:03:46] Since we can only create four primary partitions. This setup isn't possible using primary partitions alone to overcome this. We would create three primary partitions of 100 GB each which totals 300 GB.
+
+[00:04:03] The remaining 200 GB would be allocated to an extended partition inside this extended partition. We can create multiple logical partitions. In this case, two logical partitions of 100 GB each.
+
+[00:04:20] This flexibility allows us to have more than four partitions on a single disk. By using an extended partition for disks with GP T partitioning, there is effectively no limit to the number of partitions. However, on MBR partitioning, you can have up to 15 logical partitions within the extended partitions.
+
+[00:04:47] Another important factor to consider during partitioning is how Linux reserves these sectors for system metadata. Now what is a sector?
+
+[00:05:00] A sector is the smallest unit of data storage on a disk. Typically 512 bytes in size on most Linux file system. Each disk platter is divided into tracks and each track is further divided into sectors. When you create a primary partition,
+
+[00:05:23] Linux reserves 2048 sectors at the start of the partition for storing critical metadata including the partition table and a table. The partition table defines how the disk is divided.
+
+[00:05:40] Recording each partition's start and end sectors size and type like primary or extended. Without this, the operating system wouldn't know where one partition ends and another begins. The IOT table stores metadata about files and directories helping Linux
+
+[00:06:03] manage the partition structure. For example, if you create three primary partitions, Linux will reserve 2048 sectors for metadata on each when creating an extended partition. Linux
+
+[00:06:22] treats it as a container for logical partitions generating its own partition table. And IOT for managing these logical partitions similarly when dividing the extended partition into logical partitions, for example, 100 GP logical partitions,
+
+[00:06:42] Linux reserves space for metadata for each logical partition just as it does for primary partitions. This metadata ensures that each partition, whether primary or logical is independently manageable and readable by the system
+
+[00:07:01] partitioning alone does not make the disk usable to make it readable and writeable. You must create a file system. Linux supports various file system types like EXT four and XFS which we have already discussed earlier in this section. The file system formats the partition so it can store files and directories.
+
+[00:07:26] Before mounting the partition, you need to create a directory where the partition will be mounted. This directory acts as the access point for the data stored on the partition.
+
+[00:07:41] After formatting and creating the mount point. The next step is to mount the partition to a directory. This directory acts as the access point for the data stored on the partition mounting can either be temporary or permanent
+
+[00:08:00] temporary mounting is where the partition is mounted until the server reboots using the mount command to make the mount persistent across reboots. We update the slash etc slash FSTAB configuration file. When we discuss some important configuration files in the
+
+[00:08:22] etc directory. In section three, you might recall our mention of the etc FS tab file. This file plays a key role in managing how file systems are mounted and is crucial for ensuring your disk partitions are automatically mounted at
+
+[00:08:41] boot time. When a disk is no longer needed, it must be unwanted and securely decommissioned. Simply unmounting the disk can be attaching it is not enough in cloud. If the disk is reused elsewhere, the partition table and data might still be accessible
+
+[00:09:03] to securely decommission a disk. We need to delete the data, remove the partition table and then format the disk. This ensures the data cannot be recovered or accessed by unauthorized users
+
+[00:09:22] to summarize. We will follow these key steps, create an EBS volume and attach it to our server. Partition the volume into appropriate sections for better management, create a file system on each partition to make them usable.
+
+[00:09:43] Create a mount point which is a directory where the file system will be mounted, mount the file system to this directory for axis finally, we will also see how to unmount and decommission the volume when it's no longer needed
+
+[00:10:01] before we move on to the demonstration. Let's quickly review some of the disk management commands that we will be using. Use LSBLK command to view all block devices and their partitions. It's helpful for understanding the structure of your disks,
+
+[00:10:23] blkid command displays uuids of disks and partitions. UUIDS are often used in slash etc slash FSTAB to uniquely identify disks. Fdisk
+
+[00:10:40] hyphen L lists all disks and their partitions. It's useful for checking partition tables especially on master boot record or MBR partition disks. DF hyphen gives you an overview of the disk space usage of all mounted file systems showing used and available space.
+
+[00:11:05] FDISK slash DEV slash STX opens the partitioning tool for the specified disk. Here you need to replace X with the actual disk collect. This is used to create or manage partitions
+
+[00:11:22] MKFS dot file system slash DEV slash TX. One creates a file system on a specific partition which is ideal for large data or performance sensitive applications. Examples include XFS and
+
+[00:11:40] EXT four mount hyphen A mounts all the file systems listed in the etc FSTAB file. It's used to automatically mount all partitions defined here. Unmount this unmounts
+
+[00:12:01] the partition mounted at which is useful when you're done using the partition and want to safely detach it. These commands form the core set of tools that we will be using in the upcoming demonstration to manage and configure disks.
+
+[00:12:20] That's it for this lecture. See you in the demonstration.

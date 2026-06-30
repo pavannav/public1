@@ -1,0 +1,63 @@
+[00:00:00] Hello and welcome back. Let's now continue with the implementation of our networking validation. Let's cover the 0.4 0.3. Let's implement the validation for security groups. The only thing we would like to implement here is to make sure that there are no inbound rules in these security groups that reference any IP addresses or
+
+[00:00:21] CIDR blocks for us to do that. We will adopt a strategy very similar to the one that we use for subnets. So within our networking validation file, let's just scroll up a little bit here. We will see that we have retrieved the subnet information via a data source and we will do exactly the same with our security group rules.
+
+[00:00:43] For the subnets. We have used the variable subnet ids that we receive. But for the security group rules, we need to do that in two steps. Since we do not receive security group rules, IDS here, we instead receive security group ids. We first need to fetch the IDS of all the rules associated with the
+
+[00:01:03] security groups that we receive here and then we can evaluate each rule individually. So let's do that in two steps here. The first one is we're gonna use once again a data source. We're gonna call this AWS underscore VPC underscore security group rules. The one that has a plural here.
+
+[00:01:22] And we're just gonna call this input and this data source accepts a nice filter option here which allows us to filter by the security group id. Before we implement that, I just want to show this data source here in the dataform AWS provider documentation. You can see that this resource can be useful for
+
+[00:01:42] getting back a set of security group rule I DS. And here is the shape of how this looks like. So we can provide the name here of a group ID. And then the values will be a list of security group I DS. This is exactly what we are getting as an input. So we can directly pass the input here.
+
+[00:02:02] Let's scroll down a little bit more. And I just want to show you here which values are allowed for this name parameter. Let's open this in a new tab and this will bring us to the AWS API describe security group rules. If you scroll down a little bit more, you will see that we can pass here in filter dot And we can pass
+
+[00:02:22] one or more filters and this specifies all the filters that we can provide. Also to the data form, data source. We're gonna focus on the group id here. So let's go back to the IDE and let's say your name is equal to group dash id
+
+[00:02:40] and the values will be equal to simply bar dot security group ids. This here will return a bunch of security group rules and their IDS, right? So if we go back to the documentation and scroll down a little bit more, we will see that in the attribute reference here, we have IDS
+
+[00:03:00] and this basically gives us the list of all the security group rule. IDS found. We will then use this list of IDS to fetch the individual or the information for individual security group rules. Let's then use a very similar data source here. It's called AWS underscore VPC underscore security group rule. But now this is the singular one.
+
+[00:03:22] We will also name input here. And now we're going to leverage A for each block. So we will say for each is equal to and we'll simply say two set and we will then get the DS that we got back from this first data source here. So we say data dot AWS underscore VPC security group rules dot input.
+
+[00:03:43] So this refers here to this input. So it's this data source. It's important that this is in the plural here. And I will simply say dot I DS, right? So once we have the dot I DS here in the, for each block, we can now for each of the security group rule I DS fetch the individual information.
+
+[00:04:03] So it a security group rule ID is equal to each dot value. Before we move any further, I just want to differentiate between or explain a little bit more in detail why we are using the security group rule and the security group rules together.
+
+[00:04:21] The problem or the limitation with the security group rule. Data source is that it allows us to work with only a single security group rule. If we scroll down here, you also see that we can provide a filter. And if we click here on this link and we go back to the security group rules and we click on the same link as we had before.
+
+[00:04:43] We will see that the page that we are redirected to is exactly the same. So we see here that the link is exactly the same. We might be tempted to use directly the security group rule data source here and just pass the future. However, we will soon run into problems if more than one
+
+[00:05:03] security group rule is returned here within this data source. Let's say that we want to pass two security groups. And then the future here would actually have two values in the values here. This would return at least two rules, one for each security group. And then this resource here would throw us an error.
+
+[00:05:22] We're going to demonstrate that a little bit later on in this section, I just want to highlight right now here why we have implemented both of them? Because you might be asking yourself, hey, why don't we go directly with the security group rule? That's a fair and valid question. And that's why I want to give you the reason behind
+
+[00:05:41] composing these two data sources to achieve the desired result. Great. So once we have specified here, the security group rule ID, this is the best, the most stable way for us to fetch a single security group rule because IDS are unique between security group rules. So this will ensure that we always get one back.
+
+[00:06:01] Let's now create a life cycle. We're gonna say post condition and then we say condition here and the condition that we want to inspect for is let's just add an error message here. An empty one just to get rid of the squiggly lines. And the condition we want to inspect for is remember, let's come back to the read me.
+
+[00:06:20] Inbound rules should not contain IP addresses or cidr blocks. So the first thing we will do here is check if this is an egress rule, if this is an egress rule. So self dot is underscore egress, right? So if this is the case, then I don't care about this condition. I don't want to check for IPv4 cyber blocks or addresses.
+
+[00:06:42] I'm just gonna say, OK, this condition will pass. If this is not egress though, then we need to do a couple of checks. The first one is that we should check whether the Cider underscore IPV four is equal to now. So it should be equal to now. And the self dot
+
+[00:07:01] Cidr IP V six should also be equal to now. And the last point here is that we would like to ensure that we have a referenced security group ID and that this is not set to know there is a small typo here. Let's fix this and now everything should be looking good.
+
+[00:07:23] If you are wondering where I got those attributes from, you should think immediately documentation. So there is no magic, there is no knowledge that is not mentioned here. If we scroll down, we will see in attribute reference of our VPC security group rule data source
+
+[00:07:40] that we have the Cider IPV four, Cidr IPV six, we have whether this rule is an egress rule or an outbound basically. So basically outbound and egress are synonyms here, whether it is an outbound or inbound rule. It also provides the reference security group ID, the destination security group that is referenced
+
+[00:08:01] in this world is basically says that if traffic is incoming from an instance that has this security group attached to it, the traffic will be allowed here, I mean incoming. So I'm I'm assuming that this is an inbound rule, right? But this is normally the case whenever we use a security group ID. So we say
+
+[00:08:20] that hey, allow traffic from any instance or any AWS entity that has the security group attached to it. We also have the security group ID of the rule itself, right? So this is not the one that we are allowing traffic from. This is the security group ID, that the rule is connected to the reference security group ID is the security group ID that we are allowing traffic from.
+
+[00:08:43] So if these points here are not very clear where they came from, then you should always think, hey, I'm gonna look at the documentation that's probably where these things are coming from. And that's actually from where I take this information. Let's now create a much better error message here. Let's put a minus
+
+[00:09:00] eot and then eot. And then here we will simply say the following, the following security group contains an invalid inbound rule and then we will just pass the ID here. We could actually go and fetch the security group name if we were to use a data source for security groups.
+
+[00:09:20] However, the ID will be good enough for us. Now, let's add an equal here. And then we'll simply say self, self dot security underscore group underscore ID, we will say please ensure that the following conditions, the following conditions are met. And then 0.1 will be
+
+[00:09:41] rules must not allow traffic from IP cyber blocks only from other security groups, right? So this will then inform the user that there is a problem with the provided security group here
+
+[00:10:02] that has some rule which is allowing inbound traffic from IP cyber block. So we will say here, rules must not allow inbound traffic. So let's add this here, inbound traffic from IP cidr blocks only from other security groups. This is looking good. So let's save this.
+
+[00:10:22] Let's run a terraform format recursive here so that this looks a little bit better. Let's take a short break and come back in the next lecture to test this validation.

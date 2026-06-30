@@ -1,0 +1,71 @@
+[00:00:00] Hello and welcome back. Let's continue with importing our Lambda function. Let's try to fix this file name here. So we would have to provide either file name, image URI or an S3 bucket. Let's focus on file name. Let's jump to the terraform documentation here. And as you can see this file name, let's look for this option here in our arguments.
+
+[00:00:23] And if we paste it here and go down a little bit, then we will see that this has to be the path to the function's deployment package within the local system if we go back to the example here. So if we scroll up a little bit into the basic example,
+
+[00:00:40] we will see that this is a zip file and maybe you're tempted to declare just a javascript file and use that as the file name. However, a deployment package in Lambda and I have here, the AWS documentation Open a deployment package in Lambda is going to be either a container image or a
+
+[00:01:00] zip file archive. So Lambda supports only these two types of deployment packages. That means that we will either have a zip file or directly a container image, the container image here you would pass via, let's look here at the attribute reference, the container image you would pass via this image uri.
+
+[00:01:21] As you can see this has the elastic container registry image uri containing functions, deployment package. That's why we will go with the file name. However, for us to pass a zip file, we can leverage the archive file, data source. And this just makes it easier for us to package our javascript file
+
+[00:01:43] into a ZIP file and then leverage this in our function. So let's do that before we add the data, archive file. I have it open here on, on my browser. And you can see that the provider of this archive file is actually another provider. It's not the
+
+[00:02:00] aws, you can see here at the top that the provider is the archive provider and the version is 2.4. So first we need to add the archive provider and then we can use this archive file, data source to package our javascript files and pass it to the Lambda function. Let's then return to the IDE inside of our provider dot TF. Let's add here, archive
+
+[00:02:25] and the archive will be equal to source. That's once again, Hashi Corp forward slash archive. And the version here is going to be at least version two. So we're gonna work with 2.0.
+
+[00:02:40] Remember once we, whenever we add an A provider here, we need to run the form in it once again, so that we install this provider. That's great. Now that we have it, we can use the data source here. So let's add data archive and let me remove this. So data archive file that's already here. And we're gonna say Lambda,
+
+[00:03:02] Lambda code. And now here, let's come back to the documentation. You will see that we have a type, a source file and an output path. I'm gonna copy this here and I will go back to the ID, paste it here. And now we need to provide our javascript file. We can just have your index dot
+
+[00:03:23] MJ. So this is module or javascript and the output that we would like to to have here is just gonna be, let's say Lambda dot zip. We also need to of course create our index dot mjs file. So let's create it here, index dot mjs
+
+[00:03:40] or actually even better for us to, to organize our code a little bit more. Let's create a new folder. We're gonna call this build and then within the build folder place our index dot mjs our function. We're just going to change this here. We're gonna add build index dot mjs. We could also completely omit this here since this will then take the current
+
+[00:04:01] directory or we can leave this here and actually use path dot root. I want to clarify a little bit the difference between path dot root and path dot module. And here, as you can see when I hover over root, then it shows me the file system path of the root module of the configuration. If we have path
+
+[00:04:21] module here, let's hover over this. It's going to give us the file system path of the module where the expression is placed. Now, the problem of using path dot module is that if we are calling this code from within a module in dataform and this module is being used by another Dataform configuration,
+
+[00:04:42] then the path module and the path route will be different. We can run a very, very, very quick test. Let's create a new folder here. It's going to be modules, path and let's create a new file here. So we're going to just say here outputs dot TF and the first output I want to use here is the root
+
+[00:05:03] and the value is just path dot root. And then I also want to use your output module and the value is path dot module. Let's save this here. And now let's come to our to our code.
+
+[00:05:20] Let's just use this module here inside of a new file. I'm going to delete this in a few minutes. I just want to show you here. I'm gonna say module and I'm gonna call this path. The source here will be dot slash modules path. Since we have added a new path or a new module, we have to run terraform in it. Once again, everything goes through. And now here I just want to say output root
+
+[00:05:45] and the value here will be equal to path or actually module dot path dot root. And we will have another here for the module. So module value, path dot module. All right. So let's run a telephone plan.
+
+[00:06:01] I'm not sure whether this will go through because we have the error with the Lambda here. And no, it doesn't go through. So let's just comment out the Lambda function for now. The only thing that we need to comment out is this one and probably also the import. Let's comment out the import, let's save this. Let's run a Terraform plan. And as you can see here, we have these changes to the output.
+
+[00:06:24] So the module is basically giving me the path of the module of this file here of this directory, right? So if I were to actually execute this module here, the path dot TF module and where is this? That's here in the outputs.
+
+[00:06:42] If I were to execute this module and try to load a file from my parent module or from my root configuration from within the directory project 03, then by using path dot module that is not gonna work, right? So we have to use the root here to point to the direct
+
+[00:07:00] theory of our root Dataform project. That's why in many cases. And I would suggest actually as a default choice whenever we need to have a dynamic value pointing to the directory from which we're going to load files, I would go with path root because whenever we create modules, we create
+
+[00:07:20] modules for others to use that. So we don't want to point to the directory of our module. We actually want to point to the directory of the root terraform configuration that is using our module. All right, there was a little detour I have deleted here. The folder. Let's delete also the path dot Terraform here. Let's uncomment the, so that's the zip file
+
+[00:07:41] that's also uncomment our imports. Let's uncomment our resource here. And hopefully, now it is also clear why we are using the path dot root instead of path dot module. If we are working only at the root directory, then path dot root and path dot module will be the same, right? So here we're just gonna use the path dot root. Let's clear the console.
+
+[00:08:03] Let's delete here the Lambda zip file just for us to see that in action we have then our Lambda, we can now pass the file name here. That's gonna be Lambda dot zip. And if we were to run a data farm plan now, then I believe that this should go through.
+
+[00:08:20] As you can see here, there is one to import, there is one to change. And if we scroll up a little bit here, we will see that the one that we want to change is our Lambda function. So the Lambda function will be updated in place and this will also be imported, right? So it will be imported through this import and
+
+[00:08:41] some of the attributes will be modified in place. First one is the file name we also modify here. So the last and we are changing the publish to false. So let's have a look here if there is anything else that is changed. And no, however, if we were to try to publish this or to apply these changes, this is not gonna work.
+
+[00:09:01] And that's because this source code hash here, it's hard coded and it is hard coded to the code that we have in the console. Let's then come back to the console here. Let's copy our code and let's paste this in the id. So we're just gonna paste it here in our index dot M JS.
+
+[00:09:20] Let's save this. And now here we are gonna use this data dot archive. So data dot archive file, Lambda code dot output. And here I believe we will have a base64 shot 256. So that's basically the hash code in base64 of our Lambda code.
+
+[00:09:41] Let's run a terraform format and I believe that now it's looking a little bit better. Wonderful. So let's give it a try. Let's run a terraform plan here, terraform plan or actually we go, we can go directly with the apply. Let's have a look, we have one to import one to change and now we will see that the source code hash will also change
+
+[00:10:03] and we have a few other fields as we already knew. Let's type. Yes here. And let's wait for the modification to complete. Perfect. Our function was updated if we come back here to the console and we refresh this function. Let's come here, let's refresh the page.
+
+[00:10:20] Then there should be no visible change because we have not really changed anything. However, you can see here that we already get this message, your code has been updated while we're making changes. So this here is actually coming from the terraform apply. Let's click. OK. Let's come here. Let's click test. So that we leave the the editor.
+
+[00:10:44] Let's come back to Terraform and now let's change here. Hello world from Terraform. So let's see now if we can publish these changes via a data form, apply. Let's type. Yes, here, this is going to be the hash is gonna change as well as the last modified.
+
+[00:11:03] And once we do that and come back to the console, let's refresh our page here. Let's scroll down and let's see if we can actually test it here. So let's click on the code. We should actually already see the changes and there you have it. So we have our changes that were done locally,
+
+[00:11:21] they are already applied via the data form, apply command. That's great. So in this video, we managed to move the code from our function from our Lambda function from the console to the data form project. Now we can use here, we can develop our code locally.
+
+[00:11:40] And whenever we want to apply the changes, whenever we wanna publish our function, we can just run a data form apply. Isn't that great? I hope you are as excited as I am. Let's take a short pause and come back in the next lecture when we continue importing all the resources.

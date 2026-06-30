@@ -1,0 +1,55 @@
+[00:00:07] - So, let's talk about the AAA communication protocol that is RADIUS. This is the Defacto AAA Service. Now, there's two popular ones you're gonna want to know about. Oh, I guess there's three. For network equipment, we typically think of RADIUS and TACACS+.
+
+[00:00:22] I started to say three because we also tend to integrate with Active Directory or LDAP quite a bit as well. So, in this moment, we're just gonna talk about RADIUS and what it does for us, and some useful tips for how to remember it. First thing, I mean, I just look at the word RADIUS and when I was studying for tasks,
+
+[00:00:40] I was like, yep, RADIUS has got a U in it - it's UDP, TACACS+ has a T - it's TCP. I don't think I'll ever forget that. So, it's a Defacto AAA Service, it's intended for remote users. Ooh, what do I mean by that? A lot of times we've got different types of authentication that are occurring throughout the day, right? We've got users that authenticate to get through a device.
+
+[00:01:03] We have administrators that want to log into the device. For instance, if I've got a firewall at the perimeter, all the users in the organization log into the firewall for VPN services. So when their credentials come into the firewall, they're not trying to log into the firewall per se,
+
+[00:01:22] they're trying to get through the firewall. So when people are trying to go through a device, RADIUS is ideal. You can guess where this is heading. If somebody is trying to log into a device, like for admin access, that's where TACACS+ is really good. Now, we're gonna see some of the mechanics behind this and see why each of them is good later
+
+[00:01:40] but for now, just to keep it brief, RADIUS has very-- what we call extensible accounting. And it's just extensible in general. What's extensible mean? It just means that different vendors can take RADIUS and twist it and turn it to get it to do what they want it to do. They'll make vendor-specific attributes called VSAs
+
+[00:02:01] and these are essentially just unique attribute value pairs. So, another way to say this is that you can get a RADIUS server to do whatever the heck you want it to do because it's really flexible and it's great at logging, OK? because it's really flexible and it's great at logging, OK? So what does TACACS do? TACACS does something called command authorization really well,
+
+[00:02:20] which basically says every time somebody types a command into a switch or router, the device is gonna check with the AAA server, TACACS, and say, "Hey, should this user be typing this command right now?" And we have very, very granular control of what somebody does inside of a device. RADIUS was originally, when I came across it for the first time,
+
+[00:02:41] heavily, heavily used by ISPs. Back in the old days, you didn't always have unlimited internet access. They used to charge you based on how long you were on and RADIUS had the best accounting records, so that's what was one of the things that dragged so many corporations towards it. As I mentioned, it's extensible for third parties, it has very detailed logging.
+
+[00:03:00] Let's talk about planning and working with it. So, RADIUS uses two different ports. And I guess we could say four sometimes too. So let's go through this. There's gonna be a low port and a high port. The low port is responsible for AA, the last part is for the other A, what's that mean?
+
+[00:03:21] Authentication and authorization happen on port 1812; accounting happens on port 1813. These are the newer and appropriate RADIUS ports. That said, before we switched from 1645 and 1646 to 1812 and 1813, before we switched from 1645 and 1646 to 1812 and 1813, this is what things were originally using.
+
+[00:03:42] Lots of folks used RADIUS; lots of folks used those ports. The problem was that these ports 1645 and 1646 were actually reserved by some other organization, some other protocol. Which one was it? I've looked it up like four times. I can't remember something that nobody was using, it was unmemorable.
+
+[00:04:01] But that's the reason there was a conflict and RADIUS just being, you know, trying to follow the rules, said, "Hey, I'm sorry, was this your space? "I'll move, I'll go get my own seats." And basically it moved to 1812 and 1813. Let's talk about that. RADIUS is a standard but that standard has been implemented by lots of different organizations,
+
+[00:04:20] so there's a good chance you could come across an appliance or a device that's still using 1645 and 1646. an appliance or a device that's still using 1645 and 1646. I've seen scenarios where this has screwed us up. I'll show you how. When you have a device that wants to talk to a AAA server. So here's a switch. There may be firewalls between departments. There may be other routers.
+
+[00:04:41] There may be load balancers or application delivery controllers. There could be switches, and these switches could have access control lists. All of these intermediate devices between this RADIUS client and this RADIUS server have to allow RADIUS traffic to go by.
+
+[00:05:00] What that means is that if you have access control lists, you may want to permit 1812 and 1813 as well as 1645 and 1646. We would want to allow all four inside of our ACL potentially. If you look closer at your configuration,
+
+[00:05:21] if you read all of your docs and you're certain only a pair of these are being used, then you only need to allow a pair through your ACL, that would be the best approach. But I've seen scenarios where there's been a mix of these, where the AAA server was listening on all four of the ports, why? Higher compatibility. So, just things to think about when you're doing your planning and implementation.
+
+[00:05:42] So, the concept of authorization bypass is that if somebody comes in, they try to authenticate. Maybe we can authenticate them. Maybe we don't know what they're supposed to be doing. Maybe they don't even understand AAA. So what we can do is allow them to bypass this whole process
+
+[00:06:00] and a lot of times we'll do that by creating a Mac address list of known devices that just don't understand AAA, that don't understand RADIUS. It's not a best practice. It's gonna make things less secure 'cause we're allowing it but that's something that we can do. Additionally, we want to have redundant servers. Imagine if all of your ports are requiring 802.1X and imagine that our Active Directory controller
+
+[00:06:21] went to just apply a security update and reboot, but for some reason, it's given us a funny error and Windows isn't coming back online. Now no one can log into the organization. Not much fun. To make sure that that doesn't happen, we'd have a pair of AAA servers. It's kind of fun if you're using Cisco ISE for this. They say get more ISE servers and you call it an ice cube.
+
+[00:06:44] That's fun. Loopback addressing. Loopback address, what is that? That's that virtual interface. It's not physical; it's virtual. What else do we know about it? It is always, always, always up. What I like to do is create a loopback on each device
+
+[00:07:00] What I like to do is create a loopback on each device and then I source my communications to the AAA server from that loopback. That way, even though there's physical interfaces, right? If the AAA server, the RADIUS server over here is gonna talk to that switch, it has to know this switch's IP address.
+
+[00:07:20] And that switch has to know the AAA server's IP address. If something happens, if an interface goes down, you can still reach the AAA server using some other interface. What the switch or router's gonna do is source your IP address, source the packets from that other interface. Well guess what? It's not gonna work. When those messages come into your AAA server,
+
+[00:07:40] it goes, "I don't know what that IP address is." And it declines talking to it. Crap, how do we resolve this? Well, we have physical interfaces that can go up and down, we have redundant paths, but we've set all of our communication based on loopbacks. Hope that helps out. So, looking at RADIUS implementations, there's a solution out there that's open source called Free RADIUS.
+
+[00:08:00] Won't cost you a penny. There's also Microsoft Network Policy Server, abbreviated NPS. I use this most often, why? Because everybody's running Active Directory already. And if you're hearing this and you say, "We don't run Active Directory". That's interesting, that's neat. Keep doing something different.
+
+[00:08:20] But for most people that I come across, they've already got an Active Directory domain controller. When I talk about domain controllers, I typically draw kind of like a database icon because you've got this database of all of your users, their passwords, their group membership. It's already there. By installing the NPS role on the server,
+
+[00:08:40] we're basically getting it to listen on 1812 and 1813 we're basically getting it to listen on 1812 and 1813 for that incoming RADIUS traffic. We're creating a RADIUS service on our Active Directory domain controller or on another server within our domain that has access to the domain controller. There's also third-party products, such as Cisco ISE and Forescout.
+
+[00:09:01] Now, a lot of times what you'll do is you'll integrate ISE or you'll integrate Forescout with your Active Directory, or with your Novell, or with your open LDAP, whatever you're using for directory services. So, the switches, routers, firewalls, wireless access points will all point to ISE or Forescout, which will then relay your information back to Active Directory.

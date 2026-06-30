@@ -1,0 +1,73 @@
+[00:00:01] Welcome course. Takers to section six, deploying a resilient fault tolerant P global application. Now we've already built quite a resilient application running on resilient infrastructure. So this section takes a more detailed look at a couple of optional extras. If you like things that can help you maybe get more reliability or resilience
+
+[00:00:23] out of your platform. So we'll start looking at EKS or managed Kubernetes on Amazon. Then we'll look at deploying and using Amazon Aurora and then finally, we'll look at deploying and using APPMESH. So if you're ready, let's get started. So welcome to video number one running
+
+[00:00:40] and scaling our application on Eks. So in this video, we'll look at what Eks is, we'll understand why it's important and then we'll have a couple of demonstrations of tools that will hopefully mean that you really understand the power of Cinetis and the community around Cinetis. So if you're ready, let's get going. Now we've used ecs
+
+[00:01:01] for the majority of this course. And personally, I think ecs is a good technology. I hope you've seen that it's very easy to use and there is no real cost to it other than paying for the compute and the storage and the networking that you'd normally use. Um However, I guess the biggest disadvantage is it is Amazon technology.
+
+[00:01:21] So it's only on the Amazon cloud and maybe on some of the edge devices that they're producing now. But it's certainly not as widely adopted as something like Cinetis. Cti's runs on pretty much every cloud and will run on premise if you want and it will even run on your Macbook. If you really want minicube, it's got a very active community.
+
+[00:01:41] And that's one of the biggest advantages that Cinetis and you'll see from the tooling that I show you that actually, that tooling is making life so much easier. If you're a developer, it's secure, it doesn't need to be. If you don't configure it securely, then it isn't secure. But using mutual TLS and secrets and RBAC and pod policies and network policies means you can,
+
+[00:02:03] you can build a very secure production service and I've worked on projects where they're using it in the financial industry, in very heavily regulated industries, it's very extensible. So not only can you add and manage the API you can add in custom resource controllers to do other things.
+
+[00:02:21] And I think that's one of the biggest advantage when you think about reliability. If you need to adopt and change the way that applications are managed in Cubans, you can do that. And at the heart of it, which comes back to our reliability engineering aspect. Is there is an absolute focus on self healing,
+
+[00:02:41] self correcting management of pods and containers and services. So it is a platform. So it is a platform that puts reliability the forefront as well as security. So what does EKS look like? Well in Amazon, when you get any EKS cluster, you get two vpcs, one that holds the API and that's what Amazon runs and manages
+
+[00:03:02] for you and the other that holds the workloads the containers, the storage, the networking for your application and that runs in your VPC. You can have three types of clusters. You can have a publicly accessible cluster where all the endpoints, if not on the internet, they're outside your VPC. So they're certainly running on Amazon's backbone.
+
+[00:03:21] You can have a private cluster which runs completely within your VPC with no external access at all. And you can have the one that I've built, which is a kind of mixture, public and private where your cluster A P is exposed through the internet with some whitelisting and your workers sit on a private node, but they can also be accessed through an
+
+[00:03:41] AP. So if I'm an engineer, um I'm using cube CTL or the CINETIS API to talk to the API layer to configure and build it. When I'm an application user, I'm just talking to the pods through the A LB in the same way that we spoke to ecs. Now the I guess the power in Kubernetes
+
+[00:04:00] is not necessarily the platform cinetis can be difficult to manage. It can certainly be difficult to set up. It's in the tooling that sits around cinetis. So we're going to show you two today lens, which is a relatively new tool. Both of these are open source lens as you see, gives great observability into a cluster of multi clusters, quite a new tool.
+
+[00:04:21] So there's still work to be done on it, but I quite like it. And then scaffold revelation, I think when you look at how you can use Scaffold to make changes to running code in your Kubenettes environment. And see those changes reflected, you really begin to understand the power that cinetis and the the ecosystem that's building around it can give you.
+
+[00:04:41] OK. So let's have a look at the configuration. Let's look at our code first. So we have our EKS code um as I mentioned, Eks is not simple to set up. And you can see we've got a number of files here, main file sets up the security groups for your Kubernetes cluster, creates your cluster and then all the roles and configuration for that,
+
+[00:05:03] we then have the worker iam roles for the worker nodes, we set up the workers themselves. And so that involves setting up some security groups, a launch configuration and an auto scaling group. And we have to plug all that together. So we also have to deploy some configuration into Kubernetes itself. So here's a config map
+
+[00:05:24] that allows worker nodes to be configured. Now, I'm not going to show you it booting up configuring because it does take sort of 20 or 30 minutes to go. If we have a quick look on the console and go into plastic kubernete service, you can see, I've got a cluster here running 1.16. Here are the endpoints.
+
+[00:05:42] If I look at networking, I can see public and private with a whitelisting address and the various subnets. Interestingly, if I look at compute, I don't see anything here. So when Eks first launched, you could only deploy compute through a managed node group, but they're not very scalable, flexible.
+
+[00:06:00] So on the whole, the way you deploy compute these days is you create an auto scaling group. So if I go into EC two, I can see, I've got three running small systems. If I look down at my auto scaling group here, I have with three instances running. Um And so there's a little bit of work you need
+
+[00:06:21] to do in order to get these instances to connect back into cinetis, uh the API things like labeling them, setting up the AWS or making sure the security groups allow through the right traffic. So it's not a trivial task. And you can see that the interface is slightly disjointed here.
+
+[00:06:41] So in the Eks environment, I don't see the compute and in the compute environment, I don't see the API so what I really want is something to bring that all together. So lens is a great little tool. I've been very impressed with it. We started to use it a couple of projects. So here I've got my cluster. I can instantly see my pods, my deployments, staple sets, demons sets jobs
+
+[00:07:04] I can drive into looking at the pods that I can look in more detail, what running their IP S um I can by confid magnet. Here's the AWS A and that are deployed which basically just starts allowing map roles into EKS worker nodes.
+
+[00:07:20] I can look at services at service accounts and I can even delete stuff if I want to. So it's a full admin platform really and it gives me complete visibility. So here, if I look at my nodes, I can see their nodes. If I have Prometheus running, uh which is a monitoring system, I would begin to see things like CPU and memory and disk as well.
+
+[00:07:40] So it gives you a great view of one cluster and of course, you can add multiple clusters here. Uh So from purely an observability point of view, this is starting to, to push the right buttons. Um Now, the thing that I think really excites me is something like scaffold. So if I go into my Pie Cars application,
+
+[00:08:01] all my existing files, I have this thing called scaffold dot YAML. And what scaffold dot YAML does is say I'm gonna build an artifact. So I'm gonna build a container and it's called Pie cars. And we know if I look at my, if I go back into container registry, this is the registry I want to.
+
+[00:08:20] So at the moment I've got tag 001 and latest being configured. So Scaffold is going to build me a container and then it's gonna use Cubin Manifests, a deployment and a service to actually create those things for me. And if I have a quick look in here, I've got my deployment basically say how many replicas I want.
+
+[00:08:41] What's the container called? Here? It is. What's the port? And then here's some environment variables that we're passing. So if you remember back to CS, we had to pass the variables as well. So there's nothing different here and then my service is just exposing that port outside the cluster. So nothing, nothing too exciting there.
+
+[00:09:02] But what I can do is if I run, so if I just type scaffold, it's going to look for a container. If it's not, it's going to build it and now it's going to deploy my application. So we can look at lens. What we should see
+
+[00:09:20] is on deployments. We've now got a deployment called pie Cars. I look at pods, we're starting to get some pods from the pie car and we can see the registry it's pulling from, but we can see that there's a problem. So we're getting errors and crash loops, right. So normally I'm trying to debug this but, but actually in my console,
+
+[00:09:43] I can actually see what we see here guys is the live feed from our R VM. Actually our our container running and I can see it's having trouble connecting to Amazon. The profile is not set up, it's looking for a default profile.
+
+[00:10:00] So I know the code. So if I go into our AWS helper, uh and look at that particular part of the code in that create clients. If it can't find CS run or detect its running in Amazon or look for codebuild, it falls back on using the profile and of course, there's no profile here. So profile could not be found
+
+[00:10:20] so I can change the code. But one of the easiest ways to do this is go to the deployment. And if I just put in ECs run, I'm gonna fake it into thinking it's running within ecs at least. And then if I save that automatically, I trigger a new deployment and this deployment is now with the new code.
+
+[00:10:40] So it's waiting for changes to come through. And what I should see in lens is there we go containers come up running in pie cars. OK? If I go back, we can see that this now sits there waiting for changes. So making changes on code and saving them scaffolders,
+
+[00:11:00] not only created a container and then created a deployment and a service. It's when I make changes to the code, it will then manage that process of deploying it again. And I can visually see the changes that are happening. So this is not a replacement for your pipeline. When you get to a certain level of code maturity and you're generating artifacts to be promoted into higher environments like integration or preprod or prod,
+
+[00:11:22] then you still need your pipeline there. But here where I'm doing rapid development and as a developer, I really want to see the impact of my code changes quickly running in a production like environment. Scaffolding. Scaffold is an amazing tool and I think it's the combination of lens and scaffold that observability and rapid change
+
+[00:11:42] will help me reduce down the bugs and the errors that I get. And it also means that I'm deploying into a production like environment. So I shouldn't have too many surprises. If I need a service account or a name space, then I have to create it for it to work. And then we want to clear up, I can just type scaffold, delete
+
+[00:12:02] and let's go off and delete that environment for me. Perfect. So I hope they find it interesting. Please join me in the next video, creating a resilient and reliable data store for Python with, with Amazon Aurora. Thanks very much.

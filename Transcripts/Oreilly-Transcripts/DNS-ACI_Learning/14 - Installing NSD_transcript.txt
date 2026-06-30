@@ -1,0 +1,173 @@
+[00:00:00] Welcome to ITProTV. I'm your host [INAUDIBLE] [CROSSTALK]. [MUSIC] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome back to another exciting episode here at ITProTV, I'm your host Wes Bryan. And in today's episode, we're continuing through our series on DNS tech skills.
+
+[00:00:20] And I have to say, I think somebody got an acronym wrong this morning. But before I steal his thunder, welcoming back Don Pizet. Don, how you doing sir? &gt;&gt; I am doing great, Wes. Yeah just applying some proper spelling skills. Instead of doing DNS today, we're gonna do NSD. Now NSD it's kind of a, is actually intended to be NSD is a name server that a lot of you probably haven't heard of.
+
+[00:00:41] It's not terribly popular out there, most businesses or enterprises are not running NSD. And with this amazing lead in that I'm doing here, your probably asking yourself Don why are you wasting our time with this one if it's not very popular? And it's not to much the popularity that's important about NSD it's about who does run it.
+
+[00:01:01] And who runs it? Quite a few of the root hint servers. Quite a few of the big guys in the DNS infrastructure world. NSD is kind of a newer player in the name server market. But they really have kind of pushed forward a lot of great technologies, and as a result they are taking over the core. And that just means over time they're gonna slowly take over on the other way out.
+
+[00:01:20] So NSD is a very powerful name server. It is designed with some really cool features in mind and we haven't filmed many episodes on DNSSEC yet. But a lot of you are familiar with DNSSEC. You know that the DNS environment is actually kind of easy to exploit. DNS poison attacks. And man in the middle attacks, and things like that.
+
+[00:01:40] Can really endanger your clients. And DNS security or DNSSEC is a way of digitally signing lookups that go in between servers to make sure that doesn't happen. To make sure that somebody can't poison our DNS cache. That we actually know the proper records and the proper IPs and a like good stuff. DNSSEC is really important.
+
+[00:02:00] Well, the people who designed it, they needed to create a reference server a test pet to be able to test the DNSSEC. And so to do that they created an SD, an SD is where DNSSEC was developed. And that's why you see root servers running it today, cuz the root servers were the most important ones to protect.
+
+[00:02:21] So when DNSSEC became stable, they had to make a choice. Do we stay with our other technologies that don't support DNSSEC yet or do we move to NSD? Now, NSD wasn't just written by some random Joe Schmo off the street it's actually written by the same people who wrote Unbound. And so, Unbound we know is an excellent
+
+[00:02:40] highly scaleable,very fast modern name server. That really is designed for caching and reversal lookups. It doesn't do so good on the authoritative side. Well, NSD is the other side. It does authoritative lookups and that's it. It doesn't do recursive lookups or caching because it only answers for
+
+[00:03:00] the zones that it contains. So if you run NSD combined with Unbound, you've got a great solution that's very powerful. It can handle everything that you need. But if you just want to set up an authoritative name server, an SD does a great job. And if you're a route hit server, what are you? Well you're authoritative. There's nobody higher in that structure than you. And there's even some TLDs, some of the top layer domain names.
+
+[00:03:24] Those servers that are running NSD also, so it is very popular at the top. And over time we're gonna see it popular down on our side. So in this episode what we're gonna do is we're gonna run through getting NSD set up, seeing how to deploy it, get it configured. And you'll find that it's not actually that much different from the other guys that are out there and it's very stable, very fast,
+
+[00:03:42] and a great replacement for Bind. Now, remember that Bind by itself could do what Unbound and NSD do together. So it's like replacing one product with two, which is normally a bad thing. But Unbound and NSD use two different databases that are optimized for their different roles. And that gives it much better performance than Bind that has one database
+
+[00:04:02] that's not really optimized for either role and doesn't scale very well. So it's a great drop-in replacement, and that's what we're starting to see, is Unbound and NSD taking that place. So, enough gabbing about it, let's jump in and actually see it. As we're gonna take NSD and get it installed on a machine, and bring it up, and get it up and going. So I've got a CentOS 7 box right here,
+
+[00:04:22] this would be the same as Red Hat Enterprise Linux or Fedora. If you're on Ubuntu or or one of those other distros. Then you may need to use slightly different installation commands. Instead of Yum, you're going to use apt-get. But everything else beyond that point will be the same. They actually do have NSD for Windows. You can go out and get it and deploy it that way.
+
+[00:04:41] Although most people are going to deploy it on a Linux server, like what I'm doing here. Now getting it installed is pretty much like any other software. Well, let me qualify that real quick. If I just do a Yum install NSD, there's actually something weird going on right now, and we're gonna get nothing to do, right? What happened is, NSD is developing very fast.
+
+[00:05:01] There's new things coming out all the time. And NSD version 3 was the stable, widely supported one. NSD 4 was in beta. Well when NSD 4 came out of beta, they immediately yanked support for NSD 3. NL Labs, the people that create all this stuff, they don't like to support the old versions. They want you running on the latest, cuz this is all about security and
+
+[00:05:22] performance. Well, Red Hat doesn't move that fast. They're not ready to jump to NSD 4 the moment it comes out of the beta they need to run to their testing. So as of right now, NSD version 3 is no longer supported so Red Hat pulled it. And NSD 4 isn't approved yet, so it doesn't show up here yet. So when I go to install and I get that message.
+
+[00:05:41] If you're going to or Ubuntu that won't happen. They've already approved and it's come through. And depending on when you watch this episode Red Hat may have already approved it by then but I it's December of 2016 to date this episode. And as of right this moment it's still being held in the extra packages repository. So I need to set that up on this system, I don't have it set up on here so
+
+[00:06:03] I can do a yum install epel-release. And that's our extra package for Enterprise Linux repository. And you'll see that the EPEL is a part of the Red Hat distros and what they support. So I'll just go in and add it. But that's gonna allow me to install software that's not fully tested yet
+
+[00:06:24] by Red Hat. So I'm taking a little ownership here and saying I trust NSD version 4 even if Red Hat hasn't signed off on it yet. But now that I've done that, I'll be able to do a yum install NSD. And instead of telling me there's nothing to do, it's gonna reach in there and it's gonna find it. And you'll see me failing against all those mirrors.
+
+[00:06:41] And then finally I hit the EPEL, and there it is. And we've got NSD. It's version 4.1. Be careful with that too, because if you're out there Googling for how to do things in NSD. NSD3 was very popular, and so much of the documentation out there is built around NSD3. Well the commands are different now, things have changed, there's new tools that are apart.
+
+[00:07:01] So always make sure that you're paying attention to whether you're running an NSD version 3 or version 4. Because that's the latest and that's what you should be running too, And we'll go get ahead and get that installed. Okay what do we do? Well, technically we're done. We got an NSD server, we can walk away and that's it. There are actually a few little things that we need to worry about to get
+
+[00:07:22] this thing set up. Depending on which distro you're on, sometimes the installation is not complete. So when you do the install, it creates a /etc/nsd folder. Or at least it should. And in that folder, it should create an NSD.conf file and a couple of server keys.
+
+[00:07:44] I don't have any server keys. All right, well mine are missing. So the package that I chose to install didn't create those server keys. Now, I don't necessarily have to worry about that. Because the first time I start NSD it's gonna create those keys for me. But if I start modifying my config, this nsd.conf which is the next thing I wanna do.
+
+[00:08:00] If I start modifying it I'm gonna wanna check it for errors. And the tool that checks it for errors is gonna be really mad if I don't have any keys, so I might need to generate some keys here to get that to work. Now, I got two choices how I wanna do this. One, I can just try and start NSD, it'll create the keys, it'll fail, cuz I haven't configured it, and it will drop out, right?
+
+[00:08:20] But the keys get created. Or two, I can use the NSD control utility. Nsd-control is gonna be our main interface for managing NSD, as far as it running, and checking its status, and so on. We still have our zone files to worry about. We'll do those manually. But as far as the service itself, we're gonna use NSD-control.
+
+[00:08:40] NSD control allows local access, as well as remote access. I can have NSD control on my workstation, and I can point it at my NSD servers and manage them. I can run it from the server itself, or I can run it remotely if I want. I'll be assigning a port number, I'll show you all that in a bit. But there's a nsd-control-setup that you can run, and
+
+[00:09:01] if you run that, the main thing about those, it checks to see if the keys exist. And if the keys don't exist, it makes them. So, when I ran nsd-control-setup, I pressed Enter. I didn't give it any options, and it went through, and it generated a server key. You generated that RSA key, you generated the private key.
+
+[00:09:21] And the public key, it created the pen files that are necessary. It created everything I need to authenticate this server. All right, those are going to important if I'm using NSD control remotely. They're also gonna be important later for DNS. We'll see when we deploy a DNS that's kind of important. All right, as it stands, though, now I've got my certificates. And if I look in /etc/nsd, there they are, right?
+
+[00:09:43] I created them by hand here just to, or not by hand, but by running a utility, to make sure they were there ahead of time. If I had just started NSD, and it saw they were missing, it would have created them too. I would have just gotten a bunch of errors, this way I avoid the errors. All right, so now, there's one more thing I need to do, if you're on CentOS or
+
+[00:10:00] RedHat, my system right now, let's just see what release I'm running. I am running 7.1, all right, 7.3 just came out two weeks ago. So, 7.3 is really recent. In 7.0, 7.1, 7.2, there was a bug, and there was a bug in SE Linux that would stop NSD from running.
+
+[00:10:21] And the reason was, again, NSD 4 came out, Red Hat wasn't ready for it. SC Linux is still setup for NSD 3, and that causes some problems. So, if you're on a Red Hat based platform, sent to us RHEL, or Fedora, then we need to update to 7.3. You can update the whole system if you want, that will take care of it, or
+
+[00:10:42] if you're not ready for 7.3 yet, we really just need to update the S Linux policies. So, I'm gonna do a yum update SE Linux policy, and when I do that, you'll see there is a ton of packages attached to it, because of all the Python libraries, or whatever it is, its got tied to it. You're gonna see a bunch of stuff go by.
+
+[00:11:00] There we go, but the key thing is that it's gonna update its policies. And in the latest policies, the ones that came out last week, they've added support for NSD version four. So we're covered. So, if you've been holding off on going to version four, now we're really all good to go. So, I'm gonna do that update real quick, just to make sure I'm able to start it. If I don't do this, when I start NSD later, SE Linux is gonna block it.
+
+[00:11:23] And that's where you can search chasing it, trying to fix the problem, or you can disable SE Linux, which is a terrible thing to do, better to just do your updates. If I was updated, then I would have this problem in the first place. All right, now, while that's updating, we’re gonna go and put a basic configuration on this system.
+
+[00:11:40] So, I need to go an edit the nsd.conf file, and in that file, I need to setup a couple of things. I need to setup my listening IPs, so which IP addresses am I gonna listen on? I need to set my port number that I’m gonna listen on, I need to setup whether I’m supporting IPv4 or IPv6, or both, if I wanna do both. And it's all well documented in the configuration file, so
+
+[00:12:00] let's take a look at that, my update might have just finished. So, I'm going to edit /18/nsd/nsd.com, and when you reach in there, you'll see it it's well-documented, and as we edit it, there's a ton of things that we can tweak, the value they put is the default value. So, let's start with just the very first one here.
+
+[00:12:21] Server count one. That means that the default is a server count of one. It's got a hashtag before it, that means, I don't know what I'm doing. If it's got a hashtag before it, shoot, hang on, edit the file action, there we go. So, it's got a hashtag before it, and that means that it's commented out, right? Anytime you see that hashtag, that's telling us, don't apply this line.
+
+[00:12:43] But they put this in here anyway, so I can see the default. And if I wanna change it, I can, I can either modify this line and remove the hashtag, or add a second line that has what I want. So, if I wanted to bump that server count up, I could come in here, and I could say, server-count: 2, right?
+
+[00:13:00] Right, and by doing that, now I basically put the value in. It's gonna take what I put in as action, but I still remember what the default was. So, if I ever wanna go and put it back to the default, I remember, versus if I had edited this line. I wouldn't remember what the default was. All right, I want mine at one anyway, so I'll just leave it there. I guess it would probably be worthwhile to mention what server count is.
+
+[00:13:22] When you run NSD, by default, it runs single-threaded. So, it's only going to use one CPU core. What if I have a quad-core CPU? Or an eight, an octo, whatever, a ten-core, they've got a bunch of crazy ones out there today. So, if I've got a multi-core system, I might want NSD to run multi threaded. We don't normally need it to.
+
+[00:13:41] If we're using NSD with unbound, unbound is doing all the real work, right? NSD is really just managing a couple of zones. But what if you're massive? What if you are working for a root hit server, and you're trying to track hundreds of thousands, millions of domains? That's a lot. You'll probably need some more threads.
+
+[00:14:00] You'll probably need more servers, is what you'll really need, but on each individual server, you'll need more threads, and so you can bump that up here to set basically how many threads you want to run. All right, so, the important things that I'm looking for though are right beneath it, the IP address. You'll notice this is actually kind of similar to BIND, in the BIND config, we would say and interface then an IP here.
+
+[00:14:21] It says IP address and an IP, which makes more sense. So, what IPs am I going to list on? If I have more than one, I can just list each one and get them in place. You can specify an IP and a port number. If I want to override the port number, that's important if I'm running unbound and NSD on the same server, it both can't run on port 53.
+
+[00:14:43] So, I would have to move one of them to a different port number. So, here's what I move NSD if I wanted to go that route. In my case though, I just wanted to run it on my main address, which is 10.0.222.103. So, I'm going to punch that one in there so that I can have that value, right?
+
+[00:15:01] You can leave like little spaces if you want to help kind of find your values, it doesn't all have to be together like that. So, I'll space it out so I can find it. After that, you'll start to see some customization ops, most of us going to leave alone, right? They're tweaking whether we want to run an IP transparent mode, and all these other things. Most of those, we don't care about. But the ones we do care about, are right down here a little bit later,
+
+[00:15:22] where we've got listen on IPv4 connections, listen on IPv6 connections, and then a port number, right? I can change these. Now, IPv4 and IPv6 are on by default, if that's what I want, I'm good. I don't have an IPv6 address, so I might want to come in here and say do ip6 no, and so, now it's not gonna try and do IPv6, so I don't have an address anyway.
+
+[00:15:45] So, no sense in listening in on that. &gt;&gt; Don, I noticed that you can also specify a port number right there, and you can see that the default says it's 53. Now, how does that conflict with what you just showed us in specifying an IP address and a port number? &gt;&gt; Good question, right? Cuz it seems like we're doing the same thing twice.
+
+[00:16:01] This will be our general port number like our default port number if we have multiple network adapters. So let's say I have two network adapters and I wanna override the port on one of them, but not the other. Well, if I wanna do that, then way up here under the IPs, I would list both IPs,
+
+[00:16:21] I would override the port on one, and then I'd leave the other one alone. So I might say we've got this IP address, and then I might say ip-address: 10.0.222.203@53000, so now this one I didn't specify a port.
+
+[00:16:41] So it's gonna look at the port value a little bit lower in the file and it's gonna use that. But this one is gonna use port 53000, now I'm running technically on two different ports, but it's 2 different network adapters. You might have five network adapters and you can come through and do each one. So that's what that one is. So I'm not overwriting mine. I can just leave it the way that it is. You can uncommon it if you want to, but port 53 is what I expect it to run on, so
+
+[00:17:02] I'm gonna leave it be like that. And that's really about it for what we need to configure in here. I do wanna show you one more thing that I almost always turn on and that's logging. I'm just gonna do a quick search for the word log so I can find this a little faster. And you'll see this entry right here, log file. Now, by default it logs to standard error, which means to your screen.
+
+[00:17:25] If you're logged into the server and watching and everything's great you'll see that. Otherwise you're not gonna see that and syslog. Great. So it's gonna log to syslog and it's got a facility of log demon so I can always just search that facility and I'll find all its entries If I wanna go into syslog.
+
+[00:17:41] But it can maintain its own log also. And I like that. I like it to have its own log. That way I don't have to go mess around with filtering by a facility or grepping it or whatever. I can just look into this individual log. So what I'm gonna do is I'm just gonna come in here and uncomment that line. Because the default value is actually fine for me, /var/log/nsd.log.
+
+[00:18:04] And [COUGH] this is actually one of the things that would have failed had SE Linux not been updated. We wouldn't have had permission to write to that folder, it would have got upset. But I'm updated so I should be good to go on that and there we are. Most of the rest of this we don't really need to tweak, there's not a whole heck of a lot of reason to modify most of this.
+
+[00:18:21] But you may have really specific needs, and you'll see it's extremely powerful. The people who wrote this are basically the most knowledgeable people in Name Servers in the entire planet. These are the people who came up with DNS sec, and advanced caching algorithms for modern infrastructure It's amazing stuff, so they really do give you the full
+
+[00:18:40] features in here with NSD, it is the most powerful DNS server that's our there. We are gonna come back to this file later when we start adding zones but for right now I'm gonna get out of it because that's enough. Now, in typical Don Pezet fashion, I very well could have screwed up some of the stuff I typed in there. You leave a semicolon out, or something like that. And a command is put in really wrong, and it doesn't work.
+
+[00:19:02] So much like the other DNS servers out there, we have a tool we can run that'll check to see whether everything is okay. The tool is the nsd -checkconf utility. And so, we can use that checkconf to be able to scan our file and look to see if we've got any errors or mistakes or anything like that that we need to fix.
+
+[00:19:21] And we can get in there and take care of it. Now, when you run nsd-checkconf it is going to ask us to provide the config filename. So you just run nsd-checkconf/etc/nsd/nsd.conf and when you run that, it's going to check it for errors. Hopefully, you get what I get.
+
+[00:19:40] Which is absolutely nothing. If you have an error, it'll show you the error. If you don't have an error, it'll show you nothing. Now, if you have more than one error, it'll show you the first error and then stop. So you gotta fix that error and then run it again. And that way you'll find the second error, or the third. So it's only gonna show you the first error it encounters. Always keep that in mind.
+
+[00:20:00] If you go in and fix the first problem and don't run it again, you might think it's fine, and then you go to start the service and the service fails. So just a quick, easy way to check that file and make sure that there's no bugs or anything like that in there. No, not really bugs, typos. There we go, it doesn't check for bugs. [LAUGH] So basically we've got that in place.
+
+[00:20:21] We should be pretty much ready to start this turkey up. So let's go ahead and give it a shot, and see what happens. The never-ending confidence from me here. I do wanna point out one thing, I forgot to mention at beginning of the show. You'll notice that I'm logged in as root I'm actually logged in as my own user account, D Pezet, but I did an SU to elevate my privileges.
+
+[00:20:40] Almost every command that I've done so far, I would have to be an admin to do. So I'd have to sudo every single command I was running. So I went ahead and just used SU to bump up to root to save me from having to do that. So just FYI, if you're trying to run these commands and getting an error that might be why. I'm gonna do a systemctl. And I'm gonna start nsd.service.
+
+[00:21:01] And assuming everything that I've got is right, it should start right up, and I don't get any errors. Everything is good. Now, the problem here is, if I reboot, it's not gonna start during boot. So I need to make sure it starts at boot time also, so I'm gonna to systemctl enable, and sd.service.
+
+[00:21:20] And I'm not running 7.3, but if you are running Red Hat 7.3 or higher, the enable command will now start the service. Also, if it's not already started. So I could have run just one command, but I'm not on 7.3. So I couldn't do that. So I had to do it. It's two separate commands. I started it, and then I enabled it. And when you enable it you will see it's just linking that service target.
+
+[00:21:40] So that systemd knows to start it when the system boots. Same thing on Ubuntu, same thing Debian, unless you're running one of those really weird Debians where they've gone back to SysVinit or Upstart. But at this point, we're in an NSD server. Now, how do we know we're in an NSD server? How do we know we're up and running? Well, it's actually kinda hard to check.
+
+[00:22:00] Because on a normal DNS server, it would have the ability to do recursive lookups. So I could test looking up a domain name against it and it wouldn't have it. Cuz we haven't created any zones. But the server would then go out to the root hint servers and find the answer and give it back to me, so I could at least test the server. But NSD is authoritative only.
+
+[00:22:20] It will only answer for zones that are contained right inside of it and I haven't made any zones. So it can't answer for anything. So the only real verification that I can do right now is to make sure the service is running and it's running without errors. There's two commands I can do for that. The first one is nsd-control status and now it tell me if it's running.
+
+[00:22:41] And so, when I run that it will tel me my version, what my velocity is set to if I had a rate limit set and that's it. If the system wasn't running, I get a kick by message telling me that. Or if there was some crazy errors it would maybe miss an output, usually it would just fail and I have to go check out the logs. So the more useful command here is actually not an NSD tool at all,
+
+[00:23:01] it's good old systemctl. Remember that systemd can give us a status update for any service that's running on our system. And so, I can run systemctl status nsd, or really any service that I wanted. So I can punch that in and it's gonna tell me a little bit about it. And I can see that it is active, it's up and it's running,
+
+[00:23:22] it's got a process ID of 18619. It's reached out and accessed some of these files. /etc/nsd/nsd.comf kinda an important one. And it is up and it's happy. If I had errors, they would show up here. So if SC Linux was blocking it or whatever.
+
+[00:23:41] I'd see some messages here about that error. And I need to go and check my journal. So everything looks good. I can see where we started up. And we're up and running. We're happy. Now, I did truncate some of this. At least I think I did. No I didn't. Sometimes it'll truncate and you end up losing some data. And so, it'll tell you to rerun the command and add in a little extra to get it where it's not truncated.
+
+[00:24:02] But in my case, it's up and running, and we're in business. If it weren't, this is where we'd start to dig into our logs. All right, to dig into the logs, if you haven't changed your defaults, then you're not gonna have a dedicated NSD log. So what I would do is tail /var/log/messages,
+
+[00:24:22] which is your sys log, right? And if we tail that, you'll see the last ten things. And I just started NSD, so I would expect to see that. And, sure enough right here, I can see Started NSD, Starting, and it's up and going. If I had gotten an error, the error would have popped up here, and I'd see it, and
+
+[00:24:40] I'd be able to take action and figure that out, right? So that's one place that we would go if we did turn on our own logs, right? Remember when we did that setup, we told it to create an nsd.log, sorry. And we can look, and there is nsd.log right there.
+
+[00:25:01] And maybe I'll less this one, so /var/log/nsd.log, and no much to see here, right? It started, and there's that, right? But if there were errors, that's where I would spot them, and I'd be able to take action. The errors, if you get them, they usually stem from things like SELinux or file permissions, right?
+
+[00:25:23] If you're root and you're creating these files, it's fine. But if you're your own user and you start making files, sometimes, the ownership can get messed up on them. You might need to change the owner and get that stuff straightened out. Those are kind of some of the problems. But after that, it's all syntax. And syntax, that's why we have nsd-checkconf to make sure our syntax is good.
+
+[00:25:43] So that tool right there is normally enough to get us by. But at this point, we are up. We're running NSD. We're just not doing a great job because we don't have any zones. And, unfortunately, I don't have enough time to create a zone right here in this episode. But in our next episode, we're gonna create some zones, and then we'll really be able to see NSD work. Because we'll be able to ask it questions, and we'll get answers back.
+
+[00:26:01] That's what a name server is supposed to do, and we'll know that it's up and running. I'm forgetting something. [LAUGH] This is important. Depending on your operating system, you probably have a firewall in place. I just turned on NSD, but the firewall is likely blocking it, so I need to get that added in, right? So on Red Hat, we have firewalld.
+
+[00:26:20] You might have IP tables or something else, but I'm gonna use firewalld. And, actually, I'll just use the firewall-cmd to modify firewalld. And I'm gonna tell it that I need to add-service=dns. I need to add dns to firewall rules to allow that traffic to come in and, now it'll be able to get in there.
+
+[00:26:40] Be aware that that takes place right now. I just opened the port, but it didn't write it to the config file. So if I reboot, I'm gonna lose that. So I need to run it a second time, and add --permanent, okay. And now, it's going to write it to the config files. If I had just run the second command, it would write it to config files, but it wouldn't take effect right now.
+
+[00:27:00] I'd need to restart the firewall, which is a pain. So just get in the habit of running the command twice, once without the permanent to make it take effect now and once with the permanent to make it take effect on the next reboot. Why two commands? Well, what if the first one you run screws something up, and you lock yourself out of the server and you can't get in? Now you can get somebody to reboot it, and those commands go away, right?
+
+[00:27:22] So the idea is that you run the first command, you test to make sure everything's fine. And once it's fine, then you run the second command to make it permanent, so it'll start the next time you reboot, too. So that's why we have the two different commands. And you can always check that with firewall-cmd --list-all, and you'll see what's allowed on your system.
+
+[00:27:40] And so I can see DNS is now added as a service. If I had done a custom port, right, and if I had moved to port 5300 or whatever, I would need to add port 5300 and get that approved. We have to add that in SELinux, also. If you're running 2B in Ubuntu, you don't have that. In the Red Hat world, you do. I've covered it in some of the other shows, so you can jump and check that out if you want.
+
+[00:28:00] Like in the bind and the unbound shows or episodes, we've covered that, so I won't bore us with it here. But just be aware you do need to open that up, or you won't be able to communicate. &gt;&gt; A lot of great information, Don. We appreciate you letting us know and showing us how to install and get NSD up and running. I know that we are gonna, in another episode, see those zones. But it does look like we're coming to the end of another episode, and before we do,
+
+[00:28:22] got any additional words about NSD? &gt;&gt; Definitely stay tuned because it's not too fun without zones. So we're gonna come back and create some zones. That's where we'll really see some action, and you'll definitely want to be here for that. &gt;&gt; All right, Don, well, we appreciate you stopping by the studio, and we appreciate you, the viewer, watching. Signing out for ITProTV, I've been your host, Wes Brian. &gt;&gt; And I am Don Pazette.
+
+[00:28:40] &gt;&gt; And we'll see you next time. [MUSIC] &gt;&gt; Thank you for watching ITPRO.TV.

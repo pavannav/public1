@@ -1,0 +1,67 @@
+[00:00:00] Hello and welcome back. Let's mark this 4.2 0.1 as done here. And let's work in the 4.2 0.2 in this lecture. We wanna make sure that the provided subnets are private and the only check that we're gonna do for them is whether they have a tag called access or with the key access here and the value of private.
+
+[00:00:22] So let's come once again to our network validation. Let's scroll down a little bit here. We already have a post condition block for the subnets that we are retrieving the information for. We can of course add more than one post condition block. So we can have multiple post condition blocks. And the second post condition block we would like to implement here is to check
+
+[00:00:43] that they have a tag of access and that that value is equal to private. How will we check that? Let's once again, come to our post condition. We're gonna say the condition here. And now what we're interested in is not only in checking that the self dot
+
+[00:01:02] Ts dot access is equal to private, but we wanna make this check a little bit more robust. There are a few edge cases that can happen here. The first one is that the access tag might actually be written in private like this might be written in private, like this might be written also in private,
+
+[00:01:23] private like this, right. So we wanna ensure that all of these edge cases are caught here by our function. So or by our check, so let's just first of all lower this tag here. The second EdgeCase is that it might be the case that this tag is not
+
+[00:01:41] defined at all or that the self dot tags are not defined at all. In this case, trying to access the access tag will throw an error. So for us to actually ensure that if trying to retrieve the access tag throws an error here, then we can wrap this in a can function. If this oops,
+
+[00:02:00] if this throws an error, then the can function will return false. If this does not throw an error, then the can function will return true. And this should be here an equal to private. So double equal, right? Because this is an equality check. It's not an assignment. This is all we need to do here. Let's now add an error message
+
+[00:02:23] and the error message that we want to add here. Let's once again, add an eot and this is gonna be a multiline error message. Let's then just copy the one from above here. We're gonna copy this and then we're gonna paste it here. And now we're gonna say the following Subnet,
+
+[00:02:42] we're just gonna say here is not marked as private, right? So we're gonna have exactly the same information, the name and the ID. And we will say here, please ensure, please ensure that the Subnet is properly
+
+[00:03:00] tagged by adding the following tags. And we're just gonna say here, access equals to private. That's great. So now we have the check, Let's run a data form format once again so that we make sure that everything is looking good. Now, the condition, everything is
+
+[00:03:20] properly aligned here. Let's come to our networking file outside of the module. And let's do a little bit of Refactoring here. So we have only one AWS subnet allowed and another aws subnet not allowed since the aws subnet allowed does not contain the access private tag. If we were to run a tele form plan here,
+
+[00:03:42] we should get an error. Since we have added a new validation here to our module, we can see that. Now this is actually throwing an error saying that the post condition failed. So the following subnet is not marked as private. The subnet custom VPC. Please ensure that the subnet is properly tagged by adding the following text.
+
+[00:04:02] So this is looking good. However, I would like for us to actually change this refactor this a little bit. So instead of using just one allowed here, we're gonna create a couple of subnets that not allowed. We will just leave here for documentation, for documentation not
+
+[00:04:21] actively used, right? So we're just gonna leave this here for documentation and let's now do a little bit of Refactoring. So the first thing we would like to do is to actually move this aws Subnet allowed and rename this. Let's rename this to be called private one. And now we can add a moved block here from,
+
+[00:04:43] we will say AWS underscore subnet dot allowed here. So this doesn't exist as a resource anymore in our configuration. I will say that this was renamed to AWS subnet dot private one. We're gonna add here an access tag. We're gonna mark this as private
+
+[00:05:01] and let's save this here. Let's run a dataform apply to make sure that everything is properly migrated. Now here, if you, if you run a terraform apply and you get this error message here. This is not actually referring to this moved block. I forgot to update this here in our subnet
+
+[00:05:21] ID. So that should be AWS subnet dot private one dot id like so and if we run a data form apply, now, we should see that we will actually migrate this here. So if we scroll up a little bit, we should see that we have here somewhere saying that the AWS subnet here, the private one will then receive the access tag of private here and that this was
+
+[00:05:45] successfully migrated. Otherwise we would be destroying the the allowed AWS Subnet and then creating the private one. Let's then type yes here and wait for the operation to complete. As you can see the apply was successful.
+
+[00:06:01] Now, which means that our post condition is also passing, right? So if we run a data form, data form plan here, we should now see that there are no changes to the infrastructure and our post condition is successfully going through. That means that the tech that we have added here to our private one, AWS subnet
+
+[00:06:21] is now being successfully identified and the combination here, but check this post condition check is successfully passing. We can then also create a couple more subnets. So let's just come here. We're gonna copy this and then we're gonna paste this here and we're gonna create two more subnets. The first one will be private two
+
+[00:06:42] which will have a 10.0 0.1 0.0. And then the Subnet custom VPC here. We're just gonna change this to two here and the one, the first one, we're gonna add the dash one and then we will also create a public AWS subnet. So the public subnet here, we just, we're gonna remove these tags.
+
+[00:07:02] We're not gonna create any internet gateway. We're not gonna create any route tables here. You already know how to do that. But for us, for the demonstration purposes, we're just gonna remove the tag here. So let's now add a custom VPC three here. And we can actually be a little bit more precise. So let's just say private one,
+
+[00:07:22] let's say private two here, private two and let's say public one, right? So this is a little bit better public one like, so let's now save this, come to our R DS and then we're gonna pass here the AWS subnet private to dot ID. Let's save this and let's run a data form, apply once again
+
+[00:07:43] and once we do that, it will want to actually first create the Subnet and then check the post conditions. However, we're gonna run into a problem here. And that's because we are passing an unknown subnet id to our network validation here.
+
+[00:08:01] So we, you can see that we need our Subnet IDS to retrieve this information in our data resource. However, Telecomm is not able to do so because it doesn't know yet the Subnet ID. So if we scroll down a little bit here, you will see that we can add a dash target here to first apply only the resources that for each value depends on
+
+[00:08:24] and then apply a second time to fully converge. We can do that or we can just do a simpler way. Let's just remove this here. Let's run a terraform apply once again, let's save, let's type Yes, here we want to add the resources,
+
+[00:08:40] we want to change the one that exists here. We want to rename it, right. So if we scroll up a little bit, we will see that the private will be renamed here. So that is correct. Let's type. Yes. And then once this application completes here, there is a conflict with the Cidr block. I probably forgot to change this. Perfect. Yes. So let's add this dot too. Let's save this run and apply once again
+
+[00:09:02] and then confirm this, this will add our public subnet. And once we do that, we are now we have a stable id that we can or we have a known id here that we can pass. So let's add a private two dot id here. And then let's run a dataform plan
+
+[00:09:20] and that should actually give us a successful message. Perfect. So there are no changes here and if we were to actually add a public subnet here, so let's add like so and run a data form plan. Now, this should inform us that. Perfect. This following the following subnet is not marked as private.
+
+[00:09:40] So this subnet here public one is violating our post condition check. Great. So our both our validations are working. The first one referring to being a public or a private subnet. And the second one referring to being deployed outside of our default VPC. If we were to get a not allowed dot id here,
+
+[00:10:03] let's just make sure that we get both messages on the screen as you can see here. The first or the last message that we get is the following subite is not marked as private. So this is also the case here because we did not add this tag. So this is the first violation. Then we scroll up a little bit more.
+
+[00:10:20] This is once again another violation. And if we scroll up a little bit more, we also get the violation that the default VPC is part of the default VPC. So we get all the violations from our post condition blocks listed on the screen and we can work to fix all of them. Let's then remove this here. Let's pass a private,
+
+[00:10:41] private two. Let's save this. Let's once again, just make sure that all the post condition checks are passing. Let's now format our code, let's format our code that's looking good and that's a great moment for us to come here to the read me, mark this as done. Mark, this is also done
+
+[00:11:01] and we can then mark that the checks and validation for subnets is also done. This is a great moment for us to take a short break and come back in the next lecture.

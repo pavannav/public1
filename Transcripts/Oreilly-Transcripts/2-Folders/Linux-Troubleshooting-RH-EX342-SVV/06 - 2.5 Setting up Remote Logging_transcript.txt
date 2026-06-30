@@ -1,0 +1,31 @@
+[00:00:06] - In this lesson, I will show you how to set up a remote log server. So, we need two servers. I'm currently at trouble2, which is the client. And I'm opening an SSH session
+
+[00:00:20] to 192.168.4.168, which is trouble one, the server. If you want to set up remote logging, then RSYSLOG is what you need, and there are two parts in it. Part number one is a listener
+
+[00:00:40] that needs to be configured on the log server, which is trouble in this case. And the configuration goes through RSYSLOG. So, in rsyslog.conf, we have all we need to make this a log server. If you go down a little bit, then you find the modules section.
+
+[00:01:01] And in this modules section, you can choose between UDP syslog reception and TCP syslog reception. UDP syslog reception is what you will use in an environment where you need to be compatible, where you may have all the devices that only send messages
+
+[00:01:20] using the standard syslog specification that was using UDP. TCP syslog reception is more secure and a better solution. So if you want to enable TCP syslog reception, this is how you do it. ModLoad imtcp will load the input module,
+
+[00:01:40] hence, imtcp. And InputTCPServerRun is passing a parameter to that module to have it listen on port 515. And that's basically all you need to do from the perspective of RSYSLOG. So, systemctl restart rsyslog
+
+[00:02:02] and then you can use ss -tuna to figure out if port 515 currently is in listening mode. And here we can see 515 is in listening mode. We can see it's :::, which is IPv6.
+
+[00:02:22] and we can also see it on IPv4. So, this is a log server. Obviously, if we want the log server to be fully operational, you need to take care of firewalling as well. So, firewall-cmd - -permanent
+
+[00:02:40] - -add-port 514/tcp and firewall-command --reload will reload it for you. Probably, there's a service as well, so if you want, you can have a look at --get-services
+
+[00:03:00] and add the service, but adding a port works as well. Let's have a look at --list-all where we can see that port 514/tcp is now open on this server. Now we go to the other server. And on the other server, we need to configure forwarding of messages
+
+[00:03:22] to the central log server. This also goes through the /etc/rsyslog configuration file. And in /etc/rsyslog.conf, somewhere near the end, we have this line:
+
+[00:03:42] *.* @@remote-host:514. So, what do we have? *.* is all facilities, all priorities, so it will log everything. That's something you need to consider. You might want to start logging to the remote server
+
+[00:04:02] from a specific priority on, so that you don't get the verbose messages as well. But if you really want to be complete, you might want to include verbose messages as well. And then we have either a single or a double at. Double means TCP, single means UDP,
+
+[00:04:20] so this is telling the client if it should use UDP as a connection protocol or TCP. And next, you get remote-host, which obviously needs to be replaced with the name or IP address of the remote host. I haven't set up any naming yet for the remote host
+
+[00:04:40] so I'm using an IP address. And next, systemctl restart rsyslog and you can test it using logger HELLO FROM TROUBLE2. Then we go to the trouble server,
+
+[00:05:01] tail -f on /var/log/messages. And there you go, trouble2 has been logging to the remote server. You can see that messages are clearly indicated with the name of the server where the message is coming from. So, that is how you set up a remote log server.

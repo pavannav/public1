@@ -1,0 +1,87 @@
+[00:00:00] Hello and welcome back. Let's now explore persistent volumes and persistent volume claims by using the local volume. This is a persistent volume. So it's not ephemeral like the empty door. And it will give us enough for us to explore the main topics around how to create a persistent volume and how to create a persistent volume claim
+
+[00:00:22] and how we use that also within pods. So let's start by just making sure that we have no resources in the default name space. If you have any other pods here running, that's also not too bad when I'm just starting with a clean slate. A small warning here. I want to show you an error that we can very commonly come across.
+
+[00:00:41] So I'm not gonna do the necessary setup now in the minicube site to begin with. That's on purpose. We're going to create all the resources and then we will see which kind of error comes up and we will see what are the necessary requirements, what are the conditions that must be fulfilled for us to be able to use the local volume?
+
+[00:01:01] And let's start creating our new file here. I'm just going to use local volume like so and or we can also say local volume example and then here we'll create a couple of resources. The first one will be our persistent volume. So the API version once again is V one here and the kind will be a persistent,
+
+[00:01:22] persistent volume like so you will see that this will already auto populate with some options here. And we can actually delete, let's just delete here. Most of them. We're just gonna leverage this here and didn't really help much. So maybe if you just want to skip the templating, that's also good. So the name here will simply say local volume.
+
+[00:01:42] And under the spec here, we will start by specifying a few things. So first thing is the capacity of our volume and the storage here. Let's say we're gonna set this to one GB byte like so and you can set to more to less depending on how much you have available in minicube the volume mode.
+
+[00:02:01] Here is another thing that we would set in. This is going to be a file system volume. If you have any doubts about any of these options, then you can always hover over them to get a little bit more information, right? So if you're not sure about what this volume mode means here, if you hover over this,
+
+[00:02:21] then you will see whether this or you see the explanation that this will define whether this volume is intended to be a formatted file system or just a raw block state. The file system here is implied. So if we do not specify volume mode, it will, it will default to file system. And this is once again, normally the use case you come across use volumes to manage
+
+[00:02:42] files rather than just keeping them in raw block state. But you can still set this to block in case you have that use case the access modes here. We will specify a single one. So this is an array. So it's a list and we will specify read, write once here
+
+[00:03:00] so that this volume can be mounted in or by a single node. And that makes sense because this is basically just a directory inside of the node, right? So we just specify your access modes to read, write once. And so we can also specify the reclaim policy here. We can say persistent volume, reclaim policy like so and there are a couple of values that we can use,
+
+[00:03:24] we can set this to retain. So if this persistent volume is deleted, the data will be retained here. So basically this defines what happens when the volume is released from its claim, right? So it's not when the persistent volume is deleted itself, but it's when the claim is deleted.
+
+[00:03:42] And then as you can see here, the valid options are retain, delete and recycle. We also discussed that we don't need to specify this here. So the retain one is is the default for manually created persistent volumes. And the delete is the default for dynamic provision, persistent volumes.
+
+[00:04:00] So if we remove that here, this will be the default for us because this is a manually created persistent volume, we can also leave this here. Now, the important thing for us to set is the storage class name here and this will be local dash storage, right? So this will be what we will use in the persistent volume claim afterwards.
+
+[00:04:22] To look for this specific storage class or for this specific persistent volume, we will then also set a local option here and we will set the path that we will mount inside of the node. And we could simply say here, let's say mount and then we're gonna add disks and
+
+[00:04:40] let's say here damp or let's say local volume, let's say local one like so just so that we could potentially create more local volumes. Important thing is that this path here, it should already exist inside of the node. And we have not created this path yet. And I want to show you kind of error we will get if this path doesn't exist.
+
+[00:05:01] But just keep in mind that eventually we will have to create this inside of the node so that everything works as expected. Now, whenever we create a new local volume here, which is specified by this local option here, then you can see that this represents directly attached storage with node affinity.
+
+[00:05:20] So now we need to specify a node affinity option here or configuration because once again, this is mounted in the node and we might have multiple nodes. So pods that use this volume here, they should be scheduled in the node where this volume is actually created. Because otherwise there would be some issues here when
+
+[00:05:42] trying to access the data from within the volume. Let's say that we have nodes one and two and then only node one has this actual path here. So if the pods were to be scheduled in node two, they would not work as expected for that to ensure that we are actually scheduling nodes in the correct or scheduling pods,
+
+[00:06:01] sorry. In the correct node, we will specify the node affinity option here. And I will say required and then we will say here, node selector terms and this will be a list of selector terms. So we can specify multiple, multiple conditions here. I will simply say that for the first one, we'll say match expressions.
+
+[00:06:22] So once again, our expressions here are coming into play and the key that we will look for is Kubernes dot IO forward slash hostname. And let me just show you where we get this information from. So back in the terminal here, let's get all our nodes, right. So I just want to clarify where we are getting that information from.
+
+[00:06:43] And if you have started minicube with more nodes, you will have more nodes here. So just pick one of them, we're going to use minicube here. I'm gonna say cube cut, describe describe node and then we will pass the minicube node name here. And now we get all information of the node.
+
+[00:07:01] So if we scroll up, you can see here the capacity as well. This might be useful. How much CPU how much memory this node has. It's a lot of stuff here. And this is also coming from the system because we didn't specify anything when we created the node. So let's just scroll up a little bit more or actually, we didn't create the note, we didn't specify anything when we created our minicube cluster
+
+[00:07:23] minicube is just taking some defaults from behind the scenes. So this important thing here under labels, you will find the Kubernes dot IO forward slash hostname and this is the one that we are looking for. We could also go for another one, which is this minicube dot K eight dot IO forward slash name
+
+[00:07:42] and it's really up to you here, they are both the same. But if it comes to the situation where one of them actually has the information you want and the other one doesn't then just feel free to pick any of this. So that's where I'm getting this information from. And I'm just using the match expressions here to show you another use case for this.
+
+[00:08:02] So let's come back to the ide the key is then the hostname and the operator will be in. And then the values here will simply be a single value. We're going to simply say minicube like salt, right? So this is what we need to set here for our volume or actually not only what we need to set,
+
+[00:08:21] but also some useful defaults here for us to explore how we can actually work with this volume or how we can configure it. All right. So let's save this. Let's come back to the terminal and let's see here, let's clear the screen. So and let's see what we can do or what happens here once we apply the file, local va
+
+[00:08:42] example and then we can also get our volumes. So Qle get volume, we're gonna oops sorry that should be persistent volume, that's looking good. And as you can see here, we have a few things and there is nothing really saying here that there was any kind of error,
+
+[00:09:00] maybe we can describe this volume. So cube cle describe and a shorthand here is PV, right? Instead of us having to write persistent volume all the time. And then we will simply say here local dash volume. Like so in the moment we do that here, we will simply see the information that we have provided, we didn't provide any labels or annotations.
+
+[00:09:22] And as you can see here, there is nothing saying that this was not successfully created. So the source is here, we didn't get any errors, it might look good for us. Let's then continue with now the persistent volume claim. So back in the ide here, let's create a new resource.
+
+[00:09:40] And that's going to be the persistent volume claim. The API version will also be V one and the kind here will be persistent volume claim. And now let's just remove that application here and let's have a look at the fields that were created for us. So the first one metadata here we are already familiar with.
+
+[00:10:01] I'm just gonna write local volume claim like so and now we have a few things here. We have the resources, we have the volume mode, we have access modes and we can start using this to specify the conditions, the requests that we wish here
+
+[00:10:20] for this persistent volume claim, Cnis will then take these conditions and it will look for a volume that satisfies them to a in a best effort basis here or if it is also possible to dynamically provision the volume, then CORS will also do so. So basically this means, hey, give me a volume that has this criteria, these characteristics here.
+
+[00:10:44] And if you cannot find one and you can dynamically provision one, then please provision it otherwise we will get an error, right? So let's try to get an error here. Let's say that we want a volume with two GB bytes. Remember that our volume here has a storage capacity of one GB byte.
+
+[00:11:01] So we're gonna have two GB bytes. The volume mode is file system. This is matching here. That's no problem. The access modes is also matching, we have read, write one here. That's great. And now we can also specify the storage storage class name like so for local storage,
+
+[00:11:20] so that we look only for the persistent volumes that have this storage class name also set to local storage. All right. So this will give us an error. It's not going to be able to find any volume that matches the resource requests here. So let's save this. Let's come back to the terminal and let's now apply once again. So keep
+
+[00:11:41] current, apply local volume example. And then we will see that the volume is unchanged and the volume claim has been created, we can now inspect our persistent volume claims here and you will see that the volume claim will be in a pending state. So if Kubernes cannot find nor dynamically provision a volume that
+
+[00:12:01] matches the criteria specified in the claim, we will enter into a pending state. If we were to describe this PV C here, then we will see that once again, we have the message here that the provisioning failed. Now, it's a little bit weird because it's simply saying storage class here are not found.
+
+[00:12:20] But actually this is because we are not able to find a volume that is matching the conditions that we have specified. Let's then come back here to our ID and let's change the request to one GB byte. That's the only thing we will do. We're going to come back here to the terminal. We will apply the changes here once again. And let's have a look. So this is forbidden. So
+
+[00:12:42] we cannot really make this change here. So we need to actually delete everything. Cube, cut, delete and let's pass the file here local volume example. And let's then recreate that like. So if we were to now get our persistent volume claims here, we will see that the status is now bound.
+
+[00:13:02] So it was able to actually find and match the capacity and the storage class as well here. And as you can see the error message that we got a little bit before it was quite cryptic because it was kind of hinting that the problem was with the local storage storage class. But in reality,
+
+[00:13:20] the problem was that the volume or the the requested capacity was not matching any of the volumes that were currently existing. If we also get our persistent volumes here, we will also see that there is a status of bound here. So this state here bound, it shows that the volume is taken,
+
+[00:13:40] let's say it's bound to a specific persistent volume claim let's describe here. Let's see, we can also have a look at the claim here. So we don't even need to describe, right. So we can see that the claim is here and it is showing which claim is actually using this persistent volume. Now, once again, the relationship between persistent volumes and persistent volume claims,
+
+[00:14:02] it's a 1 to 1 relationship. That means if a claim or if a persistent volume is bound to a claim, it cannot be bound to another claim. All I believe that the lecture is getting a little bit longer than I expected. We still have to create this local directory here in our node.
+
+[00:14:22] And we would like to also set up a pod to see how everything is gonna work. But since we are already extending the discussion for a little bit longer than I planned. Let's take a quick break and let's come back in the next lecture.

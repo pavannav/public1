@@ -1,0 +1,55 @@
+[00:00:06] - The next level of performance troubleshooting may involve your file system. In the file system, there's a couple of items that should be considered if you have performance problems. First, there is the block size.
+
+[00:00:21] Every file system has a default block size, which in many occasions is four kilobytes. This block size can matter, depending on the size of files that you want to write. If you want to write very small files, then it helps having small block size as well. If on your file system you are only writing
+
+[00:00:41] very big files, it may help increasing the block size. Consider this, if by default you have four kilobyte block size, then these four kilobyte blocks need to be administered as well, and the administration of blocks means that you will have huge tables that need to be stored in RAM.
+
+[00:01:00] If instead of four kilobyte block size, you would use a two megabyte block size, well, then you need 512 times less the amount of memory to store your administration of blocks in RAM, and that can be a huge benefit. Second thing to consider on file systems is fragmentation.
+
+[00:01:23] Fragmentation happens if your disk space is allocated non-contiguously, and that is bad for performance. And the last part that may matter is journaling. Journaling in general is considered something that's good on file systems.
+
+[00:01:42] The idea of journaling is that it is easy to roll back. But journaling from a performance perspective may cause trouble, because what's happening in journaling? Well, when you write files you have to deal with metadata, as well as data blocks.
+
+[00:02:05] In a lightweight version of file system journaling, you would just write the metadata to the journal, so that your journal at any time, knows which files specifically are open for any transaction. So if your system crashes, you can roll back
+
+[00:02:22] from the journal and you can replay everything that was open or you can just do fixed troubleshooting on those files because they may have gotten damaged. If you have data blocks in the journal as well, that means that you will write everything two times.
+
+[00:02:42] First time, you will write it to the journal, next time it will be committed to the actual file system. And from a performance perspective, that may give you a lot of trouble. Fortunately, there are good utilities to find out if your file system is creating any trouble, and if you found specific trouble,
+
+[00:03:02] it can be easy to fix as well. Let's have a look. All right, regarding file systems, there's a couple of things that can be optimized. The most important item probably is the file system journal, because journals are not good for performance. They are good for reliability, but they
+
+[00:03:21] add overhead to your file system. And in some cases, you might not want to use a journal at all. If that is the case for an Ext file system, then you can use tune2fs. Tune2fs has different options. And these options are displayed using --help.
+
+[00:03:44] Now the interesting thing about tune2fs is the features. So the features specify what the file system can do and what it cannot do. If we use dumpe2fs and sdb1, then we can see
+
+[00:04:03] the features that this file system is using, there we go. And the interesting feature here is, has journal. Has journal means that this file system has a journal. If you don't like that, you can turn it off, tune2fs, - O, carat, has_journal on dev/sdb1.
+
+[00:04:27] And from this moment on, the sdb1 file system doesn't have a journal anymore. As you can see, it has gone from the file system journal. And that will most likely make
+
+[00:04:41] your file system a lot faster. Now there are other things that matter in file systems as well. One of them is fragmentation. If you type man -k fragm, which is partial for fragmentation then you can see that there's a filefrag utility, which reports on file fragmentation,
+
+[00:05:01] and there is e4defrag, which is the online defragmenter for Ext4 filesystems. Apparently xfs doesn't suffer from fragmentation. Ext file systems have a couple of nice utilities that help you to analyze and optimize.
+
+[00:05:20] xfs has its own set of utilities. Here we can see all the xfs utilities currently existing. Now, probably the most important utility in xfs is xfs admin. You wanna find out what's possible, have a look at the main page of xfs admin, but for some funny reason,
+
+[00:05:40] where Ext4 has a lot of options that are well-known to make the performance of an Ext4 file system better, this is not exactly the case for xfs. xfs from the beginning has been designed to be a well-performing file system, and for that reason, while it is quite common to optimize Ext file systems,
+
+[00:06:01] it's not so often used on xfs file systems, for the simple reason that it's not necessary in many cases. With that in mind, let's have a look at the lab. All right, here's a quick lab. You are planning to implement a heavily used FTP server on top of an Ext4 file system. Investigate what you can do to get the best
+
+[00:06:20] possible file system performance. Good luck. So as we have just discussed, there's a couple of things that you can do on Ext4. Now, the very first thing that I would do on the Ext4 file system that is going to host a heavily-used FTP server, is think about journaling, because really, do you need journaling?
+
+[00:06:41] And if you need journaling, maybe you want to set it to a lightweight journaling, if you don't need journaling at all, then you may just switch it off. I have just shown you how you can use tune2fs dash uppercase O carat hash journal to switch it off, but in case you want to use journaling,
+
+[00:07:00] you may also use the data is mount option. Let's have a look at mount.ext4. Let's have a look at the main page of the mount command. If you look for data equals, and you can see the different journaling options, so you can set
+
+[00:07:20] to journal, ordered, and writeback. So journal is the heavyweight mode, ordered is the default mode, and writeback is the fastest mode. If you do want to keep your journal, then you should consider using data is writeback as a mount option to the file system that contains your FTP server document root.
+
+[00:07:41] Obviously, if you are planning to host a heavily-used FTP server, it should definitely get its own device and its own mount. Don't put it on the root file system, so that all IO cycles on that specific device can be used by the FTP server. Apart from data is writeback, there may be other things
+
+[00:08:03] that you can do, but you will get the best possible performance by having a look at this specific mode. So I would recommend you just set that, and once you've done that, you'll be okay. Now let me show you from the command line how to do it. If we install vsftpd, it's a good begin.
+
+[00:08:30] Then the default document root is in var/ftp, there's a pub subdirectory, and if you want, then you can use mount - o data is writeback
+
+[00:08:46] of dev/sdb1 on var/ftp. And now if we type the mount command, it has been mounted and the data is writeback option should apply as well.
+
+[00:09:01] So, you can test after putting this mount option to the file system and if you verify that the performance of your FTP server is better, make persistent by putting it in the ETCFS tab.

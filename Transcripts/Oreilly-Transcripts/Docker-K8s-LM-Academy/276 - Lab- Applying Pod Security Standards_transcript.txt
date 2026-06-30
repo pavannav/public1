@@ -1,0 +1,75 @@
+[00:00:00] Let's now explore pod security standards in a bit more details for that. Let's create a new folder. Let's open this in our ID and let's create a couple of name spaces. I wanna create a new folder here, sub folder just to help us get organized. So let's call this name spaces. And then within here, I would like to create a baseline name space
+
+[00:00:22] and a privileged name space. So let's add it here, privileged and baseline dot YAML. The way that pod security standards work is that the admission control will then look at labels in our name spaces and it will take the appropriate action based on the labels.
+
+[00:00:41] So let's start by defining our name space. The API version is V one, the kind here is name space. We then have the metadata with the name, let's just call this privileged so privileged. And then here we will add a set of labels. So the first label we will add and they all follow the same pattern here.
+
+[00:01:03] So it's gonna be pod dash security dot Kubernes dot IO forward slash. And then here we have three options. We can either enforce a certain security standard, we can warn the user in case something goes out or in case something violates a specific security standard.
+
+[00:01:23] And we can also just log to the audit logs from Kernis and that would not issue a user facing warning, but it would log a violation in audits. So let's now here, just enforce a privileged and this really doesn't change much actually here because if we don't add anything,
+
+[00:01:44] then basically the pod in the privileged would be or the pods with a lot of permissions would still be able to schedule to be scheduled in the name space. So this label here doesn't really change much for us. But we can also add another one here where we're gonna warn
+
+[00:02:00] in case there is any violation to the baseline security standard. So even though the pods will be allowed to be created, we will see a warning here whenever we try to create the pod. So let's create a new file here at the top level of our directory. So as a sibling to our name spaces directory, and then we're just gonna call this a privileged pod like so
+
+[00:02:23] and then we'll also create another file here for our baseline pod. So let's now have a very straightforward definition here. We don't really need to spend a lot of time in creating pods. You already know how to do that. So we're just gonna use engine X, you're very straightforward.
+
+[00:02:41] And for the image, you're just going to use Nginx 1.27 0.0 container port 80. And then we're good to go here. I'm gonna copy this and here we can actually just add a new one suffix here. So privileged just so that we know here that or which part is which
+
+[00:03:02] right? So I'm gonna copy this and also paste it in the baseline. Let's then change this to baseline and this also to baseline. And now for us to actually make this pod here privileged, we can add a security context option under our container definition.
+
+[00:03:20] So let's add here security context. And we will say privileged set to true. The moment we do that, this will add quite a few functionalities. If you hover over here, you will see that processes in privileged containers are essentially equivalent to root on the host. So this is a fairly sensitive field to change,
+
+[00:03:42] but it might be also the case that some processes they do need privileged access. So let's just say that we set this to true. Our baseline pod will not have anything set here apart from our container. So let's save these things and we can now come to our terminal, we can create our name spaces.
+
+[00:04:02] So let's just create both name spaces os name spaces like so and this is creating only the privilege. Maybe I forgot to change or actually, yes, I forgot to add the baseline definition here. So let's just change this a little bit, we're gonna say baseline here and now we're gonna enforce a baseline security standard.
+
+[00:04:21] And we will warn in case our pod violates our restricted security standard. There are three security standards that are available, the restricted, the baseline and the privileged. So we can always enforce one of them and then warn in case the one below is violated or the one more restricted is violated.
+
+[00:04:42] So basically, the enforced option would really be used whenever you really want to make sure that this is not violated, right? So if you think it does make sense to enforce the restricted, then by all means, go ahead. This is always good practice in terms of security hardening. But I'm just showing you also another pattern here that might be useful.
+
+[00:05:01] So great, let's save this. Let's come back to the terminal. Let's apply this folder once again just to create the baseline name space and let's now apply our privileged pod into the and let's create it into the privileged name space. So the moment we do that here, you will see that we get a warning.
+
+[00:05:22] But nonetheless, the pod has been created, right? So if we were to say cube cut, get pod name space privileged, then we will see that our pod is created and it is up and running. But here we give, we get a warning saying that this will violate the pod security baseline because the container engine X is setting the privileged
+
+[00:05:43] option here of the security context to true. And this is not allowed in the baseline security standard. Nonetheless, with a warning, the pod will be created without issues. If we were to now try to create this pod here under the baseline name space. We will see that we actually get an error from the server. Let me clear the screen.
+
+[00:06:04] Let's run this once again just so that we can see the error a little bit better. And as you can see, it really says that, OK, this is violating the baseline pod security standard. So I'm not going to create it because I have to enforce this security standard. If we were to then try to get the pods here under the baseline name space,
+
+[00:06:24] then as you might expect the pod is not created if you were to now apply the last attempt here, let's say the last experiment, let's apply the baseline pod to our baseline name space. And as you can see here, we also get a few warnings and these
+
+[00:06:40] are coming from the restricted security standards. So for us here, we would need to change the configuration to include here. Set the security context, allow privilege escalation to false and also set the capabilities to drop all of them. We would have to set the run as non root to true
+
+[00:07:02] and we would have to set the sec profile or the secure computing profile type to either runtime default or localhost, we can give it a try to create a restricted pod. Let's just copy paste our baseline pod here. Let's name this restricted pod and let's implement all the changes that are suggested in this warning.
+
+[00:07:24] So let's add our security context option here, security context. And then we'll say allow privilege escalation to false. We will then also have a look here at the capabilities dot drop. So we're just gonna add this here. So security contexts capabilities
+
+[00:07:42] call on drop like so and then this will just include our all list and then we will also add the run as non root to true. So let's just copy this here, run as non root. We're gonna set this to true and we'll also set the second profile. So let's just copy this here, this one here.
+
+[00:08:05] Let's copy this and let's paste it here and let's set this to run time, default. And this should actually be the type and not directly under second profile. So this is all we need to set. Let's see if we can now apply this pod.
+
+[00:08:21] So let's clear the console and let's now run cube, apply. Let's use our restricted pod here, restricted pod. And oops, I think that I copied the pod but I didn't change the name. So let's just change the name here. That should be restricted, right? That comes with copy pasting. Let's save this. I think the rest is good for us.
+
+[00:08:42] So let's come back here, clear the screen. Once again, let's apply this and the moment we do that, we don't get any warnings and we get the message that our product has been created. So let's just have a look if the pod exists. And as you can see here, we get a message create container configerror. So let's copy this. And let's see here, what is the message that we're getting?
+
+[00:09:04] So let's describe the spot on the baseline name space. And as you can see here, we get an error saying that container has run as non root and image will run as root, right? So the image here, basically the engine X image is trying to run as root. But what we are actually trying to enforce is that
+
+[00:09:21] the container is or cannot be run as root. So let's delete this here and let's add the namespace here, baseline. So by default, the engine X process, it does require root permissions to touch a couple of files here. But we also have the option of exploring unprivileged images.
+
+[00:09:41] So for example, the engine X provider here, it does have an engine X, unprivileged image that we could try to use, right? So this maybe we could actually let's give it a try here. Let's come to the tags and let's have a look at whether the tags they are following the same pattern. So let's have a look here 1.27. So we can go for 1.27 0.1.
+
+[00:10:02] I think that would be good enough. Let's then have a look at the pull command. That's gonna be this one here and let's copy this and let's paste it here. And now let's say 1 27.1. So let's save this here and we don't need to add any additional configuration here.
+
+[00:10:20] Let's then come back to our terminal and let's clear the screen and let's now try to run cube cut, apply. We're going to apply once again the restricted pod like so and the name space will be the baseline name space. And the moment we do that, then we can see that we again get no warnings here. However, if we were to get the pods now in the baseline name space,
+
+[00:10:45] then we will see that the engine restricted pod was successfully initialized and successfully. So this is one example of how it might not be that straightforward to enforce the restricted security standards
+
+[00:11:00] because it also depends on the instructions that are available that are present and used in the image here. So if the container will be run as root based on the image, but we set this run as non root here to true, then that will cause a conflict and we will get a configuration error. So we also need to keep in mind that the
+
+[00:11:21] images must allow us to drop all these privileges here and still work as expected. All Right. Let's then start deleting everything that we have here. So let's come to the terminal. Let's delete all the pods that we have here. I'm not sure whether this is gonna get no because of the because of the name spaces. So let's just delete everything here on the name space baseline
+
+[00:11:43] and then let's delete on the name space privileged and then that is looking good, right? So we deleted the engine X baseline engine X restricted in the name space baseline and the engine X privileged in the name space privileged. We can of course set the name space at the configuration level here.
+
+[00:12:02] But since we were using a few of them in different name spaces, for example, that's why I didn't add the name spaces to the files with the pods out of the way we can now directly delete here all the files inside of our namespaces folder. And once the deletion completes, we are good to go
+
+[00:12:20] to wrap this lecture around pod security standards. Let's then take a short break and I'll see you in the next lecture.

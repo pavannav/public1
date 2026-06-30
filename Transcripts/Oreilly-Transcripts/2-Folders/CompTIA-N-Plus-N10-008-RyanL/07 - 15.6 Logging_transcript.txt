@@ -1,0 +1,77 @@
+[00:00:07] - [Narrator] ThiS is about as good as time as any, to have a formal discussion about logging. I've mentioned syslog before, but syslog is a network-based service. Our default logging operation writes all of our log messages
+
+[00:00:21] to the local storage or local desk. Now this may not be great. You see, your logs are gonna become useless and you should cringe, you could go, "What? Wait! Why are my logs useless?" Well, if your system was compromised, we come in, we go, "Oh no, someone hacked our web server." How do we figure out what's going on? If your answer's to check the local logs,
+
+[00:00:42] whoever compromised your server has admin rights. They've got the capability to destroy, modify and tweak your logs. Those logs, once the system is compromised are no longer to be trusted. If the system fails, What happens if I can't power it on? The servers just dead,
+
+[00:01:00] I go, well, what happened in the last final hours of its life? We'll never know. How about if the storage fills? If we're just have no more disc space, we can't write events to desk. This happens to lots of customers, things we have to keep an eye on. Because of this, I think remote logging can be a lot more reliable, the solution, then doing everything locally
+
+[00:01:21] it's what I would encourage you to do. Remote logging however, maybe less secure. What do you mean maybe? Like, well, let's think about it. For a long time, many lessons now we've been talking about securing network communications and some of the means to hijack them. How are you going to hijack communications that never leave the box?
+
+[00:01:41] It'd be pretty tough. If it's gonna across the network, now you could potentially disrupt things. We realize that when we start writing across the network, that's convenient, it's scalable. It's gonna be more reliable ultimately, but we can't trust our native communication. Why is that? Well, because syslog just happens in clear text,
+
+[00:02:02] it's UDP or TCP-based, but you're gonna find that at various, syslog is supported by lots of different vendors and they all do UDP, some of them do TCP. Remember when looking at UDP and TCP, UDP is very easy to spoof. We can make things look totally legitimate with UDP,
+
+[00:02:21] with TCP, it's much more difficult because we have to complete a three-way handshake before we can start passing data. One of the neat thing about syslog messages is that they can be replicated. Let me show you what I mean. Let's say that we've got a router, we've got a switch, we've got a firewall,
+
+[00:02:40] We've got some wireless equipment, we've got a server here for unified communications. As we start looking at more and more gear, we go, you know what? There's a lot of different departments that all say that that equipment belongs to them and they wanna know what's happening with it. If you look at the equipment, when you define a syslog server,
+
+[00:03:00] some devices allow you to point to one IP address and one IP address only. Some of them will let you point at three IP addresses, that would be nice. But what happens when we've got four or five departments that all want access to these logs. Can get pretty messy, especially if there's any type of internal politics.
+
+[00:03:20] What I like to do is take all the equipment and point it to a replicator. This is just a repeater. All that you're doing is saying, when you go to these devices and they say, who's the syslog server, I only have to point to one, unless you want high availability, then you can have two replicators.
+
+[00:03:40] What do these replicators do? Well, when a message comes in, they take it and they send it to multiple destinations. See, each appliance may have different capabilities in terms of the number of syslog servers it supports. But a replicators job is to ingest a syslog from one device and then multiply that message out
+
+[00:04:01] to various different databases or servers. So this is an intermediate system to replicate a syslog message to multiple destinations. That way if you've got a security team or a SOC, we can send them the logs. If we've got a network operations group, they can get a copy of the logs. If we've got an archive for some reason,
+
+[00:04:22] where we say we send everything here, we never miss anything. No one is allowed to edit this. Okay, cool, there's our archive. Then maybe we've got server admins that like to blame the network for problems. They're always telling us that the network is a problem. We've always proven that it isn't. Well we wanna make their jobs easier,
+
+[00:04:40] we wanna work with them. I can take all the network events logs, and I can send that to if there's some type of SIM or a logging server, maybe Splunk that the server admins are using, I can go ahead and I can send them a copy of all the logs as well. This gives different teams, some visibility into what's happening on the equipment and then they can use that information
+
+[00:05:02] whenever they're troubleshooting and we're not stepping on each other's toes. Remember I've said this before UDP can be easily spoofed can be easily modified. If I see syslog messages that I don't want to reach the server, I'll drop them. If I wanna create my own syslog messages and overwhelm the server, I'll do that too.
+
+[00:05:21] You see, you could actually create syslog events that are fake. You forge them, and then you send tons and tons of forged events at the logging server. This is a denial of service attack against the human beings that have to read through all the logs. Sure, you've got some malicious behavior. Your logs are buried in there,
+
+[00:05:40] but let's make it one heck of a haystack that they've got to sort through. If we can create tens of thousands or hundreds of thousands, or even millions of log events, somebody has to go through all those and figure out which ones are good and which ones are bad. Remember TCP and UDP can be intercepted. Ideally, we're just talking about TLS.
+
+[00:06:02] Also I've mentioned a couple of times, IPsec, IPsec is the bandaid that I stick on all other protocols that are broken. IPsec works in two modes, tunnel mode, and that's where network appliances are moving other people's traffic and transport mode, that's where maybe my router and my logging server both use IPsec.
+
+[00:06:21] and they build a tunnel between the two hosts directly. If we do that, I can push syslog through that tunnel. Nobody can intercept it. Nobody can see what the messages say, no one can bother it. Ideally we'll take our logging traffic and we'll protect it using IPsec or TLS. When working with syslog,
+
+[00:06:41] it's important to understand how the severity levels work. With severity levels, there are eight. I screwed this up before I was taking a test. I was in a hurry. It's multiple choice said, how many severity levels to syslog? I said, seven is debugging next. I'm like, oh no, I didn't think about zero,
+
+[00:07:00] which is a total of eight. On that test, I couldn't go backwards. Don't ever do that. Remember that you have to start counting at zero in computers. Looking at these severity levels, the way that they work is, in your configuration, you say, "Hey, syslog. I wanna know when these types of events happen." What I mean these types?
+
+[00:07:20] Well you'll pick one of these numbers to tell the device what level of information you wanna hear about. If we go down the list from top to bottom, as you go towards the bottom, these are more verbose or more chatty. Every time something happens, even though it's teeny tiny, not significant, you're gonna hear about it. You're going to have a logging event
+
+[00:07:41] that can be useful when you're troubleshooting. When you're trying to find out something really difficult. But a lot of times we want a log at a lower level. So where do you log at? A lot of times for me personally, I will log at five or six. It depends on the customer and it depends on the equipment. Sometimes logging at six can be way too chatty.
+
+[00:08:02] Why does that matter? Well, these log messages are getting sent somewhere. I like Splunk a lot and Splunk is free. (narrator laughs) At least last I checked. For something like 500 megabytes worth of data. If you create more than 500 megs of data, you have to pay them, which is fair. They make some really good software.
+
+[00:08:21] The problem is if we're creating tons and tons of tons of logs and they're not that useful, we're paying for licensing for a big database engine that's going to ingest it all, but also for storage for that. Additionally, all these logs are going into a database. If we're logging excessively over time,
+
+[00:08:40] that database is going to get bigger and bigger and bigger. And what happens? It takes up more disk, it takes up more RAM. What happens to my performance? It goes downhill because the database is so large. When I do queries against it, it's so much more data to chew through. We can implement logging in a more efficient way,
+
+[00:09:04] pruning out some of the stuff that we don't wanna hear about. You can go into logging server and say, which logging events, each event that occurs has got a unique ID. You can do searches against it or sometimes we call them grabs. If we wanna take a bunch of data and filter it down,
+
+[00:09:20] we'll see that we're dropping it. We'll search through these logs to try to get them smaller and more specific and I'll ask questions. I'll be like, "Hey, logging server, what's the most common event that comes in?" And they'll tell me, and if it's something really benign or basic, watch what I can do. I can log into that appliance, switch, router, firewall, whatever.
+
+[00:09:40] I will take the individual syslog ID. In this ID says a remote IP sec VPN connection has terminated gracefully. I go, I don't need to hear that a tunnel was torn down gently like a thousand times a day. That's useless.
+
+[00:10:00] So I can go to that individual syslog ID on my configuration, and one thing I could do, is I could turn it off and it'll never create another log message. Two, I can alter the severity level. This is what I wanna get you excited about. You see if I was logging at informational
+
+[00:10:21] and it kept coming up like a thousand times a day, I just don't need to hear it. Instead of turning it off all the way, I'll take that one syslog ID and I'll say, I know you're set by the vendor as a six. I just wanna move you to a seven. Individual logging events can be basically reassigned to a different severity level.
+
+[00:10:43] Meaning whenever you log at five or six, you're going to get everything more significant as well. The device goes, oh, well, if you want notifications, you definitely want warnings, errors, criticals, alerts, and emergencies. What we can do with individual IDs
+
+[00:11:01] is take that severity level and increment it to a higher value, which means less severe. When we lower that value, it means that it's more severe. If you can keep that straight, the fact that zero is the most severe incident and that seven is the most general or verbose. We can understand how remapping these syslog IDs
+
+[00:11:22] can help prune the amount of logging information that's coming into our centralized servers. I'm gonna do Cisco ASA syslog PDF. There's these guides out there. This may not be the latest one for the latest version of code.
+
+[00:11:41] I'm just hoping it loads quickly for us and see how it says syslog messages, 201002, all the way up to 219002. All right, let's click on it. As we through here, it has the syslog ID. This is the actual error message ASA-3-201002,
+
+[00:12:00] too many TCP connections, static or translate global address. Here's the econs and the end cons, embryonic connections and the number of maximum connections. This is just an alert that's happening. If I wanna take this one event and see this where it says ASA-3-21002, that's the syslog ID, the 201.
+
+[00:12:22] What's before it and that that three is a severity level. I could take that and I could change it to a four or five. You can look up any of the events. You can find out more about the values that are being represented in the error message, how to interpret it. You can also see again, the default severity.
+
+[00:12:41] We can go ahead and renumber it or alter it if we want it to. This is just an example of all of the different ASA syslog messages as of October 28th, 2020. It makes sure you get the latest version of the guide, but these are very, very handy.

@@ -1,0 +1,69 @@
+[00:00:06] So let's talk about the infrastructure pipeline disciplines. Now there are four key principles here to think about. The first one is the tdd. We spoke about the idea of writing tests before your infrastructure and this is so critical for infrastructure too because this is where you can
+
+[00:00:22] really ensure that what you are really writing, the tests you're writing is something that's going to drive your development process. Second thing is having those short lived branches and frequent mergers to main. So this is where you're going to have the TBD here obviously means trunk based development. You know, when you have these things you
+
+[00:00:42] don't let the branches drift, you're continuing to integrate. Right. That constant integration is extremely important to make sure that there is no drift. The third principle is keeping your workflow logic manual or sort of minimal. Right. I mean, so what that means is that your pipelines are going to be pretty dumb.
+
+[00:01:00] Your CI, cd, YAML should be very like, sort of like a simple orchestration and not a significantly complex logic. And the last one is this idea of push that complexity to versioned code, right? I mean, so there'll always be complex components in here, but try and put that into the code. So this is what we call those smart scripts. The idea of smart scripts.
+
+[00:01:23] So, so logic should be something that is testable, versionable scripts that can be run locally. I think that is how you should be really looking at this. So we'll dig in deeper into each of these four principles. The idea here is that infrastructure code sort of requires the same engineering rigor as the application code. And discipline feels slow at first but dramatically increases over time.
+
+[00:01:42] And you know, your consistency across these pipelines will sort of reduce the cognitive load that just what you have been after in the very first place anyway. So let's look at this, the first one dry or the don't repeat yourself part. Right. So this is one huge mistake. We have seen in most of the infrastructure
+
+[00:02:02] driven software teams there's this duplicated infrastructure that sort of resides across multiple folders or long live branches. And this, these enormous differences should only exist when the parameters. The idea is that let's, if you're doing terraform, let's not copy the code. Let's make sure that configuration
+
+[00:02:21] parameters sort of drive that. And in the code example we look at this becomes very obvious. So the modules and the shared components sort of ensures that consistency. So it is important to focus on that. And one of the biggest reasons for the drift that we see is that duplication. Right. So if you look at that example that I Have here.
+
+[00:02:43] What is happening here is that you know you have your Terraform script that has got like different problems, right? So we created multiple copies of this. The main TF put it one started from dev and then made a copy of it in staging and then made a copy of it in prod. You can see that drift happened across the board, right?
+
+[00:03:02] Instead see how you should be doing. So you should totally have this code in one version of main tf but then use your TF words to sort of define what is needed for your dev, your staging and prod. So never try and do a copy paste of the infrastructure code just because thinking that hey, this is infrastructure code
+
+[00:03:21] so it's okay to do that. It is not. And you know the idea is that prioritize that parameterization using those TFRs as opposed to duplicating it. And this is a principle that you should really take to heart and make sure it works.
+
+[00:03:40] Now let's talk a little bit about the test driven development. So how does that work? Right, As I said earlier, try and write that those tests before you get into your the actual coding, right? So that also confirms your overall configuration of your infrastructure. Then comes the idea of what is the acceptance criteria before you start your merge? Is there a specific acceptance criteria that you can get
+
+[00:04:02] through that that will ensure that happens with high levels of freedom for the developers as well as the platform engineers. Check out the other tools out there. So in AWS you can definitely look at AWS Spec and terratest or Kitchen Terraform. There are a lot of infrastructure testing tools and frameworks out there, so definitely check that out.
+
+[00:04:23] So these tests can catch some of the misconfiguration before they reach production. And just because you're applying Terraform appliance, it applies successfully. That's not a test, right? You need to have lot more going to that and we'll discuss that during our code demo integration test. Something that sort of validates those resources work as intended.
+
+[00:04:42] So it's not just good enough to have those either syntax tests or something like that. So you need to also have those integration tests and make sure that you don't really pass the deployment when some tests fail, say I'm going to go fix it later. That is usual recipe for a disaster. Never do it that way.
+
+[00:05:00] So let's look at another example of a test driven development here. So what you're really trying to do is so here you have a situation where you have somebody's using AWS and you basically have your resource defined and your name Defined and your ingress defined here. Then you go ahead and apply, do a terraform, apply and then say, looks
+
+[00:05:21] good to me. So did a code review say, it looks good to me, deploy to pod. And what happens is that, you know, you got woken up in the middle of the night saying that a missing egress rule. What do you do for outage, rollback, postmortem, right? So instead what you should be doing is defining these things. Define the done before you get into it.
+
+[00:05:42] So here you're actually trying to have this sort of defined, like how it allows ingress or how does it allow the egress. And this is where in this case the bug would be caught. Then you know, like you're not. How are you denying those ssh? So when you do it this way, you can actually see that your test would
+
+[00:06:01] ensure that it finds these things before you even commit, before you do the deployment. So it never goes to deployment and having that problem. So try this out yourself, see whether you're on AWS or anywhere, it doesn't matter. You can try this out and see how this sort of works within your environment. So let's now talk about this idea of dumb pipelines. And smart code.
+
+[00:06:24] Pipelines should contain only that ordering logic. You know, I think that is important for us. So essentially those would be like, yeah, step one, step two, step three, it should be that simple. Then your individual steps, call those external version pipeline code. This would be your scripts, reusable actions, your arbs. So the logic
+
+[00:06:42] lives outside the pipeline. I mean, that is the idea. And the smart code can be tested, versioned, reused across pipelines and you can run it locally, which is highly beneficial, and you can write unit tests for it. And if you do it that way, there's a much better chance of having the stability that you need. The architecture makes
+
+[00:07:01] changing the pipelines less costly, right? Because migrating From Jenkins to GitHub Actions, which a lot of us have done in the recent years, your scripts should remain the same, only your orchestration changes. Because otherwise what happens is that if you're moving your CI system from one to the other, you're going to have like a
+
+[00:07:21] massive work. And I've heard of, you know, companies who are really trying to do that for like five years and they still are not completely successful in doing it. The reason for that is their architecture. As you can imagine, if your pipeline YAML is hundreds of lines, right, then you're probably doing it wrong. And again, I'm being not being
+
+[00:07:40] judgmental. This is a learning that we all have gone through your complex. YAML is usually very difficult to read and untestable and unmaintainable, right? YAML might look okay if you had like 10 lines, but once you actually have lots of lines, lots of code, it's very, very difficult to maintain that. And you know, needless to say, just like every other software engineering
+
+[00:08:02] principle, you need to have those pipeline code sort of versions so that it enables the rollback and you can have that better adoption there. So developers should be able to test the pipeline logically, like. And also you can't have that, it works in CI, so shouldn't require you waiting for CI, right? So run the scripts on your laptop. You should be able to, if you're working on new machine, run it locally, make sure
+
+[00:08:21] that it sort of works before you move on. So let's look at an example of a dumb pipeline here. So what you have here is like 200 lines of inline logic, right? So what you see there is this conditional statement, you know, you have your refills Y. So then. And the BASH scripts are sort of embedded in there, you know, So I think
+
+[00:08:43] if you, yeah, these things are probably back, you know, like BASH scripts sort of embedded within the whole process. The problem is this YAML is sort of untested, right? You can't run it locally when it breaks. You debug by pushing commits and watching CI and then your time sort of, you know, every time you do it takes more and more time to do it.
+
+[00:09:01] So instead what you should probably be doing is just do your dumb YAML saying that, okay, run your init plan, apply and then run that, right? I mean, your script becomes very, very simple to be. And I'll, I'll show you how we are actually running this, you know, in, in the, it's in the GitHub repo of the course.
+
+[00:09:21] But you can actually do that as simple as this. Then once you do that, you can just test the scripts locally and we'll see how that happens, you know, but this is the way you should probably be building this as opposed to doing what you have here with all this inline logic. So the thing about this is that the pipeline should become very trivial, right? To understand these things, when you say run these
+
+[00:09:42] three scripts in order, anyone can understand that. But if you really say that this is how everything is sort of embedded within your ML, then you basically lost the developers right off the bat. And then you're going to be really tough to test it and get it working. The pipeline code management is the other part that we should be talking
+
+[00:10:02] about. So your shared pipeline code, whether it is circle, CI ops or GitHub actions and all that. So requires proper engineering, right? So applying linting, testing and semantic versioning of the pipeline libraries is very important. So if you say a version 1.2.3, it should mean something, right?
+
+[00:10:20] The semantic versioning of it is that you should probably be doing things like major version for breaking changes, minor version for like bug fixes or patch version kind of thing. So I think you should always have a nomenclature as to how you do it and build on that. And developers should sort of self manage the adoption of new versions. And you can't have any forced upgrades. So teams should upgrade when
+
+[00:10:42] they are ready to do it because they are fairly insulated and it's well architected so that it won't have issues around that. Typically breaking changes require major version bumps and the migration guides. That's something that you should always try and do because upgrading from version one to version two say that okay, it's changing X to Y.
+
+[00:11:03] Pipeline code is the production code, right? I think that is the part that a lot of us forget when we haven't done this enough and haven't been burned as many times that we have been burned. So we think about it like pipeline code. Like you should do the kind of code, review the testing, documentation, monitoring everything that you do with your production code with a pipeline code.
+
+[00:11:22] The idea is that a bad pipeline code breaks every time. Every team that uses it right now the blast radius becomes really large so that quality really matters there.

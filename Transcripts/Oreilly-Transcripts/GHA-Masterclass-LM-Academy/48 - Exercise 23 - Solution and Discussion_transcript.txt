@@ -1,0 +1,107 @@
+[00:00:00] Welcome back. In the previous lecture, we created this composite action to cache node and NPM dependencies. And in this lecture, we're gonna create a workflow to use this composite action. We'll see a couple of aspects that we have to keep in mind. Whenever we are using a composite action, let's create a new file under the workflows folder here. And this is going to be simply called
+
+[00:00:21] 17 1 custom actions composite, all right, just so that we can differentiate between all the types of custom actions that we will use. We create one workflow per type of custom action here. So let's create, let's define the name and that will just be called 17 dash custom actions
+
+[00:00:43] dash composite. And then here we will run this on workflow dispatch for now. We have no inputs and then we can define a series of jobs. We will define a single job here. That's going to be the build job which runs on, runs on B
+
+[00:01:00] to latest. And it has a series of steps. The first step here is to set up node and NPM dependencies. And this is where we would like to use our custom action let's then define or let's recall our custom action and remember our custom action is under the github
+
+[00:01:20] folder, actions folder and then a composite cash deps folder. So we can just pass this as or as a relative path to the root folder of the director. So github actions, composite
+
+[00:01:40] cache deps. What this will do is it will look inside of this directory here and it will find the action, the definition file and it will just execute this as a custom action. Now, here we need to provide a series of configuration values. Remember that we have provided two inputs here, both the node version
+
+[00:02:02] and the working there or the working directory. So let's provide this here, node version that will be 20 dot X and working directory for. Now, we're just gonna put a dot Here, we will change this in a little bit. But first, let's set up here under the a new directory, a simple vanilla React application.
+
+[00:02:22] So we're gonna make a new directory that's gonna be 17 dash custom actions and then we change into this directory and we can just run our NPX create React app. And if you just type up the up key here on your keyboard, then you can retrieve this from the list
+
+[00:02:41] of previously run commands from your terminal. So we're just gonna create the the we're just gonna run the standard create React app with the template of typescript and we will save this inside of the React app directory. Once we do that, then we should see here under our folder, 17 custom actions, our React app folder.
+
+[00:03:00] And if we open the package dot JSON, we should see all the scripts that are available for us. So under our 17-1 the composite workflow here, we now can provide the working directory where which is going to be 17 dash custom dash actions
+
+[00:03:20] forward slash React app, right? So this is the directory of our application is basically the directory where our package log file is located, which is necessary for installing our npm dependencies. The second step that we would like to use here is a test step and this will simply run NPM,
+
+[00:03:42] run test. And this working directory here is also going to be working directory will also be the 17 custom actions React app. And if we would like to build our application, we can also run the build command NPM, run build with the same working directory here as we have provided. Above.
+
+[00:04:03] There is still one very important aspect here and it refers to the fact that this workflow as it is, it's not going to work, right? And it's not because we not because these scripts here are not going to work, but rather because we will not be able to access the custom action here.
+
+[00:04:22] Now, when the custom action is defined within the same repository that we define our workflows, and we provide this relative path here to accessing the custom action. Then we do need it. It's necessary to require that before we need a, we use a checkout action. So we need to use the actions forward slash checkout
+
+[00:04:43] at version four. And this is a very intuitive step because this basically just checks out the code of the repository, which is then used by github to find the custom action. If we do not check out the code of the repository, then it's not possible for github to actually find and run this custom action.
+
+[00:05:02] Another aspect I would like to discuss here is that if you remember from previous discussions, we could provide a default key here. And for the run command, we could provide the working directory like so, right. So if we provide it like, so then we can also remove from all the steps where the working directory is set,
+
+[00:05:20] but this is still not applicable to our custom actions. So we still need to define it here. And there is a little bit of the application which we can actually remove by just defining a top level environment variable here under the end of context. And we can just say working directory for example. And then we can take the value, we can add it here.
+
+[00:05:43] And then within the defaults, we can also use the end of context and dot working directory and we can use this as well here when passing the working the input parameter to our custom action. Great. Let's save this. And now here in the terminal, we're going to add everything.
+
+[00:06:00] We're going to commit this with a workflow for composite action. And we're gonna push this to github and trigger this from the ui back on github here under show more workflows. We should be able to retrieve our 17 custom actions composite and let's now click on run workflow. If we quickly click on the on the run and we can inspect the output here,
+
+[00:06:22] then we will see that the dependencies are being installed as as desired. It's basically doing what we did so far when installing dependencies. But it does provide a very nice layer of encapsulation in which we can just use a single custom action here instead of having to define multiple steps.
+
+[00:06:41] So everything is working as expected here. As you can see, it does provide us here a run of our custom action as well as the, as well as the um parameters that we provide here. And as you can see, the working directory environment key is also set here. So we could use this in the end context within our custom action.
+
+[00:07:04] However, I do find that this is this would be an assumption, right? We would be using an assumption here and then everyone who would like to use our, our custom action would have to set this end value here. So I do find it cleaner to actually require as an input parameter.
+
+[00:07:20] And how this is defined if it's by an N key here or from some other source, then it doesn't matter for the action as long as it receives it via the worker option. So it does have a cache already for the node version here. And I just noticed here when we expand the cache action, then we can see that there is something weird happening here.
+
+[00:07:41] The key is not correctly calculated. I do have a an idea of what could be going wrong here. We will fix that in just a little bit. But nonetheless, we can see that the remaining of the custom action is working correctly back here in the ide, let's then fix that issue with the incorrectly calculated key.
+
+[00:08:01] And basically what happens here is that we are using a second pair of this expression syntax within another expression syntax, right? So and this is not correctly calculated by github. And then in the end, the hash files returns an empty string for us because the path is not correctly calculated
+
+[00:08:20] one intuition for us to use here would be to use directly the inputs do working there, right? So like this and this is how we would normally retrieve the the value for our input here whenever we are within already an expression. But this of course is not going to work because this will just give us an invalid path like this will be taken as a literal string
+
+[00:08:40] and will give us an invalid path. Even if we were to remove here, the the single code, this would also be invalid. So there is this is one use case where we should use the format function or the format function can actually come to our rescue here. And then we can provide two paths or two parts for our path. The first one is zero,
+
+[00:09:02] the second one is one and then we will just simply provide as many parameters here as we provide in our template after a comma, right. So the first one we would like to get here is the input dot work there. And the second one is a string here containing package lock dot
+
+[00:09:20] JSON, right? So basically what this format will do is it will give us our input. So it will set to to the working directory. And then within this working directory of our application, it will look for a package lockfile and this should solve our problem of the incorrectly calculated key. And to make sure that this is working correctly, we're gonna have this,
+
+[00:09:40] we're gonna commit once again. And this is a fix, not a feature, right? So fix here and we will simply say correctly, calculate cash key. And so this now once we push this, the new version of the code should be available and we should be able to already or we should already leverage this whenever we trigger our workflow.
+
+[00:10:01] Let's then come back here to custom actions composite. We're gonna run the workflow once again and inspect the results. As you can see here, we can already see that there is no cash found for this key. The key is correctly calculated. Now, we do have the value populated here for our for our package log file for the hashing of this file.
+
+[00:10:22] So this has solved our problem and now we can use this with more confidence if we were just using, even though it was not failing, we just node modules dash right. Then that would basically any, any version of package log will just retrieve that same cache because node modules would always be there.
+
+[00:10:40] There is one final step here that I want to do in this in this action. And actually I want to add the possibility for the users of our action to define whether they want to omit dev dependencies or not. This is fairly common whenever we are creating or developing a node Js applications. And we have a lot of depth
+
+[00:11:01] dependencies like testing dependencies or linking formatting and so on and so forth that we don't need to include in our production in the in the production files that we will deploy, right. So one way that, that we can do that is by running npm CI dash dash omit equals DEV, right. So this will allow us to omit the DEV dependencies.
+
+[00:11:22] But for us here we cannot just have a step like this. We need to decide whether we want to run an npm CI or another step which will omit the dev dependencies for that. Here, we will create a new input where we will say target N. And here the description
+
+[00:11:41] will be DEV or prod and to get rid of this error, we can just wrap this in single codes and we will simply say controls whether DEV dependencies are installed. And so now here, the default will be DEA and the required will also be set to false. Now, we can simply take this target N here
+
+[00:12:02] and execute this or run this here or add this to our if step. So I'll simply say if the cache output here is not a hit and our inputs target N is equal to DEV, then we're gonna run this NPM C otherwise, we will also create another step here,
+
+[00:12:25] which we will say if the cache it is true and the target is different than DEV, then ran the omit equals DEV. This is one possibility, a little bit more verbose and it does have a bit more duplication.
+
+[00:12:40] But we can also unify this under a single step, right? So if we remove here, the inputs dot Target M equals that, I'm just gonna cut this so I can reuse it. And then here we can use our, our turn operator within our run command to actually decide which command we want to run. So if the target is equal to DEV, then we would like to run NPM CI
+
+[00:13:04] otherwise with an R here, we would like to run npm CI dash dash omit equal depth. And so what this is doing here is it's basically just defining on the or deciding on the fly which script we will run based on the provided target environment.
+
+[00:13:22] So if the target environment value equals DEV, then we will include all the dependencies. Otherwise we will omit the dev dependencies. This is possible, right? And it makes it perhaps a little bit more complex in terms of understanding which command will actually be run. But I do find this version cleaner here
+
+[00:13:40] and we don't need to have two identical steps with different runs. Perfect. So this gives us the opportunity for installing both de dependencies for development as well as for production. The last thing we need to do here before committing and pushing, we do need to pass this as an option here for the workflow dispatch. So we will simply add here
+
+[00:14:00] the target or the inputs and those will be target and description here or simply B which environment to target. And then we can have a type of choice with options being death
+
+[00:14:22] and proud, right? So um here we simply say which environmental target for dependency installation, right? So just to be clear here, we are not doing any deployment with this, with this target, but if we were, then this could also be used, right? So now here we can pass this target as an input here.
+
+[00:14:41] Target will simply be our inputs dot Target N. And we can also have here a run name where we will copy this. And just for the sake of consistency, I'm just going to add one here because we will have later on for javascript and Docker as well. So I'm just going to copy this and then here we will have
+
+[00:15:01] N and we'll simply say inputs dot target M, right? So now we can differentiate it. Perfect. I believe that's it. Let's save this and now we can return to our terminal, we can add everything we can then commit and this is not a fix. We're just gonna have another feature here where
+
+[00:15:20] I will simply say add possibility for omitting dev dependencies. Let's now push our files and come back to github back on github here. Let's expand our, our workflows and let's then trigger this this 17th workflow twice here, once with the DEV environment
+
+[00:15:40] and I believe I have missed something. Let's go back to the ID for just a second under our action here. Now, we do need to include our, our environment, our target environment here in the key. Otherwise we would restore the cache independently of whether we are installing for, for PROD or for DEV as long as the package log file is the same,
+
+[00:16:01] then it would retrieve the cash, right. So here we can also add our input just like this input target. Let's save this, add everything and then commit. Once again here, we're gonna add as a fix custom actions. And I'll simply say add missing
+
+[00:16:20] target and in key and I'm gonna just push this and the previous workflow run will execute successfully. But it will basically do not include the target here. So let's go back to github and now use the correct version of the workflow back on github. Let's refresh the page here. You can see that it has already completed successfully.
+
+[00:16:40] Let's run the workflow once with DEV and another time with PROD. Now none of them should actually hit the cache because we have added this target environment as well. And this should basically prevent us from having a match since the previous cache key does not include this information. As you can see,
+
+[00:17:00] we can already visualize here that the dependencies are being installed to their full extent. So let's wait a few seconds here. We can, I believe we can refresh this page in a few seconds and see the results. Perfect. Let's expand the set up node and npm dependencies you can see here that we now have included correctly the DEV information.
+
+[00:17:21] And here under our prod run here. If we expand this, then we also include the proud information. But interestingly here enough, then we change actually the commit that we run. So we run omit dev instead of just NPM C if the target environment is broad perfect, our composite action is working as expected.
+
+[00:17:41] So I believe that's a good time for us to take a short break and come back in the next lecture.

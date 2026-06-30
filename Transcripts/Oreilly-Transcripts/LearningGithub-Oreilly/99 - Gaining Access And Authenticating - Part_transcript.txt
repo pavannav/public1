@@ -1,0 +1,57 @@
+[00:00:00] Most of github's API requires us to be authenticated to do anything useful. There are really two sides to this. On the one hand, authenticating who's using the API, be the end user of some server code, we write to provide a service and on the other hand, letting our service ask the end user to grant us a given set of
+
+[00:00:20] permissions over the GitHub account and repositories in order to be able to actually perform or service. So let us start simple when all you're doing. Inc is using the GitHub API for your own personal sake. There's no service involved. It's just you. And the GitHub API to authenticate, you just need to add some credentials to every API. Request you make, there are
+
+[00:00:42] multiple ways you can authenticate yourself at the GitHub API, you could just use what's commonly called, HTTP basic authentication, and pass in your username and password. This is a pretty bad idea from a security standpoint, as you're letting your account password travel and encrypt it over the network, it's a security risk. Besides, if you have two Factor authentication enabled, you
+
+[00:01:03] won't be able to use this. And by the way, you very much should have it enabled to learn why? And how to use it, see the tuning, your profile lesson in a previous video course learning GitHub. That lesson is available online for free. So when you do have a two-factor authentication set up, how can you authenticating your own API request with GitHub? There are
+
+[00:01:23] two ways this can go first. If you're using a totp application to provide one time password, 's you would normally, use when interactively logging into GitHub, you can use that say my app and send that value through a custom HTTP. Header, in addition to your username and password, the header is X GitHub
+
+[00:01:41] OTP. Let me show you what it's like using curl as before to demonstrate. So, that would be curless. You get a trainer HTTP API and get have Cam. Let's try with my profile and user haven't provided my password visibly. So, I'm just going to paste it here and you,
+
+[00:02:00] That I get a very clear message, telling me, I'm a specified, a two-factor authentication, I'll Tipico, that's fine. Let me just grab that OTP code here, I'm going to use a header. So the header row mention that will be X GitHub OTP, and I'm going to use that same application. I use the Google Authenticator right now, this is 667, 661
+
+[00:02:21] my password again. And this time I went through, that's one way. As you can see, this is an authenticated request to. And if you look At the information, I get, I get information about the plan for this user. A get information about private, jests about a number of things that I would not normally see another way is using personal access
+
+[00:02:41] tokens. We discuss these already in a previous video series when trying to push to get hype. Using the HTTP protocol with two-factor authentication enabled. This is the same idea. So your account settings has a personal access tokens page that lets you create configure and revoke tokens. You're bound to use this to ascend to get your own API calls. The
+
+[00:03:03] goal is to figure out which Scopes you'll need for it. A scope is a security perimeter. A set of facts is really that defines part of the API you took on this load to access, so if you click generate new token, you get into that token creation screen and as you can see when creating or editing a token, you can decide which copse to go
+
+[00:03:23] with. And GitHub is nice, advice, little helpful, hint about what those Scopes are forces. Some of those Scopes actually just supports of more General scopes for example, right now, the only Scopes are. We'll need our repo, which lets me access just about everything. Full read/write access to Repose including private repos,
+
+[00:03:43] just that lets me create ridges and I will describe that token. So I'll say demo token for a for chapter generate that token. And as usual, this is the only moment I will see that token will never see that again later. So just
+
+[00:04:00] Copy that. So that token will be invalidated by the time you watch this video but something just copy that token, make sure you have it somewhere safe. So how do we pass that in? While we will use a special authorization header using its token syntax and the nice thing with this obviously is that we can pass in a fixed axis to convert an extended period of time and get just the
+
+[00:04:21] access parameter that our colds need. So let me show you. I'll just use authorization and this is the token format with the target. I just Had and just goes through works. Just the same, I get all my information. If I use another query, maybe with my repos here goes, I get all my repos, including the private repos, which I might have it on have any
+
+[00:04:42] here on this account, but they would show up. I should also probably mention that, if you failed logins, multiple times in a short time span, you'll get banned from the API for short while all the requests will start replying with HTTP code 403 Forbidden much. Like when you just exceed your rate, Station that was for you own direct API calls
+
+[00:05:03] but most of the time we'll be building some persistent service. Usually, in the form of a web server that will interact with GitHub on our behalf to let end users retain this level of control over who accesses the data, what data they can see. And when to revoke their access we need to use an authentication and authorization standard called oauth.
+
+[00:05:23] You know, with every code that access is an API on behalf of an end, user must be it. Cell phone application known to the API provider that means the developer of the service were just Erza tab with GitHub ahead of time and obtain specific credentials uniquely identifying their app. This is done at the beginning of
+
+[00:05:41] developing the service. So let us register an app for ourselves to try this out. This is done from the settings page. So this is about a raft, you got a whole explanation in the API documentation and in settings page, for your account, that will be the account. Owning the application in the applications tab, you'll notice Not only have the applications, you're authorized as an end user. But you have developer
+
+[00:06:03] application tab, that lets you register your own applications. Let's do that. We will call this application. My Demo service, the homepage URL could be just about anything. Let's just use the demo service that we used to have application description. Would be a German service for GitHub training and authorization
+
+[00:06:23] callback will use HTTP localhost four, five, six, seven eight. Now the Callback URL. Acts as a prefix requirement for all the callbacks URL. You can then provide authorization. Request time, you'll be able to send in set Paths of the Callback URL if you want to, but you won't be able to use another host name on network port
+
+[00:06:41] or another path route. And notice now that you create this, that have to credentials here in the top right corner the client ID, now that is not secret that uniquely identifies your app. That's like sort of a public ID for your app. On the other hand as its name, implies client, secret is Confidential. You should not ever divulge that or
+
+[00:07:03] version that and make that accessible to anyone in any way, it has to really stay confidential, just you running code, should see that. So, never ever divulge that traditionally running apps get their credentials from their process environment will see how to do that with these identifiers in hand. The service can then, let their end users sign in with
+
+[00:07:23] GitHub as we've done with third-party services earlier and to do that they use what is called the oauth web flow. First, the end user is on web page of yours. And it clicks, a link to authenticate your app using GitHub. Now that link usually goes out to your own server, your server responds by crafting a special URL at GitHub
+
+[00:07:43] and redirecting the end users browser to that URL. Now, this URL identifies the registered app as the requester by providing its client ID, which is one of the credentials. You got when resisting your app, it also contains the authorizations copse. You service needs to perform its task. Then user lands on the app.
+
+[00:08:03] Authorization page at GitHub detailing, your app and the authorization it requires. And if they're not logged in yet they can do. So on the fly when they have a syndicated with GitHub and granted you the permissions you asked for they get redirected to your service callback URL which was defined in your app. So discretion with GitHub and authorization
+
+[00:08:23] code is passed to the Callback URL, a new server, then uses that of authorization code, which is single use and expires quite fast to obtain a longer lift, access token from GitHub. Using the server server request to the API, this access token. Now,
+
+[00:08:41] let's use your server. Use the GitHub API, on behalf of that, end user. You can get a number of Errors, since your callback URL, the most common being that you provided a callback URL that does not match the one defined in your absurd situation or that the end-user denied your authorization or that your app has been suspended by Have you get all the details in a few questions fields and to your
+
+[00:09:03] callback called error, error, description, and arrow URI. Now later in the flow, when exchanging the received authorization code for the actual access token, you can get a number of classic arrows as well like using invalid application credentials or invalid, redirect URL or bad, authorization code. This is handled the same way. This might all seem a bit complicated but don't
+
+[00:09:23] fret. It's really quite simple to implement and despite the apparent complexity you'll usually rely on Popular Library, run GitHub zpi that will help with the whole flow and the access token. You end up with is can be used just like the personal access token, we saw earlier for single user access, this is the same principle.

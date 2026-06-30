@@ -1,0 +1,73 @@
+[00:00:00] All right, let's start exploring role based access control. I have created a new folder here. There are no files inside of this folder as of now can confirm that there is nothing here. And actually there is quite a little bit of setup that we need to do in order to be able to use or to leverage different users in our cluster.
+
+[00:00:21] We're gonna do the setup here manually because I want to use this for illustration purposes. I'm just gonna create two users, Alice and Bob and we're gonna use X 509 certificates as authentication methods. So Kubernes itself does not have the concept of a user store like we cannot create, let's say,
+
+[00:00:41] create quote unquote users in Kubernetes. However, Cnis integrates with different authentication methods like for example X 509 certificates or open ID connect or active directory. And we can then use these methods to actually provide the information about the users and then enforce the policies for a specific user using role based access control.
+
+[00:01:05] So the first thing we need to do, we actually need to be able to somehow inform which user we want to use when interacting with the cluster. So right now, we have been using a user called minicube. We can see our configuration here,
+
+[00:01:21] the configuration that we have been using in our cluster by running the cube cat config view command. So this will print all the configuration that we have been using. So far, we have the certificate authority for the cluster we have and this is here the cluster, right. So we have the Minicube cluster here and then we have the contexts and we're gonna come to context in a little bit.
+
+[00:01:44] So the first thing we explored here is clusters. Let's scroll down a little bit more and we have the users here. And we'll say that we have a single user with the name of Minicube. This is created by Minicube whenever we start up our cluster
+
+[00:02:00] and this is already available for us. So this is the one that we are actually working with throughout this course. So how can we actually connect clusters to users? And that's where contexts come into play. So we have a context here and the context has a name, right? So here you can see that this is one object.
+
+[00:02:22] So this object has two top level fields. One is the context which will define the context we're working on. And the second one is the name that means we can reference a certain context by the name here and we can inform Cube that we would like to use the context with this name here.
+
+[00:02:40] So we can also get the current context with cube cut config current context like so and this will print Minicube, that's the name of the context. Now, if we scroll up a little bit more here, you will see that the context object has quite a bit of information. And the one that is most interesting for us here is the user one.
+
+[00:03:01] So you can see that the user here for the context with the name of Minicube is Minicube. Whenever we are using this context here, our user will be the minicube user. And we can see here the information about the mini user that the client certificate and the client key are found under these directories here.
+
+[00:03:23] And then these are used to authenticate the requests that are sent to the CORS API. So all this time in our course, we have been working with the user minicube. Now you might be asking yourself, we didn't really set any permissions.
+
+[00:03:40] We never said that we wanted to be able to perform any of the operations we actually did and we did a lot of important things. We have created secrets, read secrets. We have deployed pods, deployments and a lot of stuff, but we never said anywhere that we actually should be able to do these things. Now, this is once again set up by Minicube for us behind the scenes.
+
+[00:04:05] And what Minicube is doing is it is exploiting its leveraging the cluster role and cluster role binding objects. So let's inspect that here with the cube cut CLI. The first thing I would like to do is to get our cluster rolls.
+
+[00:04:22] So let's get all the cluster rolls here. And as you can see, there is a lot of stuff. So let me just reduce this a little bit so that we can get a better print on the screen that looks better to me. So you can see that there are a lot of different things here and a lot of different things are actually created for us behind the scenes.
+
+[00:04:42] So the one that the ones that are interesting here for us or at least that I want to explore with you are the admin and the cluster admin roles or cluster roles. So we also have some system roles here. We might have even some system admins, I believe. No. So that's looking good here.
+
+[00:05:01] So the roles that we can have a look at, let's have a look at the admin and the cluster admin cluster roles. So we're gonna get cube cut, get cluster role and then let's say admin and let's output this as a YAML file. So as you can see the admin role here, we can already start to see a lot of different things
+
+[00:05:22] that the admin should be able to perform in the cluster. So as you can see this is a huge resource, it's a huge object definition here and you can start to inspect the different rules here that are set for this role. So you can see here resources, pods, exact pods, proxy secrets,
+
+[00:05:42] get list and watch. So as you can see here, an admin would be able to get list and watch secrets. And this then as we scroll down a little bit more here, we would start having a few other resources, a few other rules and they might actually extend the permissions of our admin,
+
+[00:06:00] right? So here you can take our time to explore this already. Should be familiar to you lots of these resources here. And by no means you need to memorize any of this. I'm just giving this as an example of how things are already set up with minicube. We can also have a look at the cluster admin role here and this is a much simpler permission. There is a much simpler cluster role,
+
+[00:06:22] but it's more powerful because it's actually allowing to perform any actions, the verbs here, any actions under any resources in any API groups and the API groups here are the ones that we're actually seeing here on the top, right. So apps for example, would be an API group,
+
+[00:06:41] RBAC dot authorization dot K dot IO is another API group. So anything comes here under the API version as the prefix before this forward slash here is an API group. So now that we have explored this cluster rolls. We can also confirm that there are, there is no mention here of our minicube user.
+
+[00:07:02] So the mapping from cluster roll to the actual users is done via a cluster role binding. So let's have a look at our cluster roll bindings, cluster roll bindings. And let's then just have a look at what will be printed on the screen. So here again, it's not looking the best
+
+[00:07:22] but let's see, maybe we can do a graph here, let's do graph and then a cluster dash admin like. So and as you can see here, we get only three matches. So these are the three cluster role bindings that are actually referencing or that are binding the role cluster admin.
+
+[00:07:41] So let's inspect the cluster admin, cluster role binding. Let's copy this. Let's then pass it here to our cluster role binding. And let's output this as a yo we can also delete the graph command here. Let's just delete this here. And the moment we do that, we will see that there is an A P A version kind blah blah blah metadata here.
+
+[00:08:02] And then there is a role reference. And so this role reference here is really referencing our cluster admin role. So you can see that's the API group, there is a kind of a cluster role. The name is cluster admin. And then the subject here is what is doing this connection from the role to an actual user group or service account.
+
+[00:08:24] And we can see here that this object is connecting this cluster admin role or cluster admin cluster role to the group system masters. So there is still no mention of our mini user. So we are still missing the last piece of the puzzle which is hey,
+
+[00:08:41] how do we know that our user belongs to this system masters group? And this is actually present in the certificate that we have been using to authenticate our request. So let's see if we can scroll up a little bit more. I don't know if it was to be visible. Um Yes, perfect. So this is the file here
+
+[00:09:01] that the Cube Car O CLI has been using for the Minicube user to authenticate the requests with the Kernis API. Let's copy this file here. And now we can print the contents of this file in a human readable format by running OpenSSL X 509
+
+[00:09:22] noout text dash in and then pass here the name of the file, we can execute this and then we'll get this nice text on the screen here. And if we scroll up a little bit more, we will get finally under the subject here. We will see that the group or this o here equals system masters.
+
+[00:09:43] This is then interpreted by Kernis as being one of the groups of the user. This is the common name Minicube user and O here stands for organization and it is used by Kubernes to identify the user group. You can also see here the issuer this
+
+[00:10:01] has been issued by the Minicube certificate authority. That's the common name of the issuer, Minicube C. So this is just interesting for us to actually also know here that this this certificate here has been signed by our Minicube certificate authority. But the important part here for us that needs to map to
+
+[00:10:22] that cluster role binding is either the minicube user username here, this common name or the system masters group. And this is where we are setting here. Oops, I believe I cannot see that here. So let's just have a look here. Once again, this is exactly where we are mapping
+
+[00:10:40] this group to a certain cluster role and then finally giving permissions to whoever presents this certificate, right. So once again, this certificate here is something that should be handled with a lot of care. And I mean, in our case here, it doesn't matter, right? We're just in a, in a, in a sandbox cluster here.
+
+[00:11:01] But in reality, anyone who gets a hold of this certificate and of the key. So the client certificate and a client key would be able to authenticate themselves with the Kubernetes API and perform whatever operations this subject here is allowed to do via both cluster role bindings and role bindings.
+
+[00:11:23] So certificates here are used as an authentication method and if they fall in the wrong hands, then that attacker could potentially perform lots of operations. All right, this was a lot of stitching together and connecting different parts of our cerni system that we haven't really touched upon so far.
+
+[00:11:42] Hopefully, the connection here is clear and we understand how we are then using these certificates to present a certain identity. And then this identity is mapped to specific roles or cluster roles via their respective cluster role bindings or role bindings.
+
+[00:12:01] So we have this set up by minicube for us behind the scenes, but we'll also set up two users manually. But before we do that, let's just take a short break and I'll see you in the next lecture.

@@ -1,0 +1,71 @@
+[00:00:06] - So, let me explain PAM. PAM is Pluggable Authentication Modules. So, what is it about? Well, it's about, for example, how do you want your authentication process to be shaped.
+
+[00:00:20] You may want to look at local files. You may want to consider an ldap directory. You may want to consider Kerberos. You may want to consider fingerprint readers. And there are different parts of the Linux operating system
+
+[00:00:41] that have to deal with all of these. So, that can be login commands. That can be the SU commands. That can be the FTP clients. So, there are two approaches to make sure that all of this functionality is available to all of these commands.
+
+[00:01:03] You can either rewrite all of these commands for yourself or you can use PAM. PAM is Pluggable Authentication Modules. And the idea is that the functionality that you want to use
+
+[00:01:21] is exposed in the form of libraries. And you're going to create a PAM configuration to connect to the set of libraries that you want to use during the login process. And in this PAM configuration, as you will see, every command and everything that
+
+[00:01:40] relates to the login process, has its own set of configuration files pointing to the specific libraries that you wanna use. And that is what you can use to make your Linux system secure but if you do it the wrong way, it can give you great trouble. Let's move over to the command line and see how this is working on your Linux system.
+
+[00:02:00] So, let's have a closer look at the PAM configuration. I first show you different parts on the slide and then we dive into the configuration. First part it's happening in a PAM configuration file is where to apply. There is account which is for user related settings. There's auth for authentication related settings.
+
+[00:02:21] Password for updating passwords and session, which applies to access during different items within a session. Next in the PAM configuration file you need to define what to do. It can be a required or requisite where both are required but in the case of requisite, you will immediately be denied access
+
+[00:02:42] and in the case of required, it will continue until the end of the configuration file. Sufficient means that if you meet this condition then it's okay. Optional means that it's not important for authentication. This is normally something like the inclusion of a text file that needs to be displayed
+
+[00:03:00] or something else that's not important. And then there is include and substack which both are methods to include some additional configuration, as you will see in the configuration file. Then there is something that you will occasionally see for some modules as well, value one equals action value two equals action.
+
+[00:03:20] That is where you can specify options to a module directly in the PAM configuration file. The default behavior for most modules is that they have their own configuration file. So, modern modules allow you to pass arguments in this way. Let me show you what this configuration file look like.
+
+[00:03:41] So, the PAM configuration. So, let's start at the beginning. Ldd showing libraries for which login. Which login is getting a login from the path, obviously. And then we can see the login is using the libpam and the libpam underscore misc library.
+
+[00:04:03] Which means that this binary will have a look at the contents of etc PAM dot d. Within this directory etc PAM dot d, typically every program that uses PAM should have its own configuration file. And if there's a program
+
+[00:04:20] that does not have a configuration file, it will check for other. Other is for everything else. So, that's a very generic configuration file. Let's start by having a look at the other configuration file. You can see that it's a very simple configuration file. We have a auth, which is the very stage of the authentication process.
+
+[00:04:43] Required pam underscore deny dot so. I guess you can imagine what this module is going to do. It's going to deny everything. And for account password session, it's exactly the same. So, in case you would remove a configuration file from here, then the binary would no longer find the configuration file
+
+[00:05:02] and it would hit the other configuration file which by default secures your systems pretty well. Let's have a look at the login configuration file which is shaping the authentication process. Here we can see that it's a little bit complicated. So, first we have auth pam securetty dot so.
+
+[00:05:24] Now, in case you wonder, what is pam securetty, you can of course type pam securetty. Every PAM module has it's own man page nowadays and if you don't find it in a man page
+
+[00:05:40] because your distribution doesn't have the man page, have a look at the documentation you use and see where docs or whatever your distribution is putting it. You'll find this information in there as well. In here we can see the pam securetty is a PAM module that allows root logins only if the user if logging in on a secure tty.
+
+[00:06:00] And it reads the configuration file etc securetty to do so. I'm not going to discuss all the details about securetty, we don't wanna know about it. At this point I'm just interested in the mechanism. So we have securetty with a couple of options which is called at first.
+
+[00:06:21] So that means if you are logging in this root it will check the contents of etc securetty. Next in the auth phase, there is substack. Substack means that at this point it will run this substack, and after running the substack it will get back into the login file. And you will find this system dash auth
+
+[00:06:41] occurring pretty often in the PAM configuration. And at the end of the story there is auth include so it includes postlogin. As you can see, the system auth is occurring quite often. So it's probably interesting to have a look at system auth.
+
+[00:07:00] Let me show you why, if you do grep on system dash auth in the current directory, you can see that almost all files include system auth. It really is the most generic configuration file that PAM is using. So what do we have? Let's just focus on the auth phase.
+
+[00:07:23] We have auth required pam env. This is for an environment fail delay, which is giving a delay if the user doesn't enter information soon enough. Fprintd, which is calling the fprintd module. I don't know what it's doing, but it's sufficient
+
+[00:07:40] if the user passes the condition that are stated in fprintd. And then we have sufficient for pam unix dot so. This is probably the most important one, because this will call a normal UNIX authentication. Then after the unix dot so,
+
+[00:08:01] there's a requisite for pam succeed if. Apparently these are some additional conditions that apply if the user could not log in through the normal authentication mechanism. And if none of this works, then there is auth required pam underscore deny dot so.
+
+[00:08:20] So the user will be denied access. Now likewise you can see there's a configuration for the account settings, for the password, for the session as well. Now with this in mind, let me do a quick demo. The demo is going to be about etc securetty. In etc securetty we can see tty1
+
+[00:08:42] up to tty11. These are the virtual consoles that you can activate using Control + Alt function key or chvt. I'm going to edit etc securetty,
+
+[00:09:00] and I am going to remove tty3. Now I am going to use chvt 3, which is going to open virtual terminal number three. Alright, on this virtual terminal I'm going to log in as root,
+
+[00:09:21] and as you can see, I can't get in. Let's try it again, just to make sure that we didn't make a typo in the password, didn't work. And that is because in login, securetty is included. Now let me also show that if I'm logging in as user, user doesn't look at securetty,
+
+[00:09:42] so for user there is no problem, and once I'm in as user, I can use su minus, and in su minus, I can still open a root tail. Why is that? Well that is because a securetty is included in the login PAM but not in the su PAM.
+
+[00:10:00] Let's use chvt 1 to go back to the graphical environment, so that I can show you the su PAM configuration file. And here you can see there's no call to the securetty, and if you wanted to include the securetty in su,
+
+[00:10:21] well, it would be enough to include a line that would say something like auth required pam underscore securetty including the parameters that you want to use. And that is how PAM is working. Now let's get back to the slides so that we can talk a little bit more about PAM troubleshooting.
+
+[00:10:41] So what do we need to know in order to do troubleshooting? Well first, if no appropriate PAM module is found, the other module is used, and it will block everything. If you want to monitor what's happening, what PAM has been blocking, have a look at var log secure, because everything that's security related by default
+
+[00:11:00] is logged to var log secure. PAM normally is configured by using the authconfig utilities, but you can manually configure it as well. The authconfig utilities have a configuration file that is in etc sysconfig authconfig and that may be useful. Now if for some reason you manually mess up
+
+[00:11:21] the PAM configuration, you can restore original configuration using authconfig dash dash updateall, and that will re-apply all settings that are noted in etc sysconfig authconfig. But be aware, authconfig is about authentication. PAM itself goes beyond authentication.
+
+[00:11:40] So authconfig dash dash updateall may be convenient, but it's not repairing the entire contents of the etc pam dot d directory.

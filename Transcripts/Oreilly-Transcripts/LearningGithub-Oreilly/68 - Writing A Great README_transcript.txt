@@ -1,0 +1,21 @@
+[00:00:00] Your projects readme file is pretty much the first thing someone sees on your public GitHub repo, it takes up most of the homepage, the route scouted page that is displayed to visitors. This is where people will buy convention, look for important information on your project, what it is what it does and why it exists, how to use it quite naturally, you want to enjoy. It makes a great. First
+
+[00:00:20] impression, Jason Campbell wrote a Nifty little template, for readme Falls in this chest. It serves as a useful blueprint for fleshing out your own version depending on Watch repo is some sections. May be relevant and some not mentioned here may be important. This one is given mostly a tree pose for software libraries but it still contains a few General sections. Most with me should feature every readme should answer a couple
+
+[00:00:42] crucial questions. What is this repo? What problems does it solve or? What needs does it serve? How do I install this thing? How do I use it? What since installed where do I get help? And the context of software, libraries licensing? And copyright information, also, critical as are good API documentation?
+
+[00:01:00] And even better a user's manual. Let's just go through a couple real world examples to try and get a sense of what makes you ring. Me is really good. I think that jazz is an extremely popular. JavaScript libraries for taming complex, a synchronous code flows. It starts out with a short description of its core purpose and general scope with quick installation. Instructions it then moves on to Quick demonstrative code
+
+[00:01:20] examples to help visitors get a good feel of the API then moves on to an extremely detailed API documentation. You can see I think opted here for a single page kind of dark that a lot of people like but you can absolutely go with links to separate doc files. If you prefer to keep things in a more digestible form, it Ram - there is another JavaScript library. That takes a
+
+[00:01:41] functional programming approach and traditional helper functions because it is not yet the dominant Paradigm in JavaScript programming. It starts by going to Great Lengths to explaining the philosophy and rationally behind Ram de and how it differs from traditional equivalence what it hopes to achieve a new land for
+
+[00:02:00] And the usual installation instructions. And as you can see, the API docs or actually linked to an external file, the atom editor is a desktop product, not a library. After the inevitable short pitch opening the green me, it links to external documentation, and then provide installation detail, you've probably noticed that the top of all these files, those little graphical badges here.
+
+[00:02:22] Here those are the manifestations of external Services integrated with those. Repose to do a lot of stuff. Like audit the quality of the code run, automated test for it track. The public. Realizes provide a discussion forum will explore external service. Integration in the mastering Advance GitHub video series that complement this one.
+
+[00:02:41] But note that all these batteries are links to the detailed information Pages for their original service and in particular the guitar here and here and the snack badge, here are common ways to immediately access the chat rooms where you can get help about using this project. Finally, some projects are provide a User interface but graphical or command line. And then you may want to illustrate
+
+[00:03:03] through a short movie like animation. That's the equivalent of code examples for a software Library. GitHub will not let you embed movies in readmes, but a common strategy is to record shorts. Soundless screencast, and turn them into animated gifs. As the Vantage project does here, there are a number of free tools that can help you with that. On the Mac. I'm a big fan of the excellent
+
+[00:03:23] gift. Grabber tool to get this done. So we've covered readmes when you want to provide more fully. That documentation for the project including stuff like a fake use or detailed how-to guide. Github's built-in Wiki feature is a great option will dive into that in our next lesson.

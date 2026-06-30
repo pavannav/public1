@@ -1,0 +1,255 @@
+[00:00:00] Welcome to ITProTV. I'm your host, Don Pezet. &gt;&gt; [CROSSTALK] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome to another exciting episode here at ITProTV. I'm your host, Wes Bryan. And in today's episode, we're continuing through our DNS tech skills, we're actually coming back with a part two.
+
+[00:00:21] Joining us for this very endeavor is none other than Mr. Don Pezet. Don, how you doing sir? &gt;&gt; I'm doing great, Wes, ready to dive right back into DNSSEC. And if you watched our last episode, you know we spent our time dealing with all the prerequisites of making sure we were ready to implement DNSSEC. We set up our servers, we got everything put in place and we never actually implemented DNSSEC.
+
+[00:00:42] And that's what we're gonna kick off with right here in this episode is the actual signing. So if you didn't watch the last episode, where we left off is I've got two NSD servers that are up and running. They're replicating out a zone between each other, but it's just a regular old zone with regular old records. They're not digitally signed in any way, there's no hashes or
+
+[00:01:02] signatures attached to them. We need to start activating DNSSEC and getting that pushed out. So that's where we are right now, with the actual beginning of the true DNSSEC configuration, all right. Now, in order to get started, the first thing I need to do is kind of figure out what algorithms I'm gonna be using. I pointed that out in the last episode.
+
+[00:01:20] There's more than one algorithm we can use for generating the signature and generating the digest and all of that. And there's different standards that are out there. Be careful because the one you pick needs to be supported by your provider, whoever your registrar is. And so you've gotta check that. In my scenario, I'm using a registrar which is Hover.com, right.
+
+[00:01:40] And Hover, they're the registrar of record for my itprotvdemo.org. And I know they support DNSSEC, they've got support for that, so I can certainly come in here and activate it. And when I activate it, I'm gonna have to pick an algorithm and a digest algorithm. Now, there are many different algorithms that are out there, and
+
+[00:02:00] each one gets a number assigned to them. See how there's two, three, five, six, seven, eight? See how it skips one, and they skip four and they skip nine? Where did those numbers go? Well, Hover didn't make these numbers up. This is part of the DNSSEC standard. Each algorithm gets a number assigned to it. And what they're telling me here are which ones they support, right.
+
+[00:02:22] They don't support whatever number one was. Number one is actually MD5, right. So they don't support MD5 because MD5 is not considered secure anymore. If it's not secure, why bother supporting it? And if we look at some of the others, it's gonna be similar stuff to that. &gt;&gt; Now, Don, is this related next to that key ID that you showed us in the first episode where you said these numbers are important?
+
+[00:02:42] I noticed, for instance, eight was in the list a couple of times there. &gt;&gt; Yeah. And when we saw that, there were usually two numbers, right. And the first number was indicating the algorithm, and the other one was indicating the digest algorithm. And so you'll see where I've got those options, too. Now, when I pick an algorithm, I need to make sure that my registrar supports it,
+
+[00:03:01] and I need to make sure that I support it. So for example, on this digest, see how I can do SHA-1, SHA-256 GOST and SHA-384? Well, I'm gonna use the ldns-utils. And the version of the utils that I have, they don't support GOST or SHA-384. So I only support SHA-1 and SHA-256 for the digest.
+
+[00:03:21] So I'm the bottleneck there. But there may be something where your registrar is a bottleneck, too, so you gotta check that out. I'm gonna go ahead and use SHA-256 for everything that I do here today because that's considered secure and almost everything supports it. So you're pretty safe going with it. But don't hesitate to move to a stronger algorithm if you've got full support for it in your environment, all right.
+
+[00:03:40] So I need to get this stuff generated. I need to get it made and put in place. So let me jump back over to my server. Now, I've got two servers, dns1 and dns2, and they're replicating between each other. I'm gonna do all my work on one server, on the master. And as I sign everything, that's gonna replicate the other one.
+
+[00:04:00] So I don't have to do all the work twice, I can just do it once. But to help me make sure the work gets done, I'm gonna jump over to number two. And I'm going to do a quick dig on my local system here just to be able to verify that the records don't have any kind of keys yet, right. So if I do a lookup against my second server, and
+
+[00:04:22] I'm gonna look for www.itprotvdemo.org. When I get that back, I get a nice, normal record right there. And that's just an A record, right. I'm gonna query it again, and this time I'm gonna tell it I want the DNSKEY. And I'm gonna use +multiline just to make it look a little nicer on the screen.
+
+[00:04:41] Otherwise, it word wraps the thing all crazy. So I'm querying that record, and I'm saying show me the DNSKEY for that record. Or actually, hang on, that's a record. A record would have an RRSIG. I'm gonna do the zone, so I'll pull itprotvdemo.org, the zone, itself. And when I query that, it doesn't have a key.
+
+[00:05:00] Right, no key was returned for me. I got my SOA information, but no key. See how it says IN DNSKEY and then nothing? Normally, the key would follow that. So, as of right now, this server doesn't contain a key. And I'll run that same query later to make sure that the key does show up and I'm querying the second server. Because I'll know it's working on the first server cuz that's where
+
+[00:05:21] I'm setting it up. I need to make sure it replicates, right. So on this server, I can do that same thing, except I can look up against this server. So just using it to loop back to pull up itprotvdemo.org, and ask for that DNSKEY. And I'll do multilining even though that's not gonna return anything. But there we go, same thing.
+
+[00:05:40] I get the IN DNSKEY followed by nothing. No key, all right. Let's fix that, let's generate a key. The command to generate a key. Well, we need to get into /etc/nsd, that's where our zone is. So my zone is sitting right here, itprotvdemo.org.dns. And by the time this is done, I'm going to have generated three sets of keys.
+
+[00:06:05] I need a zone signing key that I'll use to sign the zone. Then I need a key signing key that I use to sign the zone keys. Cuz I might have ten zones. Well, I need a different key for each zone, so that will be ten different keys.
+
+[00:06:20] And I can have one master key, the key signing key, that signs all of them, right. So I need a zone signing key and a key signing key. And you'll see this usually written as ZSK and KSK, so I need those two keys. And then I need a DS key. And the DS is for the designated signer, and that's what I'm gonna send up to the registrar, all right.
+
+[00:06:40] So that's the other one. So I'm gonna make three sets of keys. And the commands are all really similar so they're easy to mix up. So let's kind of run through this step by step. I'm gonna start with the zone signing key. I'm gonna sign itprotv.demo.org.dns. Now, if I need to make any changes to the records I need to do it now because from now on, every time I modify that zone,
+
+[00:07:03] I need to go in and re-sign it, right. Every time I make a modification, I've got to re-sign it cuz it'll change. So because I know I'm gonna do that, there is the matter of the serial number that's in there. And if I want this to replicate to the other side, I need to increment that serial number.
+
+[00:07:20] I'm gonna increment the serial number now, even though I haven't changed anything, so that when it signs it the new serial number will be in there. So I'm gonna edit /etc/nsd/itprotvdemo.org.dns. And I'm gonna go in here and just take the serial number, which is a 1, and I'm gonna make it a 2, right, just bump it up.
+
+[00:07:43] I mean, you can make it 2,000, it doesn't matter, but it has to be a number higher than whatever it is right now. So that's gonna let the other side know that it's different. Now, NSD doesn't actually load the zone until I tell it to, right. So it's not gonna see that number changed, it's not gonna replicate over to the other side. And that's perfectly fine with me, so. There we go.
+
+[00:08:01] And I'll get out of that. All right, so as it stands, I've got my regular old zone sitting right there and now I need to sign it. So I'm gonna run ldns-keygen. This is gonna generate the key. And we're gonna use this utility a few times. And as far as options that go into it, we need to say -a and tell it the algorithm to use.
+
+[00:08:24] Now there's a lot that are supported and depending on your distro, you may have some and you may be missing others. What I recommend you do is before you run it, just pull up the man file for it, all right. There is actually a command you can run, I think it's ldns-keygen and then a -l or something and it'll list them out.
+
+[00:08:41] But if you pull up the man file documentation and look in here, it'll be in the documentation where it tells you which one are supported. And I say that and then it's not here we go, specifying list here gives a list of supported algorithms. That's what I need to do. So I'll say ldns-keygen and then I'll do -a.
+
+[00:09:02] And normally I would follow this up with which algorithm I was gonna use, but I'm just gonna say list. And when I run it, here's the ones that my system supports. I may see some that my registrar has and some they don't. I've gotta find that mix. So when I look down the list, I can pick and earlier,
+
+[00:09:20] I said I didn't support ghost. It looks like I do, right. I learn something new every day. And we got SHA 384 sitting down there. So I've got a couple I can pick from. But I already said I was gonna use SHA 256 and that's this guy right here. So I'm gonna use that to assign my keys. That one's pretty common right now, what a lot of people default to. Remember the harder an algorithm you pick, the more secure it is.
+
+[00:09:41] But the more work your name server is gonna have to deal with and the more work your registrar is gonna do to validate these, right. Because it has to generate the keys and hashes. So that kind of hurts performance, you don't want to go too crazy unless it's high security. All right, So I'm gonna do RSASHA256, all right. So I'll run ldns-keygen -a and
+
+[00:10:05] then RSASHA256. And then I need to tell it how many bits. Now you have some flexibility here. But the standard that's being pushed right now is that you do 1,024 bits for your zone signing keys and 2,048 bits for your key signing key.
+
+[00:10:24] So your key signing key is more secure because that could be use to compromise all your zones versus these, it could only be use to compromise one zone. So it's all about benefit, what is it cost versus benefit return, whatever. Where we get a lot more benefit from having a stronger key on our key
+
+[00:10:40] signing key. So I'll just do 1,024 and then I tell it the zone that I'm gonna be signing minus itprotvdemo.org. All right, and so it is gonna reach in and grab that and sign my key, right. Now when I do this, I get k itprotvdemo.org and
+
+[00:11:03] then some numbers, right and what the heck are those numbers? What it is telling me is k, which lets me know this is a key, right? And then itprotvdemo.org, that's my domain and the next value is the algorithm that I picked. Eight, right? Remember that eight that Wes mentioned seeing in a record earlier.
+
+[00:11:21] That means whoever that was picked SHA256 just like me, right? That's where we get that number eight from. And when I go back to hover's website and I look at that list, it's number eight on their list. So that's how we know what number it is and we make sure we pick the right thing. And then the next number 59391, that is my key ID.
+
+[00:11:40] Every key has an ID or a tag because I might generate 10 keys. And then rotate through them overtime or whatever, so this is just the key ID. I'm gonna generate three different keys here, a zone signing key, a key signing key and a DS key. And all of them are gonna be called kitprotvdemo.org and then my value.
+
+[00:12:00] If I use RSASHA256 on all of them, they're all gonna be my domain 008 and then the ID is how I'll tell them apart. So I need to remember, park it in my mind, that 59391 is my zone signing key. And I normally write it down. I don't have a pen, so I won't worry about it. I'm sure I won't forget.
+
+[00:12:20] That never happens. All right, now I've got a key generated for my zone. That's terribly exciting. And if I look at my folder here,I'll see it made three files. The private key, the public key and the DS for that delegated signer.
+
+[00:12:40] So it's created three files for it that has all the information on my key. Now I'm actually not gonna make use of some of these. But I'll keep all three of them. I generally do. You'll see people on the Internet. Well, just delete the DS one because you're not gonna use that. And we'll generate a different key for it for whatever reason. I normally keep them all. All right, so there's the key that I generated for my zone signing key.
+
+[00:13:01] Now I'm gonna do the same thing but for my key signing key. Now the interesting part here is that the command is almost identical. So I'm gonna bring that command back up. I've got ldns-keygen -a RSASHA256 -b 1024 itprotvdemo.org. I need to tell it to make a key signing key.
+
+[00:13:20] I mentioned that it needs to be 2,048 bits, so I'm gonna bump that up. I said it needs, it doesn't have to be. You could choose something lower or something higher, but this is kind of a standard right now. So I'll do 2,048 bits. If I just press Enter, it's gonna make another zone signing key. The way we tell it to make a key signing key, is back here at the beginning we add a -k.
+
+[00:13:43] So the full line is ldns-keygen -k -a RSASHA256 -b 2048 itprotvdemo.org, right? That's my full line. The -k is really all I had to add if I wanted to stay at 1024 bits.
+
+[00:14:01] But that's gonna make a key signing key. When I run it, it's not gonna look much different. It did take just a hair longer, you might have noticed, not much longer. But because it's 2,048 bits, it has to work a little harder. But now I get another key, notice at my first key had an ID of 59391 and this one is 19180, it's a lower ID number.
+
+[00:14:22] That happens when you randomly generate a number. So you can't just trust the numbers, that's why you need to document this down. Which one is your zone signing, which one is your key signing. But if I look at my folder now, I'll see that I've got six new files, right? I've got my original ones that I generated here. And now I've got these new ones.
+
+[00:14:40] They look the same as far as I'm concerned, but they are actually different entities, right, so zone signing key, key signing key. Once I've got that, now it's time to actually use the keys. Those commands I just ran, they generate the keys when they are not in use.
+
+[00:15:00] It didn't touch my zone at all. I mentioned earlier that my zone is called itprotvdemo.org and we're gonna store the file called itprotvdemo.org.dns. When we sign it, it's gonna create a new file and the new file is gonna be itprotvdemo.org.dns.sign. I don't have that yet. If I look at my files.
+
+[00:15:20] Which I just did. I can see my zone file here and there is no .sign version of it yet. I need to use the keys I generated, right? And to do that, well, I need three pieces of information. I need my zone signing key. I need my key signing key. And I need a salt.
+
+[00:15:40] A salt is a random number that we feed into an algorithm to make sure that when I generate something with an algorithm, I end up with a different number than say Wes or somebody else. If everybody ran an algorithm and got the same result, encryption wouldn't work. And so the salt is your way of making the algorithm unique. Well, if you want to make it unique, you need a random number.
+
+[00:16:00] And people stink at generating random numbers. So there's a standard method of getting random numbers out of a machine by querying /dev/random. It's the random number generator for your I mentioned in part one that I installed the H-A-V-E-G-E-D, the HAVEGED whatever utility.
+
+[00:16:21] I don't know how to say that one. The HAVE G-E-D utility, which helps to generate entropy on a virtual machine. On a physical machine you wouldn't need that. But there's no options for you. You just install it, and it's done. And now I can go in and I can generate assault using standard methods. I've done this in other episodes too where I set up like replication keys for DNS, so you've probably seen it before but the basic process is that we can use the deuce duplication utility,
+
+[00:16:44] DD and for our input file we can feed it slash dam slash random. And then normally with this duplication we would output it to a disk, but instead I can output this to "/dev/stdout" standard out, in other words my screen.
+
+[00:17:01] I want to output data from devrandom to my screen. Give me a random number, right? But I don't want too much of a number. I've only got a screen so big. And I actually only need 16 characters. What I really need are 16 hexadecimal characters. That's what I need, right? If I were to just query this I would need to limit it down.
+
+[00:17:22] So I'll say count = 1 and then I can specify a block size, I'll do a block size of 32. So it's gonna reach in there, grab that data and I'll put it on my screen and, sorry, the block size is actually BS. [LAUGH] Somebody is gonna quote me that block size is BS,
+
+[00:17:41] bs=32, so let me get that correct. There we go. And it's gonna run and you see what an output right here. These are my random characters, okay. But it actually went a little bit further. The thing has apparently some kind of crazy character turn. It can get all sort of weird numbers that come out. Weird letter, characters that can't render on the screen.
+
+[00:18:00] So, I can't safely grab data out of this. I mean I've got a lambda in there which is definitely not hexadecimal. So, by itself, yes, that's random. But it's too random. We need to get it kinda stabilized. So, what I'm gonna do is I'm gonna pipe that. Into sha256sum. I'm gonna take a sha256 checksum of it.
+
+[00:18:22] Now, that's gonna make it a little more normal, it'll be random data going in, and then it generates that checksum, right? Now, I get a nice long string right there and, I'm good to go. Now I only need 16 characters, so I could count and grab the first 16. But what I normally do is just pipe all of that into the cut command.
+
+[00:18:44] Because in cut, you can tell it that you want to get just a certain amount of characters from the beginning. So I can just say like cut, sorry I wanna do c 1-16, right? So just give me the first 16 characters, that's all I want. The rest of it you can throw away, and I can run that, all right?
+
+[00:19:01] Now when I run it, whoops, apparently my syntax is wrong, cuz I got an error on that one. What did I do wrong? Let's see, cut, and it is, sorry it is -c 1 through 16, there we go. And now I get 16 characters. Now the neat part about this, every time I run it I'm gonna get a different value.
+
+[00:19:21] So if I need to generate more salts I can just continue to do this. So I do this when I generate my replication keys and other things. The other thing is by doing a SHA 256 sum it is hexadecimal. So there's no characters that are outside of the hexadecimal range. That's nice and random. If you're running at the same time as me, you're getting a different number. And if I run it again,
+
+[00:19:40] even right here on the same machine, I'm gonna get something different, right? It ended in f6b6 a minute ago, now it ends in 481b, right? So that's a good number, I'm gonna copy that and now I've got it, right? Now, if somebody gets my salt. And they know that I used short [INAUDIBLE]. In theory that you could use it to regenerate the exact same data
+
+[00:20:01] I generate and now my security is compromised. So this is something that's kind of important, we want to protect this. Now we are going to generate a private key. And as soon as we have the private key, we can throw [INAUDIBLE] away and never look at it again. Right? We just need it to generate our private key If the private key ever becomes invalid we can generate a new one. We can use a different salt then, it doesn't matter. So I'm going to come in and create that key now.
+
+[00:20:23] So that last command was just to generate a random number. You probably could have done it other ways too but that's a way to get about as random as we're going to get. Now I can say LDNS -signzone. I need to sign my zone file. I've got my ZSK, my KSK.
+
+[00:20:41] I've got my DS generated. I've got a salt. I've got everything I need. I just need to string it all together here. So the first thing I need to do is I need to tell it that I'm going to be signing the zone, right? And when I jump in and specify all this, the salt is really kind of the most important part.
+
+[00:21:01] So I'm gonna jump that one in. And I will just paste in that salt, right? Copy and paste is your friend here, cuz there's no way you can remember all this junk. So I, I've got the salt that I'm feeding into it. And then I need to tell it what I'm assigning. I'm assigning IT Pro TV demo.org right, that's the zone that I'm signing.
+
+[00:21:20] Now I need to provide it my zone signing key, all right, and for the zone signing key. I need to give it that, that key id that we had from just moment ago. So my zone signing was five nine three nine one, right. And then I need to give it My key signing key. And my key signing key was 19180 and
+
+[00:21:43] I don't have those memorized what is actually shown on to me on another screen of yours [INAUDIBLE] a lot. So I am going to punch that in and now it knows the key ideas to use for that, okay? And once I have got that punched in, I can run it and this is going to look for that zone And it's gonna sign it for me. And the best part, it's gonna create signatures for every single host inside of that file.
+
+[00:22:02] That's why ldns-utils is so important. You can do this other ways, but there's so many signatures to generate that it becomes a nightmare. All right, when I run that. Shoot, I forgot something important. When you run it, I said itprotvdemo.org It's actually asking for the file name.
+
+[00:22:22] And mine is itprotvdemo.org.dns. So I need to correct that file name and get that squared away. And, you know, what if it needs a file name for the key ID? Will tell me. Shoot, it does. So if you look at the documentation, if I bothered to read the documentation, it would have told me that, see how it's looking for itprotvdemo.org, right?
+
+[00:22:42] And I got a no such file or directory. Cause it was looking for you know, without the .DNS. and then after that, it's trying to read 59391.private. I need to actually give it that full key file name. And if I look. I have 593.1.private, it's just all the stuff from the beginning that I need to provide.
+
+[00:23:00] It kind of needs to know the algorithm that I chose, and so I didn't include that. Fortunately, it's the same for all of me, so again I can copy and paste that. I'm gonna make this command nice and long. So I'm just gonna add that to my zone signing key. And to my key signing key. So now it's got the proper zone filename and it's got the two keys that it needs to be able to sign it.
+
+[00:23:22] And when I run that i may run really fast, it may run really slow. It depends on how big your zone is cuz it's gotta go and generate all this signatures and when it's done, you don't get a lot of fanfare, right? But, hopefully, it executes for you. And what you're left with is a file that matches your zone name,
+
+[00:23:44] but ends in Dot signed, right? So now I've got itprotvdemo.org.dns, and then I've got itprotvdemo.org.dns.signed. That's what I want, right? And if I look inside of it, it's kind of interesting because it is gonna have just a bunch of extra stuff inside of it.
+
+[00:24:00] If I edit it which you shouldn't change the file. If you change the file it's going to damage the signatures, right? So I can't make any changes but I can still use vi to edit it cuz I wanna change the word wrapping. You'll see, it'll be a mess when I open it up. It is still plain text, it's got signatures
+
+[00:24:20] all over the place and they wrap around the screen and it makes a giant mess. So what I'm gonna do is in, the reason I'm in them is I can do a set, wrap, exclamation point. I can turn off the wrap and now we can actually read it. Now, looks like a zone file, right. And what you'll see is that every record you have, you now have two of. So I had a record for DNS 1, that itprotvdemo.org right there, right?
+
+[00:24:44] There's that record and it's an A record that points to this IP. It's stored right here in plain text, and then right after it, I have an RR sig. There's my signature, right, and the signature for this one, it's still an A record. And it's got 8, 3.
+
+[00:25:00] 8 is my hashing algorithm and 3 is my digest algorithm. Now I chose shot 256 for both of them. But they're different numbers just because the protocols that are supporters. So, 8 and 3, that's telling me what I picked. And then I see my time to live. Followed by the actual signature kind of beyond that.
+
+[00:25:20] So if I kind of scroll along further and move along, there we go. I start to get into the signature values right here and so here it is, the signature for this one and it will go on and on. I'm not going to scroll all the way to the end but it lays it out right there. So it's all kind of tucked in here and
+
+[00:25:40] my zone file is far different than it used to be, right? Because every record is signed. And if I mess with any of them, it breaks that signature and does not work anymore. All right. So let me get out of that. Now that it's all nice and signed, I'm almost done, right? I need to tell my server to use it, though. My server, NSD, is looking at itprotvdemo.org.dns,
+
+[00:26:04] and that doesn't have signatures in it. So I need to reconfigure my server to look at this one, the one that's signed instead, right? So I'm gonna edit /etc/nsd/nsd.conf And I'm gonna go in there and find my zone definition, right?
+
+[00:26:24] And this looks a little different than part one because I set up replication, right. In part one I didn't have replication in place and so now you'll see where I've got my key defined for replication. And well, I highlight really doesn't help, does it. But you can see the key I generated for replication, and the other person that I set up.
+
+[00:26:40] But the key, or not the key, but the important part here is the zone down at the bottom. Here's the zone, itprotvdemo.org. And the file that it's pointing to, itprotvdemo.org.dns. And I'm just gonna come in here and I'm gonna add to that .signed. So now it's gonna use the signed version of that file. And all the replication is still there, so it will replicate to the other side and
+
+[00:27:04] it will get the signed one, too. Now it won't change its file name on the other side. It's just whatever it's set at right now. In fact, it's usually just stored in RAM not even on the file system. But the other side, the other, the slave system will have all the signatures just ike I do. So let me get out and save that.
+
+[00:27:20] The cool part about of that is, my server is now looking at itvprotv.org.dns.signed. I can go and edit itprotvdemo.org to my heart's content, itprotvdemo.org.dns, that one. You edit it and then you resign it. And when you resign it, it generates a new .signed file and
+
+[00:27:40] the server's configured to look at that. And so you never edit the .sign when you're always editing that unencrypted one, and Iit just regenerates it, and you do that every time you make a change. &gt;&gt; Don, does that overwrite the prior signed DNS zone file? So when you generate a new one, you don't have to worry about duplicates being in the list? &gt;&gt; Absolutely. Yep, it overwrites it cuz it's the same file name. And remember that the actual workflow would be, edit the non-signed file.
+
+[00:28:04] So you edit the original file. You increase your serial number, right, by at least one. You've got to bump up that serial number. That's important, and then you resign it. Then, on your server, you can do an SD control reload and have it reload that zone or you can just restart in SD, whichever one works in your environment.
+
+[00:28:23] If you want zero downtime, you reload the zone. And when you reload the zone, now the new signatures are loaded, your changes are loaded, and the new serial numbers are loaded. So, the replica sees the new serial numbers, and says, oop, give me a copy of that. And now it's got all the latest data, too. So it's all a part of that process.
+
+[00:28:41] Okay, my server is done, this server. I need to double check it to make sure it's working though. I say it's not, I never actually did reload the darn thing, did I? If you look at NSD-control, you'll see where you've got in here where you can tell it to do a reconfig and a reload. Reload or reload an individual zone, my zone file definitely changed.
+
+[00:29:03] Reconfig will reload the configuration. Well that changed for me, too, cuz I had to change to the .signed file in the server config. So I kinda need both. And a reconfig will likely do everything that I need or I can just restart NSD again. All those methods work. But if I wanna do a NSD control [LAUGH] there we go,
+
+[00:29:25] and then do a reconfig, that's gonna tell it to reload the server configuration, so now it's looking at the signed file. And it should have picked it up and updated my cache, but just in case it didn't, I'm going to come in and say reload itprotvdemo.org.
+
+[00:29:44] And that way I know it's reloaded it. And now I can test by doing a dig, right? So way back in my history, I did a dig against itprotvdemo to see if it had a signature. And when I redo that.
+
+[00:30:01] Hang on, let me, let me see if I can't get this word wrap a little straight. There we go. So when I rerun that command, I can see here that it reaches out to the server, so I did dig@127.0.0.1, so I'm doing a lookup against this server. itprotvdemo.org, I'm looking for that domain, and I'm asking for the DNS key.
+
+[00:30:21] And before, I got IN DNSKEY and nothing. Now I get IN DNSKEY and then an answer section. And here I can see that key laid out right here. You know, I've got my keys in place and sure enough, like in part one, my key ideas have been moved down here instead of up here.
+
+[00:30:41] And I've got 256, 257, interesting. So anyhow, I've got my key id which I can clearly read right there. There's my zone signing key and my key signing key. And the key is stored in that one. That's my public key not the private key. The private key is stored right here on my hard drive. Right, those files, I don't want someone to get those cuz then they can start signing zones on my behalf.
+
+[00:31:00] You don't want that, right? But this is the public key. This is the one we do hand out, all right? So I know that's working. I need to check on my other server and make sure that it's able to see that cuz it's gonna replicate over to this side, too, and I'll query it and it's already got it, right? I didn't even have to come over here and do a pull cuz I had notify set up on my
+
+[00:31:20] replication so it's already got it and now it's signed over here too, right? So I didn't configure a single thing on DNS2, the replica zone carried everything over with it, right? If I reran those same commands on this one, it would have a different key. It would have a different salt, all of the signatures would be different, it would break everything so it's important to use replication.
+
+[00:31:40] All right, as far as my servers are concerned, they're done but now it's time for the registrar, this is the important part. So on the registrar side, what I need to do is generate a deligate signer key. And I haven't done that yet. Let me get on the right server here before I screw that up.
+
+[00:32:00] I've got my zone signing key, which is that 59391. And I've got my zone signing, other way around, key signing key. See how easy it is to mix this stuff up. My key signing key is 19180. I need to make a ds key. One that I can send up to my registrar.
+
+[00:32:21] So I've got a quick command for that one. This is another ldns command. And I'm gonna do ldns-key2ds. It's important that we run this from inside of the directory that has the files, coz this is gonna be looking for this stuff to be able to sign this right. But I'm gonna create the ds key right here.
+
+[00:32:41] So ldns-key2ds, and then I need to tell it what I want to do. Now by default, it's not gonna show me a lot of information, it expects to write it to a file. I want it to show me on the screen, cuz I'm gonna cut and paste it into my registrar. So I'm gonna do -n, so it shows it on the screen. And then I need to tell it the algorithm I'm gonna use. Well ldns-key2ds only supports two algorithms, SHA1 and SHA286.
+
+[00:33:05] By the time you watch this episode it might support more, so check the man file on it see if they added more. They will show up in there if do a man ldns-key2ds. In the documentation, see how it tells me right here? SHA1, SHA2, D6, and that's it.
+
+[00:33:20] Check and see if they've added new ones since then. And they might have them. When I put this stuff on my registrar, remember. Hover, they had Ghost and SHA384. It's not here. I can't do that. So those are not gonna be an option for me. So I'm gonna come in and run this And so I'm gonna tell it not to a file, but display on my screen instead, and -2.
+
+[00:33:42] I do want to do SHA-256. I'm gonna take the best I can get. And then I'm gonna point it to itprotvdemo.org.dns.signed. I need to point at that signed file. It's gonna calculate a delicate signature
+
+[00:34:00] based on the signed file that I created right now. Okay. And so it's gonna generate that, because the public keys for the zone signing key and the a key ascending key are both in there, right? Now as I change my zone, as I change the records, and I resign it. The record signatures will change.
+
+[00:34:20] But the zone signing key and the key signing key won't change. And so it's just pulling them out of that file and building a new key based off of it. And it's gonna take that data, display it on my screen for me, and from there I can load it up for registrar. And I won't have to change that on the registrar again unless I think something's gotten compromised. But, the important thing here is when I look at it, I can see the information about the key ID, that 19180 that it pulled in.
+
+[00:34:45] I can see the 8 and 2 that tell the algorithm and digest. And then lastly, I can see the actual signature that it generated. So I need that signature. I'm gonna copy that. Now comes the fun part, right? Now I've gotta jump over and take this to my registrar.
+
+[00:35:01] And this is where it gets a little different, so I'm using hover, you might be using something completely different. So you'll have to check out their documentation. But in Hover, they give me nice, easy fields, right? I need my key tag, and my key tag was 19 180. Right, it matches my key signing key. Then my algorithm.
+
+[00:35:20] My algorithm was 8, RSA/SHA-256. Right? My digest algorithm was SHA-256, and so I can pick that. Now they don't show me 1, 2, whatever here, so that's a little annoying, but I know mine was 256, so I've paid attention. And then lastly, they want the digest and that's what we just generated. So I'm gonna paste right in there, all right.
+
+[00:35:42] Now, Hover told me that they don't support DNS sec with their own DNS servers. So they let me, provide my own DNS servers, right? But they do support DNS-ek on their registrar side. And so that's what I just did. I just put the delegate signer data right here.
+
+[00:36:01] And when somebody queries one of my records, and they get a signature and they want to validate if it's real or not, they can come all the way up to my registrar and they can take the public key that it hands out and use that to validate the zone signing key and to validate the individual records and make sure they haven't been tampered with.
+
+[00:36:22] And that process is now facilitated by having that right there. And I'm just gonna hit Save. And that's gonna go in place. Now I'm making a change to my registrar. And let me tell you changes on a registrar they can take up to 72 hours to apply. It's got to propagate out to the internet and all that stuff but in my case because I didn't have any keys in there in the first place it'll probably
+
+[00:36:42] propagate pretty quick, right, and the DNS key has to come from the registrar because otherwise somebody could spoof it in a cache somewhere else. These don't get cached and so as long as my records are updated, and as long as hover does a good job updating their registered data base which they do,
+
+[00:37:00] this should take effect pretty quick. But the official lines it could 72 hours. So how do I know if it worked? Right. Technically we're done. We just setup DNS set, we, end of the episode and walk away. Right. But we do need a test and verify that it's working. It's just this part you might have to wait awhile. Let's see if it's working already. So I'm gonna jump over to one of my servers to test it out.
+
+[00:37:22] To test it out you can use the dig command. Right. And I can dig against one of my servers but it's better to dig against a public server out there, right. So I'll take like Google. And look to them. And I'll try and look up the DS record for itprotvdemo.org.
+
+[00:37:43] In fact, let me take one that I know doesn't work, right? Itprotvdemo.com. We don't have dnssec turned on for that. So if I run that, it's going to reach out. I see that it reached out for a DS record. And there's no answer section afterwards. And it just goes right into the authority and that;s the end of it.
+
+[00:38:01] Let's do the same thing for .org. And this one should work. So in anticipation of that I'm gonna add the +mulitiline just to make it look a little neater. And when I reach out to them, I get the DS record followed by an answer section and right there I can see,
+
+[00:38:20] key ID followed by algorithm and digest followed by the actual digest after that and that is coming right from hover not from my DNS server, so that is the secret sauce for all of this, that's what makes this work. Is that the value is coming from two different places. So if the hackers poison the cache of my zone, they haven't messed with my register records.
+
+[00:38:42] Right. They're different. They would have to compromise both places, in order to actually exploit my zone now. My zone is safe. If the cache gets poisoned, the cache just gets thrown away and it does a new look up and it gets the right value. So this effectively stops DNS cache poisoning if we have DNS sec enabled.
+
+[00:39:00] And if the clients are bothering the check for it. If you got the DNS server that's not gonna check for it, then it doesn't matter that all the stuff is here. It's just gonna ignore the ds and the other records, they're not gonna get used. But I can see right here it's pulling off my registrar. I'm now good to go. I have a DNSsec enabled zone. And anybody looking up a record, like looking up www.itprotvdemo.org, they will get the signature, and
+
+[00:39:24] they'll be able to verify and test that and see whether it works. &gt;&gt; Lot of great information Don there, lot of steps to follow. Now it does look like we're coming to the end of another episode but Don you've shown us a lot of stuff here. Is there any additional things you might wanna throw in here before we call it quits on this one? &gt;&gt; Let me show you one more thing.
+
+[00:39:41] As far as configuring the server we're done, I don't really have much else to show you there. But I do want to show you a quick way of test whether this is working, Verisign has nice little dnssec testing page. They have it linked on the actual dnssec homepages, but if you go to, https, we're going to,
+
+[00:40:02] let's see if I can merge this whole thing, it's dnssec-debugger. Actually, it might not even be HTTPS. Let me get rid of that. So dnssec -debugger.verisignlabs.com and then do a / and put in whatever your domain is.
+
+[00:40:22] So my domain is itprotv, well, let's do itprotvdemo.com. I'll try that one first. ITProTV.com doesn't have a sign, DNS signatures, dnssec-debugger.verisignlabs.com/itprotvd- emo.com and if I look, looks like the domain is pretty healthy, right?
+
+[00:40:41] When I scroll down a bit, I'll start to see some problems. It found two DNS key records for it. And it had some signatures. So apparently it had DNS sec set up at some point, right, And well, actually no. That's dot, that's the root. Yes the roots server are gonna have it.
+
+[00:41:01] And then dot com, yeah, all right, it found those records. But then by the time it gets down to ITPROTV.com. Things aren't looking so good. It's not signed. You'll see that one's hosted by Amazon. Amazon refused the lookup and that's it. I don't have DNSSEC for that one. So I know that it's not functional.
+
+[00:41:21] But if I change that and we do a lookup on org instead it'll run through the same process. It looks up the dot and then it goes org and it looks that one up, and then it gets to me, I got nice little green checkmarks all the way down as it tests. And it's not only checking the DS, it's also pulling the signatures
+
+[00:41:43] of individual records to test it out, like the name server records, and the SOA, so it's pulling that and checking to make sure those records are valid. This is a great way to ensure the DNSSEC is working, and it's being tested from outside of your organization. So you know it's not cached on your server, or you're hitting a local DNS server, or something.
+
+[00:42:01] This is a test from the outside world. So I use this all the time, and it is a great way to make sure that things are set up right. &gt;&gt; All right, Don. Well as always, we appreciate you being here with us, and we do appreciate you, the viewer watching. We're gonna go ahead and sign out here for ITProTV. I've been your host Wes Bryan. &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC]
+
+[00:42:25] &gt;&gt; Thank you for watching ITProTV.

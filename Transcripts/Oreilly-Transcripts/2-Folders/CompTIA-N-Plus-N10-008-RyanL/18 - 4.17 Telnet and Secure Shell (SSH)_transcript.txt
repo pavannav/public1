@@ -1,0 +1,67 @@
+[00:00:07] - All right. Let's begin with Telnet. Telnet is something I wouldn't recommend that you use today. But it's something you better know about. Why? Because there's probably going to be a time that you have to use it even though you don't want to use it. Notice we say here that,
+
+[00:00:20] Telnet would be classified as a legacy application. What is legacy? Old stuff that's been replaced by new stuff. Something where we should be doing better but for some reason we're not. Ultimately it's a server terminal. What does that mean? Well, you've got some device out there that you want to talk to, you want to configure it, you want to ask it questions, look around.
+
+[00:00:40] Well, we need a way to interface with it. And a terminal is a live action interface that when we type into it, it returns commands right back. Opposed to what? Well, think about software defined networking. When we look at things like SDN, you've got a centralized controller that's pushing everything out to devices that it manages through APIs.
+
+[00:01:02] A lot of the cloud managed devices, you may have a centralized controller out there in the cloud somewhere. You log into it with credentials, you check radio boxes, you check check boxes, you apply different profiles in the cloud in a web application. And then what gets pushed out via many times, rest API calls and XML is just,
+
+[00:01:20] here's a configuration update to each of those devices. So SDN is, I guess, like a newer way to do things. It's kind of like what we do historically with what's called SNMP or simple network management protocol. You log into a gooey, you check some boxes, you hit apply. And then that application or gooey reaches out to network devices.
+
+[00:01:41] To be clear, Telnet is the opposite of this. Telnet, we're logging into each device with the command nine. We're typing commands. We're looking at output. This is how we talk to it. Cool. So, things we want to know just for good old, you know, TCP trivia, is first off, Telnet works on TCP port 23.
+
+[00:02:01] It has a cousin on TCP port 22. What's that cousin's name? If you said SSH, you're doing great. Just some quick port number trivia: 21 is FTP. We just talked about it. 22 is SSH. We're about to talk about it. 23 is Telnet.
+
+[00:02:22] 25 is simple mail transfer protocol, SMTP. And this is what we use to send emails. So 21 through 25, got quite a bit of activity there. If you ever do a port scan, this is somewhere where we probably find something listening. So, realize that Telnet while insecure
+
+[00:02:41] and while legacy is still very widely supported, susceptible the eavesdropping and hijacking because everything is sent in clear text. And, why would I be telling you about it? Because there's still times, there was a scenario last week where I had to telnet into a device. Why? Well, the device was built for exporting outside of the United States.
+
+[00:03:00] It didn't have any type of crypto capabilities. So when I went to turn on SSH, it said SSH was not available. You can't use cryptography on this device. Zoinks. So what can we do? We can isolate the device and put it in a specific VLAN for management only. So, our traffic doesn't go in there with other VLANs and other users.
+
+[00:03:20] Good way to maybe isolate it. But just something that we want to be aware of. When we talk about isolating traffic to out-of-band management network, this is going one step further. So, let me just show you. And if I have a device, think about a switch. It's got all these different ports.
+
+[00:03:41] If I come in through a telnet, I'm typically telnetting into an IP address that may be reachable by other users and my traffic, there's ton of traffic maybe going over a wire with other users data. This means that it could be susceptible to manipulation. Out-of-band management network means
+
+[00:04:00] I've got a dedicated network that does not share traffic with the users. So maybe I've got a dedicated ethernet port that's labeled M one slash one or maybe just M one. It's a dedicated ethernet management interface.
+
+[00:04:21] I'm still using telnetting but I'm just going there through a dedicated management only network. The wire to this, could come over to a switch and that switch infrastructure could be completely isolated from the rest of your network. What does that switch connect to ? The management interface of lots of network devices, and then maybe a firewall.
+
+[00:04:40] And that firewall is something that we connect to when we want to perform admin duties. The only way to get on that network is coming in here through this firewall, maybe do an multi-factor authentication. Once we authenticate, then we come into this separate network that has access for management purposes only. Really good model to follow
+
+[00:05:01] if you've got the option at your organization, especially if you're going to be using Telnet. So looking at SSH, this is what I would call our preferred CLI interface for remote administration. Why is it preferred? Well, because it's secure. It works on TCP port 22 opposed to 23 and it also supports file transfer.
+
+[00:05:20] This is called secure copy. So using that TCP port 22, it's going to have an encrypted authenticated session that we can move files through. Now, Public key authentication is something that's optional. And let me show you what that means for a second. When the client connects to a server for SSH,
+
+[00:05:41] what port number was it? Was it 23? Nope. 22, 22 is SSH. When we connect from the client to the server in port 22, we do our three-way handshake. And then we, we basically have to negotiate what protocols that we support. And then what happens next is that the server authenticates to the client.
+
+[00:06:03] It says I'm really me. And you know, I'm me because here's my public key. And when that happens, your application looks at you and says, hey, do you want to accept that public key? And you'll say, accept it and save it. Or you say no. How do you know if you should accept it? Well, this is almost like a Quentin Tarantino movie.
+
+[00:06:21] We're going to jump around the storyline. So this public key is part of a public-private key pair. This key pair was generated typically using RSA or DSA. These are two different algorithms that we can use for asymmetric encryption.
+
+[00:06:41] When we do asymmetric encryption, we come up with key sizes, typically between 2048 and 4096. Although you may see some larger or smaller in your travels. So this key pair, what's it do? Well, it's asymmetric cryptography, whatever gets encrypted with the public can only be decrypted by the private and vice versa.
+
+[00:07:01] So if someone says, this is my public key. Who can read it? Anybody. How do you verify that it's really their public key? You authenticate something with their public key and send it to them. They're going to decrypt it. They're going to show it back to you, When they do that, you go, oh, you must have the private key that corresponds to the public. So you must really be you.
+
+[00:07:22] The dilemma, the dilemma, guess that's the word I'm looking for. The dilemma in this whole situation is when we get that public key, how do we know as an end user, that that public key really came from that device? And I'll tell you whenever we built it, we can accept and save it.
+
+[00:07:40] So, I built the public key and I should say I built the key pair on the device. When I do it, I can go ahead and view the public key. The public key can be saved. Let's just say that this is on L one pro. It's my Linux server. And when I went into my Linux server
+
+[00:08:01] and I generated this key pair, I took the public key and I copied it. So over here on my laptop, it's called L one underscore pro RSA Pub. Cool. This is just a text file I've got on my laptop, but in the future, should I ever authenticate to that device,
+
+[00:08:20] when it shows me the public key, I'm going to look at the public key in this text file and if they match, I know I'm good. If they don't match, some type of man in the middle or mouse in the middle attack, an On-Path attack that's happening between me and that server. Or I'm just going to the wrong server. What's important here is the fact that we have mutual authentication
+
+[00:08:41] and notice who's doing it. The server is authenticating to the client first. It says, "Hey, I'm me and you know it." How do you know it? Because here's my public key. SSL is a whole lot like that. If you go to your bank and you look at your address bar, you're going to see it's authenticated. You haven't authenticated yet, but you know that you're really at the bank.
+
+[00:09:01] Cool. That's where RSA is typically used. When the client authenticates, they typically use a username and a password. Not too unique, not too original, right? But alternatively, the client can also use an RSA key.
+
+[00:09:21] This is what we call RSA authorized keys. The way that this works is I take, and you can do this a lot of different ways. You can use open SSL, the library that's inside a Linux. You can use a utility from PuTTy called the PuTTYgen, and you generate your RSA keys on the client system. When you do that, you take your public key
+
+[00:09:42] and you give it to the server and that server associates your user account with that public key. So just like the server authenticated to the client by showing it a public key, the client can authenticate to the server using username and password, which we're most familiar with or alternatively, an SSH public key.
+
+[00:10:00] So the client and the server are mutually authenticating to each other, using RSA keys on both sides. This is a less used option. I'd say in my practices, my travels maybe five to 10% of the time, but it's something that can be used that's good to know about. So we talked quite a bit about SSH public keys there.
+
+[00:10:21] Let's go back and see if we missed anything. We can restrict access to that server by IP address, by time of day and also by group membership, should anybody be able to log in or just the administrators. Sometimes SSH might require a dedicated application, secure CRT as an example, PuTTY as an example.
+
+[00:10:40] Again, we're going to connect over TCP port 22. What's significant here is that unlike Telnet, thought I had one more bullet. Unlike telnet, we do have encryption here. We do have authentication and it's actually secure. We do have integrity checks on the data
+
+[00:11:01] that has been passed. So SSH is an excellent alternative to Telnet. It's what we should be using. Just want to make sure that everybody knows that. Additionally telnet shouldn't be used, but realize there's going to be scenarios where you might possibly need it.

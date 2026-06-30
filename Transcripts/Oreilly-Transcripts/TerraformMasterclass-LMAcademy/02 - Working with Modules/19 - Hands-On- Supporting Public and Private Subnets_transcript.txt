@@ -1,0 +1,65 @@
+[00:00:00] Hello and welcome back. Let's continue with the implementation of our networking module. And let's work on step 2.3. This step is a little bit more complicated because there are several substeps in it. So let's add the substeps here. The first one is that if at least one subnet is public,
+
+[00:00:20] we need to deploy an internet gateway, right? So if at least one subnet is public, we need to deploy an internet gateway and we need to associate, we need to associate the public subnets subnet with a public route table.
+
+[00:00:42] So there are a few more steps here. I'm abstracting a little bit because we also need to create the route table. We need to create the, the route to the internet gateway and we need to create this association. But let's start with step 2.3 0.1 now. And we would like to allow the users to mark a subnet
+
+[00:01:01] as public or not. And then we have to check how many of them are public and if the count is greater than zero, at least one, right, then we need to deploy an internet gateway. Let's come to the variables here. And let's add this as an additional property here in our object, we're gonna call this public and then this is just gonna be an optional.
+
+[00:01:22] So that's gonna be an optional boolean with a default or actually not bullion with a default of false. So if the user does not provide the public, the public property here, then this is not gonna be a public subnet, how that would look in our configuration. Well, instead of having, let's say here, we have two private subnets.
+
+[00:01:44] So now to make Subnet to public, all we need to do is just pass a public equals through very easy. But behind the scenes, there are quite a few things that will happen. The first thing we would like to do is within our VPC file, we would like to filter for the subnets that are public.
+
+[00:02:01] So we're gonna have a Locos here and we'll simply say public underscore subnets and this is gonna be an object and we will iterate here. So for key and config in V dot subnet, config subnet underscore config, then give me the same thing key config if
+
+[00:02:22] config dot public, right? So now here we have two different subnets, we have one subnet here that is going to be private and we have one subnet that is gonna be public. Our future here should return only the public subnet, right? So here in the end, we have a map
+
+[00:02:41] of subnets containing only the ones that have the public set to true one way for us to check that is to just output this from the module. So let's come here to outputs and we'll say here output public subnets. And we're just gonna say value is equal to local dot public subnets. If we just add the output like this, we're not gonna see it in the console.
+
+[00:03:04] And that's because this output here is coming from the module but not from our root telephone project. So let's add another output here. I'm gonna say outputs dot TF. And then this output here will say module public subnets and the value here will be our module VPC public Subnet.
+
+[00:03:25] So basically, we're just accessing the output of our module and then making this transforming it into an output for our root Dataform project. Let's run a Dataform plan and see the output. And as you can see here, we get as a result, just the Subnet
+
+[00:03:40] two. So everything is working fine here. We are just reflecting the information. But now we can use this information within our VPC file. Let's run a data form format here. We can use this information to decide whether we're gonna deploy an internet gateway or not. So let's just scroll down to the bottom.
+
+[00:04:00] We will say here, resource aws internet gateway, we're gonna call it this and then we say here a count, right? So the count here is going to be we're gonna check whether this public subnet has one entry or more. So we're gonna say here, the count is gonna be
+
+[00:04:20] length of local do public subnets. And here we can say either the length of the keys or of the values. So if the length of the keys is greater than zero, then we're gonna deploy one. Otherwise we will not deploy an internet gateway. And why do we use this condition here instead of just using the length?
+
+[00:04:41] It's maybe because we might have more than one public subnet. If we don't want to deploy multiple internet gateway, we just want to deploy one internet gateway as long as there is at least one entry in this map. And actually, I believe that for maps, we don't really need to have the keys just doing the length here will actually be enough.
+
+[00:05:00] So let's run a telephone plan here. And let's see the proposed changes. If we scroll up a little bit, we will see that we have one resource to add and this is an internet gateway. That's great. If we now come back to our networking module here or the networking file where we use our networking module, that might be a little bit confusing. But please bear with me
+
+[00:05:22] because the names here are not very flexible. So we don't have a lot of synonyms. So let's just go with the set up if we remove the public here. Now, we should actually see that the output is an empty output. There are no public subnets and here there are no changes in addition to that. So there is no internet gateway to be created.
+
+[00:05:42] The internet gateway will be deployed only if there is at least one public subnet in our configuration. That's great. We can also go forward here and within the VPC, we can also deploy, let's create here a route table. I see here
+
+[00:06:00] AWS route table and we're just gonna call this public RTB and we will also see here the count, right. So we will deploy this public route table here. If there are more than one or at least one public subnet and the route that we would like to have here will have a cidr block of everything 0.0 0.0 0.0 forward slash zero.
+
+[00:06:24] And the gateway ID, the gateway ID here is going to be the AWS internet gateway dot this dot id. And we also need to pass a VPC ID here where we will deploy. So it's called this VPC id, AWSVPC dot this dot id. So this ID will be or this VPC will be used for the route table.
+
+[00:06:46] There is one small change we need to do here. And actually whenever we are using count to create resources, then we access these resources not directly via the, the key here dot this, but we also need to pass an index and this is gonna be the index zero.
+
+[00:07:02] So if there is an internet gateway deployed. It's going to be deployed at the index zero here. This is mount change very important for us to keep in mind because we are using the count keyword. Also, if there are public subnets here, then we would also say another resource resource
+
+[00:07:21] aws route table association. And I will just say here public and this here we're gonna iterate for each local public subnets. Then we will say that the subnet ID is gonna be each or actually not directly the each dot value here. But we need to access via
+
+[00:07:41] aws underscore Subnet. And that is gonna be dot this and then we're gonna access the correct one with here. We're gonna have, remember we have the key. So this is the one we want to use here, the each dot key and then we're gonna get it from this one, the ID.
+
+[00:08:00] And then we also have the route table, ID, route table ID and this is gonna be AWS route table public RTB zero here. S zero dot id. Let's save this. Let's run a telephone plan and see if there are any necessary adjustments. According to the plan, everything should be working as expected here.
+
+[00:08:23] We have our subnet ID, the route table ID will be known after apply because it still needs to be deployed. The V PCI D is already here and this is the route table and then this is the internet gateway. So let's save this plan here. Let's just run a data form format, recursive.
+
+[00:08:41] Let's run a data form, apply and let's wait for the results. Let's type here and let's see if everything is applied successfully. Oops. And there is a small error here that I forgot to add the V PCI D to the internet gateway. Let's add the V PCI D that's AWS VPC this
+
+[00:09:00] dot ID, right. So now here, the error that we are getting is that they belong to different networks. And that's because of the VPC. So let's run a data form apply once again, let's type. Yes, here there is one to change and one to destroy. We are fine with that. Let's go ahead and now everything should work as expected. Perfect.
+
+[00:09:20] So now we have all our resources added, one resource was changed and one was destroyed. And we can see here that the route table was destroyed while the internet gateway was just modified. We could also see this in the plan here. We should be able to see here that the route table is gonna be replaced, right?
+
+[00:09:40] So we can see here that the route table must be replaced and what forces the replacement doesn't really tell us here, but probably it's the change of the internet gateway and the internet gateway here just needs to be changed by adding the VPC ID. That's great. If we come to the AWS console, we click here on subnets, we should be able to see our subnets here.
+
+[00:10:03] And if we click on the Subnet two, which is supposed to be a public subnet, and then we click on the route table and we click on the route table ID, then we will see that. Perfect. We have our route here which is associated with an internet gateway. We can also see that this is an explicit subnet
+
+[00:10:21] association for this route. While if we were to come back here to our Subnet one, and we click on the route table, we see that this is an implicit route, an implicit association with Subnet one because there is no explicit association. Wonderful in terms of resources. That's what I actually wanted to create with you.
+
+[00:10:42] There's nothing more that we will create as part of this exercise. However, in the next lecture, I would like to look a little bit more into the outputs of this module because right now, we are not exposing useful information from this module. So let's take a short break and come back in the next lecture.

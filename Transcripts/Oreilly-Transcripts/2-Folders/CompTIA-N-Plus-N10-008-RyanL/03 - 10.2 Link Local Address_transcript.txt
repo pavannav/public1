@@ -1,0 +1,53 @@
+[00:00:06] - Let's go ahead and take a look at the style of address that's used in IPV6, that's referred to as a link local address. This is a bit of a new concept. You're going to see that when we move into IPv6, you'll move from having a single IP address on an interface
+
+[00:00:22] to multiple. Now, if you've spent some time in networking, you may have seen scenarios in the past where you can take an IPv4 node might be a computer, might be a switch or a router, and you can assign a single interface multiple IPs. In the Cisco world, we'll go to an interface,
+
+[00:00:41] config t interface gig 0/0, and we'll say IP address 5.5.5.5 255.255.255.0 And there's the first IP address. If I want to come behind it and give it a second one, I could say IP address 5.5.5.6 255.255.255.0
+
+[00:01:00] followed by the keyword 'secondary'. The cool thing about that keyword is I can have two IP addresses in that one interface. This is great for when I'm doing things like migration. If I'm moving from one sub-net to another, not all my hosts are configured at the same time. So for a little bit, I can actually run those two IPs at once. Once I get all my hosts moved over,
+
+[00:01:20] I'll go ahead and just drop to that single one. So not a totally unique concept of having multiplied IPs what's needed in IPv6 is first off, you're probably not doing just IPv6. You're probably dual stack, which means IPv4 and IPv6. Now, beyond that, once you enable IPv6, the first thing that you're going to see is that's what we're talking about here
+
+[00:01:40] is the link local address. For many of you that are using a default, well, let's say an operating system in it's default form. So you've got a windows installation or Linux installation, and you have not turned off IPv6. You're probably running IPv6. It's typically on by default in modern operating systems. The downside is that, at least in America,
+
+[00:02:02] you're less likely than more likely to not have IPv6 around, meaning you're running a service that you're not actually using. You connect to a network and you send out solicitations or requests for IPv6 information in an advertisement just doesn't come.
+
+[00:02:20] If you want to take a look at your computer, just if you're in Windows, do an ipconfig. If you're Linux, do an ifconfig and see if you have one of these FE80 prefixes on an interface. I bet you do. If you've got a couple of interfaces, you'll see that you have FE80 on each one. These are link local. So even if you haven't been advertised or route prefix from a router,
+
+[00:02:40] you're still going to go ahead and have this link local up and running and it allows you to do some basic services on your local sub-net and communicate with other devices. So as the name suggests, link local, this is not used for routable communications. This is just for using a preset reserved block of addressing
+
+[00:03:02] for a dedicated style of communication. When we want to communicate with people at our local subnet, but no further, what would you use this for? Well, routing processes. If I'm running OSPF, if I'm running EIGRP I can form a relationship with a neighbor and we're just using these FE80s or these, these link local addresses to do it.
+
+[00:03:23] What that means is that you could come in and change the IP addresses that you're actually using for routing and using for production on the interface in your routing process won't drop because the neighbor relationship is built on a link local address. So let's dive in and look at it a little bit, realize that these are real handy for local services.
+
+[00:03:42] So configured automatically many devices. This is what I was saying. It's on by default, on a lot of IOT devices, it's on by default on windows, it's on by default on Linux. This is going to be on by default in your smartphones. So if we look at this concept of EUI-64, this is something we can support with FE80,
+
+[00:04:00] but it's not necessarily required. EUI-64 formatting is where we say, "let's look at IPV six address." We know that it's how many bits in length? 128 and the first half is 64, which makes the last half 64. A lot of times this first 64-bits,
+
+[00:04:20] which is our network prefix is assigned to us and the last 64-bits, well, we've got to come up with it. Maybe it comes from a DHCP server. Maybe we build it ourselves, EUI-64, just as build it based on your MAC address, we take a MAC address, which is 48-bits we add a little padding to the middle and it's basically going to make it a 64-bit unique value.
+
+[00:04:42] So we can leverage EUI-64, the integration of a Mac address into the host portion of an IP in FE80. Just something to know about. The goal here is to make a unique value. We wouldn't want to conflict or duplicate with anybody else. There's actually a duplication check that we can do on the wire. And remember that this is locally significant.
+
+[00:05:02] This is not intended to go outside of your broadcast domain. So where it gets a little bit weird is if you start thinking about routing tables, a traditional routing table is where we say 192.168.10.0 is in this direction,
+
+[00:05:20] and 10.3.3.0 is in this direction. So it's really easy. We've got a packet, we want to send it somewhere, we look for the best path. What gets crazy with FE80 is when we go to the router and we say, "Hey, I want to send a packet to FE80." "Where is it?" And he says "that way" "what do you mean it's that way?" Well, we have FE80 "style addressing" on every interface.
+
+[00:05:42] The way that this will actually work is when you start OSPF processes or other processes for example. On an interface, it starts sending out hellos. It starts doing discovery. It starts forming neighbor relationships with other devices based on these link local values. Pretty neat. So if we look at our interfaces, like you see here,
+
+[00:06:02] we've got this router in the middle, we've got a network to the left and network to the right. These are separate broadcast demands. Remember that our router does not forward broadcasts by default. You can tell it to with things like directed broadcast, but typically we do not. We want a separate broadcast demands. So everything that's communicating on the left is fine.
+
+[00:06:21] Everything communicating on the right is fine. For our example purposes, we've got FE80::A, B, C, and D with unique values, but could you have the same value? Could I have an FE80::A over here? and FE80::B over here? Absolutely! Because those networks aren't going to talk to each other.
+
+[00:06:40] So we want to avoid conflicts within the same broadcast domain or the same VLAN. But once we get into different broadcast domains, you can reuse those values if you ever needed to. So if you ever see duplicate addresses, maybe you've got FE80::1, and it's on the ethernet one, and it's on ethernet two. Is that a problem?
+
+[00:07:00] No, because these are different broadcast domains. Now, if you were to look at your routing table, this gets a little bit weird. You'll actually see the FE80 values that are identical, but there's a percent symbol. And the next to the percent symbol, there's an interface ID. So you can look for that. You'll see the same thing in windows. If you do an ipconfig on windows,
+
+[00:07:21] you'll see interface identifiers and the table at the beginning, those interface IDs are referenced in some of your link local addresses. You'll actually see that designation at the end of the value. And the interfaces noted there for routing entries and with neighbors to ensure proper delivery. In other words, I say,
+
+[00:07:40] "Hey, I want to talk to FE80::005 on this particular interface. I want to go to Eth2 to get there. So different protocols that leverage the link local capability. I mentioned OSPF previously, the OSPF we've been talking about through most of the course and what most of you are running is going to be OSPFv2.
+
+[00:08:01] There's a newer version called OSPFv3. It's built to keep, to provide capabilities for IPv6 addressing. EIGRP is another one. It has the ability to support link local neighbors. Again, the neat thing about that is if I changed the IP addresses on my switches or on my routers, firewalls, servers,
+
+[00:08:22] whatever is using these protocols. I can change the interface IP, the routable one, and it won't break my neighbor relationship. HSRP is another one. Does anybody Remember what that is? Hot Standby Routing Protocol. This is used for first-hop redundancy, another great place to use link local.
+
+[00:08:40] RIP-NG. This is our RIP that has been built or upgraded to support IPv6, another one that uses link local. You can see a common theme here among IGPs and IPv6.

@@ -1,0 +1,59 @@
+[00:00:06] - In this lesson, I will provide you with a quick overview of Linux permissions and permissions management. This is something that you have probably learned from another video course already, but just to make sure that we are on the same page, let's do a quick overview.
+
+[00:00:21] So first we have these basic permissions, read, write, execute. And then there is also the set of advanced permissions, suid, for set user ID, sgid, for set group ID, and sticky bit.
+
+[00:00:42] In order to apply these permissions, we work with numeric values, in the chmod commands. So let me put in these numeric values as well. And let's have a quick overview of what the permissions are doing.
+
+[00:01:00] So you can use permissions on files and on directories. Now if you have read permissions on a file, that's easy. You can open it so that you can read it. And if you have read permissions on a directory, that means that you can list the contents of the directory using the ls command.
+
+[00:01:23] If you have write permissions on a file you can modify the file, and if you have write permissions on the directory you can either create or delete files in that directory. The execute permission is very special regarding Linux security.
+
+[00:01:41] If you have it on a file, you can run it as an executable, and on a directory it's a very important permission as well because you need it together with the read permission in order to get into the directory. Without execute permission on a directory, you cannot use a cd command to get in the directory.
+
+[00:02:01] Then we have the specials. Set user ID on the file means run as owner. Now let me put a red exclamation mark behind that, because set user ID on files is very dangerous. If you set it on an ordinary binary file
+
+[00:02:21] that is owned by the user root, any user that runs a file will run it as the root user. Just one thing to remember about it, never, ever use it. Then we have set user ID on directories, which is not currently used. Set group ID on a file means run as group owner.
+
+[00:02:45] And that can also have a red exclamation mark because it's the same story as set user ID on a file. It's a dangerous permission and the operating system is using both of them on some specific files, but you as an administrator should never use it.
+
+[00:03:01] Set group ID on a directory means they inherit the directory group owner. And that is very convenient for shared group environments.
+
+[00:03:21] The idea is that if you have a shared directory with the name/data/cells that is owned by the group cells, if you have this permission applied to the directory, any file that will be created in the directory will be group owned by the cells group, which makes it really easy for people to work together on the same file.
+
+[00:03:40] Then there is sticky bit. Sticky bit on a file has no meaning. Once it existed long time ago, we don't need it anymore. Sticky bit on a directory means only delete if you are the owner. The owner of either the file
+
+[00:04:01] or the directory that contains the file. So normally anybody with write permissions on the directory would be able to delete all files, which in a shared group environment can be quite annoying, and that is why sticky bit was invented, to add to a shared group environment where anybody can create files
+
+[00:04:21] but to limit that only the owner can delete the files. In order to set permissions, you first need to take care of ownership. Ownership is set using the ch own command. Chown for users owners,
+
+[00:04:41] or chgrp for group owners. You can manage group owners as well using chown, it's not very important which of these you are going to use. And then there are the permissions itself, and these permissions are set using chmod.
+
+[00:05:02] I like using chmod in two different ways. For example, chmod + x on script one, which would make the file bit name script one executable for everybody. Or chmod 1750 on file one,
+
+[00:05:26] which would apply one, which is about the special permissions, so sticky bit, and then 7 for user, 5 for group, and 0 for others. Last, there is this thing called access control list,
+
+[00:05:40] the ACL. Now what is an ACL doing? An ACL makes it possible to apply permissions to more than one specific user and to more than one specific group on a file. In order to view current access control lists, you will use getfacl,
+
+[00:06:00] and in order to set you will use setfacl, and if you want to know more about it, then I can warmly recommend that you watch my LFCS or RHCSA video courses which go into more much depth into permissions for much more details. So let's troubleshoot permissions.
+
+[00:06:21] In the home directory of user Linda there's a file with the name trash. Linda wants to remove it but she doesn't succeed in doing so. Fix it! So in order to run this lab, you can run the lab93 script, which will prepare it, and the best way to run it, of course, is to become user Linda,
+
+[00:06:41] because this seems to apply to the home directory of user Linda. And there we go, there's a file with the name trash. So can Linda remove it? She's getting a warning, and oh no, cannot remove trash operation not permitted. So let's analyze,
+
+[00:07:02] and let's use our methodology again. So we first need to define the issue. The issue is that a user cannot remove a file from the home directory. We need to gather information. What kind of information? Well, ls-ld. to figure out
+
+[00:07:20] the permissions on the home directory, and we can see that user Linda is owner of the directory dot, which is Linda's home directory, and the permissions are set to rwx. That should be enough. Now let's do ls -l on the file as well, and we can see that the file is set to rw-r--r. It is owned by a root root,
+
+[00:07:42] and Linda cannot remove it. Okay, is there anything else that we need to know about it? This should be enough. So let's form a hypothesis. What can be wrong here? Well, you may think that it's not possible for the user to remove files
+
+[00:08:00] that have been created by the user root. If that's the hypothesis, we need to work on that, and that's easy, as root I'm going to home/Linda, and I am using touch root. I create a file, and you can see there's the same permissions applied. Now that I'm here, let's also create root one,
+
+[00:08:22] so that we have two files in case we need to do one more test. So now we can verify the hypothesis, which is that users cannot remove files that have been created by root in their home directory. So I'm using rm -f on root,
+
+[00:08:43] and it's gone. So do you see a difference? I don't, so there must be something else that is wrong. Let's try once more, rm -f on trash. Operation not permitted. So our first hypothesis was wrong. Time for a second hypothesis.
+
+[00:09:01] Something else is happening. What might be the something else? Well apart from permissions, there's also this system called attribute. There might be attributes that I used. If I'm using lsattr and star, I'm listing the attributes. Now look at this. The trash file has the i attribute,
+
+[00:09:22] and the i attribute means that it is immutable. So hypothesis number two, the trash file has the i attribute which is the explanation why the user cannot remove it. And in order to fix it, we need chattr. Chattr -i on trash.
+
+[00:09:41] And no if Linda goes back to her home directory, she's using rm -f trash again, it's gone. Problem fixed.

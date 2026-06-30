@@ -1,0 +1,65 @@
+[00:00:00] Now that we have our Alice and Bob users set up and authenticated or at least we have the information where their authentication credentials are in our cube. Config let's go ahead and create our first role and role binding objects to give Bob read only access to certain resources,
+
+[00:00:22] more specifically pods and config maps. So let's create our scenario. I'm just gonna create a new roles folder here and let's now, first of all, create a few name spaces. I would like to create a kind here. So this kind is going to be name space and the ID is not automatically populating.
+
+[00:00:41] So the API version, let's just do that manually. V one kind name space. And then we just need to pass here the metadata with the name of the name space and it's gonna be the dev name space. We'll also create another name space here. That's gonna be the broad name space, right? So just two name spaces here, let's come to the terminal, let's then run cube cut,
+
+[00:01:03] apply. And now we're going to apply the roles name space and oops, as you can see here, this is already giving me an error because I am actually using the Alice context. So I forgot to change this, right. So you can see here current context here, we will see that we're using
+
+[00:01:20] Alice and Alice doesn't have permissions to create name spaces. That's great, right? So now let's use our context here. Minicube. This is the one we have been using so far throughout the course. And as you know, the minicube context, the MICU user here belongs to the system Masters group.
+
+[00:01:41] And that gives the minicube user all the necessary permissions for all the resources everywhere in the cluster. So we can now apply, create our name spaces. No problem here. The name spaces are then created and let's now allow Bob to view pods in the DEV name space but not in the pod,
+
+[00:02:02] name space. So before we actually create the roll and roll binding, let's just create here, pods dot YAML and all I want to do is just create a very simple pod here. So let's use kind pod and that will already populate stuff for us. Let's use engine X. Since X is a long running process here, just gonna use engine
+
+[00:02:23] X and the image 1.27 0.0. And then that's the container port 80 we can also launch this in the name space DEV and let's create another one here for the name space Prod, right? So name space here and we're gonna say prod like so
+
+[00:02:41] perfect. Let's save this Now, once again, we are using the minicube context now, so we can just apply here the pods dot YAML file oops pods like. So, so now we have both pods created, we can have a look at these pods. So get pod across all name spaces
+
+[00:03:01] and oops, that's actually returning a few more pods. But we can see here the container creating for both our engine X pods. So let's just grab your engine X and we are good to go. So we can see here that we have our engine X pods up and running in both the DEV and prod name space. So let's now create the permissions for Bob
+
+[00:03:22] to be able to retrieve information about our pods in the DEV namespace, but not to be able to create or edit pods. So let's create our DEV pod reader role and we will also create our DEV called reader role binding dot yo,
+
+[00:03:43] right. So now this is the role and this is the role binding. So let's start with the role here. The API version is a little bit different. This is a little bit different. This is a resource that is under a group and the API group is RBAC dot authorization
+
+[00:04:02] dot kh dot IO forward slash. And then API version is V one, the kind of resource is a role. And now here the metadata does need to specify the name space where we want to create this role that's gonna be DEV and the name of the role, I'm just gonna say pod reader.
+
+[00:04:22] So what we will do now here is to set a list of rules and basically the rules, they, they have a few different properties and the ones who said here, first one is API groups. So now we're gonna allow this only under the default like this empty API group here.
+
+[00:04:40] That's the root one. And that is when we create pods or when we create config maps, then they don't specify anything here before the view one. So that simply is equivalent to this, right? So now if we were to specify the RBAC authorization CORS or IO as an API group, then it would look like this.
+
+[00:05:02] So API groups first, then we're gonna set the resources we want to enable to allow reading and that's gonna be just pods. And then now we would like to specify the verbs that Bob can perform. And now we are just gonna allow get and list pods, right? So just get and list pods. Let's save this here.
+
+[00:05:23] Let's now come to the terminal and let's apply our rolls forward slash DEVD Readert yamo. Once we apply this, we can now retrieve the role with cube cut getrow and we do need to pass the name space and we can confirm that the role has been created.
+
+[00:05:42] Let's now create the role binding here. So I'm just gonna copy this from here just so that we don't need to type the API version and the role as well here or the kind that's gonna be role binding. And as you can see here, we already get an error that we have not specified the necessary configuration here.
+
+[00:06:00] So now we need to not specify roles but rather to reference a certain role. And the role we will reference here is a kind of role and the name of the role is called pod reader, right? So the name here comes from our metadata dot name under the role file. That's gonna be pod reader
+
+[00:06:21] and the API group for this role is once again RBAC dot authorization dot K eight dot IO, we can also leave the name here as pod reader. That's OK. And now what is missing here. The last piece of information in addition to the role is actually to which subjects this role binding apply to.
+
+[00:06:42] So the subjects here will be a list of objects and the only one we will pass here for now is a kind of user and then the name of our user is Bob. And the API group here is once again the RBAC authorization K eight IO like so
+
+[00:07:02] and this will create the role binding from our for our user Bob to be able to get the permissions to inherit the permissions from our pod reader role. Let's save this here and very important. Just one small note, the name space of our role binding must match the name space of our role.
+
+[00:07:22] OK. So just keep that in mind, let's now come to the terminal and let's now apply here our DEV pod reader role binding file. And then we can confirm that the the raw binding has been created to keep KGA roll binding under the name space
+
+[00:07:40] DEV. And then we can confirm that the pod reader is then binding to the raw pod reader. So let's now use our context that is referencing our Bob user. So cube car config use context Bob like so and then we will confirm, we can confirm that the context has been switched to Bob.
+
+[00:08:02] Bob only has permissions under the DEV name space and more specifically only to get and list pods. So if we were to try to get pods in the default name space by not specifying any name space here, then as expected we get an error from the server A
+
+[00:08:20] PS from the server here saying that this is forbidden. If however, we specify the DEV name space here, then we will see that we are actually able to get the pod. So we don't have any errors here. We can also then let's see if we can describe the pod here. I'm not sure whether this is going to, to work now with the verbs that we have defined but let's have a look. Perfect. Yeah.
+
+[00:08:43] So that works as well. And that's because in our file So basically the cube cut is a little bit misleading here. The cube cut, get pod actually is the equivalent of our list verb. And the cube color describe pod is the actual equivalent of our get verb. OK.
+
+[00:09:01] So there's just a little bit mismatch here between the verbs that are used in the actual code API and the names here, the commands that were implemented in cube. Let's clear the screen here just to have a little bit more space. And of course, if we were to have a look at or try to get the pods under the name space pod here,
+
+[00:09:21] then once again, Bob has no permissions on the pod. So Bob will not be able to list these pods here. What happens if we pass all name spaces? And as you can see here, this is not allowed because Bob cannot list resources at the cluster scope, right? So this here would be the equivalent of trying to run a non name based command.
+
+[00:09:46] And Bob is not allowed to do that just to clarify. We could imagine that this could represent or could return only the resources to which Bob has access. But no, that's not the case. We're just gonna get an error here. Perfect.
+
+[00:10:01] So we were able to allow Bob to get the pods in the DEV name space. Can Bob, can Bob actually run something here. So let's just try to run. And this is one older command that I have here just getting something here to try to run and maybe we can try to run something else. Let's have a look at what I have here and let's just have a look at this busybox image
+
+[00:10:23] and let's try to run this in the name space dash N DEV here. Now, as you can see, we also get an error because Bob is not allowed to create the resource pods in the namespace. DEV. Bob is able to only retrieve the pods and describe
+
+[00:10:42] them but is not able to create nor update nor delete pods in our namespace. So cube delete pod engine X would of course be out of limits. Wonderful. So we are off to a great start here. We have managed to make a lot of progress in these last few lectures. Let's take a very well deserved break and I'll see you in the next video.

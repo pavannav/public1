@@ -1,0 +1,63 @@
+[00:00:07] - All right. Let's take a little bit of a deeper look at Network Address Translation. I think NAT is one of the more complex things that you'll have to understand. There's a lot of things we'll talk about and some of them are complex and some of them, you just kind of remember a few bullet points about them,
+
+[00:00:22] and maybe you go on, you pass the test. You don't have to think about it again, but NAT is something that you have to get right. This is something that you're going to use day in and day out as a network engineer. So I want to make sure that everyone feels comfortable with it. I introduced it a couple lessons ago just to kind of get your feet wet, gets you a little bit used to thinking about it.
+
+[00:00:41] We talked about a translation table. We talked about the fact that NAT is one-to-one and PAT is many-to-one, but we're going to go through it in a little bit more detail here, just to make sure that everybody's comfortable. So remember with Network Address Translation, the purpose, is that we can take the private RFC 1918 addresses
+
+[00:01:00] that are internal and translate them to a public IP address. And that public IP is what we can actually use to communicate on the internet. This process is referred to as Network Address Translation, which not on its own is a layer 3 operation. We're looking at the IP header and we're just changing the source IP from private to public.
+
+[00:01:21] (exhales sharply) Now, whenever we do that, we can also change things from public to private. For example, if you wanted a web server to be reachable on the internet, we would take a public IP address and map that to the private IP on the inside. It's typically done with this static translation. Again, the use of network address translation
+
+[00:01:40] is the pivot between public and private IP addresses. One of the major benefits here is that this will extend the life of IPv4. Additionally, it works as a security control. You see everything internally has an IP address, but those are IP addresses that are not globally reachable. So if you wanted to talk to a public... If you wanted to talk to a device
+
+[00:02:01] inside of your organization from the public internet, you'd have to have some type of NAT rule created on the firewall, potentially as well as an access control list, to allow that traffic in. To reiterate, if you're using a firewall, it'll typically trust outbound traffic. It says outbound traffic is a good thing.
+
+[00:02:20] We want to see traffic leave the environment. Now, inbound traffic, not always a good thing. That's somebody trying to come into the company. So we say inbound traffic is denied by default. Outbound traffic is allowed by default. Now, we can change those rules to make things a bit more secure, but that's just kind of the way things regularly work. So because we have a NAT policy,
+
+[00:02:41] things are allowed to flow out of the organization, but they'd be prohibited from flowing in, unless you construct a static statement to permit it. So a static NAT statement is a one-to-one permanent mapping. And this is typically what I would do with a server. I say this server internally, maybe it's a mail server,
+
+[00:03:01] should map to this public IP. And I always want traffic to come in and be able to reach my mail server Dynamic NAT is what we use for clients. So static, typically their first server. Dynamic NAT is what we use for our clients. Somebody who wants to get out to the internet, we see that and we'll dynamically translate
+
+[00:03:20] their internal private value to a public value so that it can be routed. Port Address Translation, I talked about it in the previous section, and we said, Port Address Translation gives us the ability to do many-to-one. We can take lots and lots of internal devices and overload them, sometimes called NAT Overload
+
+[00:03:40] onto a single IP address on the outside. What's the advantage here? It's going to save us a bunch of money. If I was doing one-to-one mappings with NAT, I would have to have one public IP for every private IP that I have internally. Again that would get costly on a per month basis. It's just not very efficient. So what we can do is overload
+
+[00:04:00] by looking at each session's port number. So what does it look like to configure something like NAT? Well, from a Cisco configuration, we would say something like IP NAT inside. Now when it says inside here, there's a concept of the inside and the outside of your firewall. The outside is what touches the internet.
+
+[00:04:21] The inside is what touches your actual business. Is a router a firewall? It depends, if it's what's connecting you to internet and you're actually having some filtering happening, even if it's simple ACLs, I'd say, sure, your router is acting as a firewall. It's separating traffic between the two. That said it could be something like a Cisco ASA,
+
+[00:04:40] It could be a FortiGate firewall, They're all going to do NAT just about the same. The concept here of creating a static one to-one-mapping is that I take my internal IP, and I map it to an external. Then what we do is we set up DNS, right?
+
+[00:05:02] If this was my web server, this is my mail server, this is an FTP server, I might create DNS records, and these would be A records, right? An A record says WWW, equals this IP address.
+
+[00:05:21] I create another A record, I say, mail, like mail.pearson.com equals another IP address. If I want mail to get delivered, what record do I need? Does anybody remember?
+
+[00:05:40] DNS has got different record types. An A record, is what we use for typical name to IP address mapping. A quad A record is what we use for IPv6. A C record or CNAME is what we use to create an alias. I'm imagining everybody just shouting out MX record.
+
+[00:06:00] If you're thinking MX record, that's your mail exchanger. So if you lived or worked at pearson.com, we would say here's to your name@pearson.com. When the mail server wants to deliver that, it will ask for the MX record, which points to an IP address. What IP address? In this case, 23.5.5.10.
+
+[00:06:22] that's going to get you through the internet to this firewall. Firewalls got this rule that says, "If anybody comes looking for 23 five five 10, send them to that internal IP of 10.1.1.10. So these are just static mappings between a internal and external
+
+[00:06:42] also known as a private and public IP address. So one-to-one mappings, these are defined by the administrator statically. And now let's take a look at Port Address Translation. Remember how I said PAT is sometimes called NAT Overload.
+
+[00:07:01] We'll look at the configuration example. We start off with an access list. Now access lists are awesome. We haven't talked about them a whole lot yet, but this is just an example of one. I think of it as an access list as an if condition, I'm saying, "Hey router, if you see packets sourced from 10 one one."
+
+[00:07:21] See how that just... It's kind of like an incomplete thought. It's just the if. We go, "What do we want to do with it?" Well, I put the access list inside of a NAT statement. I say IP NAT inside source, list one, that says, "Look at list one, these are the source IP addresses
+
+[00:07:41] that are valid to be natted." How do I nat them? We'll use the interface fast ethernet zero one and overload. In other words, your outside interface here has an IP address. They all do if they're going to talk on the internet. typically that IP address is assigned through DHCP. That is unless you have a static address.
+
+[00:08:01] So in any case, we say, "Hey router, I would like you to translate all of the internal users to a public IP." Router is like, "Sure, sounds good. Which public IP?" I say, "Go ahead and use the IP address. that's already on your interface." Pretty cool, right? We don't have to burn additional IP addresses just for outbound traffic.
+
+[00:08:21] The router can use its own interface for the PAT traffic. Additionally, you can allocate extra IPs if you need more connections to support, but this is... Let me get out of the way over here. This is one of the easiest ways to set NAT up. So we're just going to perform an overload operation using the IP address that's already
+
+[00:08:40] on the outside interface. Everyone from the ten one one network is going to be translated in this case to 23.5.5.8, whenever they talk to the outside world. When the return traffic comes in all return traffic for all users goes to 23 five five eight. Wait, isn't that confusing? No,
+
+[00:09:00] because we use the port number to keep each session unique. That's why we call it port address translation. Our translation table has a mapping of which port number is in use by which client. Remember, our layer 3 headers are basically envelopes. As they come in and it's destined for 23 five five eight,
+
+[00:09:20] I go, "Wait a minute, let's look at that layer 4 header," also like an envelope. Layer 4 header says it's destined for port four three one one two. I go, "Wait a minute, that's in use by 10 one one five." So I can come into my layer three header and I change,
+
+[00:09:40] the destination IP address. Does that make sense? We change the source IP address on the way out. We change the destination on the way back in. How do we change it? By leveraging this translation table. Translation table shows us what ports are in use by which internal clients.
+
+[00:10:02] So once again, just to make sure I get through all the bullet points for you, and so that you hear it multiple times, the port numbers are what makes the translation possible. Many users are sharing one public address by overloading the interface. You see the word overload right there in the command. This is also called Port Address Translation.
+
+[00:10:22] This is the most common form of NAT. This is what you're using on all the SOHO devices right out of the box. This is what your cable modem that the cable company gives you does right out of the box.

@@ -1,0 +1,49 @@
+[00:00:06] - Let's take a look at how we can secure DNS. And the first step would be to use encryption. So, kind of looking back at encryption from the old days. We've got the Enigma machine above us here. The idea is that we want to add privacy to the communications of what we're doing.
+
+[00:00:22] Downside to DNS is, of course, it's clear text, meaning it's potentially can be intercepted and modified. And it could also be observed upon or people can use it for reconnaissance. If someone was to monitor DNS traffic and they wanted to target you, they could learn the operating system when you do your updates,
+
+[00:00:40] they can learn the antivirus that you use, they can find third-party extensions, they can look at your browser, they can figure out the type of office software and third-party products that you're using within the operating system. The reason for that is when we typically launch an application, even something like VLC to play video, it'll go out to the internet to do an update check.
+
+[00:01:00] The way that it does is by checking in with an update server, which you've guessed it, resolves itself through DNS. Just by performing passive reconnaissance and looking at that DNS traffic, I can learn an awful lot about the target. But beyond that, if I wanted to intercept or modify communications, you could do that as well because it's traditionally not protected. Let's take a look at
+
+[00:01:20] how we can actually protect it with DNSCrypt. In this case, DNS traffic is gonna be encrypted, and the responses that come in will be authenticated. This will prevent man-in-the-middle attacks, prevents also, distributed denial-of-service attacks because each of the messages that we're getting, we know is coming from a trusted source. There's no forged queries or forged responses here.
+
+[00:01:43] It's gonna leverage TCP 443, or UDP 443 as necessary. There's a whitepaper at dnscrypt.info if you need any more information about it. Now, one of the ways that I've done this in the past is both using a windows system
+
+[00:02:00] and just putting a third-party client on it called Simple DNS and then also leveraging the Pihole. Now, the neat thing about the Pihole is that it's low cost, it's always on. And if you've got a pair of these, you could have redundant DNS servers. So the nice thing, it's always on, but it's also low cost as well as low energy. This would give us the capability to have
+
+[00:02:20] a dedicated, secure DNS server. And let's talk about it for a second. If you haven't heard of Pihole before, the goal is we're gonna take a Raspberry PI System on Chip, little, tiny inexpensive computer and run our DNS services there. Now, what makes it slick is that we can do specific things like taking a list of bad domain names, blocking it there.
+
+[00:02:42] We could do things like DNS encryption and handle it all in the Pi, so that other systems inside the organization don't have to be configured to support DNSSEC or even DNSCrypt. We can handle all of that on the Pihole. Additionally, it has content filtering.
+
+[00:03:00] So if there's content that we don't want to have come in, typically the first thing that we think of as ads, we can block that right here on the DNS server. As a webpage loads, and the webpage does request to grab, you know, specific content to load an ad, we'll see that, and we can block that on the Pihole. So as I mentioned previously, we can leverage the Pihole to protect an entire network.
+
+[00:03:21] I'm gonna use this whiteboard here to talk a little bit about how we can do that. And keep it very, very functional, but also very, very low cost. Let's just hit W and bring in our whiteboard. So, imagine that we've got a router here at the perimeter of our network and the router's what's connecting us out to the internet.
+
+[00:03:40] We know that this router can have access control lists, which I abbreviate as ACL. And access control is, essentially tells us what is permitted or denied. And one of the approaches that we can take is deny almost everything and only permit what's absolutely necessary.
+
+[00:04:01] This is gonna be a principle of least privilege. It's a good approach. So I could say permit TCP 443, permit TCP 25, if you're sending email out. But one of the things I might deny would be DNS, UDP 53, typically. So I say, hey firewall, hey router,
+
+[00:04:20] if you see UDP 53 coming out, block it. However, if you see it coming from 101153, and it's going out, I want you to permit it. Why is that? Well, 101153 is my Pihole, inside of my network. Just take raspberry PI, load the latest version of Pihole on it.
+
+[00:04:43] And that's our DNS server. Now what we can do is leveraging DHCP. DHCP is gonna give us the ability to not only advertise IP addresses, subnet mask, domain name, gateway, but of course the domain name server.
+
+[00:05:01] By telling everyone through DHCP that the domain name server is in fact, the Pihole 101153. It means all of our clients internally, are gonna send their DNS queries to the Pihole. What happens if they try to go ahead and do a query directly through the internet? Maybe they manually define their DNS server
+
+[00:05:21] to be 4222, or 8888. Well, that's gonna come over here. It's gonna hit our access control essence, it's gonna be denied. The reason for that, our routers configuration with this ACL says the only system on the inside of the network that can make DNS requests is the Pihole. Do you have two Piholes for redundancy?
+
+[00:05:41] Great. Have two access lists. Now what we'll do is we'll put each of those Piholes at a specific IP, like .53. It may be .54 for my backup. Those two IP addresses at .53 and .54 would be advertised through DHCP to each of our clients. Basically saying, if you need a DNS server,
+
+[00:06:01] come ask the Pihole. Now what's cool about that is all of our clients are going to be sending unencrypted. I'll just put a big U here. Unencrypted communication to the Pihole. And remember, these are basically queries. It's a lookup. It says, Hey, I want to know how to get to pearson.com. The Pihole sees that. It checks its local records
+
+[00:06:20] and says, I don't have anything for that. But it can go ahead and do a lookup to another server. When it performs that lookup going out, this is where DNSSEC kicks in. So, this is gonna be protected. Any traffic that's gonna go out to the public internet and discover DNS, will be protected. What's unprotected are local traffic within the network
+
+[00:06:42] coming from all of our clients. This is okay though. It means for someone to do a DNS attack, they'd have to be inside of our local network. Is that impossible? Of course not. Perfect world. We can put DNS everywhere. DNSSEC, everywhere. But it's gonna take a little bit of work. We're gonna have to go to each endpoint. We're gonna have to see
+
+[00:07:01] does the operating system support it? Do I have to add a third party agent? It can be pretty difficult. By just setting it up on a Pihole, I can enable secure DNS for everybody in the organization by just pointing to it locally or internally. Again, best case scenario, we'll put DNSSEC on everything, but that would require a client reconfiguration.
+
+[00:07:20] A lot of times we might have to add extra third-party software to get it to work. Again what I'm talking about here is just using native DNS inside of your organization, but then anything that needs to go out to the public internet that will be protected. Again, it only gives us two places that we have to set up DNSSEC. That's gonna be our primary Pihole and our backup Pihole.
+
+[00:07:41] Now I've talked quite a bit about using Raspberry Pis and Piholes here. They can get overwhelmed, they can get jammed up and freeze. When they freeze, everything stops working. So, go ahead and test. And look at resource utilization levels. Just see how your performance is. Could be a scenario where you need dedicated servers.
+
+[00:08:00] You needed a faster appliance. But in smaller networks, the Pi-hole tends to work pretty well. You can implement DNSSEC on a Linux system and just have a dedicated Linux box running on x86 if you'd like. And if that's what's more plentiful to you, that's gonna give you quite a bit more horsepower on the backend.

@@ -1,0 +1,15 @@
+[00:00:00] All right, let's take a look at our Readme file. So this is our Readme file and we've worked with this once before. Now, a read me is always written in this thing called a Markdown language. I guess, suppose it's actually not really a language. It's just a way of uh shortcut, writing larger titles, smaller titles, regular text
+
+[00:00:20] links, things like that. And it's literally just called markdown. That's what the Readme dot MD stands for MD is markdown. Now, every project you have should have some sort of Readme file in here. And at some point, I'm going to change this. Read me away from just get essentials with deployment staging nodes and all sorts of other stuff and put some actual information in here.
+
+[00:00:40] Now, markdown is a very interesting way of writing new text. Now, there are a lot of different markdown, preview editors out there, but I always like to go straight to the source whenever possible and see exactly how github is going to sort of render this. So we've got essentials at the very top here. But if we type git essentials
+
+[00:01:01] with two number signs instead of just one, you can actually compare the difference here. So the green border just means that that's new and you can see that this text is larger than this text. You can also make links, add lists, add pull quotes, things like that. I'm not going to go over all the different ways that you can write Markdown
+
+[00:01:20] because that's its own little mini course on its own, I think. But when it comes to writing markdown for a year for your project, you're probably going to want some sort of helpful information in there. What is your project about? What should the reader know? Are there contributing rules? Because sometimes there are certain rules for contributing to an open source project.
+
+[00:01:43] If someone wants to get involved, how do they get involved? Do you have a certain workflow? They should follow anything like that. That is generally useful information that you would put inside of your read me dot MD file. Now, generally I put anything that's I think is important as someone who's coming to a project for the first time ever. I want to see things that are going to pertain to me and, and
+
+[00:02:02] my interest involving this project. And it's also a really good way to just sort of look through here and see what the project is all about. So maybe you have a project that's just a react project and it's just supposed to render out some, some jsonify data from an AJAX request,
+
+[00:02:21] you could write that in your Readme file. So again, I'm not going to do anything with this at this time. I'll do that a little bit later. But what you can do and what you definitely should do is whenever you have a project, you should update your Readme file as well.

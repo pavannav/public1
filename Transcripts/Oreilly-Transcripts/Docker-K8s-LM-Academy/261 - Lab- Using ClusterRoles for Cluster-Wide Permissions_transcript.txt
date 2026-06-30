@@ -1,0 +1,45 @@
+[00:00:00] In the previous lecture, we set up a DEVD reader role here that enables users to or that would enable anyone mentioned in the world binding to read and list pods or to describe and list pods under the DEV namespace. We have then created a role binding here
+
+[00:00:20] that binds this role to the Bob user that effectively gave Bob permissions to retrieve pods or get information around pods in the DEV namespace. Now, I would like to have a look at how we can leverage cluster roles and cluster role bindings to give Alice or more specifically
+
+[00:00:40] to give the group that Alice is part of permissions to manage pods. That means not only reading information or getting information about pods but also creating deleting and updating pods. We also would like to make sure that admins can work throughout name spaces. So across name spaces that they are not bound
+
+[00:01:00] to any specific name space in this specific permission might also be the case that we decide that for other sets of permissions, it makes sense to limit the scope to certain name spaces. But for managing pods, I would like to give admins access to all the name spaces, the best use case for this or the best solution for this
+
+[00:01:21] is not to use just a roll but rather a cluster role. So I'm gonna create a new folder here under the top directory just as a sibling to roles. And I'm gonna call this cluster roles and I'm going to have something similar here. So let me just have a look at these two files. I'm gonna copy them here and I'm gonna paste them here.
+
+[00:01:41] Let's now change their names. So we're gonna call this pod admin and we're gonna call this other one here pod admin roll binding, right? So pod admin cluster role binding like so we will soon update the information here and we can also leverage the pods dot yamo file. So let's just bring that outside of our role
+
+[00:02:02] folder just so that it's at the root folder. Perfect. So now let's start adjusting our pod admin policy. And the first thing we would like to do here is to move away from roll into a cluster role like so, so the API version is the same.
+
+[00:02:20] This is our back authorization K eight IO forward slash V one. The difference now is that we will create a cluster role rather than a roll and a cluster role is not name space. That means you should delete the name space here. And let's now update the name to just match this here pod admin,
+
+[00:02:40] the API groups that we will mention here is just the core API groups are not gonna add anything here. Resources is not only pods, but also we would like to give the admins or the pod admins the possibility of getting the logs of pods. So we need to provide subresources here.
+
+[00:03:00] Pods, logs are actually before we provide this, let's not give these resources here. Let's just leave pods and let's see how this behaves. We'll then come back here and we will update this here. So now we would like to allow all the verbs. So instead of having to list all of them, we can just use a wildcard character here.
+
+[00:03:20] And this will simply mean that all the verbs are allowed in the pods resources. Let's quickly come back to the terminal here. And I just want to confirm what is the group from Alice. So let's print here the information from Alice's certificate. And if we scroll up a little bit here, we can confirm that one of the groups is admin.
+
+[00:03:41] So this is gonna be the name of the group we will mention in our cluster role binding. We don't need to create groups in Cnis. So there is no such a thing as like a group entity in CORS similarly as there, there is no user entity in cos all we need to do is to mention the group in our role binding.
+
+[00:04:02] In this case here, let's move this from role binding to cluster role binding, we can remove the name space as well. We can name this part admin and the role here, the role reference will be a cluster role and not just the role. So that's cluster role here. The name is pod
+
+[00:04:20] admin. And now in the subject here, instead of mentioning a user, we're gonna mention a group and the name of this group is the admin group. So now the API group here stays the same and all we need to do is to just apply these files. So let's come back to the terminal. Let's clear the screen. Let's have a look at which config
+
+[00:04:42] or which context we are using. We are in the minicube context. That's good because the Bob context and the Alice context would not have permission to create cluster roles and cluster role bindings. So let's now just apply here. First of all our bod admin dot YAML
+
+[00:05:00] row that's gonna create the roll and now we can apply our roll binding or cluster role binding. Perfect. So now we can let's get our cluster roll cluster roll. We have oops, we have actually quite a lot of information here. So let's see if we can find our pod admin that's here. Perfect. And if we were to describe this cube cut,
+
+[00:05:21] describe cluster roll pod admin, we're gonna get that we are allowed to perform all the operations on pods, right? So if we were to now also describe the cluster role binding pod admin. We see that this is connected to the group or to the admin group.
+
+[00:05:40] That means effectively that anyone who presents a certificate with the admin group mentioned in the subject would be able to perform these operations. So let's start by running here or changing our configuration to use the context of Bob.
+
+[00:06:00] And I just wanna confirm that Bob does not have permissions to create pods. So let's apply here our pods dot Yamo file and we will get an error that no, we cannot perform these operations. Perfect. So as you can see here, we have one pod and to next that was in the DEV name space,
+
+[00:06:22] this we have not deleted. So it just remains unchanged. There was no API call behind the scenes, but we can confirm that Bob was not able to create pods in the prod name space. Let's now have a look if Bob can actually delete stuff and we know that Bob should not be able to delete it.
+
+[00:06:41] So Bob is not able to perform this delete operation in any of the name spaces. But now the moment we change this to use the context Alice, then we can confirm by just running cube K apply F and then pods dot YAML that both pods will actually be created.
+
+[00:07:01] So here you can see that they're both unchanged. So we can just delete the pods. I think I still had them from previous lecture. So delete now goes without any issue, apply, also goes without any issue. So in our cluster role binding, we didn't mention any specific user. We just mentioned a group and then whoever user happens to be a part of this group
+
+[00:07:24] will inherit these permissions and will be able to manage pods in our cluster. Perfect. So we have done quite a bit in this lecture. There is still one aspect I want to discuss with you regarding sub resources here in the rules. But before that, let's take a short break and I'll see you in the next lecture.

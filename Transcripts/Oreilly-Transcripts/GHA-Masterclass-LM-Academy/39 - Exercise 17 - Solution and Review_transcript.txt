@@ -1,0 +1,127 @@
+[00:00:00] Welcome back. Let's now go through our practical exercise for working with artifacts. So we're gonna create a new file under our workflows directory. And this is going to be 14 artifacts dot YAML, the name following the convention 14 working with artifacts. And we're gonna dep
+
+[00:00:20] we we are gonna trigger this on a workflow dispatch event, right? So we can also add it like so, so we can extend it more easily later on on workflow dispatch and the jobs that we would like to define. The first one, we have two of them, we're gonna have the build job and we're gonna have the deploy job, right? So these are gonna be two jobs and the build job
+
+[00:00:42] will be responsible for building our code and uploading our artifact. And the deploy job is gonna download our artifact and show simply just show the files on the console for this. We will also need a react application. So before we go any further here, let's make a directory 14 dash artifacts. And then within this directory,
+
+[00:01:00] we will simply initialize our react application once again with a template typescript. Perfect. If everything went well, then you should see this message here saying that everything was was added successfully. And if you scroll down under the artifacts folder, you should see the React App folders. We can then continue with our workflow definition here so that both the build and the deploy job,
+
+[00:01:22] they will both run on Ubuntu latest. Let me just copy this at the bottom as well. And the the build job, we would like to provide a couple of defaults as well and this is for our run comments. And the only default that we want to provide here is the working directory and the working directory is going to be once again 14 artifacts forward slash react
+
+[00:01:45] app, right? So we can then execute our runs without having to specify our working directory in every step. So we can now define our steps. The first one is going to be checkout code since we are working with the contents of our repository. And here we're just going to use the actions forward slash checkout
+
+[00:02:02] at version four. The next step is then to set up note, set up node and then here we once again use the actions forward slash setup dash node at version three. And with here we can simply say node version and then we can provide a hard coded value here.
+
+[00:02:21] If you wanted to check this or to test this in a different node environments, maybe you are deploying or building, for example, an NPM package that is supposed to be backwards compatible with node 16 or something. Then you, we could provide this as a, as a variable or as we will see also later on, we can provide multiple values of node version
+
+[00:02:41] and execute multiple runs of the same workflow. This refers to matrices, but that's something we will come back in a few sections. So the next step that we would like to do now is install dependencies and then this will simply run npm CI and perhaps here we can also explore what we have already done with
+
+[00:03:02] caching. So we can have a similar uh step here. Let's just have a look at our, at our workflow here. And we're just gonna have this download cache dependencies here and we can just paste it here, probably need to fix some indentation like so and then I will just remove a few things here that we don't need for this workflow,
+
+[00:03:23] right? So the key here is calculated somewhere else in our previous workflow. For us here, we can simply use a hard coded key. So dependencies, node modules and then we would use the hash files with our now new path 14 artifacts
+
+[00:03:42] like so. And then we will just use not the node modules but rather the package lock dot JSON, right? So the package lock dot JSON and then we will install the dependencies here. If there is, if our steps dot cache dot outputs
+
+[00:04:01] dot cash dash hit is different than true, right. So here we are combining both caching and artifacts in the same workflow. That's no problem. It's actually encouraged to do so. As long as we can leverage both of them. Perfect. After we have installed our dependencies, we can then execute the testing steps. So let's say here,
+
+[00:04:20] test or unit tests and then we simply run here NPM, run test and let me just change the name here to be test dash build so that we know exactly what the job is doing. We can also, if you want to, instead of identifying the job by its key, we can also pass an ID to a job or a name to a job.
+
+[00:04:40] And this would also appear on the UI, right? So here for us, since we can clearly identify what's going on on the job by its key, then we don't need to change that the once the unit tests are successful, then we would like to upload our code. So here that's or rather build and then upload our code, right? So build
+
+[00:05:00] code and we will run here simply NPM. Run build. Now, where is this build here? Output. So let's just switch to our React App quickly here within the artifacts folder at the bottom. So make sure that you are in the artifacts folder and change to the React app folder and then run the NPM. Run
+
+[00:05:21] build comment and let's have a look at both the output as well as the changes to the file here on the left. Perfect. So once the build is ready, then we should see a new folder here build within our React app directory. And if we expand this here, we have then all the files that compose our application and we have a couple of instructions here
+
+[00:05:42] on how to, how to serve this locally. We don't need to install the serve package here globally. We can simply use NPX serve dash S and then the build directory like so, so let's wait a little bit and see whether this is going to work correctly. So it will ask us to confirm that we want to install this.
+
+[00:06:03] And once we do that, then it should initialize automatically and then perfect its serving on the part 3000. So let's copy this and go to the browser to check this up. I'm on the browser here with localhost 3000 open. And it's important just to highlight that this is not using the npm start command,
+
+[00:06:22] right? So the NPM start command is also available for us. It starts a development server and you will see exactly the same page here. However, for us, we are serving this under port 3000 via and via another package which is the serve package. We are using the build files. We are not using
+
+[00:06:40] the development files. Basically, the build process takes our development files, transform, transforms them into production ready files. And we are using these production ready files here. OK? So this is a small difference. And even though the port here would be the same as if you were using your development server. These are two different things. Perfect. Now that we know where our build actually lives,
+
+[00:07:02] it lives within this build directory here, we can stop our our local server and then we can proceed with our action to or with our step to upload this build artifact. Let's create a new step here. It's gonna be called upload build files. And this will simply use again actions forward slash
+
+[00:07:23] upload artifact at V three. And then here we can customize or actually, we have to customize with a couple of parameters. The first one is the name that we want this this artifact to be referenced here whenever we want to download the artifact once again.
+
+[00:07:40] So we're just gonna call this app and then here we need to provide the path. Now the path you might be tempted to provide just build because we know that it's just the build directory within our React app. However, the defaults here at the top, they apply only for run. So we also need to provide the full path here or at least the
+
+[00:08:00] the full path relative to the root of our of our git repository, right? So that would be the whole thing. 14 artifacts React app and then the build folder. Perfect. Now we can move on to the deploy job and we can then use the download artifact action to retrieve our artifact. The steps here on the deploy job are going to be the first one
+
+[00:08:21] is going to be download, build artifact. And this will simply use our actions forward slash download artifact instead of upload artifact. So actions download artifact. And then here we need to provide again a couple of parameters. The first parameter is the name of the artifact we want to download. And this is app.
+
+[00:08:42] So this name here has to match this name here. It's basically an identifier of our artifact. And the second parameter is called the path parameter. And this simply specifies where this artifact is going to be downloaded into. So for us to visualize the the folder structure, let's simply create here
+
+[00:09:01] another step. So show folder structure and then we can simply run a recursive so that we can see all the folders that are available and then we will see within the build directory here which other folders are available or basically the structure of our directory. After downloading the artifact, these are the first steps that we want to do here.
+
+[00:09:24] This is the first version of our workflow. We will still make a few changes, but let's then just add everything and let's go back actually a couple of repository, a couple of folders so that we make sure that we add all the files and there should be just one dot And then we can commit the changes
+
+[00:09:40] and once we commit the changes, we can then also push them to the github repository within our repository under the actions. Tab Let's now open here on the left our working with artifacts and then click on run workflow and run workflow and let's see what is going to happen. Perfect. I did a little mistake here. As you can see the deploy step is failing and that's because we forgot to add
+
+[00:10:04] dependencies between these two jobs, right? So here the deploy job is starting simultaneously to the test build job, but there is no artifact uploaded yet from test build. So the deploy basically cannot find the artifact to download it. If we click here,
+
+[00:10:20] then you just see that it's unable to find any artifacts for the associated workflow. Let's quickly fix that we can actually fix it here in the UI we don't need to change much here. So let's just edit the file and then scrolling down to the deploy here. Let's specify a job dependency to the test dash build job.
+
+[00:10:40] And let's just check that this is the correct name. Yes, that's the correct identifier. Perfect. Let's then commit our changes directly to the main branch. And here this is actually a fix and we are adding missing dependency to test build, right? So now we can commit the changes here and then go back to our actions
+
+[00:11:01] and rerun the workflow. Now, if we click here on this workflow run, you will see that the test build step here or the test build job it has successfully completed. And then if you just scroll down a little bit, you will see that there is an artifact produced as a result of this execution here. So the artifact was successful,
+
+[00:11:21] fully uploaded. It just happens that the deploy job did not have a dependency to the test build job. If we click on app here, then this should download the file you can see here on the top, then it has downloaded and it's a zip folder that we will explore a little bit later on. So um let's come here again to the actions and let's see now show more workflows working with artifacts and now let's rebrand our workflow.
+
+[00:11:44] Now, the caching should also kick in here and we should be able to have a little bit faster execution for the test job, took roughly half the time instead of one minute as before, it takes 30 seconds. And now we can see that both have succeeded. We have once again and the app artifact here.
+
+[00:12:01] And if we click on the deploy job, then we should see the folder structure. And you can see that these are this, these are the contents of our build folder. And then within the build folder, we have a couple of other folders containing the build files that we would be interested in, in deploying later on. So basically, this has successfully been downloaded into our build folder
+
+[00:12:23] and this is just done by the download artifact action. Let's now quickly explore the app zip file that we have downloaded as you might expect. This is a pretty predictable thing. So it just downloads all the build directory, right? So we can unzip, remember that's a zip file
+
+[00:12:40] and this for me at least is located under the downloads directory and then the app dot zip file. And I just want to unzip this into a directory that I'm going to create here. So the artifacts build directory, right? So now this will just and zip basically inflate this file into the specified directory. I have put here at the root level of a repository
+
+[00:13:01] because I'm just gonna remove it in a little bit. But as you can see, then all the files are here. And if we were to just say the NPX once again, and now we would use our artifacts build directory, then it should work as expected as well. And here it's once again serving in our localhost port 3000, right? So
+
+[00:13:22] as you can see this, this can be very useful for us because we can then download this file either via an API call from github and then we can use this file somewhere else. OK? So this is one option for us. I'm just gonna delete this and what I would also like to do here is to upload the test results,
+
+[00:13:41] the coverage report here and we can do that by simply running NPM, run test and then dash dash and dash dash coverage. Now, this dash dash here is something specific of running NPM scripts and that's, this basically allows us to pass arguments to the underlying script being run, right. So here, if we were to simply run NPM, run test and then a dash dash coverage,
+
+[00:14:04] this dash dash coverage would be passed to the NPM command and not to the underlying command being triggered by this npm comment. So we need to add this additional dash dash here so that the coverage is correctly passed to the test. If you, if we press enter here, then you should see
+
+[00:14:21] that we have the and here squid a little bit. And instead of running this on watch mode, we can actually set CI equals true and then run this. And this should simply run without being in the watch mode, right? So perfect here, we have actually the results instead of without being in watch mode.
+
+[00:14:40] And I just want to show you here, then we have the coverage flag passed to the underlying react scripts test. If we scroll down a little bit here, we also see our coverage results and they are not great, but we are not interested in changing any anything here. Just want to show you the actual results that are within our coverage folder, right?
+
+[00:15:02] So we have an LCOV report folder and here we have an index dot HTML file. And if we were to open this and I the live server extension here, so it's on part 5500. And if we just open this on the browser, we would have something like this, right? So this is a a coverage report that is done
+
+[00:15:20] already out of the box provided already out of the box with just here and our React application. We're just interested in uploading this coverage report as artifact back in our ide. The last thing I want to explain here, maybe it's not very clear, this C equals true. What I'm doing here is just setting an environment variable.
+
+[00:15:40] Whenever we run the test command and create React app finds a CI environment variable set to true, then it's going to run this test without being in watch mode. The watch mode is basically what we have seen before and we can then change the files and dynamically rerun the tests here so
+
+[00:16:00] that we don't need to always rerun the test script. Now the c environment variable is set by default in github actions and it's is set to true. And that's why so far our tests were always run without being in watch mode, right? So this was the only thing I wanted to change to, to explain here before moving forward. Let's clear the console. And now here we can also
+
+[00:16:22] upload the test results. So we can do that after the test. And we will also use the the upload artifact and we simply say upload test results. And then here the name, we simply say test coverage
+
+[00:16:41] and the results are under our React App and then the coverage directory. And now here we also need to add the dash dash and dash dash coverage here so that we output the results right. So here, um this will also run under the 14 artifacts React app. And then we will have the results available in the coverage directory.
+
+[00:17:02] We don't need this anywhere else in our workflow. We don't need to use the download artifact perfect. And the last thing I want to do here is to instead of just using this name here, very, very plain name and it is always gonna be called app, we can also define, for example, at the workflow level and environment variable that could be let's say build
+
+[00:17:24] artifact key. And this can then be defined as for example, app dash for. And then we can use an expression here. We will simply access the github context and we will use the sha here. So this will just append the shop to our app. And if we wanted to, we could actually
+
+[00:17:43] have a substring of the shop instead of the whole thing. But since there are no native functions on github actions that would allow us to get a substring, let's just use the whole thing here. If you wanted to, you could also calculate this within the test build jobs that is as an output and then
+
+[00:18:00] use this within deploy here as well, right? So use the output from the test build job. But then you would have to do a bit of like a small shell script here to to get the substring. So let's just use the whole sha and we will use this then build artifact key key here. And instead of passing this
+
+[00:18:20] to our, instead of passing the name here to our upload artifact, we can just access the context and then build artifact key and the same thing for our for our download, right? So we can also do the build artifact key and the test report key. If you want to test report key, that could also be the same, there would be test coverage
+
+[00:18:43] dash and then once again our github shine and you don't need to use the sha you could also use, for example, a tag that is perhaps it changes less often than the shop. But for the test report, maybe the sha would be relevant because we would like to see the report whenever we are making changes to the code. OK? So
+
+[00:19:02] these are just minor improvements here. And then here we'll simply use, instead of test coverage, we will use the N dot Test report key, right? So or let's just use test coverage key I just prefer to be consistent throughout the workflow. Perfect.
+
+[00:19:20] So let's save this and now we will commit this and push the the code. So let's once again, go back to the root directory and everything and then commit with whatever message you see fit. Once we do that, just remember here, we have changed a few things on the UI I haven't pulled it. So I'm just gonna pull with the rebase option
+
+[00:19:41] and then we will just once again push this right. So the if, if there are some changes here that or if the push is rejected for you, it's probably also because you did some changes on the UI and have forgotten to do a pull. And here with the changes that we have done a rebase is safe to execute. So we're just rebasing our commit.
+
+[00:20:01] So we don't add any new merge commit and then we are pushing the changes once again to github back in github under our workflows. Let's refresh the page. If we are not seeing the workflow that's probably listed on the top. Yeah, perfect. Um And then we can rerun the workflow here and let's see what are the results? Perfect. So everything was completed.
+
+[00:20:21] And if we scroll down a little bit, you will see that we have two artifacts that were produced. The first one is the app artifact. The second one is the test coverage artifact and now they are identified by the commit. Sha here which allows us to basically more easily identify and then retrieve these artifacts later on. Perfect.
+
+[00:20:40] So this was a great opportunity for us to, to practice a few things that we have already discussed in the past, including for example, defining some values that are used throughout the workflow with the end of context, using caching for dependencies and also then artifacts to upload, not only build files, but also test coverage reports.
+
+[00:21:01] I believe that's enough for our practical exercise. Let's then take a short break and come back in the next lecture.

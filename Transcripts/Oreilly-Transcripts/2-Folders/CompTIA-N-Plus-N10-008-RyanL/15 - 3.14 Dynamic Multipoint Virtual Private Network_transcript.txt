@@ -1,0 +1,55 @@
+[00:00:07] - So, if you're still with me, you're doing pretty good. We've talked about a lot of different network topologies. We've talked about different VPN designs. What I'm about to do is take everything we've talked about, and show you how we can combine all of these technologies
+
+[00:00:22] and come up with something really, really slick. If you feel a little bit shaky on some of the past topics, you might want to review them before we get into this. If not, let's go ahead and dive in. So we know the concept of hub and spoke. That's what we see here on the left. Of course, the three buildings would be the hub the spokes would be each of those routers.
+
+[00:00:41] With the hub and spoke VPN, if the hub goes down, everyone's offline. And it's also a bit sub-optimal because all traffic, has to flow through the spoke. It's one thing to look at it on a slide. It's another thing to do it geographically. Perhaps, my, headquarters,
+
+[00:01:00] is in Denver, but I've also got, a location up in New York City. I've got a location in Miami, and maybe one in Atlanta. So, these three routers are all in the East Coast, but if they want to communicate,
+
+[00:01:20] they've got to cross thousands of miles for every single packet, in every single direction. It's not the end of the world. This is something that we've always done, but there can be better approaches. Notice we've got the multiple branch locations. We take a look at this path selection. Everything goes right through the middle,
+
+[00:01:41] we're going to achieve, is direct spoke to spoke. This is what we want. Wouldn't it be cool if I could just go from New York City to Atlanta or from Atlanta to Miami? Well the problem here, think back to least lines. You had to purchase each one of these circuits and they had a monthly fee
+
+[00:02:01] and it took a long time to provision them. And every time you built another site, each of those sites had to have a new circuit, which would go to the other one. So for example to do full mesh, it would have to look something like this, right? And then if we add a new router, that router has got to connect to everything.
+
+[00:02:20] And then if you add a new router, that router has got to connect everything, see what a mess that starts to become. So, what we're headed for, is a slightly different approach. We want to get this direct, spoke to spoke communication. It's going to require some configuration. It may require fixed IP addresses. How do I get one site to talk to the other site?
+
+[00:02:41] We have to enter its IP. Well now I've got static IP addresses at each site, that gets more expensive. Doesn't scale well because every time I add another site, like I said, I've got to come in here and hard code everything. So, what are our alternatives? We know what hub and spoke is. We know what point to point is.
+
+[00:03:00] We know what full mesh is. Well Dynamic Multipoint VPN. This will, I think this is probably one of the coolest technologies we'll cover. It's abbreviated DMVPN. This one really changed the world. We know that full mesh, is like the ideal network topology, if we're not paying for it,
+
+[00:03:21] because everything can connect to everything directly. There's no chance of an intermediate device screwing things up for us. Well, DMVPN's goal is to achieve that. Let's talk about it. You're going to start off, with the traditional hub and spoke topology. Ignore those dotted lines. Those dotted lines
+
+[00:03:41] are VPN sessions, that are going to be established as needed. Notice our bullet point says that automates the creation of VPN connections. Our goal, is to enable spoke to spoke connectivity. This is what's going to move us towards a full mesh where any site can call any other site directly.
+
+[00:04:01] There's no need for fixed IPs here. This is what's so cool. In the old days, you would have had to put a static IP address on every site, and hard-coded your configuration. So think about this. If you've got fifty sites, you've got fifty routers, and this fifty routers have got a connection entry
+
+[00:04:20] for every other router. When you add your 51st router, you've got to go to the first fifty routers, and tell each and every one, about the new router. And then you go to your new router, and you tell it about the other fifty. Are you looking forward to doing that? (laughing) Probably not. You're like I thought networking was going to be way more fun than this. It is.
+
+[00:04:40] See with Dynamic Multi VPN, a Multipoint VPN, we don't need static IPs. What each of these sites does, is when it comes online, it's going to register with headquarters. And it basically says, 'Here's my public IP that I'm calling from'. It's almost like caller ID, and here's the private network
+
+[00:05:02] that I've got behind my router, and he goes 'He that's cool'. And he puts it in something called an NHRP database - Next Type Resolution Protocol. The next router comes online, and when it comes online, boots up, has internet access, it does the same thing. It's called an NHRP registration. It calls headquarters and says, 'Hey, this is just router B reporting in,
+
+[00:05:22] I want to let you know that I can be found here at this public IP address. And I'm representing this private range'. Each site does the exact same thing. What we basically do is run a routing protocol, across these links. And that ensures that every router
+
+[00:05:40] knows how to get to every other router. This scales really, really well. If I add five new routers, I don't have to do anything. I have to do a little bit of something. I add my one, two, three, four, five routers. I tell all of them how to get to headquarters. And the rest is history. As soon as they get to headquarters,
+
+[00:06:00] they register their sites. They're running a routing protocol. They learn about all the other sites. And in the event that I need to make a connection to these other sites, I can do so directly. So, there's a few components here. You heard me mention GRE earlier within the course, Generic Routing Encapsulation. And I said, this is really slick. When people tell me 'no, Ryan, you can't do that'.
+
+[00:06:22] I get a look in my eye, and I say, 'You know what? I bet GRE can.' And I break out GRE and I can do all sorts of wild packet stunts. GRE is typically used for a point to point network. This is its default mode, but it can also work in what's called a Multipoint Environment.
+
+[00:06:40] What you see here is Multipoint. You've got multiple remote offices, that are all reachable, out of that outside interface. So mGRE is just the way that we configure our tunnel interface. We say interface, tunnel zero. And then we say the mode should be Multipoint GRE, opposed to point to point.
+
+[00:07:01] Why? Well point to point is expecting an A to B type of relationship. Multipoint GRE is expecting a relationship that looks like this: Does that make sense? Think of point to point like that, just like a straw and it like there's, there's no possible way to add a third player to the straw.
+
+[00:07:20] The straws just got one, one device in each end. The Multipoint, now we've got multiple devices out there. So if you've never heard of Multipoint GRE before, not a big deal, this is typically what it's used for in production - DMVPN. Another protocol that's used in the background is Next Hop Resolution Protocol.
+
+[00:07:41] So that comes back to you. You already know this one. What was any NHRP for? Next Hop Resolution? Well, think about it. These are our two sites. If this is ten, three, three, zero, up there, and this is ten, four, four, zero, just for simplicity. If I want to get to ten, three, three, zero
+
+[00:08:01] from ten, four, four, zero, I say, 'Hey, I've got some packets for ten three'. We do an NHRP lookup to headquarters. I say, 'Hey, I'm trying to reach the ten three network'. I get an NHRP reply that says 'Go to this public IP'. At that point, I go to the public IP. I establish an IPSec session
+
+[00:08:20] and now ten four and ten three can talk, but we're not sending all that traffic through headquarters. Another component of this is IPSec. So mGRE is the style of interface. You know, we think about using ethernet as like a connection type. This is just a weird connection type
+
+[00:08:40] for building this style of network. What do we run on top of it? NHRP for resolving the other peers. Once I know where the peer is, what do I do? I call them with IPSec. This is the protocol that's being used in here. See, we've got that green dotted arrow, that red, that yellow dotted arrow. That's where IPSec actually lives.
+
+[00:09:01] It's responsible for protecting the data as it moves between the routers.

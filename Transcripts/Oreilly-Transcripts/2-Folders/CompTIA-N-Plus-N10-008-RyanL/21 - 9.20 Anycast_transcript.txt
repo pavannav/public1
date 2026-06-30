@@ -1,0 +1,51 @@
+[00:00:06] - All right, if you're still hanging in there you're doing really good. And as a special bonus for sticking around so long, I'm gonna show you something that I didn't know about, until maybe I was into networking for probably five or six years, and I'd worked on some pretty big networks.
+
+[00:00:21] There's this concept of anycast, so let's discuss it. This is the process of using the same IP address in multiple locations, that sounds completely crazy, multiple instances of the same IP. I mentioned that, DNS server 8.8.8.8, real easy to remember,
+
+[00:00:41] there's multiple instances of that around the internet. Each host does have a unique IP address. This is something that you don't wanna miss. So when we talk about an anycast, this is like an additional feature, that we can do in conjunction with normal IP routing. So if I wanted to participate in anycast,
+
+[00:01:00] let say I'm doing DNS, I would need a globally unique IP, because anytime I do a request let's say I go to Windows Update I wanna get the latest purchase, I have to have a unique IP, for any traffic that I source to be guaranteed to come back to me. So anycast is not useful for sourcing traffic from,
+
+[00:01:21] it's something that we listen on, we give ourselves an additional IP. Yeah, I've got an IP address it's my primary, but I've got the secondary one, and if anybody makes requests to that, then heck, I will go ahead and I'll answer it for them. So when we use anycast clients are routed to the nearest instance. Think about how big the world is,
+
+[00:01:42] think about even just America. When we look at the internet, the internet is made up of autonomous systems, ASs, which are basically clouds, inside of clouds. Each of these clouds have got their own routing table, they know what's close, they know what's far.
+
+[00:02:01] And they're trying to get people to the closest resources as fast as possible. So let's say that this is the West Coast on the left, let's say that this is the East Coast on the right, and let's say again, I'm down here in Tampa, Florida. If I try to ping 8.8.8.8, when it goes to my service provider, they might tell me 8.8.8.8, is over here in Miami.
+
+[00:02:21] Now meanwhile, if you were in California, say that you're in Los Angeles. If you were to try to ping 8.8.8.8, it's gonna come into your local service provider, and they're gonna say, "Wait a second, there is an instance of that in San Diego." So when you tried to get there, we didn't route you across the entire internet,
+
+[00:02:41] we just went and found the local, closest instance of 8.8.8.8. Now, what I struggled with the first time as I said, how can you have multiple devices with the same IP, and not have them conflict, right? Isn't there gonna be a collision there? Well, you can't have two devices with the same IP address,
+
+[00:03:01] in the same broadcast domain, it'll break things. Whenever one device ARPs, it'll get one answer. When another device ARPs, it gets a different answer. When those devices ARP later, 'cause the ARP cast time is out, maybe about five minutes, either the upstream devices could answer that could be problematic, who knows which server that you're talking to. Now, when the devices you're trying to reach
+
+[00:03:22] are on totally different networks, in different parts of the globe, the way that it works is, you take the IP address of that, anycast value, and we advertise it out, just like we do with a loopback, through a dynamic routing protocol. What's the routing protocol we use on the internet? BGP, right?
+
+[00:03:40] You can use any routing protocol you want so long it's BGP. So what we have is, with the example of 8.8.8.8, you've got many installations. There could be 50, we've got 50 different installations around the globe. As those 50 installations are advertising out, hey, 8.8.8.8 server here,
+
+[00:04:00] everybody hears it. BGP routers go, "Man, I've got 50 different ways to get to 8.8.8.8." Not a big deal, it's just gonna pick the best one, and every router, look at my, kind of (chuckles) my internet picture over here, it's a little embarrassing looking back at it. But think of each of these as a separate autonomous system,
+
+[00:04:22] Spring, NTT, Global Crossing, WOW, Frontier, Verizon, they're all different networks, and any of them that wanna have a copy of that DNS server, could add one locally. What's that gonna do, it's gonna improve performance for all their customers.
+
+[00:04:40] So anycast is just the idea of the same IP address, being used on multiple boxes, all around the globe. This is very, very common for creating resiliency, with domain name service, with DNS. So here's a little bit cleaner example of what I was talking about. If we take the DNS server 4.2.2.2,
+
+[00:05:02] this is a secondary IP on each of those servers. All those servers have a primary IP address. It's got to, that's how they do any communications that they source, they're gonna use a unique IP, to source their communications. That said, they have a DNS service, listening on, UDP=53,
+
+[00:05:23] on each of these systems, and should anybody ask a question, they're going to be able to answer, but remember that's a secondary IP. They also have a primary IP, which they use to contact each other and keep all their DNS records, synchronized and up to date.
+
+[00:05:40] So our DNS servers are communicating, with unique IPs. They're listening, and answering requests, on these anycast IPs. Show you one more example of it. If we pull up Firefox, and I'm going to look for the root DNS servers.
+
+[00:06:07] So in Wikipedia, it says here, a root name servers is a name server for a root zone, of the DNS system. Now if I highlight root zone, it says, the root zone is the top level DNS zone, in a hierarchical namespace.
+
+[00:06:20] So think of like, .com, .org, et cetera. If we go down here, there are 13 logical root servers that run the entire internet. Each of those root servers has a name, A, B, C, D, E, F, G, all the way through M, we can see who the operator, of those root servers are.
+
+[00:06:41] So A is run by Verisign, C by Cogent, E by NASA, et cetera. I don't know if they show us the server count here. Oh yeah, location and number of sites. So using anycast, that's what we're talking about here,
+
+[00:07:00] and you can see the number of sites. There's actually a root servers.org, here, and they do a little prettier representation of it. And you can actually, geographically see where those root servers are located. So when you're trying to find a particular IP, you get routed there based on your proximity,
+
+[00:07:24] isn't that cool? So what they're showing you there, E, D, F, J, those are the different root servers. There's 13 root servers, and here they are, A through M, if we look at J, this is Verisign,
+
+[00:07:40] it actually lives in 118 locations. So if we look at this IP address, 192.58.128.30, just a class C address, it really doesn't look like anything special, but that one IP, is used in 118 locations. Ain't that crazy?
+
+[00:08:00] All around the world. Not all of them are so busy, L is a busy one with 190. But if you look at Cogent, just 12, if you look at B, there's just 6 sites. M, just 6 sites. But like I said, J and L, both real busy. K, 75.
+
+[00:08:22] So again, this one IP address, is in these 75 locations. You will get routed to the closest instance based on where you're coming from.

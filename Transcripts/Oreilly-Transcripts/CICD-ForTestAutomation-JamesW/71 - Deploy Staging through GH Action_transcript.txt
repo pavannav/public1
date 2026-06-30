@@ -1,0 +1,59 @@
+[00:00:00] So let's now work on adding a new job that's gonna run our postdeployment tests. So this ro job is gonna run under the deploy staging job. So I'm gonna come down under there, I'm gonna add a new job and call it post deployment tests. So before we run this job, we want to make sure that the deploystaging job has happened first, we're
+
+[00:00:23] at a needs call here and we'll say make sure that the deploy staging job above is run first. We're also gonna want to only run this again when we're on the main branch. So again, I'll leave that, I'll leave that commented out for now, but we will remove that comment again because we'll only want
+
+[00:00:40] postdeployment tests to run when we're building the main branch. We wanna make sure that it runs on Ubuntu latest as we've been doing with all of our other jobs. So let's say, make sure that this job also runs on Ubuntu latest and let's go down and start adding in our steps.
+
+[00:01:00] So the first one that we'll do as usual is we'll just check out the code. So we do actions forward slash checkout at V four. The next step that we'll do is that we'll install playwrights. So we're gonna be reusing our existing end to end tests.
+
+[00:01:22] So let's make sure that our working directory is set to our end to end test folder. Uh And then let's add a run with a pipe. The first thing we'll do is npm CI to pull the dependencies and then we'll do MP X playwright install just to make sure we've got playwright set up
+
+[00:01:45] after that. The next step that we can do is run the postdeployment tests. So again, we want this working directory to be the same one, the end to end test one.
+
+[00:02:00] I'm just gonna paste that over there like so and this time we need to set an environment variable. So we did a similar thing as this to this with Jenkins. So we need to set a specific environment variable that's gonna make sure that we're pointing to the staging URL that we've previously deployed. So that URL is playwright underscore test underscore base
+
+[00:02:24] underscore URL and our staging environment, URL, the staging environment Euro. I'm just gonna go over to the browser and grab that. There's our staging environment you around, just paste that one in there like so,
+
+[00:02:42] so after that, we can do the wrong call again for the run or we can just say MP X playwright text. OK? So that's how we run our post deployment tests. We also, it would be good if we uploaded the playwright test report.
+
+[00:03:02] So we're gonna say upload postdeployment test report. So again, we want the report to always be uploaded, whether the step has passed or not, we're going to use the action and then the action is upload
+
+[00:03:20] artifacts V four. So V four of that github action and give it the parameters that it needs. So the first one is the name, the name is, we call it postdeployment uh Test oops test playwrights, let's say reports,
+
+[00:03:43] the path of that report that's gonna live in the tests, dash E two E folder, and it's gonna live in the playwright dash report folder. So again, if I just open up the tests E two E, it's the files that are gonna live in this playwright report folder here, this one over here.
+
+[00:04:02] And then finally, we can just specify the retention days. So the retention days we'll set those to 30. So again, after we've uploaded the report, we can also, so that's just gonna upload the artifacts. So another cool thing is that we can actually publish the report using github. So let's say publish post
+
+[00:04:21] deployment test results. Again, this one uses the Dawie forward slash test hyphen reporter at the one. And we'll say if always, because we always want this to be republished, even if we have a test fail, we'll say
+
+[00:04:43] the name of that report should be postdeployment tests, tests reports, the path of that report. Again, that's going to be in the tests, enter N folder, it's gonna be in our test results folder
+
+[00:05:01] and that's gonna be this one here. And then we're going to want to make sure that we get the uh results dot X ML XML. And then the last thing to say is the type of the reporter and that's the G slash JUnit reporter, ok. That should be everything that we need for our postdeployment tests.
+
+[00:05:24] So let's open up our terminal again, gonna add the changes, it say commit, message running postdeployment tests.
+
+[00:05:40] So we're still committing to the deploy staging branch. I'm now going to push up to that branch, push origin deploy staging. OK? Let's jump back over to github, just close this browser down. So it should be starting to build this pull request again. OK? It is that looks good.
+
+[00:06:01] Let's go over to the actions tab where we can watch that running through. So again, it's preparing to deploy to staging. So again, even though this is on a poor request, it should still do the deploy to staging and it should still run the post deployment tests because we commented out the check uh here where it checks for the main branch. So if this bill passes, OK?
+
+[00:06:22] And it does the deployment, we'll update um We'll put the comments, take the comments out and we'll put the checks back in to check that we're on the main branch. But let's see if this runs through. Ok, first. Ok. And so the workflow is finished, we can see the deploy staging happened and the post deployment test job ran as well.
+
+[00:06:40] So it went through all of the steps to run the post deployment tests. We can see as well. It generated the postdeployment test report here as well. And if I go over to the staging environment here, I can see it also added in new entries here to the bugs. So it actually created three new bugs, bugs as well when it ran through. So we definitely know that our postdeployment tests are running
+
+[00:07:00] just before we merge in this pull request. If we just go back over to the IDE. So we've just find the two lines where we're commenting out the main branch check. So there's one there on line 251 here as well on line 227 just going to uncomment those. So we want to make sure that we are definitely
+
+[00:07:20] uh only doing this when we merge into the main branch. So let's just add in those two changes, let's say get add dots, get commit minus M, we can leave the same commit message and we'll push that up to the deploy staging branch as well. And if we jump back over to github,
+
+[00:07:40] this is just gonna build once more. But now when this project builds this time, if we look at the github actions, it shouldn't do the steps where it deploys the staging. So it shouldn't actually deploy to staging this time. It should have checks to skip the deploy staging because we're not running on the main branch.
+
+[00:08:00] So then when we merge this PR into the main branch, after the checks have passed, ok, then it should do the deploy to staging. So let's just let this run through for a second and then we'll do, we'll merge the PR in and then we should see that go through, run through and then do the actual full deploy to staging. OK. So we can see that our tests will run,
+
+[00:08:21] but we can see as well that it skips the staging and the post deployment test, which is what we would expect. So what we can do now is we can go back over to that poor request. We can see that it's got the green check because it's all passed, all of the checks have passed this time. So now we can actually merge this poor request in. So that's gonna merge into the main branch here like so
+
+[00:08:44] and then if we head back over to github actions, we should see. Yes, another workflow is gonna get triggered here. So this one, this one again will run through the tests. But this time it should do the actual deployment to staging and do the postproduction tests or the postdeployment test for us as well.
+
+[00:09:02] So one more thing to add is that if we just go back over to our code base. Let's check out the main branch again and then let's make sure that we pull those changes that we just merged in just so that we've got everything up to date. Great. Ok. I'm just gonna let this run through. This should now run through and deploy staging and post deployment tests for us.
+
+[00:09:23] So, what we're gonna do now is we're going to do the final step, which is once the post deployment tests are run, we're gonna want to do our full deployment to production. So let's take a quick pause here. Then when we come back, we'll check that our uh the workflow path here, ok? And then we'll go ahead and we'll add in the final step,
+
+[00:09:42] which is doing the deployment to production through github actions.

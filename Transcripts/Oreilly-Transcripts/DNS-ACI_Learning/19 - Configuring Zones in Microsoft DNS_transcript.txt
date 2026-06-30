@@ -1,0 +1,221 @@
+[00:00:00] &gt;&gt; Welcome to IT Pro Tv, I'm your host Don Pezet. [CROSSTALK] &gt;&gt; You're watching IT Pro TV. &gt;&gt; Welcome to another great episode here at ITProTV. I'm your host Wes Bryan and on today's episode we are continuing through our DNS tech skills and we're going to be dealing in the realm of Microsoft and
+
+[00:00:22] joining us in our endeavors is none other than Don Pezet. Don, how you doing sir? &gt;&gt; I'm doing great Wes. Ready to dive right back into Microsoft DNS and redeem ourselves for the last episode. Because in the last episode we set up the world's lamest DNS server, because all it was, was a caching server. We got it up and running. We saw some options.
+
+[00:00:40] We saw some of the things we need to do to get a Microsoft DNS server up and going. But man, it isn't doing anything. We need to really get this thing set up and going, right. So that's what we're gonna do right here in this episode. We're gonna take a look at forward look up zones and reverse look up zones and see how they work, how they function, and how we create the records inside the DNS server. And then, we're not a caching server anymore.
+
+[00:01:02] Now we're an authoritative name server for one of more domains and that's where the power is. So that's what we're gonna do right here in this episode. So let's get started. What I'm gonna do is I have a domain, itprotvdemo.org, and I need to host it somewhere. I'm gonna host it here.
+
+[00:01:20] I've got these servers. They've got some public IPs on them. So why not? We'll throw them out there and we'll get them hosting this zone. Now I need people out there in the world to be able to say, hey. If I want to find out where itprotvdemo.org. Or, you know? Find the headers in there. I need to go and ask a DNS server for the answer. So I need to tell this server that it's okay to answer for it. That it's okay to be authoritative for that zone.
+
+[00:01:41] And the way we do it is by creating a forward lookup zone. So in my DNS manager, where we're gonna set this up, and let me just run through this, there's different ways to get to the DNS manager. If you're in your server manager already, right. When you login to Server 2016 it launches the server manager automatically. In the server manager, you can go to your tools menu up top.
+
+[00:02:00] And you can go to DNS, right. So, that's one of the quicker ways to get there But if you like me and you constantly close the server manager and forget about it, you can just go into your Start Menu. And in your Start Menu, you'll find a folder in here called Windows Administrative Tools. And when we go into Windows Administrative Tools, you'll find DNS and there also.
+
+[00:02:21] So either way, we'll get you right in that DNS management tool. And you'll be able to manage your stuff. Which is kind of useful. So I'm gonna go into my server, and just as part of the GUI we're gonna see forward and reverse lookup zones that already show up as a folder. But they're empty. Right? And remember sometimes there can be hidden objects in these things, so I'm gonna go up to view and turn on the advanced view.
+
+[00:02:42] And I'll see that it's still empty even if I refresh it nothing special there but I'm going to to turn off the advance menu for now, cuz I want to show you something a little bit later that will come into play. But for right now, I just don't have any Forward Lookup Zones that's why I'm a caching only server, I can't answer anything authoritatively. If you right click on Forward Lookup Zones, you can create a new zone.
+
+[00:03:03] Now for those of you coming from the bind world or Power DNS or whatever. You know the truth. You know that there is really no difference between forward look-up zone and a reverse look-up zone. The only difference, really, is in the records. In a forward look-up zone, we create records that map a name to an IP.
+
+[00:03:21] And in a reverse look-up zone we create a record that maps an IP to a name. But the way the zone works is identical. It's, whatever's on the left resolves to whatever's on the right. It's just backwards in a reverse lookup zone. So in other DNS servers, they don't separate between Forward and Reverse. But Microsoft does because the GUI is a little bit different,
+
+[00:03:42] based on what we're doing. And it's because it's a graphical tool. If this was a command-line only tool, we probably wouldn't differentiate there either, all right? But I'm going to come in and create a Forward Lookup Zone, and when I create that zone it's a pretty straight forward process. I really just have to tell it the domain that I'm going to be handling. Now, on the very first set up screen here that I get to, I get a choice.
+
+[00:04:03] Right? And, you may have one or two or all three of these options, some of them might be grayed out, like my Store the zone in the Active Directory option, way down here at the bottom, is grayed out. I can't click it, right? But the other options are lit up, and I can choose them. Now, what are each of these?
+
+[00:04:20] Normally, you're going to be creating a primary zone. A primary zone means, you've got the main copy of the zone and you are the authoritative server for. You're the head hunter, you're the one who's in charge, all right? But if there's already somebody in charge, you might just be a replica. I'm gonna hold a copy of that zone.
+
+[00:04:41] And if I hold a copy, them I'm a secondary zone, okay? A primary and a secondary, in Bind terminology. Which all of this is based on Bind, right? The Berkeley Internet Name Demon. The service that is used as the reference for the DNS infrastructure. They use the master/slave model, right?
+
+[00:05:00] So you have a master server, and all the other servers are slaves. Well, that terminology is not really accepted by most people these days. And so Microsoft has just renamed that as primary and secondary. But on the back end it is 100% completely compatible with BIND. So I could have a primary server that's BIND And a Microsoft server that's a secondary off of it, that's a slave to the BIND master, right?
+
+[00:05:22] Or the other way around. I can have a Microsoft server that's primary and have a BIND server that was a slave off of the Microsoft server. And I can even mix and match where I have some BIND slaves and some Microsoft slaves, cuz they're all completely compatible with each other. Microsoft In a rarity, completely conformed to the standards on that one when they set it up.
+
+[00:05:41] Well, we'll see where they break that here in a minute. But, that's the Primary and Secondary right there, it basically setting it up for replication. If this is the first time I'm creating it, then I'm gonna be the master for that zone, and I would choose Primary zone. There is a third option here which is Stub zone A stub zone is where I create a domain in here, but I don't actually host it.
+
+[00:06:03] Instead, I have entries in that zone that point to name server somewhere else, right. So I kinda use it to like forward to somebody else. See how it says a server containing a stub zone is not authoritative for that zone. I'm not authoritative, I can't answer for the A records and
+
+[00:06:20] things that are inside of it. I'm answering for name servers to override for that domain. &gt;&gt; Don, you briefly explained in another episode when you got DNS installed here that you would just if it's caching server you can also forward over what would be a difference using the forwarder and using the stub zone if you are pointing to somebody that is authoritative?
+
+[00:06:41] &gt;&gt; Sure, the forwarder, that forwards everything, right? Maybe I just want to forward one domain. A regular forwarder can't do that, right? So when I come in here, I can. For example, let's say that this is itprotvdemo.org, right? Well our main domain is itpro.tv and we have a different DNS server that manages that.
+
+[00:07:02] Maybe I've got a VPN tunnel that connects it to. Right. This can be two separate companies for that matter. Right. We got a VPN tunnel and data DNS server right on the other side of the VPN tunnel. Wouldn't it be nice if when I did a DNS look up for admin and instead of going out to the internet and using public servers that might have potentially poisoned caches because of internet attacks.
+
+[00:07:20] Instead if I forward the DNS lookups over the VPN tunnel to their internal DNS server so I knew I was getting something good, clean and safe. Right, you can do that with a Stub zone. I can put an entry in there and instead of going out to the internet where the name servers will be listed with public IP's I could override the name servers And put private IPs that were on the other side of that VPN tunnel.
+
+[00:07:40] And I'm just redirecting their domain. Everything else might still be using a forwarder and going out to Google, or whoever I'm using as my servers whoever, right? But that one domain would now get forwarded over to the other side It's not a standard zone. That's actually a kind of Microsoft implementation, but Bind and the other guys they have something similar they can set up which are actually
+
+[00:08:00] called stub zones there too, they're just set up a slightly different way. Now the last option, store the zone in the active directory.Plasmapheresis As long as we're maintaining Bind capability, that's gonna be grayed out, right? And also I'm not a domain controller. I have to have an active directory to store something in the active directory, and this machine is not a part of one. So I don't have the option so it's grayed out there too. In the Bind world your primary and secondary servers
+
+[00:08:23] maintain the DNS configuration in a text file right on the hard drive. And Windows Server will do that also by default. And the primary is where you make changes and it replicates after the secondary so the secondaries are effectively read only, right? You can't make a change on the secondary. But, if you've got the Microsoft Active directory in place, and
+
+[00:08:42] this is a domain controller, you can check this box. And your primary zone will get stored in the active directory instead of a file on the hard drive. You're still compatible with Bind, you could have Bind slaves. But if you have other Windows servers, they can see the DNS zones
+
+[00:09:01] through the active directory, replicated in time with the active directory. &gt;&gt; In other episodes you've showed us how you can configure replications, Don. I can only assume here that if it's a stored in Active Directory, do you get the benefits of the multi-mass to replication that Active Directory does? &gt;&gt; Absolutely, and so technically, replication is already set up, right? I don't have to set it up.
+
+[00:09:20] Once I bind that into the active directory, now it replicates alongside it. So I'm going to any domain controller in my organization. I can add the DNS roll, and all of my zones will magically appear. And even better, its multi-master like Wes said. I can make changes on anyone of them and then it'll replicate it because Active Directory sorts out conflicts.
+
+[00:09:40] Bind in the old file structure, it just uses a serial number, and it has no way to resolve a conflict. If I make two changes at the same time on two different servers, it can't figure that out, Active Directory can. So you get a lot of benefits with that Microsoft environment. But if you bring in some Bind slaves or whatever, they can't deal with that. They can replicate it, they get the one way, but you can't make changes.
+
+[00:10:00] You can't participate in the multi master model. So if you're an all Microsoft shop storing in the active directory is great. It really does make things easy. You can spin up new DNS servers super easy. But in the traditional world we do primaryies and secondaries. So I'm going to do a primary since this is the very first one, and we'll deal with replication in the next episode. Now I'm going to create a zone. Mine is going to be itprotvdemo.org right?
+
+[00:10:22] So we just type in whatever domain name it is that we're trying to be authoritative for. And then it's gonna create a file on the hard drive to store this. Now if I chose an active directory, it wouldn't ask me this. It's not gonna go in a file, it's gonna go in the AD. But in the standard mode, it has to be stored as a file.
+
+[00:10:40] And it gives you a recommended file name. You can call it whatever you want. Call it bob.text, who cares? It just needs to be a text file. And that's how it's gonna read and write. And it's 100% compatible with Vine. So I can take this file and open it up in a text editor. And see what's inside of it. &gt;&gt; Now I've also noticed, too, in other episodes. When we've been looking at Vine, Don. That there's that trailing dot there that represents the root.
+
+[00:11:00] And I don't see it present here in this file name. Is there a reason behind that? &gt;&gt; Well, this is just a file, right? So that dot normally represents the root servers, and a file doesn't have a root server, so we don't need it there. But I didn't put the dot back here either, and that's because Microsoft does it for me. This is all kind of designed to be as easy as possible.
+
+[00:11:20] So if you put the dot it's not a big deal. Like I say, itprotvdemo.org dot, and if I move forward to see it was happy with that too, Microsoft accounts for that. Bind Unix and Linux, not very forgiving operating systems are they. They expect you to know what you're doing. And God forbid the network admins knew what they were doing, right? Microsoft says, hey, the network admins may or may not know what they're doing,
+
+[00:11:41] and we'll allow for that. So it's just kind of keeping us clean there. Now I mentioned Bind compatibility more than once. If I have a zone that was on a Bind server. I can actually take the zone file from Bind, and copy it right over here, and import it in. I can use an existing file and point to it. 100% compatible, it'll load them right up and off you go.
+
+[00:12:01] It's a really easy to migrate one way or the other, to migrate to Microsoft, which is what they want. Or migrate away from Microsoft which is what they don't want, but it's very easy to do both. All right, on the next screen it's gonna ask me something kind of important. If I am deploying this and I want it to be a true DNS standard server,
+
+[00:12:21] then I don't want what I call dynamic updates. Dynamic updates are a feature that was released about ten years ago, maybe a little bit longer, that originally was really popular in the Microsoft World. But now it's stretched out to other environments, so it's used by a lot of different people now. But what it does is it says hey, it's hard to maintain DNS records.
+
+[00:12:42] That every time I add a new computer to the network, I don't wanna have to go and create a record for it in DNS. It's just very time consuming. So, what if we had machines make their own record, right? I might have 1000 laptops, and I have a DHCP server for them, so their IPs are constantly changing. Wouldn't it be nice if when a laptop got a new IP,
+
+[00:13:03] it reached out to DNS and updated it's own record. Now I didn't have to do it, it's just automatic. They dynamically update their records, that would be nice. It would also be a security concern. Do you want to allow everyone from your network to be able to write to your DNS zone? That would be bad, so when you look at the options here and
+
+[00:13:20] saying, do you wanna allow it? And then if you do, do you wanna allow non-secure and secure updates? In other words, when you're allowed even unauthenticated users to update, that's not good. Or do I wanna require secure dynamic updates? And notice that security dynamic updates are grayed out. It only works when you're Active Directory integrated.
+
+[00:13:40] Because Bind in the official DNS standard in the, not the RFC, I don't know, whatever the heck the standard is for DNS. Maybe it is RFC, but whatever. It doesn't actually provide a method for authenticating for doing dynamic updates. It does provide a way for doing dynamic updates but it doesn't provide a method for authenticating it.
+
+[00:14:01] And so Microsoft put a proprietary way on there to solve the problem. But it's proprietary, it's not a standard, and so that's why it only works with the active directory. &gt;&gt; You said as far as a non-secure update that would be bad. And I'm thinking, and you can correct me if I'm wrong here, Don. Are you talking about a poisoning of your zone file, or
+
+[00:14:20] just false records getting in there? &gt;&gt; Yeah, both, really, if you allowed non-secure updates I could take a laptop and I could spoof my laptop's name. Give it the same name as one of the servers, right? Now on a Windows box, it would go nuts. But on a Linux box, it doesn't care. So I could take a Linux box, and give it the same name as a server.
+
+[00:14:41] Push an update to DNS, and overwrite the server's value. And now, everybody trying to get to that server comes to me. And I can fire up a protocol sniffer, and start capturing all that traffic, and going crazy, having a lot of fun, right? You could override any kind of value like that, that would be the type of problem you have, you could poison the DNS cache. There's all sorts of crazy things that you could do from there.
+
+[00:15:00] You can poison the cache without writing a record. So there's different ways to do stuff like that. But that's the big risk we have there. So it's not recommended that you do non-secure unless you have a completely trustworthy network where you control all the equipment. But even if you control the equipment, you don't always control the people behind them. So it is a good idea that either go secure or not allow dynamic update. That's what I'm gonna do is I'm not gonna allow it.
+
+[00:15:23] All right, after that I just get my little summary I can finish. And now I'm the proud owner of a new itprotvdemo.org zone. Once I've got a zone, it's not incredibly useful until I start to create some records inside of it. Now, if you watch the other DNS shows that we filmed. I talked about the standard format of a zone file, and
+
+[00:15:41] there's three things that are required inside a zone file. There's the default time to live, the start of authority, and technically two name servers, but at least one name server to get by. So, this new zone that just got created, there is a default TTL that Microsoft sets. It's hidden from the screen.
+
+[00:16:00] And then here's the start of authority and here's my first name server. So it's giving me the bare minimum for the zone to get it operational. But there's plenty of other things that I can tweak and change. If I wanna modify this start of authority, I can. You'll notice that it kinda sets a default administrator that hostmaster.itprotvdemo.net.
+
+[00:16:21] Actually mine own server is dns1.itprotvdemo.net not .org, the zone is .org. You know what, I might want to change that or my primary DNS server which is showing that .net address, maybe I want to change that. There's different things been going here to modify. Now normally in this screen we're modifying the records that are in here. The name server in start of authority, you're not supposed to modify right here.
+
+[00:16:42] If you pull up the properties of the zone. So if I go in here to properties, here is where we change the zone file name. You can change your dynamic updates. If you change your mind, and you want to switch later on, you can set those. You can change, see how mine's a primary? And if I chose not to go in the AD,
+
+[00:17:01] I can change my mind later and move it into the AD. And so I can change that, and you can even move it back again, take it out of the AD and put it back in a file, you can go back and forth pretty easily. Here I've got my start of authority, and here's where I can change those values. My serial number, my primary server, my responsible person. Maybe I wanna make this admin, @itprotvdemo.net, right?
+
+[00:17:21] So you put that in, and see how these do have the dots at the end? Because in the start of authority file, you're supposed to have that. It did it for me, but now I see them. And my other values that need to show up, my Refresh interval, Retry, Expire, Minimum time to live, each of these different things that are in here. And the time to live for this record itself. So I can manipulate each of these. I can easily increment that serial number.
+
+[00:17:42] It will increment it for me as I make changes, which is an improvement over bind, where you have to do it manually. And as far as the name servers, they're defined right here. I've got just one name server. I might want a second name server. So I can add in another one, like DNS2.ipprotv.demo.net. And I can drop that one in, so there it is.
+
+[00:18:03] And now I've got it, too, right? I wonder why it didn't resolve itself. That's kinda interesting. Well, there we go. All right, so I see it. Again, I have a local IP that's also mapped to a public IP. So see how it detected multiple IPs on itself? Versus this one where it just got the public IP so
+
+[00:18:20] that's why it's kind of wonky there, but I'll leave it the way it is. So once that's set up now, I've got these DNS servers in place. And, I could continue to add more if I needed to, and I could go ahead and finish out. &gt;&gt; And, Don, in other episodes, like for instance, with bind you were doing all this through a text file, is that essentially what the gooey front end is doing for us if it's following bind, if Microsoft is following bind,
+
+[00:18:40] it's adding those entries or modifying what's in that file? &gt;&gt; Absolutely. Yeah, it is creating a text file in the background. Let's create a few records, and once we get some records I'll go and show you that file so you can see it, it's actually looks kind of neat. Do be aware, though, that Microsoft does all this in ram. And then it writes to the file when it gets a chance. If the server's really busy, it might not write to the file right away.
+
+[00:19:00] So if you jump over and check the file out too soon, sometimes it doesn't have the data. You just wait a few seconds. Bind is the exact same way. NSD is the same way. They all do that. They all deal with stuff in ram first, for speeds sake. And then write to the hard drive when they have a chance. All right. So I want to create some records in here. It's not a lot fun without any records. Our standard records are things like A records, AAAA records, MX records.
+
+[00:19:24] Those are all things we need to create. The best part about doing this stuff inside of Microsoft Server is we have a GUI. If you right click on a zone, you'll see where you can create A records, CNAMEs, MX and so on. And if you go down here to "other new records," there's even more that don't
+
+[00:19:40] show up here by default. Let's create a few standard ones. So for example, I might want to create an A record for dns1, and I don't have to type the domain names. See how it's doing it for me? dns1.itprotvdemo.org and I can come in here and set that up and put it in with an IP that maps to that server.
+
+[00:20:00] I just have to remember what my IP is which is [LAUGH] 34, that's the hardest part of this is figuring that out .193.44.23, right? So I'm gonna punch that one in and I'll add that host. And then, I can add another one I'll do DNS2. And I'll punch it in, which is 34.193.248.100.
+
+[00:20:21] And I'll add that one, too, all right? And there's a super annoying window that pops up telling you it was created. The reason it does that is when you hit done, it lets you create more. It doesn't close the window. So they just have to give you some kind of confirmation. It annoys the heck out of me. Alright, but now I've created those two records, I've got a few A records. Now, I might want to create other records that are aliases.
+
+[00:20:42] So for example, I might want somebody to be able to go to www.itpprodemo.org and I want them to get a website, but I haven't set up a web server yet. So maybe I'll throw in an alias here. I'll just do a CNAME. And I'll do www. And www.itprotvdemo.org is gonna point somewhere.
+
+[00:21:01] Where is it gonna point? I'm gonna have it point to showmemy.info. That's our little website that shows you where your IP address is. So, by hitting this address, we'll get the website rendered from there. So, I'll go ahead and just punch that in, and hit OK. And now I've created a CNAME, an Alias that's gonna point to it.
+
+[00:21:22] Other things I might create are MX records, so if I wanna go in here and create a MX record, I can do that. I might have a mail server, no, actually before I create the MX record, I'm gonna have a little bit of a problem here. An MX record needs to point to a host. So I need an a record to go alongside it. So I probably need some mail servers set up before I get too far.
+
+[00:21:42] So if I come in here and create some A records, well, then I can have those. Now, before I do that let's back up even further. Every time I've created one of these records you've probably noticed the option it had to create a PTR record at the same time. When you create the forward record you can create the reverse one. So, let's see that. Well, I can't actually do it because I don't have a reverse zone.
+
+[00:22:03] So if I did it right now I'd get an error. I need to create a reverse lookup zone before I can really do that. So I'm gonna create a new zone and when I move forward it's gonna ask if I'm creating a primary, secondary or stub, just like before. I right clicked on the reverse lookup zones, not on the forward lookup zones. Here it looks identical,
+
+[00:22:20] but where it starts to get different is on this next screen. Am I reversing IPv4 or IPv6? I'm doing IPv4. And then what's my network ID? And here's where you can punch in as many octets as you want. And one of the annoying things about reverse lookup zones is you have to flip the IP around backwards, and it's a pain. Here, you can just type it in forwards, and Microsoft will reverse it for you.
+
+[00:22:43] So if I type in, let's say I wanna do 192.168.0, right, my private range. Down here you can see where it made it, 0.168.192 and it flipped it around for me and it added the in-addr.arpa, that's the official naming structure for our reverse look up zone.
+
+[00:23:03] I don't have to remember that because the GUI does it for me and you don't have to put in all the octets, I could just say 192, like that, because I might have a ton of networks. I might have 192.168, 192.169, 170, all of those are part of the, no they aren't.
+
+[00:23:20] What do they, it's 192.168.0, all the way through 192.168.254. So I might wanna do 192.168, and stop there. So I get all of the private class Cs. Or I might do, it's harder with a 172. So if I do 172.16. Well, there's 172.17, 172.18. I would have to add each of those in separately.
+
+[00:23:42] Or I could just do 172. It will get all of them. But it will get. Public 172 is also and that it can be a bit of problem sometimes. Cause you're doing a reverse lookup for a public zone and this server will think it's authoritative and not be able to resolve this anymore. So be careful, you don't want to go overboard with this, if it in this class, hey you can just go Ten, right?
+
+[00:24:00] And that'll get the whole private range. There's no need to provide any other octets. But I'm gonna go ahead and do 192.168.0. And when I do the mail servers, I'll set them up in an address in that range. As I move forward, just gonna create the files, there's that file name. And I can pick whether I want dynamic updates, which I'm not gonna do. When I finish up now, I've got a Reverse Lookup Zone.
+
+[00:24:21] And there's not much in here, the SOA and the nameserver, so you have to have those. And now, when I create my mail server records, I'm gonna create these two A records. So, I'm gonna go in here and create one. This'll be mail1.itprotvdemo.org. I'm gonna make it 192.168.0.2. And I'll create the associated PTR record at the same time, all right?
+
+[00:24:43] And I'll add that host, and then I'll do mail2, and I'll make it 192.168.0.3. Create the PTR at the same time, and add that one in also. Now that they're done, I've got my A records. And if I go to my Reverse Zone, they're not there.
+
+[00:25:00] Well, I need to refresh, right? So, we refresh the screen and there they are. It made the reverse lookup, so, it maps the IP to the name. And remember, you can have more than one IP address tied to a server. So, maybe, I've got a file server. And the file server has multiple NICs in it to get some extra bandwidth, right? So, I might have files.itprotvdemo.org, or file whatever, whatever I call it.
+
+[00:25:23] And it might be 192.168.0.4. And did I call it file or files? I got myself mixed up. File, all right. So, I'm gonna call it file and it might also be 192.168.0.5. We got two IPs, all right? And when I do that, I now have two entries for file.
+
+[00:25:42] Now, if you know the file structure, when you write a BIND configuration file, you leave the name off of the second record. In the GUI, it shows it. When we look at the file later, it'll actually be correct. But in the GUI, it shows it to make it easier to understand. So, I could add more, I could even add IPv6. Now, I didn't create a Reverse Lookup Zone for an IPv6 range.
+
+[00:26:03] So, if I go and create one of these that are IPv6, so, I'll do file again. And I punch something in like this. I'll just make one up, I'm not very good at making those up. So, I'll punch one of those in, and if I choose the Create the record and hit Add Host, it's gonna add the Forward lookup, but
+
+[00:26:20] it won't be able to add the Reverse. So, I get an error about that, and I can just say OK. It did create the forward one, right? It just didn't create the Reverse one cuz there was no zone. Which means if I add the zone later, I'll have to manually create that record. But there it is and I've got all of those entries with the same name, all right? And that's perfectly fine. Now, the whole point is that I tried was I wanted to add MX records, right?
+
+[00:26:40] So, I need to go over and here right-click my zone and choose to create New MX records. And when I do that, I can come in here and the host you wanna leave empty. Cuz it's the domain, itprotvdemo.org. And if you leave it empty, that's what it is. And that's what it's telling me here in this message. And then down here, who is the server? And I can type in the name if I know it. Or you can hit browse.
+
+[00:27:00] And you can actually browse all the zones that are on your system and find the server that way. Cuz the mail server might actually be in a different zone. So, this makes it easier to just browse and find it and get it added. But if you type it, same thing. And we do have to set a priority. I'll give that one a priority of ten. I'll give the other one a priority of 20.
+
+[00:27:22] And I'll just type it cuz it's faster sometimes. I say that and then I'll screw it up, but I'll give that one a priority of 20, and we'll create that one too. So, now, I've got my two, shoot, and see, then, I screw it up. After telling you guys to leave that domain name empty, I typed it in and it's not gonna let me fix that either, I have to delete my record.
+
+[00:27:40] Should have just browsed, that's what happens when you get me involved in the process. So, let me create that one again. It was mail2.itprotvdemo.org. All right, there we go. Now, I got my two records. It's taking the time to format those properly, to lay out the priority as
+
+[00:28:02] part of the name that gets resolved until it gets tucked away there. And it's pointing at the servers up there like I want it to. There we go, we've got all our records, right? There are other records we could create. The episode is only so long, so, I can't go into all of them. But if you ever get bored, go in here and go to Other New Records. When you right-click on the zone and choose Other New Records,
+
+[00:28:20] you get the full list, you get everything. And so, in here is where we will start to see some of the DNSSEC records and some of the other really neat stuff. &gt;&gt; Is this where we would see if you needed to send an SPF record, would we see these in the record share as well? &gt;&gt; Yes, SPF records, there is an actual record called an SPF. Those are obsolete, you're not supposed to use them anymore. But you create text records that store your SPF values, right?
+
+[00:28:42] And I didn't have that option, but if I go in here, whoop, no, that's Next, not Text. There we go, Text. Next, Text, pretty close. There's Text, right there, T-X-T. So, I can choose it and I can add that record in. And in fact, SPF doesn't show up in the list. Cuz it is obsolete, you're not supposed to use it. So, Microsoft's taking that out, apparently. But you'll see some of these other ones like WKS records and
+
+[00:29:02] RT records that hardly anybody uses. But they are a part of the standard. So, Microsoft includes them so you can make them. But you'd add in a Text, and that's where you'd go in and you'd put your SPF record and all that other things. So, any other special records you can do right from here, right? Worst case scenario, you could always go and edit the file itself and load them,
+
+[00:29:20] but then, the GUI will start to freak out. So, if you start doing that and managing the file directly, you're not really supposed to use the GUI anymore beyond that. Okay, so, I'm in good shape. I mentioned I was gonna show you the file that's being created. This whole zone is being created. It should be working when you take a look at the file. &gt;&gt; All right, now, I'm gonna test myself here because we've done a few of these episodes together, see if I can remember my BIND format.
+
+[00:29:40] When you leave that MX record, the domain blank. I'm guessing, is it gonna put the at symbol inside of the BIND folder like it did in previous episodes what we've seen? &gt;&gt; You know, I don't remember with Microsoft. Cuz the at symbol is an alias. And whenever I type it, I do that. I put the at symbol in there to refer to the domain that you're in. But Microsoft, they might actually write it out for us.
+
+[00:30:01] I do it to save typing, and so, it makes sense for me. But this is the computer. It makes no difference to it. So, let's find out. We'll go and pull that up. The file gets stored on the hard drive, and if you drop to your hard drive, it gets stored in kind of a weird place. It's in C:\Windows\System32\dns.
+
+[00:30:26] So, if I browse into that folder, C:\Windows\System32\dns and I take a look in there, I'll see a few files. That's where my dns.log is stored, the DNS CACHE, right? My cache is starting to creep up in size, I'm at three kilobytes now.
+
+[00:30:42] You had a backup of your zones that it maintains as changes occur. It's got my Reverse Lookup Zone and my Forward Lookup Zone. And those are just straight up text files ready to be used and you can even copy them over to BIND or whatever. If I open one up, I'm just gonna use Notepad. And I'll open up itprotvdemo.org.dns.
+
+[00:31:03] And we fire that up in Notepad. If you watched our BIND episodes, this should look pretty familiar, okay? I've got my SOA right here at the top, and all the little subvalues that fall underneath it. And see how my serial number is all the way up to 18? I haven't incremented that one single time this whole episode.
+
+[00:31:20] Every time I made a change, it incremented it for me and bumped that up. And as I look down here, I'll start to see my other records. And it did use the at alias for the name servers. And for the MX records. It used the at alias, which is what I would use to save on typing. So, it did that. All the other entries are pumped in here. And it did nice little formatting. That extra tabs and things.
+
+[00:31:41] If you watch my BIND shows, I get a little particular about how I arrange this stuff, so, you've seen them. Notice how file, it is listed with the name only one time. Even though the GUI showed it every time, here, it is listed where it's only one time. So, it's in the proper format to be exchanged with any service that supports it, and unbound, no, not unbound.
+
+[00:32:00] Sorry, that's the one that doesn't. NSD Bind, Power DNS, and Microsoft's DNS, they all share this format in common, so you can easily move this between those servers and it'll fire right up. All right, that's the forward lookup zone. Let me open up the reverse lookup zone. The reverse lookup zone was sitting right there in that same directory.
+
+[00:32:20] I'll just use Notepad to open it also. And here's the reverse look up zone. It's less exciting, right. We still have our SOA up there at the top. But then when we get down to the zone records, here's the PTRs. And see what this is. 2, 3, 4, 5. It's because it's in the 192.168.0 zone, right. Which is defined by the file name where that was loaded into the zone.
+
+[00:32:43] But down here we can see each of those records pointing to mail or file or whoever does it point to. There's only two entries for file, because this is the IPv4 zone, not the IPv6 zone. The IPv6 zone I didn't create, and so the IPv6 address is left off of that server.
+
+[00:33:01] But otherwise it is up and running and I am serving my entries. If I were to fire up a tool like NS lookup and switch the server over to myself, let's see, if I type it right, I can connect to myself and I should be able to look up any of those like mail one
+
+[00:33:20] dot itpro itprotvdemo.org and I get a result. Or www, remember that was the C name, it resolves it. It actually mapped out that C name to show me my dot info and exploded that to get the actual IP and we're [INAUDIBLE] so all that process happened.
+
+[00:33:43] If I set my type to MX I can say give me the MX records for itprotvdemo.org. And it returns my mail servers. And if I, let's see, set type-any. And I pull up file.itprotvdemo.org.
+
+[00:34:02] I can look that up and I get the IPv4 and IPv6 address, all returning right back to me, the A and the AAAA records all coming back, we're up and going. So creating zones, super simple thanks to the GUI unless you need to make hundreds of entries or thousands of entries, if you need to make bulk of entries, you're not gonna like that GUI very much, right?
+
+[00:34:22] And that's where we go back to editing the file directly or using PowerShell commands to load that in. If you wanna edit the file directly you've gotta stop the DNS server first, go back into your tool and right click on the server. Go to All Tasks And stop.
+
+[00:34:41] Stop the server, which takes it offline and kicks everybody out. Everybody now hates you, right? And you get in there. And you make all your changes. Then you can start the server back up. And it will load them all. And you've got them in play. So if you do bulk changes, sometimes that's faster. You can make typos. And there's no syntax checker in Windows, so you've got to get it right. PowerShell's a little bit better because there is a little bit of syntax checking
+
+[00:35:00] that happens and you can automate things faster, but definitely beyond the scope of what I can cover in this show. But something to keep in mind you're in bulk DMS changes. &gt;&gt; Still a lot of great information on getting those zones configured and up and running. In fact, I thought it was kind of fascinating to see the The file underneath, you'd still see that bind structure. Well done. You've already mentioned it. It does look like we're coming to the end of another episode.
+
+[00:35:20] But do you have any additional word you might like to tell our viewers? When it comes to configuring your zones inside a Windows environment? &gt;&gt; There is a good bit more to this. I'm just covering what I can in 30 minutes. But if you're doing things, like, dynamic updates. Understand that there's a whole permissions infrastructure in there that you can view. If you switch to the advanced view inside of the tool.
+
+[00:35:41] And even on our regular records. When I created my A records. It never asked me about what Time- to- Live I wanted. You could override the Time-to- Live for a record. But let me just show this real quick. I know we're out of time West. But let me show real quick. Cuz it's kind of important. If we take the dns1 record that I made here. And I double click on it. I can change the name of the IP.
+
+[00:36:02] I can't change the time to live, right? But if I go up here to view and advanced, a lot of stuff starts to show up that wasn't there before. And so I usually stay in the advanced view all the time. And when you go into it now, I see the three values I did a moment ago. I also see where I can set whether the record becomes stale if it gets deleted I
+
+[00:36:21] can over ride the time to live just for this one record. You get a lot of the extra values in here that you can modify. So don't forget the advanced view. It unlocks a lot of potential of the GUI. &gt;&gt; Well, Don, that's a, a lot of great information. We definitely appreciate you being here in the studios with us. And we appreciate you, the viewer watching. We're gonna go ahead and sign out here for IT Pro TV.
+
+[00:36:40] I've been your host, Wes Bryan. &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC] &gt;&gt; Thank you for watching ITPRO.TV.

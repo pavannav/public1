@@ -1,0 +1,49 @@
+[00:00:06] - Now that we know a little bit about Systemd and especially, what to consider in Systemd troubleshooting, let's do a quick lab. So here is the lab. After applying some changes to services, you SSH server doesn't start anymore.
+
+[00:00:21] Fix it. Now before you start diving into the problem, let's not forget about the methodology, methodology of troubleshooting. So what was it again? We need to define the issue, we need to gather information, form a hypothesis, verify the hypothesis, and apply the solution.
+
+[00:00:41] So if we have problems with SSH, we need to define what exactly is happening. So let's use SSH localhost to see if we can log in. Oh, port 22, connection refused. So, systemctl status sshd, and what do we get?
+
+[00:01:01] We get dead since some time ago. Well that is basically because I installed the problem. Which by the way is installed to running the script lab39.sh. Now as it is dead, obviously it's not going to work. So let's use systemctl start sshd,
+
+[00:01:23] and what do we get? Unit not found. That's odd. So as it is giving a unit not found that looks as if it needs a configuration file that is not there. So usr/lib/systemd/system
+
+[00:01:43] and let's do ls on sshd dot, well we do have sshd.service and dot socket. So I don't get it, the unit not found. So, if the file exists and it is giving a unit not found,
+
+[00:02:01] I think at this point we have gathered enough information. It's time to define a hypothesis. The hypothesis is, then maybe something is wrong in the configuration file. Let me show you the configuration file of sshd.service. And what can we see? Well the blinking cursor is still at the beginning
+
+[00:02:21] of the line that has been added. Requisite is vsftpd.service. So why is it giving the unit not found? My hypothesis is because vsftpd.service is giving a problem. So, let's do an ls on vsf
+
+[00:02:42] and tap tap and, oh no, tap completion doesn't work. There is no vsftpd.service. So that makes sense that sshd.service is giving issues with that. Now, before I'm going to fix this, I want you to be aware of something.
+
+[00:03:00] So I am going to reboot and after a reboot we will see again what's happening. So here's my boot prompt. Let me log in.
+
+[00:03:23] And open a root shell so that we can analyze and see what sshd has been doing. Systemctl status sshd.service. Isn't that magical? The boot procedure is considering this in a very specific way
+
+[00:03:40] and it has just ignored the requisite. Now look at this. If I'm using systemctl stop sshd.service, that works and if we are doing systemctl start sshd.service, I'm getting the unit not found again. So it's kind of funny that you cannot start it manually,
+
+[00:04:00] but if this happens during boot then Systemd automatically fixed the problem to make sure that your service can start anyway. So, that's kind of old behavior that you need to be aware of. Let's get back to the problem. So, the hypothesis is that sshd cannot be
+
+[00:04:21] started manually because vsftpd is not installed on this system. Let's use yum install vsftpd. I'm not even verifying the package because we did not find vsftpd.service and you can see that vsftpd is going to be installed.
+
+[00:04:42] Now let me show you something in addition. Systemctl status on vsftpd. We can see that it is disabled. Disabled, dead, but the service is there. Now let's use systemctl start sshd.
+
+[00:05:00] And, oh no, a dependency job for sshd.service failed. Now it is being more specific because at least vsftpd is present. And if you type systemctl status on sshd.service we might find some more information.
+
+[00:05:20] Okay, just dependency failed for OpenSSH server daemon. Now let me use systemctl start vsftpd and start sshd again, and now sshd is starting. So we need to enable vsftpd to make sure
+
+[00:05:40] that sshd can be started manually as well. I'm not going to do that for now because I want to show you something more. I'm stopping sshd and I'm stopping vsftp and now we are going to modify,
+
+[00:06:00] and let's do that in usr/lib/systemd/system. We are going to modify the sshd.service file. And we make the requisite, a required. Oh and you should notice by the way, that what I'm doing right now is not exactly according to the rules.
+
+[00:06:21] According to the rules you should never modify configuration files in usr/lib/systemd/system. If you want to modify it, copy the unit file to etc/systemd/system and apply your modification there. Because this modification will be overwritten if at any time my servers will update the unit file
+
+[00:06:40] during an update. So now we have a required, and the situation is that we don't have an sshd, we don't have a vsftpd and I just want to show you what's happening if we are going to manually start it. Oops, I forgot to use the systemctl daemon-reload.
+
+[00:07:05] Systemctl daemon-reload will make sure that Systemd reloads the unit and is aware of the changes that I have applied. So for now we can safely ignore the dependency job that has failed because it hasn't reconsidered the configuration file.
+
+[00:07:22] Let's use the start again and look at that, it starts. So if you do a status on sshd.service, it is running. And how about vsftpd.service? So vsftpd.service
+
+[00:07:44] is loaded, but inactive and dead. So required isn't as strong as requisite. So if you really want everything to fail in case of dependency cannot be load, loaded, use requisite so you cannot load it manually anymore,
+
+[00:08:00] but be aware that Systemd tries to think for you. And during the boot procedure this will not create any big problems. I'm not sure if that is behavior that is really desired, but at least now you are aware of it.

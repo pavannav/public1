@@ -1,0 +1,61 @@
+[00:00:06] - Now that you know how to identify hardware, let's talk about finding hardware issues. Finding hardware issues goes through different mechanisms. First, there are the log files, the obvious log files. Like dmesg and journalctl, more specific is mcelog.
+
+[00:00:25] Mcelog is a service that needs to enabled, so you need systemctl enable and systemctl start to run it. And next you can use journalctl -u mcelog.service to find everything that has come in
+
+[00:00:40] through the mcelog service. Alternatively, you can also enable the mcelog cron job. So in etc/cron.hourly/mcelog.cron you'll make sure mcelog will log data at regular intervals. Another solution is rasdaemon, rasdaemon hooks into the kernel tracking system.
+
+[00:01:03] And that's not always easy to activate because a kernel must be compiled with edac_mc support. If that is the case, you can enable the rasdaemon using systemctl enable --now rasdaemon which will enable it and start it. And next you can find errors using ras-mc-ctl --errors
+
+[00:01:24] or you can just check the status using ras-mc-ctl --status. Then there's memory as well. Memory requires a different approach. Mcelog can set memory pages offline after exceeding an error threshold,
+
+[00:01:41] which might be useful but kind of dangerous as well. Memtest86+ can be used as well. If you want to use this solution, you need to install it because it is activated from GRUB to test memory. Notice that memtest86+ is not supported on EFI platforms.
+
+[00:02:01] Is you want to use it, run yum istall memtest86+ and next memtest-setup. And in order get it into the GRUB configuration after the memtest setup you need to run grubmkconfig again to rewrite your GRUB configuration file. Then you reboot, and in the GRUB boot menu
+
+[00:02:22] you can activate the memtest features. Let me show you how to use these commands from the command line. So first there is dmsg. Dmsg, as you can see, is showing information about what is happening in hardware. So this system, as you can see, apparently does has some problems.
+
+[00:02:41] A problem that is related to the PCI bus. We have PCI express bus error. Severity is corrected type physical layer and receiver error and if we go up in the dmsg output then I expect to see this problem a lot.
+
+[00:03:00] As you can see, it does occur a lot. So apparently this is something that needs to be fixed. Dmsg is very useful because dmsg interfaces the kernel directly, and if you are looking for hardware figures, I would recommend using it as your first starting point. Of course you can also use journalctl.
+
+[00:03:21] The advantage of journalctl is that it is providing a lot of information. It includes what you've got in your dmsg as you can see here. The PCI report messages occur as well in the journalctl. The advantage of journalctl of course is that you can configure it to be persistent.
+
+[00:03:43] You've already learned how to do that. So both os these utilities will help you identify hardware issues, but there is more, such as mcelog. Let's have a look and see if mcelog is available on this system.
+
+[00:04:00] So systemctl status mcelog is showing us that mcelog is active and running. So this is the machine check exception logging daemon. Now if you want to know what mcelog has been logging for you, then you can use journalctl
+
+[00:04:22] - u to interface that specific unit, mcelog.service. So what do we see? Well, we see that mcelog hasn't been very busy. So that's not something very interesting in this specific case,
+
+[00:04:40] but it all depends on the amount of problems you've got on your physical machine. You have no problems, mcelog won't give you anything. Than there is rasdaemon. Rasdaemon is also a system D unit that should be running as a service. So it can check its current status
+
+[00:05:01] using systemctl status rasdaemon. Not running, so if we want to enable and run it, we can use enable --now. And there you can see that it's doing stuff. And what exactly is it doing?
+
+[00:05:21] Well, it is logging information that it is getting from the kernel tracing subsystem. And in order to figure out if anything useful is happening, you can use ras-mc-ctl --status started. Then it shows you the current status of the rasdaemon.
+
+[00:05:42] Now here we can see that drivers currently are not loaded. That is what you get if the kernel has not been enabled with the edac mc support options. In case it has been enabled, then you can also use ras-mc-ctl --errors. Which in this case is not very useful
+
+[00:06:02] because this kernel doesn't support it. My take on rasdaemon: rasdaemon can be very useful but only on systems that really are experiencing trouble because to find a hardware issue who is going to recompile the kernel with specific support options
+
+[00:06:20] in order to run a specific utility. So its a quite uncommon utility. The most sigificant utility to work with memory problems is memdesk86+. So let's do a yum search on memtest. And we can see the name of the package is memdesk86+.
+
+[00:06:41] So yum install memtest86+ will install it for us. And after installation you need to run memtest setup. Memtest setup is generating a template that will be integrated in GRUB.
+
+[00:07:01] And as utility is mentioning, you need to run grub2-mkconfig -o /boot/grub2/grub.cfg to write a new GRUB configuration. And the memtest utility is integrated in GRUB so if you want to test your memory
+
+[00:07:21] you need to reboot. Which is also one of the reasons why not everybody is liking memtest. I mean, why would you want to reboot a server if you might be able to just replace ROM chips if you think they are faulty? Well memtest is going to analyze your memory
+
+[00:07:41] and here you can see what it looks like. So here we can see the memtest utility has been added to GRUB. So you can select it and then you can press F1 function key to start testing your memory. You can see the test is running
+
+[00:08:00] and you can also see that it is testing all areas of memory. So there's a level one test, a level two test, a level three test, as well as the physical memory. And as you can see it is not the fastest utility, but it will help you find out
+
+[00:08:20] if there are memory related problems. The reason that it's not so very fast as a utility is also why this is not the most popular utility. But if you definitely want to find out if something is wrong with memory, this is the utility to use. Okay now that we are at the end of this lesson
+
+[00:08:41] where we have talked about different utilities that you can use to analyze hardware let's do a quick lab. In this lab, I would like you to find hardware issues. To validate the reliability of your server, investigate hardware on your computer to make sure there are no current hardware issues.
+
+[00:09:02] And so what do I expect you to do? Well, some hints of utilities that you can use, apart from the obvious logs of course, you can check memory information using dmidecode -t memory, also I recommend you to use the rasdaemon, and the rasdaemon, once it is enabled,
+
+[00:09:21] you can use ras-mc-ctl --status and ras-mc-ctl --mainboard to give you information about current status and the mainboard option will give you mainboard information, which can be useful as well. You can also consider using the memtest utility.
+
+[00:09:42] But be aware that running a memory test will take a lot of time, and if you want to do the memtest utility, don't forget to run memtest setup, reboot, and start it from GRUB. And that is what you can do to identify hardware issues. But most important: keep an eye on the logs
+
+[00:10:01] because if you have serious hardware issues, you will find notification about these issues in your logs as well, and you can go from there to fix them.

@@ -1,0 +1,77 @@
+[00:00:00] Hello and welcome back before we apply our changes here. Since we are requesting quite a bit of resources, I did run into a few errors actually, when trying to apply the test runs of this project here. And the errors were actually coming from Google cloud site simply showing that there were no available machines in the zone that I actually wanted to schedule the pod.
+
+[00:00:24] So before we move on with adjusting our pod definition or our state for set definition, let's come here to our cluster under demo cluster. And then we have here on logs, we can then retrieve here our auto scalar logs.
+
+[00:00:40] So this will inform whether there are any errors when trying to scale out. And then a little bit above here, we will see that under a result info option here. Then we get under the JSON payload result info and then results in the first one. We get finally the error message here. And it's simply telling me that hey,
+
+[00:01:01] there are no available resources in the zone where you want to schedule the spot. So this is not something that is really up to us. It's not a configuration error it is simply a lack of available resources in a specific in Gke or in Google cloud. One way for us to tackle this problem is to actually allow Google cloud or allow
+
+[00:01:22] GKE to place the pod in different zones. So we're going to tackle that using the concept of node affinity. So let's now under our specification here, let's define under the container. So let's just keep in mind here the indentation. So just above the volumes here, there is a concept that we can leverage, which is called affinity.
+
+[00:01:43] And then here we can specify node affinity and then we can specify something that is required during scheduling, ignored during execution, right. So this will enable us to set a series of criteria that need to be fulfilled by our node in order for pods to be scheduled there.
+
+[00:02:04] And basically, if the pods, whenever we want to schedule a pod, then combinators will look for nodes that fulfill this criteria and it will schedule the pods in these nodes. So what we can do here is select or define the node, select or terms.
+
+[00:02:20] And this is a list of match expressions and match labels, right, or match fields here. So let's define our match expression operation here. The key that we're interested in is topology. So the key is already here. So that's going to be topology dot Kitti dot IO forward slash
+
+[00:02:40] zone. And then here the operator will be in and the values will basically what I'm gonna do here is I'm gonna actually list all the zones under the Europe West four region. You can find this information by just Googling regions and zones, Google Cloud and then you will be redirected to this page regions and zones.
+
+[00:03:02] So let's click on choosing a region and zone. And then if you scroll down a little bit more here, we will eventually be able to select a location to select. So let's say Europe here and then we will see that eventually we will come across Europe West one Europe, West two Europe West three,
+
+[00:03:21] and then we get Europe West four. So Europe West four, the region here has three zones. That's Europe West four AB and C and then I'm gonna just add all of them to actually the list of values here. So we're gonna make Europe West four
+
+[00:03:40] dash A and I'm gonna have Europe West four B and Europe West four C. If you wish to stay on the truly safe side here, then you can also extend this to all the regions within Europe. So in my case here, just to stay on the safe side, I'm going to also add the Europe West one options.
+
+[00:04:00] And as you can notice here, they start with B and not with A, let's then copy this as well and they go up to the letter D. So let's copy this and let's also add it here. So Europe West one B, Europe, West one C and then Europe West one D, right. So this will make sure that we have plenty of
+
+[00:04:21] regions that our auto scalar can try to create nodes in to actually schedule our pod. We could also reduce the requests and limits here and give it a try with fewer resources so that the allocation of the pod actually becomes easier. So why not give it a try for that?
+
+[00:04:40] Let's say that we want two GB bytes of requests for memory and then four GB bytes of limits. And for CPU here, we can actually try with half of what we are working on. Personally. I do believe I, I wouldn't probably go below this. But since our application does not incur or it does not place a lot of load on the database,
+
+[00:05:00] then it should be enough, right? So let's just save this here. Let's come back to our terminal and now let's try to apply here our overlay. So cube apply color DB forward slash DEV like so and let's then wait here and inspect what are the outcomes of this command.
+
+[00:05:21] So let's now have a look at whether our pod is up and running and perfect our pod is already up and running. So auto scaling here was not even necessary. I do believe that I ran into these errors because of the high requests and limits that we have placed here. And this was triggering also an auto scaling event. But I do believe that the discussion here was helpful for
+
+[00:05:42] us to understand in case you also run into this, maybe you are running and deploying the cluster in a smaller region and there are not so many resources available. So it's always good to know how we can actually leverage different regions and different zones in Google cloud to make sure that we are able to schedule our pods.
+
+[00:06:01] So let's just save this here. Let me show you in the node that we have here. So we have a single node and let's now describe this node. So keep cut of describe node and let's paste the name here. And then we should see eventually if we scroll up all the way here to the labels to the to the label section of our node,
+
+[00:06:23] we will see that this node is deployed in the zone Europe West four C. So we know that this amount of resources that we have now newly specified here. Basically half of what we had before that this can be accommodated in the existing node.
+
+[00:06:41] Let's undo these changes because now I'm curious here whether this will trigger an autoscaling event. So let's now delete our customization and let's reapply the customization. Let's have a look now at the state of the pods. And as you can see here, the pod is in a pending state. So we did not start running yet.
+
+[00:07:02] Let's then describe the pod here. So cube cut describe pod name space DEV Mongodbs S zero like so and as you can see here, if we have a look a little bit closer at the logs here, we can see that the pod has triggered a scale up event.
+
+[00:07:20] So basically the amount of resources that we have requested for the pod, they could not be accommodated in the existing node in our cluster. So this has triggered this cluster autoscaler event to scale up basically to add another node to our COTIS cluster. This is all managed behind the scenes by
+
+[00:07:41] GKE autopilot and this is where I actually ran into an issue, right? So basically this autoscaler event here, the scale up was not able to be fulfilled, it was not available. There were not enough compute resources inside of the zone where I have deployed the pod. And basically, it could not create another node there
+
+[00:08:03] in our case here because we have added more regions than or more zones. Then I do believe that this will not be the case anymore. So let's get our nodes here. And as you can see, we have two new nodes added, there is a new one here in a ready status and there is another one in a not ready status.
+
+[00:08:22] Let's try to output this as a wide and see if there is information about the region. So I cannot find any information about the region here. Let's then just try to describe this node here and see whether it's within the same region or not. So cube cut, describe node and then let's describe the node here.
+
+[00:08:42] Let's scroll up a little bit, let's get the labels and the region here is still the same. So this is Europe West four C right? So resource availability here, it also varies drastically within the day. So it might be the case when I was running some of the tests, it was working fine,
+
+[00:09:00] then I ran a few other ones and it stopped working because there was not enough resources available. So it really varies across the day here. So just don't worry too much if you start seeing these messages that there are no resources available, just follow the steps in this lecture here to make sure that you allow for other zones within your array or list of options here and you should be good to go.
+
+[00:09:23] So now we can confirm here, let's get our pods in the name space DEV. And we can confirm that our mongo DB pod is actually up and running if we describe the pod. So let's describe the pod once again here, we can see that eventually it will actually be scheduled. So here
+
+[00:09:42] it has triggered a scale up event. This is this event here, then it has a failed scheduling and this is perfectly normal, right? So nodes, they don't come out of nowhere immediately, they need to be initialized and this initialization process might take a couple of minutes.
+
+[00:10:01] So it's perfectly fine to see this failed scheduling. Kernis will try to schedule again and it will try to find a node that is in a ready state. As you saw from our previous messages from the previous logs. Here, there was a node that was a not ready state. So when the node is in not ready state, the pods cannot be scheduled in that node.
+
+[00:10:23] So Kernis needs to wait and that's why we start seeing these failed scheduling warnings here after a few minutes. You can see that the scheduling event here, the scheduled event appears and everything goes as expected. We have also received our
+
+[00:10:41] volume claim and then a hash here. So we have received our persistent volume. And if we were to now have a look here at Cubot get PV in the name space DEV, we should see that there is a new persistent volume that was created and bound to this persistent volume claim. The storage class here is using standard read write ones.
+
+[00:11:02] Let's just quickly exact into this pod to make sure that our authentication has been correctly set up. So the name space is DEV. The pod is Mongodbs S zero and I would like to get the Mongo shell up and running here. So now once the Mongo shell is up and running, let's use our color
+
+[00:11:21] DB and then let's now run db dot off and let's get the values from our ENV files. So the caller DB credentials is called DB user here and the password. I'm just going to copy paste from this string here. So let's copy this and let's paste this here and
+
+[00:11:40] then we should get the message that we are authenticated. Perfect. So our script also ran. So the initialization script also ran successfully. And let's now quickly jump to the Google cloud console to have a look at our persistent volume within Google cloud. So let me just come back here to the main screen within Google Cloud.
+
+[00:12:01] Let's click here on the hamburger menu. Let's come to compute engine and then on the left side here under storage, we can click on disks and then you can see here we have our disk with the name based on our persistent volume claim. And so if we click here, we get a bit more information and this is a balanced persistent disk.
+
+[00:12:23] So it's not highly performant, maybe for databases, it would make sense to use a highly performant or at least for the prod environment. You could consider using a highly performant SSD or solid state disk. But it's just good for us here to know to have a look at the fact that we're actually creating a disk here
+
+[00:12:43] in our Google Cloud project automatically just by defining our persistent volume claim. Perfect. So we were able to deploy our Mongodb, we have our database up and running. Let's now take a short break and let's come back in the next lecture to continue with our project.

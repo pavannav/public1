@@ -1,0 +1,43 @@
+[00:00:01] Welcome course taker to video fault tolerant computation on AWS where we'll focus specifically on Lambda and EC two. So in this video, we will have a quick overview of the differences between virtual machines and serverless. Then we'll look at the EC two S and some of the techniques used to provide more resilient EC two services and a similar thing for Lambda.
+
+[00:00:22] So if you're ready, let's get started. So EC two is a virtual machine. So like any virtual machine as a user, you specify how much ram, how big a disk, what type of disk, what operating system, the network configuration and security. You configure this all you pay for the server, irrespective of what it's actually doing,
+
+[00:00:42] then you manage patch it and secure it yourself. Lambda is a serverless framework. So you're basically saying, well, I want to run Python or I want to run Go or I want to run Java, you specify how much ram you want to consume and you specify any permissions associated with that function,
+
+[00:01:00] you configure your code and you deploy it, you pay for execution. So if your code takes three minutes to run or 30 seconds that's what you pay for and you run it. So they have slightly different ways of handling and making them more resilient. So if you look at EC two, well, two, as we've said is the basic building block. So you can run Linux a variety of Windows and Linux services.
+
+[00:01:24] And you're getting four nines availability, four nines measured over a month. Again, you have the sort of standard service credits. But because EC two is a as a base layer effectively is a base service, there's one exclusion
+
+[00:01:41] that anything to do with the software, third party you have installed, that directly affects the virtual machine causes it to crash. The SL A will not be covered. And that's particularly important to understand because you're building your C two instance from the ground up from the operating system,
+
+[00:02:00] installing the application. All Amazon are really saying is, well, we'll make sure the virtual machine is there and the control plane, the API around it. But anything else you know, is your responsibility? So when we think about EC2 or C two is by default connected in a region in an availability zone. So one thing you can do is you can make
+
+[00:02:21] the IP address separate to the actual definition of the EC2 instance, which means it has a life of its own. So if that instance dies or you need to replace it, you can simply move the IP address over to the EC two instance that's new with, you know, little disruption to your end user depending on what's failed.
+
+[00:02:43] But ultimately, they don't have to change DNS records or IP addresses. Now, each instance has a network interface, these are elastic network interfaces or E and you can have multiple es in a virtual machine and you can have them on different availability zones. However,
+
+[00:03:01] you need to configure your operating system to understand that. So if you're using Amazon Linux, for example, you've got EC two netutils, which is an Amazon library which helps manage that. But if that's not supported on your Linux or you're running something on windows, then you need to make sure that your operating system understands how to
+
+[00:03:20] bond the interfaces together or how to handle failover within the virtual machine. Everything on Amazon, you see two instances is stored on elastic block storage, EBS and so EBS can have a snapshot, which is a backup point in time copy of that volume, that ebs snapshot can be copied to another region
+
+[00:03:41] for resilience purposes or can be used to clone, can be cloned and used by other machines. Now, you can automate all this. Now with the new Amazon data lifecycle manager and you can set up your snapshots and your applications so that if you do have a regional outage, you can actually start your instance in another region
+
+[00:04:00] and you can go through and make an actual full copy of your machine and turn it into an AMI that can then be used as another backup if you want to do that. So five things, manage the network using elastic ips and E and manage your backups using ebs snapshots and Amazon data lifecycle manager. And then think about making full copies of your machine as well.
+
+[00:04:21] Now, Lambda, lambda's slightly different. Of course, you're not really concerned about your virtual machine or managing servers and it will automatically scale in line with any concurrency controls you set. So it does a lot more, it has slightly less availability, 3.5 nines, again, calculated over a month,
+
+[00:04:40] but those are calculated on the requests. So what it's saying is 99.95 your request should return a 200 or definitely not a 500 or 503 error. OK. Again, similar sort of service credits. And again, what you're saying here is in the exclusions. If you misconfigure Lambda or you don't do the b what's decided or you
+
+[00:05:03] don't configure it in a way that's defined in the user guide or you use libraries or files in your Lambda function that cause it to fail, the SL A does not apply. So when we look at Lambda, Lambda is inherently scalable, it will scale within the concurrency levels you've set.
+
+[00:05:21] There's a couple of things you can do. So version control of your code very important, making sure you deploy the right version Lambda when it executes, there's a trigger, it will run your code, it will then scale out and we'll talk about that a lot more in the next video, but it will scale out to about 1000 concurrent instances per region. If you allow it to,
+
+[00:05:41] if it's talking to other services, depending on the way it invokes those services. If it's asynchronous will automatically retry and then when it fails, it can also write to a dead letter queue. So you get some view of reliability by monitoring that queue. Now, the other thing is often Lambda functions need to talk to databases.
+
+[00:06:00] Now, when you've got lots of concurrent processes executing or wanting to talk to a database, you can quickly run into issues with connection tables and timeouts. So you can use the rds proxy to give you the capability to actually talk to rds in a consistent way and scale your connections.
+
+[00:06:20] So Lambda supports R DS proxy. And so you basically configure that as part of your function and then connections can be reused. And if you have a failover and dropping to standby in R DS, then the proxy takes care of hiding all of that. So proxy is available for mysql and Postgre and that includes Aurora.
+
+[00:06:40] So things like SQL server is not supported, it does provide a very consistent way of providing access to your R DS databases and also supports some level of resilience. But R DS proxy does allow you to provide a much more consistent database connection to your functions. And it does make the failover that happens under the R DS covers a
+
+[00:07:02] little bit more seamless to those functions as well. Again, a whistle stop tour of uh EC2 and Lambda resilience. Please join me for the next video where we look at low balancing and also scaling in more detail. Thanks very much.

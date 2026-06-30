@@ -1,0 +1,65 @@
+[00:00:00] Let's now start exploring network policies in minicube. And for that, I would like to actually restart or create another minicube cluster with the Calico Cni or container network interface. As discussed in the theoretical lectures, we do need to have a container network interface that supports network policies.
+
+[00:00:24] And the default one that comes with minicube when we don't configure it explicitly to another CN is not able to or it doesn't support network policies, which means they would have no effect in our cluster. So you can either stop your existing minicube cluster or you can entirely delete it.
+
+[00:00:42] It's really up to you. I'm just gonna delete everything here and I will create a new minicube cluster. I'm gonna call this a different profile here. So let's call network policies. And then the only thing we need to do to use the Calico CNI is to pass the CN option here and then the value calico
+
+[00:01:01] now this CN or calico it does require a few more computational resources. So CPU and memory. So make sure that you have enough available for this to work properly if you start getting some errors here that the containers are being killed, you might need to free up some resources so that this works as expected.
+
+[00:01:21] So as you can see here, once we pass this, we then just get our configuring calico message here. Now, if we get our pods in the cube system, name space, let's have a look. We have a couple of pods here on container creating. So let's just watch this here. And I just want to show you exactly what will happen here.
+
+[00:01:40] You will see that eventually here, some pods might enter into an error state. That is fine. Let's just wait until all these things here stop updating. So you will keep seeing some changes here. Eventually the pod that got into an error state here, it now is running successfully, then we have a few others in error then running once again.
+
+[00:02:02] So there are some dependencies here between the different calico pods. And we just need to wait until all of them start successfully here. Eventually, after a few seconds, these messages will stop coming. So it means that we are actually all in a good state. Let's get our pods in the cube system, name space here.
+
+[00:02:23] And we will see that we have all of the pods in a state running, we have a few ray stars here, but that is perfectly fine, right? So now the important thing is that all the pods are up and running great. Let's then switch to the de and let's create a few files. And the first one I want to create is just our traditional color API deployment here.
+
+[00:02:44] Let's go with the kind of deployment and let's just populate this color API. And this, we will just use virtually the same things, the same configuration that we have used so far. If you've been following the course, up until now, you probably know that we have used the call
+
+[00:03:02] API version 2.0 0.0 in our MongoDB project. However, I will go back a little bit here because the 2.0 0.0 it does require us to have our mongo DB set up and I just want to keep things simple here. So I'm going to use the version 1.2 0.0. You can also use the 1.2 0.1 that's also fine.
+
+[00:03:23] So it's really up to you. Anything below 2.0 here is gonna work for us because it doesn't have any hard external dependencies. The only thing I would recommend you not to use is the 2.0 0.0 except if you are up to some more practice. And if you wanna set up the entire
+
+[00:03:40] Mogo db coordinated objects here, then by all means, go ahead and do that. I'm just gonna use the 1.2 0.0 here. So the image we will use is going to be LM Academy, LM Academy forward slash color API 1.2 0.0. I also want to create a service here. So let's go with a kind of service.
+
+[00:04:01] The name will be once again call API or actually let's say color SVC here. The selector will be a color API. The port will be 80 the target port will also be 80. Let's just remove the error here and we are good to go. Let's save this. Let's come back to our terminal,
+
+[00:04:20] clean the screen and run cube cat apply and let's apply all the files. We can confirm that we have both our deployment. So get deploy SVC, we have both of them up and running here and our caller service is a cluster IP service. Let's now test connectivity towards our color API pods from within the cluster.
+
+[00:04:45] So for that, we're gonna create our cURL pod here and I'm just going to use a kind of pod and then this is going to be our crawl application. We are going to use for the image here. LM Academy
+
+[00:05:00] forward slash alpine cURL and the version 1.0 0.0. We don't need to expose any parts here and the resources are good to go. So let's save this. Let's come back to the terminal and let's run cube cURL apply once again to get our container up and running.
+
+[00:05:20] We now also have our cURL pod so we can exact into this pod into the cURL pod and we can get a shell here. And now we can just send a call request to call dash SVC forward slash API. And perfect, we can confirm that we get a response back.
+
+[00:05:40] So we are able to establish connectivity and this is really the default set up here within CORS we can always talk from pod to pod by default. There are no restrictions here. That means that if anyone gets a hold of any of our pods, they could start actually sending requests to other pods.
+
+[00:06:00] All right. So the first thing I want to do here or the first network policy I want to test with you is to really not allow completely deny all the traffic to our caller API. So this is gonna be a deny all traffic by default policy. And let's create then a new folder here for us to actually
+
+[00:06:22] collect all our policies. The first one we will say denyall yoli. So and I have no idea why it has this here, this schema. But let's start with our kind of network policy API version that's going to be networking
+
+[00:06:42] dot K dot io forward slash V one, not policy. And now it's correct now it has updated it here. So probably just some extension here identifying something as soon as you provide these two fields, then it should identify the correct schema here to validate stuff
+
+[00:07:01] the policy for us to deny all the traffic by default. Let's add a metadata name here and that's gonna be deny all and the specification here is going to be very simple. So remember there are three major fields that we would have to define. The first one is the pod selector. The second one is the ingress
+
+[00:07:24] and the third one is the egress, the ingress and the egress fields, they are optional as long as you want to define or actually if you specify here under policy types, right? So if you specify ingress, then the ingress field becomes
+
+[00:07:41] roughly mandatory. That means if you don't specify it, that means no ingress will be allowed, right? So these two ingress and egress fields, you don't explicit, they are not mandatory, but it means if you don't specify them and then you inform the policy type here, ingress and you have no ingress field, that means nothing will be allowed.
+
+[00:08:03] So let's remove this two here. And basically what this will do is this will set a ingress policy type. But since there is no ingress configuration here, then no traffic will be allowed to flow into any pods. And the pod selector here, all we need to do is to provide an empty object as the pod selector.
+
+[00:08:23] So an empty object here has the effect that all the pods are selected. This is something that we need to be very mindful about because if we are not careful regarding selecting all the pods here, then it might be the case that we end up blocking traffic. That is not intended to be blocked.
+
+[00:08:40] So if we don't specify anything here, if we just provide an empty object, then this will apply to all the pods. Let's then come back to the terminal here. Let's clear our screen and let's apply our policies forward slash denyall the moment we do that, we can confirm the policy has been created.
+
+[00:09:00] So if we get the network policy, then we will get our deny all here. And if we describe this, so let's describe cut all describe network policy, deny all. Then we will get here that it's not allowing any
+
+[00:09:20] ingress traffic, right? So here it says allowing ingress traffic. None. Here it says that selected pods are isolated for ingress connectivity. So there are no pods allowing ingress traffic and that this is not affecting ingress traffic. So if we were to now try Cubot Exec into our alpine pod, that's ok. We can still exact.
+
+[00:09:42] But the moment we try to hit our color, we see API here. Then as you can see bingo, the request is hanging. We are not getting any response back. The traffic is not allowed to go through and this will in the end eventually time out here and give us an error.
+
+[00:10:00] Now, this policy is not affecting ingress traffic. So if we were to just send a request here to https colon slash slash cat or cat dot Ninja forward slash fact, then we're just gonna get a random cat fact by default, right. So here,
+
+[00:10:25] the egress traffic is allowed, we are able to reach out to the external world. And from the perspective of our alpine crawl pod, we, we are actually able to send traffic to the color API pods. But because the ingress is blocked in the color API,
+
+[00:10:43] then the color API will not receive the traffic and it will not send a response back. Perfect. So we were able to effectively block all the ingress traffic.

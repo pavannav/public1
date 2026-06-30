@@ -1,0 +1,77 @@
+[00:00:00] Hello and welcome back. Let's take the opportunity to explore a few concepts around stateful and stateless application. That's gonna be a fairly quick discussion, but I just thought it makes sense. We take a few minutes for that since we have our color API up and running and connected to a database. So let's keep,
+
+[00:00:20] let's make sure here that we have our color service up and running in minicube. So we have exposed our service here and let's open a new terminal so that I mean, we don't need to be inside of the project Mongo DB folder because we're just going to use the scale command from our cube cut CLI. So let's now scale our deployment. So we have scaled stateful sets and deployments so far.
+
+[00:00:43] And all we need to do is to run cube cut scale deployment. And then that's going to be the color API deployment. And the number of replicas that I want to set here is three. So now after we have scaled our deployment, we can confirm that we have our pods. Let's also use the label color API here
+
+[00:01:02] and we can confirm we have different hosts. So we have two new pods. And if we were to now come back to Postman here, let's have a look at how this will behave, right? So, as you can see here, if we keep hitting the send button here, I'm not sure whether this is because there is some kind of caching happening in Postman.
+
+[00:01:21] So let's maybe try to use the chro or even better than that. We can actually come to our ID and let's create our traffic generator. So traffic generator dot YAML, then once again, we have done that little bit also a few times in the past, that's gonna be pod, that's gonna be traffic generator.
+
+[00:01:41] And then we will have here our API version, the image that we will use will be LM Academy. So LM Academy traffic generator and version is version 1.0 0.0. We don't need any container parts. So now here we should also define a couple of arguments
+
+[00:02:02] and the first one will be the end point we want to hit. That's going to be color SVC forward slash API and the interval just every half a second, right? So let's save this. Let's come back to the terminal and let's see if this will work as expected. So keep cut,
+
+[00:02:20] apply. And now you do need to be inside of the folder where you created your traffic generator. Let's then apply here the file traffic generator like so and let's then follow the logs of our pod. So traffic generator and let's follow the logs. Perfect. So that is working much better here. We are now able to get the traffic back from different hosts.
+
+[00:02:43] We are still getting our color blue here. So let's stop this. Let's delete our traffic generator pod. So delete traffic generator. Let's quickly come back to our ID here and let's just set the color key to primary, right? So now here we are just retrieving always the primary
+
+[00:03:03] color key so that we can see some differences. If the pod takes too long to delete, we can also delete this with force here. Oops force like so and then we can now apply the pod once again and let's get the logs here and follow the logs.
+
+[00:03:20] Perfect. So we are getting a purple color here. And now this is why I also let me increase this a little bit is also why I left the minicube service up and running here because now in postman, let's just update our color. So we're gonna run API forward slash color, forward slash primary. And then we're gonna set the value to now instead of purple,
+
+[00:03:44] let's just set the value to red. So the moment we do that and we get the value to red, then we should also see that our traffic generator starts getting the new color. And this is actually also reflected you can see in all the hosts, right? So because this state is independent of our
+
+[00:04:00] pod and independent of our color API application, then this is immediately reflected in every host. That's a typical database stuff here that we are doing. Now, if we were to, let's now delete here. So cube cut, delete our traffic generator and let's now try to scale our database. So let's run cube cut
+
+[00:04:21] scale stateful set. And the stateful set is the MongoDB stateful set and the number of replicas here will be three. And so now we have scaled our MongoDB stateful set. If we were to get our pods with the label app equals MongoDB, then we will see that we have three mongo DB pods up and running.
+
+[00:04:42] You can see here that they were created recently. And now the difference is that in our deployment file, we are just connecting to the first one, right. So this is exactly the first pod here. So for us to update this to connect to another database, we would need to come to the ide and let's then have a look at the deployment here for color API.
+
+[00:05:04] And now we need to specify a different host. So let's connect to the first or actually the second with index one here to the second database. Let's save this and let's apply the color API file. So cube apply and let's clear the console here just so that you can see the comment better
+
+[00:05:22] and that's going to be color dash API yamo. Now, this has configured the deployment. And if we get the pods here for our color API application, then we will see that they were already recreated here and they are fairly new. So now let's deploy once again our traffic generator cube cut
+
+[00:05:40] apply and let's run here a traffic generator and let's get the logs of our traffic generator. And as you can see, this is actually returning the default color here, the blue, the, the default fallback that we have even when the environment variables are not set. So now if we were to come back to our application here,
+
+[00:06:01] and let's post once again to the same endpoint and let's set the primary color to instead of red, let's set it to yellow and let's send this here, then you will see that now we will start getting yellow back. So this also is useful to demonstrate that the state of our different pods in our state for set here.
+
+[00:06:23] So in this state for set here, the state of the different pods that are created with the state for set, they are completely independent. And that's why it's also important for us to have a stable entry point to each of the pods. That's what our headless service is doing here. And that's how we can connect to different databases from our application.
+
+[00:06:43] So just to clarify or actually to just summarize everything that we have discussed, the color API is a stateless application, we can scale this out and in as much as we want, we can create more pods, we can delete some pods and there will be no impact in the underlying state.
+
+[00:07:00] The Mongodb stateful set is a stateful application. That means if we want to connect to a specific pod, we need to make sure that that pod is up and we have a headless server in front of it. And then we can use the fully qualified domain name or the shorthand here if you wish to do so as well to connect to that
+
+[00:07:20] specific pod. If we change the pod here in a stateful set, then we will end up with an entirely new state. And this might actually lead to unexpected behavior in the application. So that's not something we would do very often with stateful sets. It's just important for us to understand that if we wanted to have multiple pods in a stateful set
+
+[00:07:42] that have exactly the same state, we would have to implement this replication logic MongoDB or the mongo image here. It does allow for us to configure a replica set so that we would have a replication of data across multiple parts. But this is something we have to do ourselves.
+
+[00:08:00] It's not something that the stateful set will take care of. Perfect with these topics covered. Let's then come back to the terminal. Let's stop the running process here. Let's delete our pod traffic generator once again and we can also stop here. Let's start cleaning up a little bit so we can also stop here our running minicube service
+
+[00:08:22] that is looking good. Let's now close this terminal here on the top and let's clean out. Let's clear our screen. So let's have a look at all the resources that we have here. So CUCA get pod, we have a couple of resources here. We can now delete all our resources. So let's run cube
+
+[00:08:40] cut, delete and let's delete our color API dot YAML. And let's also delete our Mongo MongoDB state fet dot YAML. And now we can confirm that we have no pods running. That's perfect. So they were quickly deleted here. Now, we can also have a look at our services
+
+[00:09:01] and we can confirm that we have a couple of services we need to delete. So we have the color API service that I believe either was created earlier or I was using it for testing purposes. Then we have the color service here and the Mongo DB service. So you will probably have just the color service and the mongo DB service.
+
+[00:09:20] Nonetheless, I'm gonna delete here manually the color API service and then I'm gonna delete also the two services that we have via the dash F option. So let's pass the color SVC and then let's delete the Mongodb SVC as well. Perfect. So now I believe our services are clean. So let's have a look here, cuo
+
+[00:09:43] get service that's looking good. We also have a bit of configuration file, right? So if we were to run configmap and secrets here, we should get three entries that are managed by us, the mongo DB, init color db and the MongoDB, color db credentials and root credentials.
+
+[00:10:01] So let's also delete those here with a file. So MongoDB in it, color DB, another file is Mongodb color DB, creds and the other file is Mongodb root creds. Now, I am passing the individual files here instead of trying to find a catch all expression
+
+[00:10:21] because I want to develop the habit of being careful about the things that we delete, right? So whenever we run, like keep cut out delete and then all the files in the directory, we might just take our entire cluster down. So we just need to be a little bit careful about deleting stuff. And that's why I'm taking this slightly longer way of specifying the individual files we want to delete. Perfect.
+
+[00:10:44] So I believe that's actually everything that we have created and we can delete via the files here. So let's have a look pod service configmap secret here and we have nothing that is managed by us. So all these things are managed by
+
+[00:11:01] Cnis or Minicube. So that is looking good. We also created a deployment. So let's have a look here, deploy and stateful, stateful set just to confirm that these entries they are also gone. That's perfect. The only thing that's missing here. For us to delete is the created persistent volume claims.
+
+[00:11:22] So as you can see here, we have the first one from our previous tests and then we have the two new ones that were created when we scaled our stateful set earlier in this lecture. So let's just delete all of them here. Cube cut, delete PVC. And you could add the
+
+[00:11:40] all here to delete all the persistent volume claims. However, that is once again a very, very tricky operation because you might delete persistent volume claims of unrelated applications. And that would simply mean that your dynamically provisioned persistent volumes. If they reclaim policy set to delete, they would all be gone including your persistent data, right?
+
+[00:12:03] So just be very careful with this. That's also another use case for us to to leveraging name spaces, for example, because then it would allow us to protect which persistent volume claims can be deleted when we are inside of a name space. So let's just delete all of them.
+
+[00:12:20] And then the second one here as well. So the persistent volume claims should be gone as well as the persistent volumes. Let's just confirm that they are gone. Perfect. There are no resources found and our cluster is in a clean state which brings us to a very well deserved break. Congratulations on completing this project.
+
+[00:12:42] I'm so proud of you and I'm so excited with all the discussions we had here. So let's take a short break. And I'll see you in the next lecture.

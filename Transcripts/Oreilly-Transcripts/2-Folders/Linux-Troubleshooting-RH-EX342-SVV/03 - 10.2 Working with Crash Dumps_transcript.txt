@@ -1,0 +1,45 @@
+[00:00:06] - Probably the most important thing that you can do to manage kernel problems is configure your system to work with crash dumps. Let's see what is involved. So, a crash dump is a dump of the kernel memory image
+
+[00:00:20] that occurs at a kernel crash. Crash dumps are useful because they contain information for developers to help them analyze what happened at the moment that the crash occured. Kdump is a software that works with kexec to boot a secondary Linux kernel without rebooting and that is what you will use on the Red Hat family of Linux distributions to configure crash dumps.
+
+[00:00:43] Other solutions do exist as well such as the Linux kernel crash dump. Now, the basic concept behind this is that the secondary kernel boots from a reserved memory area of the primary kernel so that a memory dump can be made. So, it's like you have a shadow kernel.
+
+[00:01:00] In case the primary kernel crashes, the secondary kernel's still running. And because it uses a secondary kernel, kdump is very reliable. In order to use kdump, there is some configuration behind it. The configuration can be done using system-config-kdump. Kdump requires a minimum of 160 megabytes
+
+[00:01:21] of reserved memory, so you need to make sure that you have sufficient memory on your systems and apart from that, an additional two bits for every four kilobytes of physical RAM that is installed which means that you need an additional 64 megabytes for every one gigabyte of RAM.
+
+[00:01:40] Use crashkernel is auto as a GRUB kernel boot argument to reserve this memory automatically and you don't have to worry about it. And you need to make sure that the kdump service is started and enabled. By default, dumps will be written to /var/crash but you can use alternative remote locations by editing the kdump.conf.
+
+[00:02:01] It's pretty common to work with SSH as a remote location, for example. To modify the kdump parameters, you can edit the /etc/kdump.conf configuration file. Let me show you. All right, so we need system-config-kdump.
+
+[00:02:32] And now that it has been installed, we can start it. Oops. And as you can see, a nice graphical utility.
+
+[00:02:42] Now that's funny, it seems to create an SELinux security alert. So, what do we have? We have the automated kdump memory settings and you can select manual settings as well. So, automated seems fine to me. Then we have the target settings.
+
+[00:03:02] So, the target settings specify where you are going to write the kdump information. You can use raw devices for dumping kdump information as well or network and in a network you can directly write to an NFS share or using SSH to a remote server.
+
+[00:03:21] Then there are the filtering settings in which you can specify what exactly it is that you want to put in your core dump. Any expert settings that allow you to specify additional options. For most cases, the default filter settings will do fine, so I would recommend not to change anything
+
+[00:03:41] in the Expert Settings unless you have a very good reason to do so. So, once you have configured this, you need to apply and then you need to reboot your system. Let's have a look at the configuration that is behind, so /etc/default/grub
+
+[00:04:00] is one part of the configuration and here we can see crashkernel is auto, so this should automatically load the crash kernel. Then there is the kdump service, so systemctl status kdump will give you current information and oh no, it is failed.
+
+[00:04:20] No memory reserved for crash kernel. Let's reboot and let's see if it automatically gets back. And there is the /etc/kdump.conf configuration file in which everything is written. If you want to write this the easy way, just use system-config-kdump
+
+[00:04:40] but if you don't have a graphical interface, you may modify the settings in here. Now, let's use reboot to reboot the system and see what is happening and if the kdump service is getting up or not.
+
+[00:05:07] So, we are back, let's use systemctl status kdump and we can see it still fails. Most likely your reason why it failed is because of shortage of memory.
+
+[00:05:21] But journalctl should be able to tell us more about that. So, let's look for kdump and well, this is not really informative. How about journalctl -u kdump?
+
+[00:05:43] And as you can see, we don't get really further with this information. So, let's just make an educated guess. Kdump is trying to reserve memory and this system doesn't have a lot of memory. As you can see, it has 630 megabytes of used memory
+
+[00:06:02] and it has a total of one megabyte of memory, so the issue might just be memory. In the troubleshooting methodology, this is the quick fix, by the way. Before we are going very deep in trying to configure what is happening, it makes sense to apply a quick fix and on a virtual machine,
+
+[00:06:20] you can easily add more memory and that's exactly what I'm going to do now. So, in the virtualization layer, let's make that 2048 and start it again.
+
+[00:06:53] And here you can see that after a reboot, it is working fine,. We can see that it's loaded and well, activating, so activating
+
+[00:07:02] doesn't mean that it's already working but given the information that we see, it's doing a lot more than just before. Now we can see it's active and we can see all the related information being logged as well. So, bottom line, one gig of RAM
+
+[00:07:21] is not enough to start a core dump kernel, so we have now configured a basic core dump configuration. In the next lesson, I will teach you how to set up remote core dump targets.

@@ -1,0 +1,109 @@
+[00:00:00] Hello and welcome back in this lecture. We're gonna focus on the last aspect of making our solution work. Remember, we have shown that this AWS Im policy document, the assume role policy is not really suited for our purposes. And that's primarily because or or simply because this
+
+[00:00:20] policy here is attached to all of the world. And it is basically saying that the user logo can assume any of the roles that this policy is attached to. That is not what we want to implement. What we want to implement is to basically attach only or to allow only the users with a username
+
+[00:00:40] where the role is included in this roles list here. So we, we need to iterate over this list of users here and the list of roles and we need to somehow create different policy documents that will allow the users with that respective role to assume that role. So the first thing and maybe here we could actually add a couple of
+
+[00:01:03] lines of comment here for us to understand what we want to do. So the first part here, the first point is that we must iterate over the existing rules and create a different
+
+[00:01:20] assume role, assume role policy, right? Assume role policy for each of them. So this is the first one, we need to iterate over the existing roles and we need to create a different assume role policy for each of them. And then we have here in each right. So in each,
+
+[00:01:41] in each role policy, let's scroll down a little bit here. We should include under the identifiers, only the users that have this role listed in their roles list, right? So in each role policy, add users or add under identifiers. So let's put it like this
+
+[00:02:00] under identifiers, add only the users that have that role, that specific role listed in their roles list, right? So this is what we want to do. There are two things. The first one, we need to create a different policy document for each of the existing roles.
+
+[00:02:22] And the second one in each of these specific policy documents we must allow or we must add the users only the users that have this specific role listed in their role in their roles list. The first step is fairly straightforward to implement. The only thing we need to do here is we need to say for each
+
+[00:02:42] and then we will say to set and we will get here the keys of our local dot role policies. And so let's revisit this local dot role policies here. If we scroll up a little bit, we a little bit we have the role policies. And this role policy is basically an object or a map where the key here refers to the name of the role.
+
+[00:03:04] And the value is a list of the permissions that this role can assume or that this role can perform, right? So anyone who assumes this role would be able to perform these actions. So this is the first thing that's um that's fairly straightforward.
+
+[00:03:20] We are iterating then over each of the role policies and we are creating a different assume role policy document. The moment we do that we also need to change the assume role policy value here that we are passing to the IM role. So here we are already creating four different roles. That is exactly the same thing as we have here in our IM policy document. However, now
+
+[00:03:45] we have several assume role policy documents here and we need to choose which one to take and this is fairly straightforward. We're just gonna take each dot value here. So basically for each of the roles that we create, we're gonna get the respective assume role policy from this data,
+
+[00:04:03] a WSIM policy document here, we can run here a dataform plan just to see the changes that we would implement only with this adjustment here. And as you can see, that's very interesting, maybe you didn't expect that there will be no changes because we actually added for each year.
+
+[00:04:21] That means we are creating multiple resources. But in reality, the data is not really a resource, the data is basically some information that the form is using in other places to customize the resources that we are creating. So this is correct, we are creating four instances of this policy document instant of one.
+
+[00:04:44] However, when we look at the statements here, they are exactly the same. Which means that here for our AWS IM role purposes, these assume role policies here, they will actually stay the same. We already have four different roles with each of them,
+
+[00:05:02] with a assume role policy. And this assume role policy is not gonna change just because we are getting it from a different place, this is not gonna change because it's still the same. So this is an interesting way here to see how this Refactoring will lead to no changes to our infrastructure.
+
+[00:05:20] However, it opens the possibility for us to now customize these identifiers based on the role that we are creating. Let's now have a look at our users here and we can see that we are iterating. So let's have a look, we have to output the passwords. We have, we are iterating here. Whenever we are creating our IM users, we are iterating
+
+[00:05:41] over the username object. So basically we are creating here a list or a tuple of usernames and then we are creating an AWS Im user for each of them. However, the shape that we have from these users from YAML here, the shape that we receive from this file, it's not the best shape to access the roles key here of a certain user name.
+
+[00:06:05] So a better option here would be to actually transform this. So let's have a look inside of our users. A better option would be to transform it from this shape here. Let's add and let's comment this here just for us to understand the transformation we are doing.
+
+[00:06:20] So basically, we now have an array or a list of objects with the following shape, username. It's going to be a string and the roles is an array of strings, right? So I'm just keeping it simple here. And the problem with dataform and this is a list and the problem with dataform is that it's not that easy to actually filter,
+
+[00:06:43] get one entry and then access the roles key of that entry. A much easier way is if we have something like this where we have an object and this object here simply contains the username as the key and this username is then mapped to its roles.
+
+[00:07:02] So now instead of having an array, we have an object or a map here where the key is the username and the value are the roles. This becomes much easier to access because we can just use this username here to capture or to access a specific entry in this map. So that's exactly what we're gonna do here. We're just gonna do a little bit of transformation. We're going to call this users's
+
+[00:07:24] underscore map. And what we want to do here is to create a map, an object in the end. And here we will iterate over. So we're gonna say four user underscore config in local dot users from yamo,
+
+[00:07:41] users underscore from underscore Yamo. So this we are iterating over this entry here and we will get each object in the list here. We're gonna say that then this will return user underscore config dot username. And then this here will map to our user underscore config dot rolls.
+
+[00:08:02] So we are basically transforming this from a list into a map. And we're using the user name here to actually identi uniquely identify the keys within this map. Let's just remove the user here or maybe we can actually leave. I mean, it's a little bit verbose, it goes a little bit beyond what we can see at once here.
+
+[00:08:22] But I think that's very descriptive. We can also stay on the safe side here and add an ellipsis here to make sure that if we have any duplicated user names, let's say for example, we have something like this. So someone added John only with read only and then they add him only with developer, right? So something like this, then the roles here will all be connected.
+
+[00:08:43] They will all be concatenated here under our roles object here. Now, this would probably this this could I believe, lead to a list here that is nested with lists. So let's just inspect this here. Let's have a look. Let's put this in output.
+
+[00:09:00] We're gonna say output and then we'll say here, users map and let's try to make this a little bit more user friendly. So the value is gonna be local dot users map here. Let's save this. Let's run a terraform plan and let's see the results exactly. So as you can see here, we actually get a list of lists.
+
+[00:09:20] So let's see how we can fix that. Let's scroll up here and let's try an intern or some intuitive approach here where we would like to actually flatten this result. If we were to try to do something like this, let's scroll down here and run a data form plan. I believe that's not gonna work. And actually we get an error here, which has too many function arguments, right?
+
+[00:09:41] So here we are seeing that user config roles is a top with two elements. So maybe a way for us to actually do that is in one step to, to simply create this map. And then in the other one, we say here, flattened users map and then here we would have four and then we will simply recreate the map.
+
+[00:10:01] We're gonna say four user and then roles in local dot users map. Then we're just gonna recreate this map. We're gonna say here, give me, give me the map back and then in each entry here, we're gonna have the user and then we're gonna flatten the rows here, we're gonna say flatten
+
+[00:10:20] and then we'll pass roles. Right. So now here we're just creating a new user here and actually this doesn't have the curly brackets like, so that's much better. Right. So now if we were to pass this out in our output here, let's pass this out. Let's clear the console run once again, terraform plan. And then we will see here that now the result that we
+
+[00:10:41] get is actually just one single list with all the roles. Now, once again, this is for the case that we want to be on the safe side towards or against having duplicated user names. You could also do that in different ways and simply say, hey, no, we're not gonna allow you to have duplicated usernames and
+
+[00:11:02] we're just gonna throw an error in case that happens. Personally, I'm actually on the side of throwing an error and that's for one maybe not so explicit or so direct reason. And it is basically that I would much prefer to have all the roles of a single user name under or all
+
+[00:11:22] the roles of a single user under the single user name entry. Let's say that we have something like this, let's say John read only. And then we have, I don't know 200 other entries here. And then suddenly we have one entry with user name John. And then the roles here is admin,
+
+[00:11:40] right? And then we it's very hard to see all the roles that John has if we can have duplicated usernames, because these roles can be spread across a list with a lot of entries. So for me, I actually prefer to just throw an error. So we're gonna actually revert some of the things that we did here. Let's just revert it here.
+
+[00:12:01] Let's come back to our users and let's revert, let's delete this here. And also let's not allow for duplicated keys. So if there are duplicated keys, this is gonna throw an error, right? Let's remove this output here. And let's check that by adding another entry to John. Let's add another entry to John. We're gonna say admin here.
+
+[00:12:21] That's just for testing purposes and we should expect this to throw an error. Perfect. So here is our error. It simply says that we have a duplicated key here. So duplicate object key and from my perspective, that's perfectly fine because that will force us to remove the duplicate key and then add the admin role here under John much better from a
+
+[00:12:42] security perspective because if John leaves the company, we just remove one entry here and we don't need to keep looking for all the entries that might have John as the user name. Perfect. So this is how I prefer it and that's what I'm going to follow. It also leads to a simpler tele form code. That's great. So we have achieved our map here that we need
+
+[00:13:03] and then we can continue here with customizing our, our identifiers based on this role that we are creating the policy to and the user name in question. So now we would like to iterate over all the users that we have created. I'm gonna
+
+[00:13:20] remove this, but I'm gonna cut instead of just deleting because I wanna paste this afterwards. Now we can iterate so we can say for user in or even better for username in keys. And then here we're gonna reference to the AWS underscore Im underscore user dot users and we will iterate over the keys of this object here.
+
+[00:13:42] Let's just double check that this is how we call it. That's correct. So AWS Im user users. So we iterate over the keys here. And then we're gonna say, please build the A RN for this user. And then here instead of using the hard coded value here, we're gonna use the user name like so
+
+[00:14:00] we can then also customize this account ID here by let's come here to the provider and we're gonna, or we could actually create under the rules itself since it's used on here. Let's create another data. And we're gonna call this AWS underscore color underscore identity and this is going to be current and that's all we need because now we can use this data dot AWS color identity here.
+
+[00:14:24] Let's use it here, let's remove this and then add the interpolation and we're gonna say data dot AWS color identity dot current dot account underscore ID. And this will give us the account id of the current
+
+[00:14:40] profile that we are using to deploy our AWS accesses. So this is not enough, right? We have managed to now customize who can assume this role based on the user name. However, this would just give access to everyone within this role. Basically, all of our users that are created by our,
+
+[00:15:00] by our infrastructure would be able to assume this role. And that's not what we want. Let's run a terraform plan here. And let's see the changes and you will see that there are quite a few changes here. Let's scroll up and you will see that we are allowing everyone. So basically now the the principle here is changing from a single user to actually all of the users and this role here
+
+[00:15:23] have a look, this is the read only role, right? So now we also get the the IM row here. The policy is updated to reflect the the role. But actually this doesn't change because there is no tilda here. You can see that the fields that change, they actually have a tilda next to them. Let's scroll up a little bit,
+
+[00:15:41] the developer once again can be assumed by all of them and the auditor by all of them as well. And the admin by all of them. So this is definitely not what we want for us to address this. There is a very simple if condition that we need to add here. And that's why I also created this users's map in our
+
+[00:16:00] locals here because now we can just fetch the username. We can see here if and we can simply say contains and we will say contains local dot users map and we will this local here is duplicated local dot users map and we will get the username here,
+
+[00:16:20] the username. And we would like to access the basically the roles they are retrieved from this user maps here. So now we are already working with our roles list. And we will say if this list contains each dot value, right, then each dot value here is storing the role for which we are creating the assume role policy.
+
+[00:16:41] So let's save this. Let's run a terraform plan once again. And let's see if that works. We have all the changes and now we can already see some differences. So only Lauro and John can assume the read only. That's exactly what we want. And if we go a little bit more up, we will see that. Now here, only John can assume the role developer. And if we open our user roles
+
+[00:17:04] file, we will see that John is actually the only person that has a developer role. We will see that also the admin role as well as the auditor role should only be accessible or they should only be assumable by Jane. And that's exactly what we see here. We see Jane for the auditor role.
+
+[00:17:21] And if we scroll up a little bit more for the admin role, we also see only Jane. So now we were actually able to fully wrap up our functionality and to say that we are also allowing only the users that have the roles here in our users list to assume this role. So this is done.
+
+[00:17:43] And the second one for us to actually finish here, let's just clear the console and run a dataform apply. Let's type yes here. And once we do that, then it should change the policies and everything should be working. Now, the second point here is also done
+
+[00:18:00] and I believe that this is a great moment for us to take a short break and then come back in the next lecture to wrap this project up by summarizing and testing everything that we have implemented.

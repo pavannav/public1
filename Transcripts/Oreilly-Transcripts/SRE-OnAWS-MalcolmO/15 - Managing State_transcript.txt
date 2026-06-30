@@ -1,0 +1,57 @@
+[00:00:01] Welcome course takers to video managing state. Now managing states in microservice architectures is hard. And so we're not going to cover every aspect of data management. In this video, we are going to touch on the different types of state platform, configuration, state, session, state and data.
+
+[00:00:22] And we'll look at how you manage those or certain techniques and patterns you can use to manage those in a microservice. So if you're ready, let's get started. So for the purposes of this course, we're going to look at state in terms of four main areas. So we'll have how does a platform manage service state for microservice?
+
+[00:00:42] We'll look at how we manage service configurations, user sessions and application data. So focusing on Kubernetes, we've already looked at replica sets and how they can be used to manage stateless services. Well, a stateful set is the equivalent of a deployment for a stateful service.
+
+[00:01:01] So here we have our description of a service now, it has no cluster IP. So it's called a headless service in Kubernetes. And all it allows us to do is provide a mechanism for managing our stateful set. Our staple set looks exactly like a replica set, however, its behavior is slightly different.
+
+[00:01:22] So here we're going to create three replicas and here we have our three replicas down here. Now, when a replica gets created from a template, it's given a unique ID starting at zero and going up. So here we have fe zero F one F two. So when that gets created, zero happens first,
+
+[00:01:40] then one, then two. And when you delete the service two gets deleted, one gets deleted, then zero gets deleted. And these are all done in order incompleteness. So one won't get started until zero has been created. Now, we call it headless service because each of these pods is exposed directly
+
+[00:02:00] through DNS name because you want to talk specifically to a pod and each pod is given its own PV C physical volume claim. And that allows us to store state within that volume itself. So a stateful set basically gives you persistent storage deployment is ordered, you deploy it in a graceful way and you delete it in a graceful way
+
+[00:02:23] and you expose those pods directly. So this gives us within cinetis a way of managing if we want to a stateful container. So when we're starting to configure those containers, we have the ability to use platform stores like
+
+[00:02:40] Kineti secrets. For example, Kineti secrets allow you to store secrets and configuration items. They're not encrypted, so they're not very secure, they're just encoded in base64. And if you've got access to the secret, you can decode it quite easily, but that only works for Kubernetes. So if you then have Lambda and Kubernetes or ecs, then really you want to have an externalized service configuration.
+
+[00:03:03] So Amazon offer a couple of things, systems manager, the params is still part of that. You've got secrets manager, you can invest in Hashicorp's vault or you can build your own and the choices really are around, you know, how much you want to spend. What's the total cost of ownership. So Kubernetes comes with a platform so it's very easy to deploy news, but it's not very secure.
+
+[00:03:22] Whereas you can build a configuration service that is very secure using as much security as you want to embed, but it's going to cost you a lot more. So things to consider, you know, throughput, number of requests, you know, that's a key differentiator between systems manager and secrets manager, the ability to automatically rotate keys and use KMS.
+
+[00:03:43] For example, how many different container platforms are you gonna have? If you're only going to use Eks, then maybe Kubernetes Secrets is a good way. What's the operational overhead? Who's going to support it? Who's gonna run it? And then ultimately, if you want to embed it in your application, are there the right frameworks in Estay kit and SDKS
+
+[00:04:01] to support your application again with session state, you really want to externalize that state, you can do it within the platform. So we've already touched on stateful sets with EKS. So you can do that within a volume. There's an example, you could use Redis internally and use a stateful set to manage your Redis cluster.
+
+[00:04:21] But if you've got a secondary platform like Lambda, for example, you need to use an external caching service. So you can use Elasticcache managed reddits and Memcache D or you can deploy your own versions of reddit and Memcache D might be a little bit more cost effective, but then you'd have to manage it, operate it and again, the same things apply.
+
+[00:04:40] What's the cost? What's the throughput? What's the operational overhead? And can you use an SDK within your application? Application data is by far the most complex area and we're not going to address, you know, all of the questions you might have here and, and a lot of it will be specific to your application itself. So as a general principle,
+
+[00:05:01] Microservices use decentralized data management in that the data is actually encapsulated by the microservice that leads to a number of challenges. So typically, if you're coming from a large enterprise, you've got some very big databases, maybe just one. So who's gonna pay for breaking up that database,
+
+[00:05:21] understanding all the relationships between the tables, the joins and so on and so forth. Copying data around can lead to inconsistencies. We all know that. And of course, a distributed data platform means that you have issues around data access, bring it all back into artistic view. And of course, operationally the more components you have,
+
+[00:05:41] you know, and a distributed system has a lot of components, the more load you can potentially generate on those databases. So here are a couple of patterns, the main patterns that I've seen being used that can help you. So the first one we've talked about this database proxy, it basically is an operational pattern. It allows you to effectively reuse connection pools.
+
+[00:06:02] Simplify the way you connect with credentials. It can include caching as well to reduce some of the Latency. But database proxy for relational databases is probably a must remember for NoSQL systems. A lot of the times the way the database is built means you don't need a proxy anymore because it's scaling horizontally.
+
+[00:06:22] Another pattern is to have a centralized data service. Now this data service might be used to write all your data to give you that kind of single view of the data equally. It can be used to read data from multiple Microservices. However, starting to use that pattern can lead you down the path of breaking the initial principle of data remaining being encapsulated
+
+[00:06:44] within a microservice. So use with caution. There's a couple of articles I think one from datadog that you can look up that show some of the issues you can start getting to if you have a centralized data service. Nevertheless, it's still a pattern and it may be valid for your application change. Data capture is a good pattern to use in a microservice.
+
+[00:07:02] Basically, what you're doing is either implicitly through something like that EO db streams or explicitly through SQS or kinesis. You're capturing events to data. So let's say I've got a stock item and I reduce it by one, then I reduce it by another one and I reduce it by another one in a transactional system.
+
+[00:07:20] I just see, you know, the stock item going you know was 10 is now seven change. Data capture would capture those three events. Why change? Data capture is important is because I can use it for something like event sourcing. So as well as storing the fact that I've now got seven of these things, I've also captured the fact that the three things
+
+[00:07:42] were ordered at this time at this date. And I end up with an immutable data store that not only covers the state but also provides an audit history of how you got to there. So that's important for a couple of reasons, it can help you with analytics. So not only understanding what the stock value was, but when it changed and who changed it,
+
+[00:08:01] it can help you build compensating transactions if something goes wrong and it provides an audit source for everything that's going on in your infrastructure change. Data capture also allows you to implement CQRS as well. So breaking apart your read and write. So in microservice a and microservice C
+
+[00:08:20] they both read and write data to the data source. Now, there are some advantages to being able to optimize your rights and your reads separately. And also in many cases, there are a lot more reads than there are rights. So segmenting your application to support that also gives you a bit more security. So here we have microservice E that's talking to an RDS
+
+[00:08:42] data source that's being populated through change, data capture. So every time something changes, that change is being written into a separate data store which is then queried by microservice E or anything that needs to read it. So this is starting to change the way you look at data.
+
+[00:09:00] As I said, this is not necessarily every single data pattern that you'll ever use again, look at the Microsoft documents to see a more detailed description of these patterns. However, these are, you know, 45 common patterns I've seen being used a lot and being discussed a lot. Certainly, when you begin to talk about the general microservice architecture.
+
+[00:09:22] So hopefully that was useful. Please join me for the next video where we'll look at typical application reliability patterns. Thanks very much.

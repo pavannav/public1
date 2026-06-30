@@ -1,0 +1,95 @@
+[00:00:07] In this lesson we talked about golden path automation. So it sort of demonstrated how platform teams produce secure by default ingress and safe traffic management. And all this done without the developers having to do anything additional.
+
+[00:00:20] So to understand certificates, ingress controllers, service measures and all that, the demo that we are going to do again is less about tools, but it's more about the concepts. What does that mean? So that means it's going to be very simple and python based like every other demos that we have seen. And it focused on the intent and the guardrails and the automation. As you can see, there's been the trend along this whole course.
+
+[00:00:42] So the core idea here is that developers should tell you what the intent is. If you go back to the original lesson, we started from the foundation lesson. One of the things that we talked about was that how, how do you translate that intent to the platform capabilities? And this is where you can see that coming to a reality.
+
+[00:01:00] So developers declared intent here could be expose my service securely and manage traffic safely. Very high level. Right. And platforms should be able to go under the hoods and do everything that is needed. So it'll manage things like your tls host routing, traffic strategies and validation guardrails. So what we are going to do in this demo is to sort of simulate that whole thing.
+
+[00:01:22] As always, you can take the code and do more work with it and like sort of extend it as you see fit to learn this and maybe even take it to that next level of being able to apply that to your definite business scenarios. So as always I want to go into VS code here and I'm going to go into.
+
+[00:01:45] So to start with, let's look at a couple of pieces of data. First thing we are going to look at this canary. So I'm going to look at the canary YAML file. The reason why we are going to look at the canary YAML and the blue green YAML is so that you know how this is set up. Not going to spend too much time, but just so that you understand.
+
+[00:02:02] So what you have here is you're defining the service, in this case the orders and you're defining the host, right? I mean so host is like orders API platform local. So it can be any other host that you would have in your scenario. Then we look at the security where TLS is set to true because that
+
+[00:02:20] developer said I want to do it in a secure way, right? Not an insecure way. Then the strategy is going to be canary. We're going to look at the canary and then canary percentage is 20 meaning like you're going to first send 20% of the traffic there and then change from there. Now let's also look at your blue green YAML. In the blue green YAML, what you have is like again the same service host dls. All those things
+
+[00:02:42] are the same, right? What you see at the top, what is really different is the traffic pattern. So looking at the traffic pattern, you see that the strategy is blue green, not canary. And you're going to have blue as your environment, which is your default environment, right? This is where all traffic is going through blue.
+
+[00:03:02] So and it also gives you a way to let the testers force route to green via header. So this is where it says allow header override, right? So if the testers want to send something over to green to see if it is actually working before they actually do the flipping or the switch over from blue to green, they can do that. That's why this is set to true.
+
+[00:03:23] So you can see that the developers do not configure certificates, ingress controllers, routing rules, load balancing. None of it's happening. Now let's actually look at our test scripts here. Let's start with our policy. So in here we'll spend a few minutes on this ingress demo
+
+[00:03:40] and then we will get into the rest of it. So the policy is like, think of this more like your OPA that we learned in one of the previous lessons. So this OPA admission control in a real platform is something that we are simulating here. So it's the sort of validates that developers configure before anything is running.
+
+[00:04:00] So let's look at the rules that are being enforced here. So we are saying what we need are. So you have all these things like what are the allowed environments, what are the allowed strategies and everything. Then we should have. Okay, so these are the required keys. So this provides you that structural completeness across the board. You can see like service, host, security
+
+[00:04:23] and traffic are the required keys here the. Then let's look at our tls. Where is tls? Yes, TLS must be enabled. So TLS enabled part is there. Then we look at the host and saying that the host must end in. Where is that doing okay, allowed host.
+
+[00:04:42] Allowed host coming from platform local, which means that, okay, it has to end in platform local. Again you change this to anything that you want, it could be platform.platformetrix.com or whatever that you might won't have in there. Then strategy. We already talked about setting to canary and blue green and then the Canadian percentage should be 1 to 99.
+
+[00:05:04] So let's see where you're setting the canary percentage. Yeah, the percentage of Canadian should be either a bit less than 1 or greater than 99. So again, so it should be between, you know, 1 and 99. So because 1 thing that can happen is that if you put a zero there, nothing happens. Right. What's the purpose of doing it?
+
+[00:05:21] And if you are doing 100%, obviously it's completely unsafe to start with. So you don't want to do that either. So the idea is that when something fails, it basically just, you know, completely exits sort of reject immediately with some really clear error messages that you would see. So the next piece of code that you want to look at is your gateway.
+
+[00:05:43] This is where you're doing your secure ingress with those traffic control simulation. Right. So we talked about the envoy ISTIO and the ingress gateway. So this would sort of simulate that. So your secure ingress check here, this is the first one to look at. So this is simulating that secure ingress id. So in real life what happens
+
+[00:06:01] is you'll have your TLS termination, your host routing and you know, some of the rate limiting outs happening at the edge. So this one will go ahead and double check if the TLS is enabled, that's what it will do. Right. So what you're seeing here, if not TLS and it also checks with your platform DNS. So I think that's
+
+[00:06:20] also something that is checked here. The second thing to look for here is your route request. So we talked about routing to Canary or blue Green. Right. So since we are simulating here, what we are doing is that doing a random generator to probabilistically route those orders v2 to based on the canary percentage.
+
+[00:06:42] So if the request ad has this header X canary, then it sort of forces routing to V2. That is how it is done. And if it is not, you know, it basically reverts it back. So on the blue green side of things you can see that all traffic to orders active.
+
+[00:07:00] Where is that order? Yeah, Orders active color. Yeah, so this is the active color that you would get here. Traffic active color. And then it also allows for what we talked about earlier, that header override. Where is the header override set? Yes, this is where the header override.
+
+[00:07:20] Because if you don't set that, there's no point really. Right. Because it's set to, you know, completely to work on blue and it can't really test anything with the green. Last function that you should look for in Gateway should be around this demo before After. So here what it says is that before five requests
+
+[00:07:40] go to all orders V1, that's the first case, right. So you start with five percentage of five requests that sort of goes to orders B1. And there's no traffic control. No. Essentially pretty risky deploys. And that's okay. If something doesn't work there, then you can always go back right now after that what you have is this. Then increase that to 12.
+
+[00:08:04] So 12 requests are routed using those configured strategy. And this is where you see that split in real time, right? It happens from 5 to 12. Then you'll have a safe test sort of requesting these using these headers. So this is I'm showing just from a teaching point of view just to see
+
+[00:08:20] how we can understand this works. Because one request is using those header override showing how to test without like impacting the users. And I just wanted you to get for it. So I just added that from a teaching point of view. So let's actually look at the last script here. I have something called rundemo py. I just created that so that it's easy for you to test
+
+[00:08:40] it out and learn it. So this does a few things, right? So one thing it does is that it validates the config. Validate config, right. Essentially where is that Validate config? So essentially it uses that to validate the configuration. It checks for ingress security.
+
+[00:09:01] You can see that it's checking for the ingress security. Then what does it do? So config gets a printsconfig accepted after that. Then it then simulates the ingress overall ingress setup where you'll have like the short delays from TLS termination to host routing, to traffic rules kind of thing. After that it runs a before and after comparison so
+
+[00:09:21] that you see what happened before and what is happening now. So with that said, let's actually try and get running in this one. I will go to exit this one. The code part of it. Not my terminal. I will accept these ones.
+
+[00:09:44] Let me actually start my terminal, clear my screen. Okay, so I'm here on lesson eight. So let me first start by doing a PIP install. I want to make sure that I have my YAML. So you might want to definitely do that.
+
+[00:10:01] These are things that could trip you up. So it says that yeah, it's available, but it's a lower version. There's been some upgrades. I don't know if I need the new one, but I'm just going to go do that anyway. Bit point of view. So I just make sure that I don't miss anything. So I got that installed.
+
+[00:10:21] So then I make sure that install YAML just because I don't want to miss anything. Yep, I think all good. Okay, so now I'm going to run the demo. MLC run demo. This demo, as you saw, runs both of them back to back, right? Both the canary and blue green are run back to back.
+
+[00:10:43] But since we have looked at the code, let's run it that way. Feel free to go ahead and split this script up. Python script up and you know, run it separately if you want to learn these things separately. But otherwise we can just run it back to back and see how it works. So let's look at what it did.
+
+[00:11:00] Okay, so when I ran this, what happened is that first thing, this is the first demo there, what it's doing is that you're seeing that the config is accepted. So then before you have those five requests, see that and then the rest of the requests essentially happen after that. So these ones are going to orders v1, the rest are going to v1, not
+
+[00:11:23] v2, because 80% of the requests would be on v1, the remaining 20% to v2, you can count that and you know, tabulate that. So now you also have a safe test here, right? Because we want to try and do that header override if you need to. So essentially you're requesting that one request
+
+[00:11:40] out of four goes to force two go to V2. And because here X Canary is set to true, as you saw in the code. Now, on the blue green side of things, what you're seeing is the same thing is happening. You're seeing that your config is accepted, then you're having your TLS enforced happening.
+
+[00:12:02] What else? The strategy is set to blue green and it's active blue. So now we are automating that ingress setup. So you see, now we are simulating that ingress setup here. So you have those automation of the ingress setup. Then before you can see, this is five are going to orders V1 like we asked.
+
+[00:12:21] Then the. Let's see the. All the other requests are going to blue because we said everything should go to blue. Perfect. Now we also have a safe test here. So the header override is that we're testing this to say that if you have request routed here, that should. What is that? X Force color?
+
+[00:12:40] Yep, we had an X Force color in the script there. And the blue green YAML that actually set you to have that safety there. So one of the thing here is that the developer intent Changed, but the platform behavior is sort of, you know, secure by. By default right now
+
+[00:13:00] this is all great, but I want to show you some situations where there's a guardrail rejection. Right? So let's go back and change my Canary script. So one of the things, simple things that you could do is that you can say the developer asked for security. TLS true. Right, Security true. So what if I say I'm going to make this false and I'm going to save
+
+[00:13:23] that and say okay, so now what happens if I rerun this? It's unfortunately going to run both. Sorry, I don't want to have that. Go back to my terminal, I run this again. So what happened? Let's see what happened to your first demo.
+
+[00:13:40] You can see that the config is rejected because TLS must be enabled and we have that disabled here. So. Right, set to false. So that's something that caught how that guardrail rejection happened. So that's good. Let's also look at a case where that blue green flipping is happening. Right? Because that is something that you might be interested in if you
+
+[00:14:01] are looking at blue green. So let's look at your blue green YAML. What should we change here? So I think we can go ahead and change your active color to green. Let's see how the traffic is going to go now. Right. Now that we set to green. So if you set to green, is the traffic moving?
+
+[00:14:23] Aha. You can see that the before traffic continue to route to orders V1. Now after traffic is completely move to green. So that flipping is something that you can do. Because only thing you had to do here was to change the config in your YAML and that's it, right? I mean, so the whole thing sort of worked based on how we were
+
+[00:14:41] to do it. So let's change it back to blue. So as you went through this demo again, just to reemphasize a few things, sort of like a takeaway in a way. Second takeaway here, right? Golden Path is like that opinionated, predictable, safe by default ways. So essentially developers get fewer choices.
+
+[00:15:00] Every choice is a good one. Right? Security is automatic and not optional because TLSS enforced DNS is platform on the no config can sort of disable it. The other one is like traffic control belongs to the platform. So individual teams don't manage ingress controllers or their service meshes.
+
+[00:15:22] Then guardrails catch errors early. So invalid configs are sort of rejected before runtime like we saw not discovered in production. And then there is this before and after, right? Because without the platform, deploys are all or nothing. But now with Canary, or now with the platform, you get this Canary
+
+[00:15:40] or blue Green, right? I mean, so that is something that provides you that great capability to do it. So this concludes the demo of this lesson on this Golden Path Accelerators. And we'll see you later.

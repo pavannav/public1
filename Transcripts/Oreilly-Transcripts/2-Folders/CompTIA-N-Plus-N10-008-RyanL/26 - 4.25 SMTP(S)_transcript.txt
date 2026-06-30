@@ -1,0 +1,51 @@
+[00:00:07] - [Instructor] So looking at simple mail transfer protocol, if you can think about this inbox, (instructor laughs) this mailbox here, this is exactly what we're doing. We've got a message. We want to send it to someone else. We're looking for a server for outbound mail.
+
+[00:00:23] Not inbound. For inbound, I've got POP3 and IMAP, for outbound, SMTP. So realize that this is a standard mechanism for sending emails. It's been around for a very long time. Authentication is optional. Although, it's definitely recommended. So in SMTP,
+
+[00:00:40] mail server may be a gateway or relay, and that relay, there's a good chance that you're going to want to require authentication. Many, many years ago, these servers were basically running and they were willing to relay without authentication. And it led to a lot of spam. You could just sweep the internet for TCP port 25.
+
+[00:01:01] If we found a server that was open, we could send an email. We could see if it relayed it. And if it did, you could target hundreds of thousands of users just by sending email through that particular server. So authentication says, if somebody sends us a message, we'll relay it for them. But we say, wait a minute, who goes there?
+
+[00:01:20] If we think about a traditional public mailbox, you could drop a message into it, so long as it's got a stamp, it's gonna be sent. What happens with authentication is it's like, you'd come over here to send a message and you gotta open that handle. And it says, wait a minute, who goes there? And only after you successfully authenticate, can you open the handle, drop your message in, and then go ahead and send it.
+
+[00:01:42] So SMTP by default is clear text. You can see when these things were built, not a lot of security was in mind. POP3, IMAP, SMTP, all clear text. So your credentials would cross the wire in clear. So would all of your email. There was two different port numbers
+
+[00:02:00] kind of similar to what you've seen before. The traditional port number of TCP 25 is what's used by default. We can use hashed messaging over port 25, so it's not as susceptible, but those hashes can still be collected, and you can do a tax against them. A better option than using hashes through clear text
+
+[00:02:20] would be to send your credentials through TLS. You can still do hashing. You can still do one-time passwords. You can use generic token cards, but those messages are gonna be be protected through the use of TLS. Also remember that when we use digital certificates, we're authenticating the server side of the connection. If you don't do that, I could do a tax with rerouting,
+
+[00:02:40] and I could tell you that I'm the mail server. And when you go to send emails, you'd be sending them to me. I could read them, I could modify them. It wouldn't be good. By using SSL, AKA TLS, whenever you're go to send out an outbound email, that server is going to authenticate to you and say, I'm definitely the mail server. And then you authenticate to the server,
+
+[00:03:01] you say, I'm definitely the valid user. Your credentials are gonna be secured inside of that TLS tunnel. Very similar to LDAP. Very similar to IMAPS. Very similar to POP3-S. Just remember those port numbers. Additionally, remember that SMTP has relaying capabilities. What's that mean? Well, when we wanna send mail to a particular domain,
+
+[00:03:24] we do a DNS record lookup, we get the MX record, and then we go ahead and send it there. Now, you may have a local server inside of your environment that you send all of your email to. It's very much like this blue box. Maybe your organization blocks all outgoing emails, and says, if you wanna send emails,
+
+[00:03:40] you go ahead and send to our server. And your internal server would be responsible for the delivery. We call that relaying. And I mentioned that term MX records. I wanna talk about it in a little bit more detail, which is why I left this slide in the slide deck. Let's go through a whiteboard real quick, and just look at what SMTP looks like
+
+[00:04:00] in day to day operation. So here I am, I've got my laptop, and I wanna send a message to you@pearson.com. What I'll do is go ahead and I'll create my email. I'll give it a message, put some contents in it, maybe include a file, and I'll hit send.
+
+[00:04:22] When the mail process wants to actually do the delivery, it looks at, you guessed it, the domain name. And what we're gonna do there is perform, like the slide said, an MX record. Do you remember what MX records are? We might've talked about it a little bit back in the DNS section.
+
+[00:04:40] Your MX record, once again, stands for the term mail exchanger. And this is one of several important records that happens in a DNS server. So your DNS server, the first record that we wanna think about is an A record. And an A record is where I say, www equals sum IP address. And that allows people to find my company www.pearson.com,
+
+[00:05:04] goes to this IP, vpn.pearson.com goes to another IP, developers.pearson.com goes to another IP. Those are all just A records. It's an IP address to a name mapping and specifically IPv4. If we were to do this with IPv6,
+
+[00:05:22] that's a quad-A record. And this is just saying www, or any other name that you pick, equals as IPv6 address, opposed to IPv4. Now, there's several types of DNS records, but the one that we wanna talk about next is called MX.
+
+[00:05:41] This points to the IP address of the mail server. And this works because anytime you've got an email, in this case, you@pearson.com, what the SMTP process is gonna do when you go to send this email out, is we go, okay, I've got email to be delivered. I've gotta leverage SMTP,
+
+[00:06:02] let me do a query. So we do a DNS lookup. Does anybody remember the protocol that's used? It's gonna be UDP. Does anybody remember the port number? This is an important one. 53. It can work on TCP, but UDP is where it typically works.
+
+[00:06:22] We do UDP lookup on 53 and I say, where on earth is the MX record for pearson.com? And the way DNS works is that if you have mail to be delivered to anybody at pearson.com, we say, send it to this IP address. So the DNS response comes back,
+
+[00:06:41] MX equals sum IP. At that point, we're going to connect to that server. And what's the default port number? For unencrypted, just regular SMTP. 25. If you said 25, you're doing great. So the real kind of process of operations here is
+
+[00:07:03] you've got an email to deliver, find the MX record. MX record points to an IP address. Once we have that, if we're using just clear text SMTP, we're gonna go ahead and connect to that server on TCP port 25. Once you get there, remember, we're talking about simple mail transfer protocol.
+
+[00:07:22] When we say protocol, remember that this is a standard way to do things. There's a white paper, and it describes what I call the verbs. And the real term for it is the methods that when a client talks to a server, these are the words that it says to get an action out of it. So if you wanna send an email,
+
+[00:07:41] there's certain words that are used. If you need to authenticate, there's certain words that are used. If you wanna verify that particular users are on that system, there's a verify command that you use and so forth. Again, the point being that when we have a protocol, we can do it the same way everywhere. It doesn't matter whether it's Windows, Linux, OSX, some type of IOT device.
+
+[00:08:02] SMTP works in a standard way, so we can do it the same way everywhere. Cool. Big takeaways from those things that I would remember for testing, and I hope I brought enough attention to each of these, know what an MX record is. Remember that our default port number is 25.
+
+[00:08:20] Remember that we resolve this MX record through the use of DNS. If we can't resolve an MX record, your emails are never gonna get delivered.

@@ -1,0 +1,51 @@
+[00:00:07] - To troubleshoot authentication, you should know what is used in the authentication process. So, let's call authentication the login binary. Obviously, you know that it can be all the binaries as well that go back to the authentication mechanism
+
+[00:00:21] but let's just take login as one of the examples. Now, login, in order to learn what it needs to do, we'll have a look at PAM and in login you may have PAM libraries like pam_unix2.so
+
+[00:00:42] or like pam_sssd.so or like pam_ldap.so. And the important thing that you should realize is that depending on the PAM module that you are going to use, there is a different configuration that is sitting behind it.
+
+[00:01:02] So, pam_unix2 is plain old Unix authentication in which we are going to look to /etc/passwd and to /etc/shadow and all the configuration files that are related to that. Then, we have pam_sssd.so which is going
+
+[00:01:23] to look at the sssd servers. So, you need to check sss servers and, if anything is going wrong in the sssd servers, you need to check the configuration which is in /etc/sssd/sssd.conf.
+
+[00:01:41] If it's pam_ldap, well then it really depends on which configuration you are on. Pam_ldap can either look to the nslcd service or the nscd service or it can also do it the good old fashioned way and have a look at /etc/openldap and the ldap configuration
+
+[00:02:06] that is in there. So, it's kind of a jungle to analyze what is happening in the authentication process but, if you are getting into problems that relate to authentication, then really I should say step number one is figure out
+
+[00:02:22] what exactly it is that PAM is doing and, once you've figured out what PAM is doing, be aware that every library in PAM has a man page. You can read the man page to figure out what is actually used as the backend for that specific component in the authentication
+
+[00:02:41] and, if you systematically work down through the authentication process by analyzing what PAM is doing, eventually you will get there and you will find the service that is causing your trouble and you'll be able to fix it. So, now that we understand what can be involved in login problems, let's do a lab.
+
+[00:03:00] User Linda cannot log in anymore. Help her. In order to install this scenario, run the lab 97 script. Now let's run the lab 97 script. So, scenario installed, good luck. So, I'm using chvt to terminal two to test a real login of user Linda.
+
+[00:03:29] And as you can see, I'm getting a log in incorrect. So, let's see if I can get in as root. And fortunately we can get in as root.
+
+[00:03:40] Now let's define what is wrong. So, the issue is that user Linda cannot log in. Now, the next phase in the methodology is to gather information. We need to gather more information about user Linda and oh no, Linda, no such user.
+
+[00:04:00] That's not entirely correct. So, we need more information. ID Linda doesn't work. If ID Linda doesn't work, then maybe the user doesn't exist but we wanna know for sure, greb Linda on /etc/passwd and there we can see that Linda does exist, so what is wrong here?
+
+[00:04:21] Let's form a hypothesis. So, we need to make a quick list to figure out what's wrong. If we get ID Linda and we see Linda, no such user, then it might happen that our system doesn't look in the right location. So, it might happen that the SSSD or whatever mechanism is used
+
+[00:04:42] to authenticate and to find user information is wrong. It might also be the case something else is wrong. So, first, let's further investigate the mechanisms behind it. At least I would advise you to have a look at /etc/nsswitch.conf.
+
+[00:05:01] Nsswitch is looking up usernames that are used by any commands and in nsswitch, we can see that passwd is set to files sss ldap which means that nsswitch with have a look at the files first. Now, how about PAM?
+
+[00:05:20] Well, if we have a look at /etc/pam.d/system-auth, then we can see that PAM is first looking in Unix. So, according to PAM, things are all right.
+
+[00:05:43] PAM is looking in a local Linux configuration, next it's looking in LDAP and it's not doing anything else. So, according to PAM, things are okay, so that means that it's not due to any of the authentication mechanisms that are behind it, so it must be due to the account.
+
+[00:06:03] Let's grep Linda in /etc/passwd once again and let's read what we see. So, we have the username, we have the field that goes to the encrypted password, we have the user ID and then we have an empty field.
+
+[00:06:21] What is supposed to be in the empty field? Let's do a cat on /etc/passwd and there we can see that all of these users don't have this field empty and user Linda does have the fourth field empty. This fourth field is the G ID, the primary group of the user and you know what?
+
+[00:06:41] In Linux, every user must be a member of a primary group. So, new hypothesis, the problem is a cost benefit that Linda does not have a primary group. Do we have a primary group for Linda? Let's grab Linda in /etc/group and we see that there is a group 1101
+
+[00:07:01] which is a primary group for Linda. So, let's try to apply a fix. And if you do it the nice way, we are using VIPW which opens a temporary password file and allows us to fix the temporary password file
+
+[00:07:21] because I cannot do anything else than going into the password file directly. All utilities seen to be complaining that user Linda does not exist. So, here we see you have modified /etc/passwd, you may need to modify /etc0 for consistency. Let's do a VIPW -s
+
+[00:07:40] and let's at least have a look and we can see user Linda, the hash of the encrypted password, all the password properties and all of that is looking quite okay. Now, what is going to happen if we type ID Linda again? And there you can see Linda suddenly exists again.
+
+[00:08:00] So, this did not fix the problem yet but this did fix the issue that we get an error about a non-existing user when we were using ID on user Linda. So, now I can try to log out and log in as user Linda again providing the appropriate password and yay, it works.
+
+[00:08:20] So, in this lab, we have learned that if a user does not have a primary group ID, the user cannot authenticate even stronger, the user does not exist according to Linux. Nice to know.

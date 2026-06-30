@@ -1,0 +1,41 @@
+[00:00:06] - All right, let's talk about fixing LUKS issues. So what can you do to troubleshoot LUKS? Well first you need to identify where the problem occurs. It can be at the decryption level. It can be in the mounting.
+
+[00:00:21] If it's decryption, then the error is normally related to the contents of /etc/crypttab, and to analyze what's happening you can use cryptsetup luksDump on your device to find if there are additional keyslots where backup passphrases may have been stored because you may have forgotten the passphrase.
+
+[00:00:42] If that's the case, it helps to know if there are several passphrases so that you can try other stuff as well, and if that doesn't help, there's only one solution, restore backup because a LUKS encrypted device to which you don't have the passphrase anymore will be inaccessible.
+
+[00:01:01] The second category of problems is mount issues. If it's a mount issue, then the error is related to /etc/fstab. So then it's all about normal file system troubleshooting. So if that is the point, check the device name, mount the LUKS device, and not the underlying device.
+
+[00:01:22] This is a common error in /etc/fstab. If somebody has created a LUKS device with the name secrets on the underlying device, /dev/sdb1, I have seen too often that people are trying to put /dev/sdb1 in /etc/fstab. That's not going to work. You need to put dev map or secret in /etc/fstab.
+
+[00:01:44] In troubleshooting, or better to prevent troubleshooting, you can also manage the LUKS headers. The LUKS headers are essential for decrypting the device, and you can make backups of them. In order to do so you would use something like cryptsetup luksHeaderBackup
+
+[00:02:01] /path/to/luksdevice --header-backup-file which is followed by the path to the backup file. So this is going to help you in case the LUKS headers get corrupted. After creating a backup, you obviously know you should verify the backup. You can do that using cryptsetup luksOpen
+
+[00:02:21] /path/to/luksdevice followed by the decrypted name followed by --header path to backup file. That will prompt for the passphrase that is in the backup file, and if you entered the passphrase correctly, you will get access to the device.
+
+[00:02:40] In case you need to restore the headers, you can use cryptsetup luksHeaderRestore /path/to/luksdevice --header-backup-file /path/to/backup/file, and that will restore them for you. Let me show you how this works. So first I want to show you dmsetup. You know dmsetup is talking to the device mapper,
+
+[00:03:00] which is the layer that is used by LVM but also by LUKS, and if you do an ls followed by target crypt, then you get an overview of all the device mapper devices that are managed through LUKS. If you don't see your devices here, there's only one explanation,
+
+[00:03:20] sometime went wrong in the LUKS open. So if you have automated mounting of LUKS devices, /etc/crypttab is where you need to go next. Now let's talk about backups. So first you are going to use cryptsetup luksHeaderBackup followed by the path to the LUKS device.
+
+[00:03:40] That will be the underlying device, so /dev/sdb1. Next header-backup-file, which is followed by the file you want to create. Something like this. Doesn't complain, so probably it's happy.
+
+[00:04:01] Now we want to verify, and in order to verify we use cryptsetup luksOpen /dev/sdb1. We need the name that we want to open, and next we need to specify that we want to use the header,
+
+[00:04:20] which is in /root/luks-sdb1.bak. Our device secret already exists. That is because the device has been opened already. So if you want to test that, then we use cryptsetup luksClose
+
+[00:04:42] /dev/mapper/secret. Oops, device or resource busy. Why do we get that? Well, that's a silly error of course. If you want to close a device, it helps if you first unmount it,
+
+[00:05:02] and then you can see the luksClose runs smoothly, and now we can try the luksOpen based on the header file again. It's prompting for the passphrase on /dev/sdb1, and you can pick whatever passphrase you wanna use, and as you can see it was successful.
+
+[00:05:22] Was it really? Well, if we see the device in the /dev/mapper directory, and we do, then it was successful. Now in case something goes wrong with your LUKS device, you may restore the LUKS device from the header backup,
+
+[00:05:41] and in order to do that, cryptsetup luksHeaderRestore /dev/sdb1 --header-backup-file /root/, oops.
+
+[00:06:04] I'll post the name again, luks-sdb1.bak. So we need to confirm that we want to replace the existing header 'cause you know this is how it always goes when working with backups. You will overwrite the original data,
+
+[00:06:20] and if you're okay with that, then you type yes in uppercase, and the header file will be restored, and that's how you work with LUKS encryption headers. All right, now that you know how to troubleshoot LUKS, let's do a quick lab. This is a lab without a script. I just want you to practice making a backup of the header files and test that you can decrypt
+
+[00:06:43] the device using this backup, and once you've done, restore the backup. You should be comfortable with this procedure. Good luck.

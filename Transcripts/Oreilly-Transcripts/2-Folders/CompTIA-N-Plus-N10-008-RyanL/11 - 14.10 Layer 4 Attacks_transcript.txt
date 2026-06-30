@@ -1,0 +1,129 @@
+[00:00:06] - So let's take a little bit of a deeper look than we have previously at layer four. We wanna understand the layer four protocols and the way that they can be abused by attackers. We're gonna take a look at ICMP TCP, UDP, as well as GRE.
+
+[00:00:21] These are all protocols I'd like you to just be a little bit more familiar with and think about from a security perspective. And we'll start with the ICMP. ICMP is unfortunately very misunderstood. I've been reading a lot of network books for many, many years, and I can't tell you how many times I've seen books say that ICMP is a layer three protocol.
+
+[00:00:40] It's actually layer four protocol, and I'll show you how that works. Let me just jump over here. When we look at the layer three header, remember this is our IP header. In the IP header, what's the name of the field that shows what we're carrying at layer four? Does anybody remember? It's called the protocol field.
+
+[00:01:02] And it indicates, when you're decoding this layer three packet, it tells us, it's basically a definition of how to decode the following bits. All those ones and zeros needed to be formatted so that we can turn it into the right type of header. So if it's TCP, it six, if it's UDP, it's 17,
+
+[00:01:21] if it's ICMP, it's one. So it'll actually say protocol member ID one. What we'll see here, layer four is an ICMP message. Now this throws people off because they're used to seeing layer four protocols that have port numbers. Typically, what we spend most of our time looking at is TCP UDP, and then going and making firewall rules
+
+[00:01:42] or troubleshooting services based on port numbers. It's critical to understand that there's other layer four protocols out there. If we look at OSPs and EIGRP, those are later four protocols that don't have port numbers. GRE, which we're gonna talk about in this module is another layer four protocol that doesn't use port numbers.
+
+[00:02:01] ESP, which we use for IPsec VPN is yet another example. So just be comfortable with the idea that not everything at layer four is necessarily gonna have a port number. What ICMP uses instead of port numbers are message types. So we've got a type, and then we've got a code. And that's basically all that it does.
+
+[00:02:21] So if you wanted to do something like a pin, you send out an echo request, you get an echo reply. We can use ICMP for host discovery. I can see that a host is actually there, but you can also use it for service discovery. A lot of people don't realize that. Whenever we're doing a port scan to discover what ports a remote system has open,
+
+[00:02:40] with TCP, we'll send a TCP SYN, and we get a SYN-ACK of the port is open. With UDP, you don't get anything if the port is open, but you get an ICMP error message back if a port is closed. So we can determine what ports are open by doing a scan that gives us inversed results. Basically telling us what's closed.
+
+[00:03:00] For example, if I send a UDP packet to port 69, and I don't hear anything, it's a good chance TFTP is listening. If I send a UDP packet to port 70, and I get an ICMP error back, I go aha, that host is sending ICMP errors for closed ports, and now I've certainly discovered that 70 is closed
+
+[00:03:20] and that 69, I can deduce would be open. So when we do port scans for UDP, you'll actually get those ICMP error messages back. Or will you? A lot of times what some networks do is they prohibit ICMP all of it from being passed back and forth. That's not that wise. There are certain ICMP messages you want to permit,
+
+[00:03:40] and there's others that maybe wanna deny. Realize that when we create access control lists, we can permit or deny ICMP strategically based on the specific type and code of messages. So if you were to, let me just pull up Firefox real quick. And if we do ICMP into Google or DuckDuckGo, rather,
+
+[00:04:03] let's just look at the Wikipedia page for it. And what I'm hoping to find is this. It's a table of different control messages. Notice that an echo reply, this is a ping response is code zero, and the ping request is a type eight.
+
+[00:04:20] Isn't that a little funny? You'd think it would be like one and then two, it would be sequential, but it just isn't. Not with IPv4. IPv6, it's a little bit more logical. Type one and two are reserved. Three is destination unreachable. This is where it gets interesting because we go, well, why is the destination unreachable? Is it the network? Is it the host? Is that the protocol?
+
+[00:04:40] Is it because I tried to do source routing? That's where the client specifies the path that a packet should take through the network, and a lot of routers aren't gonna respect that. They go, you don't get to pick the path, I get to pick the path. So maybe they'll toss my message away, and they'll say, hey, your source routing failed. There are situations where the traffic could be administratively prohibited
+
+[00:05:00] and we get an error back. Notice we also get messages for things like a source quench, route advertisement, time exceeded. This is what we see in trace route, TTL expired in transit. Sometimes the time exceeded with reassembly if there's fragmentation. I could spend all day talking about these code types. What I'd like for you to know is that there are
+
+[00:05:21] different code types for different types of messages, and I want you to not be an administrator who just says block all ICMP and puts up this big wall. Why? Because you're gonna break diagnostic tools. You can permit and deny based on individual message types. So if you still want trace route to work, we can block ping,
+
+[00:05:40] but we can allow trace route to function. How? By going in and permitting and denying based on these code types. Cool. Let me get this out of here. And what else did I wanna tell you about? ICMP can be used for spoofing. How does that work? Well, I can send a ping request source from you
+
+[00:06:01] and you're gonna get the response. So here I am. I'm the attacker. Here is Google. I'm just gonna put a G to the right. And here you are as the victim. If I spoof a request to Google saying it's coming from you, I say the source is V. Google is gonna respond and send you traffic.
+
+[00:06:21] So if this was a SYN with TCP, you'd get a SYN-ACK back. If this is an echo request, which is a type eight, you're gonna get a zero back. So I can spoof, and you're gonna get traffic that you didn't request. What made this really slick once upon a time is you could ping broadcast addresses. There's a lot of colleges that had direct broadcast enabled.
+
+[00:06:43] So you could ping one particular subnet or one particular IP. Just imagine like 28.255.255.255, you send out one echo quest and you could get back up to 16 million replies. And you don't just do it once, you put it in a loop and it sends out a thousand,
+
+[00:07:01] and for those thousand you get a 16 million to one return on investment. And that's all going back toward somebody who never wanted those messages. So just something that we could kind of look at and think about when people talk about spoofing, there's a concept called firewalking, and I always think of Tony Robbins
+
+[00:07:20] and self-help stuff and people walking on hot coals. Firewalking is a way to peer beyond a firewall. So let me get my diode logo go in the right way. All right, so if this is the internet, that's the firewall. A lot of times people do network address translation. And they go, if you connect to port 80,
+
+[00:07:41] we're gonna bring you in here and have you talk to the web server. Well, wait, what if they put a WAF, a web application firewall, behind their firewall? What's the difference? A firewall's general purpose, it does everything. It does firewalls, it does VPNs, it does a little bit of intrusion detection, it can look at FTP, it can look at email,
+
+[00:08:00] it can look at web, it can look at file transfers, it can look at all sorts of stuff. What does a web application firewall do? Only look at web applications. So you'll sometimes pair these up. You can have a traditional firewall at the perimeter, and then you have a more intelligent proxy or you have another very granular filter behind it. We do the same thing for email.
+
+[00:08:21] I'll show you. A lot of times what we'll do is stick a dedicated email appliance here. Cisco's is called an email security appliance. And what do we do? We put that before our mail server. But again, if I do a DNS lookup, and I grab your MX record, remember, this is like, if I've got an email for brent@pearson.com,
+
+[00:08:41] I'm gonna do a lookup for the MX record for pearson.com. It's gonna give me a global IP address, which is probably the outside of the firewall. That's gonna be NATed to this internal mail server. Now, this is where firewalking comes in. Beyond the firewall, you've got an extra hop.
+
+[00:09:00] This is another layer three device we have to pass through to get to the real web server or the real mail server. So what we can do is do a trace route where we're collecting TTL messages the whole way through. And by going to different ports and different services,
+
+[00:09:21] anytime a service, let's say they had an FTP server and they didn't have an additional intermediate proxy between us and the FTP server. If I do a trace route to port 80 for web to port 25 for email and to port 21 for FTP, what I might see is a differentiation in hop count.
+
+[00:09:42] I'll see that port 21 is 10 hops away. I'll see that the other two services are 11 hops away. How weird is that? What you're seeing is that the hop count is changing based on port number. Why? Because beyond the firewall, they have additional internal filters that they're using.
+
+[00:10:00] We can discover those by looking at trace route. Really pretty slick. This is just a process called firewalking. Ping of death is where we send a ping, and the maximum size is written in an RFC, like 65,000 bytes or something, and what we would do is we would exceed the maximum size, and basically the host that received this giant ping try to reassemble it,
+
+[00:10:20] it would hit that maximum and then fall apart. So this is an old attack. Doesn't work anymore. Operating systems have been patched, but the idea is by sending a message that was too big, it violated the RFC. When you tried to reassemble it, the system didn't give up gracefully. It would just crash in the process. So some legacy stuff, but it's good to know about.
+
+[00:10:40] So let's look at TCP. With TCP, remember that at the beginning of session, there's a three-way handshake. What's that about? We do a SYN, and SYN-ACT, and an ACT to get our sequence numbers synchronized on either side. That's what the SYN is, it means synchronized. So once you and I are synchronized, you might want to start at 1024,
+
+[00:11:01] and I might wanna start at one. That's okay, so long as we agree. That's the numbers aren't important. The fact that we know what the numbers are is what matters. Once we've got those numbers, we can exchange data, and as more data goes across, those numbers just keep climbing, the sequence numbers. So if somebody was monitoring a connection
+
+[00:11:20] between two parties, when you look at sequence numbers go by, you can figure out what the next one would be. This is called TCP sequence number prediction. You'd have to be able to observe a flow, you'd have to watch the sequence numbers climb if you were ever going to spoof a packet and try to inject it into a flow and have it be accepted. Now, there's not a scenario
+
+[00:11:42] where you're gonna have to count the numbers on your fingers and toes and type it in real fast. There's utilities that will do this for you in the background. Just realize that in a TCP transmission, the sequence numbers are negotiated at the beginning with a three-way handshake. If you were to ever mess with the TCP connection, if I just spoof a TCP message,
+
+[00:12:02] and there's not an established session, nobody's gonna look at the payload. I'd have to inject it into an existing flow, and to do that, you have to know what the sequence numbers are. If you know what the sequence numbers are, and you have the ability to do man in the middle attacks, we could potentially do art poisoning, disrupt that connection,
+
+[00:12:21] and actually hijack it and take it over. This is effective against clear text applications. So if somebody had to Telnet session, if somebody had an FTP session, if they authenticated, even with multi-factor author, a one-time password, once their session is established, I can art poison them, I can art poison the upstream device,
+
+[00:12:40] and I can take over the session just as though I'm the real user. So this is why we always wanna use encryption because clear text transmissions can be hijacked. Another fun thing about TCP is there's different parameters in a TSP header. One is the sequence number, sure. Yes, we've got flags for things like SYN, SYN-ACT, and reset,
+
+[00:13:01] but you've also got what we call a sliding window. And the way that the window slides is so that we can send more and more data a little bit more aggressively once we know the network's fast and stable. And if we try being too aggressive and it's too crazy, we can slow that window back down, and we can send traffic in a smaller, a less aggressive way,
+
+[00:13:20] ensuring that there's a greater chance or likelihood that it's gonna get through. So if you pay attention to the way that TCP sliding windows operate, the way that initial sequence numbers work, are they being randomized or are they starting at one? Just by looking at the behavior of TCP, you can learn some things about the client and server. And if you are lucky,
+
+[00:13:41] you can learn enough things to accurately guess what the client and server are. So one way to discover who's around you is to go out and run and map and do ping sweeps and port scans, and that's very noisy. It could be hundreds of megs of traffic, and you could set off a lot of alerts. Another way is to just sit there and be quiet.
+
+[00:14:02] And watch packets go by. And as those packets go by, we can learn quite a bit. We can do all of our reconnaissance passively. Learning what's actually happening across the network. Not only do we see the application that's working, but by the behavior of TCP IP, we can start to guess, you can do this with ICMP too,
+
+[00:14:20] we can guess, oh, that's a windows stack, that's a Linux stack, that's FreeBSD, that's OSX, just by looking at the behavior. This is very valuable. If I wanna figure out what's a server, what might be a client, what might be worthy of attacking, what I definitely wanna leave alone, I can do this before I even kick off my first port scan. Additionally, TCP sequence numbers,
+
+[00:14:41] because you can do observation and do what we call passive iOS fingerprinting for OS identification, some firewalls have the ability to do TCP sequence number randomization. If you're keeping up with all this, fantastic. If you've got to watch this two or three times to soak it up, don't feel bad. This stuff took me years to learn.
+
+[00:15:02] With TCP sequence number randomization, here's our TCP header. It's got a source port. It's got a destination port. It's also got sequenced numbers. Remember how I said with the OSI identification, I can look at the sequence number that you picked and guess your operating system? Well, here's a client.
+
+[00:15:21] It sends out initial TCP SYN out to talk to the server, now it hits a firewall. What's the firewall do? Network address translation, but it also can reach into this TCP header and change the sequence number. To what? To something random. Why would you ever do that? Well, we're gonna NAT anyhow.
+
+[00:15:41] The firewall knows it's gonna be in there rewriting source or destination IP, rewriting source and destination port numbers if it needs to, why not change the sequence number? This will defeat attempts to perform passive OS fingerprinting by intermediate parties outside of the firewall. Pretty nifty. Another concept you should know about
+
+[00:16:01] is called a TCP SYN flood. This is an attack against just the way that the three-way handshake works. Effectively, we send TCP SYN, after SYN, after SYN, after SYN, after SYN, after SYN, after SYN. All of these are coming in, Well, as they come in with the request,
+
+[00:16:20] we say here, we've got this SYN, the server has to respond with this SYN-ACT. It also has to store sequence number information and memory. He's keeping track of all these crazy sequence numbers for connections that are never gonna be established to do this effectively,
+
+[00:16:40] we spoof a connection request from an invalid IP address that is not being used. Why? Because when a SYN-ACT out goes out, if there's no one to respond to it, that server's gonna wait as long as possible, send a second one, and then a third one, and then finally, clear out the entry. We want that to happen,
+
+[00:17:00] so we spoof from IP addresses that are not in use. If the IP address was in use, when it gets in what we call an unsolicited SYN-ACT, a SIN-ACT that had nothing to do with, it will respond with the reset, which this server will clear its resources and get them back. We don't want the server to get the resources back, we want them to be wasted. So we wanna find IP addresses that are not in use.
+
+[00:17:22] Nobody's there. Once we've got that IP, we start sending all these send requests from it. They're all gonna be recorded. It just wastes lots of memory. If we do enough of this, we could overwhelm the server and legitimate connections wouldn't get in. UDP, just a quick refresher. Remember that it's stateless. That means it can be easily spoofed.
+
+[00:17:41] TCP can't be spoofed easily. If I say that I'm you, right? And I send a SYN to that server over there, the SYN-ACT comes back to you, to which you do a reset. So if the three-way handshake is never established, I can never get to a point where I'm gonna send an HTTP request to a web server or an FTP request
+
+[00:18:01] to an FTP server. I can't spoof TCP effectively because I can't totally bring up the connection. I can do things like SYN floods, but I can't pull off the whole handshake, not without what we call TCP hijacking, which is a man in the middle attack. But if I'm somewhere else on the internet pretending to be you, the packets are never,
+
+[00:18:20] it's never gonna become a sophisticated attack because I can't complete the three-way connection. UDP, however, because it's stateless, I can spoof a UDP message to anybody, and they're gonna believe it. So this is heavily used by denial of service attacks. There are no sequence numbers, which means I don't have to worry about it.
+
+[00:18:41] Again, just because it's stateless, I can't stress enough that this is very easy to spoof. Most of the services that we leverage in distribute denial of service attack are UDP based. So just keep that in mind. When we think about GRE, generic routing encapsulation, you could be using ESP.
+
+[00:19:01] This is the layer four protocol. This leveraged by IPsec VPNs. It's fantastic, but IPsec is its own can of worms, which we're gonna get into later. This is what I'd prefer that you use. There are reasons though, that you would use GRE. GRE is vendor neutral. It supports things that are not IP.
+
+[00:19:20] And do you like duct tape? Kind of a weird question, but you know how duct tape just sometimes gets the job done or zip ties or Velcro or whatever? Maybe WD 40? That's kind of like what GRE does. If you're in a situation, there's network protocols that aren't working, there's appliances or equipment that just says that cannot happen. We go, wait a minute, let me put GRE on either side of this.
+
+[00:19:42] If I can construct a point to point tunnel over IP, I can you leverage GRE, and I can put anything in the world inside of that. So if there's other network protocols like IPX or AppleTalk or DakNet or IP version eight, if you just made that up and built it, the intermediate equipment would all have to speak
+
+[00:20:01] IP version eight for that to work, but if we can do GRE at two points, I can take anything I can imagine and pass it between those two systems. So think of GRE as just like a big, clear plastic bin that you maybe stick in a storage facility that you can put anything in. It's very, very, very flexible, extensible.
+
+[00:20:22] You can kind of do what you want. So anytime you're stuck in a situation where someone says, you can't do that, look at GRE and see if GRE will solve that problem for you. Now, I hyped it up a little bit. If we think about tunneling, you think, yeah, VPN, right? Not with GRE.
+
+[00:20:40] GRE is a tunneling protocol, but it doesn't provide any authentication. It doesn't provide any encryption. It doesn't provide any integrity. So that's the downside to GRE. It's useful. It can be clever to build a tunnel between two devices and tunnel anything across the internet. It carries non IP traffic.
+
+[00:21:01] That's its claim to fame. If you're to contrast this with ESP, which we use for IPsec VPNs, it has confidentiality, integrity, authentication. This does everything we need, but it's IP only. So if you're ever in a situation where you need to do weird stuff and you want security, you guessed it.
+
+[00:21:20] You can take a GRE header and put it inside of an ESP header. We could use both if we really had to, which would give us basically duct tape and encryption, if you ever needed it. But for now, just remember that GRE doesn't have encryption, doesn't have integrity, doesn't have authentication. Can still be handy, but it's not to be trusted.

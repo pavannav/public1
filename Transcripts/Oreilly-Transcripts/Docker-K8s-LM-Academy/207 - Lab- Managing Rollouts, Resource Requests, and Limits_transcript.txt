@@ -1,0 +1,67 @@
+[00:00:00] Hello and welcome back in this lecture. I would like to discuss one common trap that we might run into, that might might exhaust resources and that you should be aware of. So here we are deploying only pods, right? That's a single pod here. However, let's change this. Let's now create a call
+
+[00:00:20] API deployment. So instead of just a single pod, I wish to create a deployment here, I'm going to copy the definition of the pod because I will specify this also under the spec section. But let's change this to apps forward slash V one. The kind will be deployment the metadata here. Name is going to be color
+
+[00:00:42] API deployment. The name space will be dev the labels here app is going to be color API this plica we're just gonna create here. Let's set a number five for example. And then here we will have template and the template will then have its metadata,
+
+[00:01:01] metadata. And I'm just gonna copy here once again from our pod. We don't need to specify the metadata or the name space under the template metadata, right? So this will already be defined here by the the name space of the deployment. We also don't need to specify the name that's gonna be set by the deployment.
+
+[00:01:21] And then we have here spec and then we're gonna set the containers here like so now instead of using the 1.1 0.0 let's just use the 1.0 0.0 here. So that we can also try to create a rollout for this deployment last, but not least after we have created the template,
+
+[00:01:41] we also need to set a selector here and the selector just gonna look at app call API like so, right. So I believe that this is all we need to do. And let's reduce here a little bit the requests. Let's put this. So 200 is good here. 256 might be a little bit too much.
+
+[00:02:01] So maybe we can actually, instead of reducing this here, let's just change these replicas to four instead of five so that we make sure here that our resources are within the boundaries of the DEV name space. And why do I say that? Because when we look at DEV, we should have one CPU one GB byte,
+
+[00:02:21] two CPUS and two GB bytes for limits when we look at the deployment, that's one thing we need to keep in mind, we're gonna create four pods, each pod will create its own requests and limits here. That means we should take these values and multiply by four. It's gonna be 800 millicores. That's gonna be one GB byte,
+
+[00:02:41] that's gonna be two cores and that's gonna be two GB bytes. All right. So the default strategy here for a rollout is a rolling update. So we're gonna leave that as it is. Let's save this here. Let's come back to the terminal. And now in the terminal here, we will apply individual files. So we gonna say apply
+
+[00:03:01] and we're gonna apply the DEV name space and the color API deployment, right? So we're just gonna create these two. We don't need to create the prod nor the color API pod. Let's first create the name space and then now we're gonna create the deployment called API deployment.
+
+[00:03:21] And I'm sorry, I think I confused that with a little bit with services. Let's come back to the IDE and under selector here, we're gonna use match, match labels, match labels and then app color API, right? So I believe that this is looking better. Let's now come back to the terminal. Let's try to apply this once again.
+
+[00:03:41] Perfect. We can confirm that this was created. Let's get the pods in the name space DEV here and we can confirm that all the pods are now up and running. Perfect. If we were to now describe, let's describe our resource quota. It's gonna be DEV quota with the name space DEV. Here,
+
+[00:04:00] we will see that it's virtually all consumed. It's virtually all booked up. So now what actually is gonna happen once we come back to our IDE and we wanna roll out a new version of our deployment. Let's come back to the ide here and let's change the image to version 1.1 0.0.
+
+[00:04:21] Let's save this here and let's come back to the terminal and let's try to apply the color API deployment file once again. And the moment we do that, let's have a look at our pods cube car, get pod, oops, we need to pass the name space DEV here. And as you can see here, we have three pods. That doesn't seem right. Right. So
+
+[00:04:44] let's wait a little bit. And as you can see here, this seems to actually be stuck at three pods. And I already expected an error here because the rolling update, how it actually does the update is that it creates additional pods,
+
+[00:05:00] but these additional pods cannot really be scheduled because they will be exceeding the resource quota of our namespace. So let's have a look at the rollout status for the deployment and that's gonna be color API deployment in the name space DEV. And the moment we do, we, we do this here, we see that there is still some errors,
+
+[00:05:24] there are some errors here. One out of four new replicas have been updated. So only one replica has been updated here. Let's cancel this. And now let's try to describe here our deployment call API deployment name space DEV, like So,
+
+[00:05:41] and as you can see here, it's still giving us not giving us a lot of information. So let's see if we can scroll this up a little bit. See if we get any errors here. No, there is no or there are no errors here, but it's showing two unavailable replicas here. So let's see if we can get the replica set. So keep
+
+[00:06:00] Carro get replica set in name space DEV and the new replica set that we have here, as you can see, this has a desired count of three, but only one is available. So let's try to describe this replica set cube cut, describe replica set. We're going to pass the name here and the name space is Dev
+
+[00:06:21] and Bingo, we start getting some very interesting messages here. And as you can see, this is actually what is interesting for us. So the message is coming the bug, not the bug, but the error here is clearly visible at the replica set level because the replica set level
+
+[00:06:40] is the one that is responsible for creating new pods. So the error here is saying that once again, we get this forbidden exceeded quota. And that's because we are trying to create more pods than we actually can based on how much available, how much resources we have in our DEV namespace resource quota.
+
+[00:07:01] So this is something that is very easy to oversee and sometimes hard to calculate because you might have different teams or different applications being deployed in the same name space. And it's not always clear how much of the quota itself is being consumed. And then suddenly you just want to update
+
+[00:07:20] a deployment and you are very close to hitting the quota and then you're not able to complete that rollout because the quota has been exceeded. So one way to go about, there are a couple of ways, one way to go about, it would be for sure to delete like delete and our resources that are not being used in the cluster so that you can free up some of the quota.
+
+[00:07:42] You could also right size them to make sure that they are, they are requested. Your limits are matching a little bit more closely their, their real resource needs. And a quick way here, if you do have some hardware available, it would be to directly edit the the resource quota for the name space.
+
+[00:08:01] So back in the ID here, let's change. Let's update this a little bit. Let's put 22, let's put four and four. We're gonna save this here. Let's come back to the terminal. Let's apply. So keep croly our dev namespace file, the quota has been updated here.
+
+[00:08:20] And now let's have a look at whether we started doing this here. Not yet. So now we can probably have a look at our rollout status here for deployment, call API deployment namespace and the rollout now is waiting to finish here. So if we don't want to wait for this
+
+[00:08:40] thing here for the exponential back off to actually come and try to create new pods in the replica set because that might take a little bit of time. We can also restart the rollout like so that's gonna restart the rollout. And now we can see that once we check the rollout here, then we can confirm that the deployment has successfully rolled out.
+
+[00:09:02] So now, Cube Car get pods, sorry, name Space Dev. Here, we're gonna confirm that we have four pods that is looking good and these parts, they are all very new, right? So we can also have a look here at the replica set, name Space DEV. And we can confirm here that the older replica sets, they are now with zero desired.
+
+[00:09:23] And we have this new replica set here. If we were to now describe this replica set, describe replica set past the name here, name Space Dev. Then we can confirm that the pods were successfully created. Once the rollout has succeeded, you can then decide whether you will leave
+
+[00:09:41] the new resource quota in place to allow for this room for new pods to be created as part of new rollouts in our deployments. Or you can also revert the values to their previous amounts and then make sure that you update the requests and limits of existing pods or that you delete resources which are either consuming too much or
+
+[00:10:03] not being used in the cluster at all. And just as a side note, of course, this will also impact the the scaling, right. So if we were to scale this deployment, color API deployment name space DEV replicas uh 10, then of course,
+
+[00:10:21] that's not gonna work because we don't have enough resources to create 10 replicas. So if we were to now get the pods here, then we're gonna confirm that we're just gonna have here 368 pods and that's as much as we can get the rest here is not gonna work, right? So we would then once again try to scale this back to the original one here for
+
+[00:10:44] and then that should also kill some of the pods and we should be good to go. So just keep this resource quotas requests and limits in mind whenever you're playing around with pods with deployments, rolling updates and so on and so forth, right? So,
+
+[00:11:00] um let's just delete everything that we have here. So let's just do a little bit of clean up. We're gonna delete everything. There are a few things which will not be found that is perfectly fine for us. If we now get our name spaces, we can confirm that the DEA name space is gone. So we are good to go. Let's wrap up this lecture, take a short break and I'll see you in the next video

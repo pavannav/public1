@@ -1,0 +1,63 @@
+[00:00:06] - Before we start talking about SELinux, let me first work through two demos to refresh your knowledge about SELinux. In demo number one, I'm going to run SSH on port 2022.
+
+[00:00:23] So in order to do so I'm using vim on etc ssh, sshd, underscore config. And you look for the port line which is right here. By default it's in port 22. And let's make that port 2022.
+
+[00:00:41] Oops, just checking a little bit, something odd happened there. Now it's good. So now that we have changed it, we can use system, ctl, restart, sshd. And, oh no, "Job for sshd service failed "because control process exited with error code."
+
+[00:01:03] So what is wrong? Well, let's see if system, ctl status, sshd status, anything. Just telling us it failed to start the open ssh server daemon. Now for the details.
+
+[00:01:20] So if something like that happens, Well in SELinux troubleshooting, it's always a good idea to figure out if it's because of SELinux or because of something else. If you use getenforce, then you can see that we are in enforcing mode, if you set enforce zero, then we are in permissions mode
+
+[00:01:41] and for troubleshooting it's a good idea to try again. And as you can see it works now, so the problem is in SELinux. That's what we just needed to confirm. So back to enforcing mode and let's start troubleshooting. To understand what is happening,
+
+[00:02:02] I am going to grep, AVC, on var, log, audit, audit the log. I just wanna see the last line so dll dash N one is giving me that. What do we see? An AVC denied, denied for name bind.
+
+[00:02:21] Name bind is when a process needs to get access to a network port, so the command is sshd, the port is 2022. Now we have the source context. The source context is the context that is assigned to be initiated. And the interesting part is the context type which currently is set to sshd, underscore T.
+
+[00:02:41] And the target context is set to unreserved port T and that is not allowed. So we need to set it correctly. How are we going to do that? Well, let's see SE Manage port command of course. It might be a good idea to have looked at the man page of semanage port.
+
+[00:03:01] The man pages of semanage often have examples near the end. Now look at this. This is an example that shows us how to allow sshd to listen on TCP port 8991. So we can easily copy this part of the example because that's exactly what we need to do.
+
+[00:03:20] We need to set to set the ssh port T context on our specific port. So let me copy this and let's change the port to 2022.
+
+[00:03:40] And now I'm going to run the commands. And it takes a while, which in SELinux is always is good. So now we can try and start the sshd process again. Looking good, system ctl status, sshd.
+
+[00:04:00] And sshd as you can see is listening on port 2022. So that was successful. Now I want to give you a second demo. The second demo is about file systems. I'm going to create a quick sambash here. So yum, search, samba.
+
+[00:04:22] So we need the samba packets and the samba common packets so yum, install, samba, and samba, dash, common. And that should be enough to create samba file shares.
+
+[00:04:42] In samba you need the samba user account. So smbpasswd dash A user. And next I need to create the share. Let's work on slash data and let's use vim on ATC samba, smb.com.
+
+[00:05:04] Oops, smb.conf, so that we can set the appropriates here. Data, comment is data,
+
+[00:05:21] bath is slash data. Write list is user. That should be enough, and let's not care about permissions at all and do it the good old Windows way. Chmod 777 so that we know for sure that at the Linux val system level
+
+[00:05:40] there's nothing that should prevent the user from accessing the share. Systemctl, restart, smb. And now the samba service is running. And now I can mount cif share using mount.cifs. Mounts.cif's is not present,
+
+[00:06:00] that's because we need cifs utils. And now let's also install samba, oops, samba client. Just keeping it simple and trying to access samba share locally. Now the big thing is that I'm going to use mount.cifs
+
+[00:06:24] on local host, and do that the good old windows way. Localhost, slash, data, and let's put it on slash mnt. And also we need an option, user name is user.
+
+[00:06:42] It's prompting the password and now if use is going to mnt which is where the share is mounted and I'm using touch 1234, and I'm getting a permission denied. So what is happening here, well again, it's always wise to start using setenforce zero.
+
+[00:07:04] And to try again. And here we can see that it now works. So we have proved that this is because of samba. Now as you have learned in previous courses, there is sealert. Sealert is very convenient. So I'm grepping on sealert in var, log, messages,
+
+[00:07:23] and that is given me oh, a lot of output. The output that I care about is basically where samba is starting so we can see that it starts about here,
+
+[00:07:40] and there are multiple messages. So preventing samba from write access on directory data. That sounds like a good point to start. And sealert has generated the commands that we can run to get more information about this. The nice thing about sealert is that it's getting information from the database,
+
+[00:08:03] it's using artificial intelligence to tell you more about what is happening. So here we can see, Plugin samba share, 78.9% confidence suggests, "If you want to allow smbd to have write access "on the data directory, "then you need to change the label on data."
+
+[00:08:20] well that sounds exactly as what we needed to do. And this is what it suggests. Semanage, fcontext, samba share, T, slash data. Well that is almost what I want. Now we were going to combine it with a little bit of knowledge of SELinux. Semanage, fcontext, dash A, dash T.
+
+[00:08:46] Dash A is for add, dash T is indicating that the next in common is a SELinux context type. And that would be samba share T, and we do that on slash data.
+
+[00:09:00] But in a regx format so that it includes everything that may exist below the data directory. Now that we have written the context to SELinux policy, nothing has changed on the file system yet. So we need restorecon, dash Rv on slash data
+
+[00:09:23] to apply the setting that we have just written to the policy to the file system. So if it's about contexts in the fie system, you need two steps. Only one step for a context on the port, two ports for the context on the file system. And here we can see samba share T is now set.
+
+[00:09:42] So what if we do a search of some file again? Then we can see at this point it works. Let's double check, obviously it works, 'cause we forgot to setenforce one again.
+
+[00:10:01] And now let's use search something else and it still works, so we have fixed the SELinux context label on the target's directory. What we have just seen are two of the most common operations on SELinux, setting a port, setting a context label on a file,
+
+[00:10:20] so far a refresher of our basic SELinux knowledge, Let's get back to the slides so that we can talk about some more advanced troubleshooting approaches in SELinux.

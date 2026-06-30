@@ -1,0 +1,67 @@
+[00:00:00] Hello and welcome back. I'm sure you want to continue learning how we can write better images with Docker. So let's talk about installing only the dependencies we need in both our current Docker files. So I'm just gonna use the, we can take any of them. Let's take the old one in both our Docker files. We're actually installing all the dependencies by running this NPM C command.
+
+[00:00:23] Remember our package touches on file. It does differentiate between the dependencies of our application and the development dependencies of our application. So development dependencies, they are by definition not needed during our
+
+[00:00:40] production or whenever we are running the application, they are needed whenever we are developing and building the application, but they should not be needed whenever we are running it. So for example, typescript here is needed for us to write the code and then transpile that code into javascript. If we were working with typescript here, right,
+
+[00:01:00] just is needed for us to test our application to write unit tests and integration tests by using the Jest framework. And the types forward slash express is necessary for us to leverage the static typing from typescript in the express package, but none of these dependencies, they are actually needed when running the application.
+
+[00:01:21] The only thing we need is the javascript code that is output from typescript and the express package installed. So let's jump to the ide let's here, copy this dockerfile dot order and we're just gonna change the name here. We're gonna say Docker file dot depths like so from dependencies just so that we can classify this
+
+[00:01:42] and let's leave this as it is. Let's come here back to our terminal and let's run a Docker build. And now we're gonna tag here image depths and we will say not so good. And the file that we will use here is Docker file dot depths. And the context is just the current directory.
+
+[00:02:02] Once we do that, we can confirm that we have the new image here built for us. So image depths here not so good. And then we can actually run a shell on this or create a container and run a shell inside of this container. Let's just run the Docker run, let's add the dash dash RM here to remove the container. Once it stops,
+
+[00:02:23] let's get an interactive shell into this container. And what we need to pass now is the image name. So Docker run dash dash, remove dash it, image depth colon, not so good. And we will just run a shell inside of this container.
+
+[00:02:41] You will see that we will immediately land inside of the forward slash app directory. And if we were to list all the directories here, we can then have a look at our dependencies that are installed. Now, what we would like to do is to change into the node modules directory and let's just run once again
+
+[00:03:00] and here and we will see that there are many dependencies installed here and you will see there is quite a bit of just related stuff. Scroll down a little bit more. There's probably some typescript here. Let's see. Yeah, probably these are also related to typescript as well. So there are quite a few dependencies that we have installed, which are actually development dependencies or any transitive
+
+[00:03:22] dependencies of our development dependencies, we can definitely improve in this sense. So let's go back to the ide and we just need to change a single line in our Docker file depths in the case of node and NPM applications. The way for us to install only the dependencies that
+
+[00:03:40] are needed by our application here at run time. So the dependencies under this dependencies key here is for us to use a only equals production. This will make sure that we'll install only the dependencies that are needed at production time or at runtime and it will not install any of the dev dependencies.
+
+[00:04:02] It's just important to highlight that if we had any build command here, like if we were once again running some transpilation with typescript. So we transpiling typescript files into javascript after this run command, then this would fail because this command is not going to install typescript.
+
+[00:04:21] Just keep that in mind because here we would then need to split into a build phase, right? Where we're gonna install, we're gonna run like so, so run NPM C and then we're gonna run for example NPM, run build. And then we would have a run phase, right where we would then install only the npm or only the production dependencies,
+
+[00:04:45] we would use multistage builds for that. So this Docker file here, the one that I just wrote, this is not what it would look like, it's actually not gonna work. So just for you to keep in mind, if we did have a build phase that needs this development dependencies,
+
+[00:05:00] then think multi stage builds, we would have one stage here as built, right? So as built and then we would have another stage here with a different or it can even be the same base image. But we would have another stage where we will just install the things we need for production. OK? But let me just remove these things here because I'm going a little bit ahead of myself.
+
+[00:05:21] Let's now save this and come back to the, to the terminal and let's rebuild our image back to the terminal. Let's clear the console, exit the existing container and let's run once again our Docker build command. But now instead of the not so good. This is a better variation. So let's just use good here
+
+[00:05:40] and you will see that we run the NPM C only production. This takes slightly less or it's slightly faster than the overall npm C. And I'm looking forward to have a look once again at the images, we can confirm that we have this image Ts here with good. So let's run a container here. Same principle. Let's just remove the not so good. So I am running a new shell inside
+
+[00:06:05] of a new container here that is leveraging the good version. And as you can see here on the top, let me just before I run this, let me just show you here that we already have a difference of roughly 50 megabytes in size. And we can confirm
+
+[00:06:21] that the dependencies were not completely installed. We didn't install everything and our node modules is actually much, much smaller. So just a small comment here to confirm that we are actually making or executing something different. Let's now start our container, get a shell change into the node modules folder.
+
+[00:06:41] And if we were to run a list command here, once again, then we will get a much smaller list of dependencies fine. So just scroll up a little bit, you will see that there is nothing related to just, there is nothing related to typescript here at the bottom. So this is a much smaller surface area here also for Attackers, right?
+
+[00:07:01] So we have fewer dependencies, which is better from the perspective. From the security perspective, we can potentially run into fewer vulnerabilities over the life cycle of this Docker image. So this is also another consequence of using or of installing only the necessary dependences for our application to run successfully.
+
+[00:07:22] We can also confirm that this application will still work right by just running a Docker run, let's remove this. And I'm just going to remove the shell here because I just want to run the image like so the moment we do that, we just get hello world back and for us to stay on the safe side, let's just create an express application here
+
+[00:07:42] because we're not actually using our dependency, right? We're not gonna, we're not using our express dependency. So let's just go ahead and let's create express. We're going to do exactly the same here. Let's say constant is equal to express. And then we say app dot get at the
+
+[00:08:01] forward slash, we're just gonna return here something. So that is the request and the response object. And then we'll just simply say return response dot send and we're gonna say hello from express. And now we can just say app dot listen
+
+[00:08:22] and listen at the port and then let's hard code that I'm sorry for hardcoding stuff. But um let's just go ahead with it, right? So, uh I mean, since we actually use the port twice, let's just use port 3000 here. Just so we're just gonna say app dot listen at port. And once that
+
+[00:08:41] is through, we're just gonna come log here listening on port colon and then forward here once again. So you should be already familiar with this code. We did that, I don't know, 1020 too many times probably in the course. But this is just a very simple application for us to confirm
+
+[00:09:02] that the express dependency is working as expected. Let's then build that. Once again, Docker build here, image dependencies is good and we will just install this. And now we can once again Docker run, let's remove the container and once we do that, we will get listening on port 3000.
+
+[00:09:20] If you try to kill that, this is actually not gonna work and I apologize for that. So let's split our terminal here. Let's run a Docker PS or actually we can run a Docker kill with Docker PS de and that's gonna get rid of this container by the way, just a warning. Um Don't follow this blindly.
+
+[00:09:41] If you have other containers running in your machine and you don't want to terminate them, then please don't do that. Let me just show you a more friendly version here. Let's just get a Docker PS and then we will get our container ID here, right? So just use this container ID for the Docker kill command in case you do not wish to kill all the running containers in your machine.
+
+[00:10:03] Since I am in a very controlled environment here, I'm not afraid of killing everything in the machine. But if you are running other containers that you do not wish to exit, then just be mindful and terminate only the container that matches the one we have just created. Awesome. So just summarizing here by installing only
+
+[00:10:22] the application dependencies that are actually needed. At runtime, we were able to reduce the image size by roughly 50 megabytes. We also sped up the build process because you saw that now instead of three seconds, it took roughly one second. And we also increased the security of our application, the overall security of our environment
+
+[00:10:41] because we have fewer installed dependencies, super amazing, very small change. And normally this is possible with every programming language in the sense that you normally have some division between development time dependencies and runtime dependencies. So try to incorporate that in your locker file and you will definitely be at a better place at the end of the build process.
+
+[00:11:03] Really cool. Let's take a short break and come back in the next lecture.

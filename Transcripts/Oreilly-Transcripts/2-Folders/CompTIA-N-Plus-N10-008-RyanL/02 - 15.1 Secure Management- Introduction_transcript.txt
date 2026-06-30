@@ -1,0 +1,111 @@
+[00:00:06] - All right, jumping into lesson 15. I'd like to start off with a brief discussion about what not to do in network management. Just above me here, we've got a list of some protocols that should no longer be used. There's a good chance you'll find these still in use
+
+[00:00:20] in production environments today. If we find them in use that's okay. We just wanna start migrating away from them. So let's talk about what some of these protocols are and what their problems are. Going back in time if we wanted to get remote CLI access command line interface. If I want to get a shell into a remote system or an appliance, I could use Telnet,
+
+[00:00:41] which is a bit more common. And then there was also another competitor from BSD called Rlogin. Very, very old these aren't protocols. I don't think you'll see Rlogin today. You'll probably still find Telnet and the kind of the catch with these protocols, but what's not great about them is they send everything in clear text. So you do your three-way handshake
+
+[00:01:01] you go ahead and you log in there are your credentials in clear text. And now all the commands that you type can also be intercepted and can be monitored. So not a great solution. For example, if I was to log into a router with Telnet and say, show ran that's gonna display the running configuration of a Cisco router.
+
+[00:01:20] There's a lot of details in that running configuration that are sensitive. The keys for SNMP, the keys for your routing protocols, the keys for your time authentication, user accounts and their credentials. Anytime you type show run, it's gonna display all that information to you. Sometimes the credentials are hashed, but if an attacker sees that hash credential,
+
+[00:01:42] they can still use the tool to try to break it. So our configurations themselves are sensitive. We don't want anybody to see that nor look at what we're typing nor hijack our sessions. When we talked a little bit about TCP session, hijacking. Telnet in our login are examples of protocols where this would actually be possible.
+
+[00:02:01] Another protocol we wanna talk about avoiding is SNMP. And when we talk about SNMP one and two try to remember security is not my problem. SNMP, it's really simple network management protocol. But when we look at version one and two, they use a concept called a community string and a community string is very much just like a password.
+
+[00:02:22] There's no reason to think of it as really being any different. And the managed device, you have a network management system, kind of like solar winds. They've been in the news quite a bit lately, and then you've got a managed device. And now that could be a server, it could be a printer in our scenario, it's typically gonna be switches, routers, wireless land controllers, firewalls, et cetera.
+
+[00:02:42] When we're monitoring devices with SNMP or managing them, cause it can be used for both , version one and version two are gonna send what's called the community string, which is basically just the password in clear text. So if you change it from the defaults, which are public and private, public read only private for read, right?
+
+[00:03:01] Once you change that to something long and secure and obscure, it's still crossing the wire in clear text. So we've talked previously about how to hijack traffic, maybe art poisoning or spanning tree manipulation or routing protocol injection. If I can get other traffic to flow through me and people are using clear text protocols, I can just harvest all the credentials that go by.
+
+[00:03:22] So these are dangerous protocols to use. We don't want to use them, but that doesn't mean that they're not out there work with a lot of people in the service provider space and SNMP one and two are still used all over the place. They shouldn't be, but they are. That's just the reality of things. Additionally, HTTPS is secure, right?
+
+[00:03:40] That's the S is for SSL or TLS. The problem is if you're using soft signed certificates, whenever you connect, you're clicking through a certificate error. This is, this isn't secure, are you sure you wanna continue? If you know precisely what you're doing and you're very careful, you can still kind of get away with this, but I would still recommend against it set up a respectable
+
+[00:04:01] certificate authority, and then just issue your own certificates that don't create errors from that CA server. So let's talk about what you should be using. If you find Telnet or our login, we wanna migrate them to secure shell or SSH. If you find SNMP version one or version two,
+
+[00:04:20] we wanna migrate that to SNMP version three is version three, always secure. No, you can do version three without encryption and without hashing, but the whole point of it is that it has good encryption. It has good hashing built-in. Additionally using HTTPS, there's a couple of different ways we can do this. One you can use a browser.
+
+[00:04:40] You can browse to a web service on the firewall and you can interact or manage that firewall by clicking different links in a webpage makes it very easy. Now, alternatively, we can still use HTTPS, but instead of using a browser and having an administrator sitting there clicking on buttons, hyperlinks, what we can do is we can have an application
+
+[00:05:01] talk to that firewall and tell it what to do through something called a rest API call. So rest API calls, if you were to look at it, I think it looks a lot like an HTTP transaction, but you're basically making requests to a remote server of what to do. That's kind of an oversimplified statement, but let's think about it in a bit more details.
+
+[00:05:21] If I want to shut down an interface on a router, I might SSH into that device. I might escalate my privileges to administrator. I might change the configuration into that interface and then issue the shutdown command. It's quite a bit to type and it's quite a bit to navigate now what if I wanna do this across 50 devices at the same time?
+
+[00:05:40] That's where rest API starts to really, really pay off using rest API calls I can have a central network management controller access, all of the managed appliances in leveraging rest API. It just makes a call to that remote devices like, hey, can you shut down and gig zero? It does immediately, it responds to us that it was successful
+
+[00:06:02] and we can display that in the network management station. So rest API calls over HTTPS are a way to remotely program network equipment. And it's an alternative to using SSH, getting a command line or shell, and then typing in this commands one at a time.
+
+[00:06:20] Cool additionally, whenever we use HTTPS or SSL also known as TLS, we wanna implement PKI with valid certificates. Let's talk about that for a second. When we have a certificate authority that this is you could have publicly trusted CA servers like VeriSign and Entrust and let's encrypt, et cetera,
+
+[00:06:42] or you could deploy your own. If this is inside of your organization, you can go to a Microsoft server and you can add a role of a certificate authority. At that point, your server is now a CA server. It can issue digital certificates to anybody. The problem is everyone that's gonna use these certificates
+
+[00:07:01] needs to trust the CA server. So we call the CA server and we import what we call the root certificate. And the root certificate is saying, hey computer, hey operating system, whether it's windows, Linux, iOS, whatever it is that you're using. Network appliances, physical servers, et cetera, virtual servers.
+
+[00:07:21] We have to define who a route is and a route is basically, we talk about someone being a trusted third party. And I'd like you to think of the DMZ, not the DMZ. That's a demilitarized zone, the DMV, the department of motor vehicles. The DMV gives you a driver's license right
+
+[00:07:40] now before getting a driver's license before having an issue to you, you have to know how to drive. You have to have a height, an eye color, a hair color, a weight. There's all this information that you give to the DMV to say, I really am who I say I am. This is where I live, here's a copy of my electric bill. And if we can convince the DMV that we are,
+
+[00:08:00] who we say we are, maybe we need a birth certificate there's a validation process it takes a little bit. But once I've achieved that and I'm issued identification, I can show that identification to anybody. And they look at it, they twist it back and forth. They see a hologram and they go, okay yeah, this must really be you, right? Well, when we define a root CA server, we're saying,
+
+[00:08:22] this is a trusted DMV. This is someone who can issue driver's licenses and digital certificates. For the most part are very much like a driver's license. Just the prerequisite to using them is to trust the CA server. So when we install the root certificate, this is a digital certificate that says the public
+
+[00:08:41] or private whatever CA server, this is, is to be trusted. So we import the certificate, we verify it and we go, okay, cool, I trust that CA server, if there's a firewall over here that I'm gonna log into this firewall also has to go to the CA server and import the root certificate. And again,
+
+[00:09:00] this is just defining it as a central trusted third party within what we call public key infrastructure. This is defined as a critical element within this hierarchy. Then what happens, that was step one. Once we know who the root certificate is, we create what's called a CSR, a certificate signing request. I say, here's the copy of my public key
+
+[00:09:22] because this is asymmetric encryption, right? We used RSA or we use DSA and we built a private and public key. The private key is private. Nobody should ever see that the public key is what the rest of the world is allowed to use. But if you look at this public key, it's kinda ugly. It's just a big block of characters. It looks like gibberish.
+
+[00:09:41] But if we take that public key and we put it inside of an X.509 version three certificate, now it makes a lot more sense. So let's talk about what we've got, a public key. What's it look like? Just a bunch of crazy characters. What we wanna do is associate it with an identity.
+
+[00:10:02] This could be a fully qualified domain name. It could be an email address. We wanna say that this public key belongs to this identity. And that's basically what's being included in the certificate signing request. We're sending a message to the CA server. And we're saying, dear CA server,
+
+[00:10:20] I'd like a driver's license, here's my public key, which is what's important and asymmetric encryption. And here's my identity, do you believe it? Now what happens at that CA server is you have an administrator who sees the requests come in and they look at it. Maybe they call you, maybe they verify something through email or through your internal chat program. And they go, is this really you okay
+
+[00:10:40] I'm gonna go ahead and issue a certificate at that point, once it's been issued, this is where we see the X.509 and V3 certificate coming back down to the user. Now, the name of this certificate is an identity certificate. Opposed to a root certificate. The root certificate is the identity of the CA server.
+
+[00:11:03] These identity certificates are the actual users. So over there, on the other side, with that firewall, it's gonna do the same thing, it's gonna use RSA or DSA, and it's gonna generate an RSA public key and a private key. A lot of times, these are 2048 bits. They could be 4096.
+
+[00:11:21] The 2048 is about the minimum that we use today. When I send this over again, this is a certificate signing request. I say, here's my identity and here's my public key. The CA server has to look that up and go, okay, it's vpn.pearson.com for an identity. That's the public key of the firewall I believe it.
+
+[00:11:41] Now watch what happens. The CA server signs it with its identity it's as that public key goes with that identity, vpn.pearson.com because I say so. So there's information there about who the certificate authority is. And there's also information about the certificate itself.
+
+[00:12:00] Let's talk about that for a second. Some of the things that go in here include an issue date and an expiration date. This is why time is so critical. Having the accurate time on all of our devices. If the certificates issued in the time is off, the certificate will be rejected. It says this isn't valid yet.
+
+[00:12:20] It's almost like having an expired driver's license. There's also gonna be a serial number. And this is kind of cool. You know how your driver's license has a driver's license number, right? So let's say that you got a driver's license. You're driving around. All of a sudden you get in some trouble, you get some tickets, you don't pay your tickets. Now what happens, they suspend your driver's license.
+
+[00:12:41] Now you get pulled over again. Please come up to you. Do you know why we pulled you over? Driving a little bit fast? Do you have your license? Now this is where it gets interesting. You hand your license to the officer and they can look at you and they can go, okay, go ahead and have safe afternoon. Be careful. That means in the world of certificates,
+
+[00:13:01] that they didn't validate your certificate to make sure it wasn't revoked or in the world of driver's licenses with the police officer could have done is take your ID, gone back to their cruiser, gone into the computer, typed in your driver's license number, hit a central database and made sure that that license wasn't revoked. So just because you're holding onto it
+
+[00:13:20] doesn't mean that it's still good. Just like these private and public keys that we're talking about. If something happens in my private key is compromised. Maybe this router is stolen, maybe the router has a problem, and I have to decommission it and send it back to the vendor and install a new router, well, in any scenario, I might want to invalidate the digital certificate.
+
+[00:13:41] So kind of coming back to my illustration here, looking at that X.509 and V3 certificate, it's your public key or identity CA information. And in the certificate info, yes, you have a serial number, but there's also something called a certificate revocation list, distribution point. Now what that's used for is to go retrieve a list.
+
+[00:14:02] Yep, you guessed it, of revoked certificates. So anytime a certificate is revoked, it's serial number is added to this list. So when someone shows you a certificate, they go, here's my certificate, and you're looking at it and you go, oh, there's the location of the repository of the list of revoked certificates.
+
+[00:14:21] This is an optional step. But what we can do is go out to that CRL, retrieve the list, look at it and make sure the serial number of the certificate is not in that list. It's just CRL checking. Now this is an optional step that a lot of browsers and a lot of servers weren't doing for a long time, they're getting better about this,
+
+[00:14:40] but just realize that this is something that you can have enabled or disabled. We'll talk about certificates on and off throughout the course. So just add little bits of data here and there. But I think if hear some of these terms enough times, it will become a little bit less spooky. I hope that was helpful. So, you know, when we talk about PKI's being implemented with valid certificates, what makes it valid?
+
+[00:15:02] Everybody trusting that route, whoever the CA server is, if you've got certificates that are self-signed or they're coming from an untrusted CA server, you've got administrators and you've potentially got users that are clicking through certificate errors that they may not understand, and we're teaching the users to do bad things.
+
+[00:15:20] So ideally we want to get our PKI set up in such a way that none of the certificates are throwing errors in that everything's trusted the way that it should be. Last but not least there's a concept of out of band management. I'll show you some of the first out of band management I used to deal with. First router I ever managed was the Cisco 2,600. This is the 1990s guys.
+
+[00:15:41] It had a T1 circuit that got us to the internet. and if that T1 circuit ever went down, I needed a way to get into this router. So there was a port on it that port had a modem in the modem connected to the public switch, telephone network, the PSTN,
+
+[00:16:01] which meant there was a phone number here, an eight one three phone number, cause it was Tampa. And if I dialed this specific phone number, it's going to answer, and if I give credentials, it's going to let me in. And it means that I can manage this device. And I'm coming in through for my management connection through a different path. You see traditional user data is crossing that T1.
+
+[00:16:22] I've got user data on this insight, ethernet interface, that's just passing user traffic out to the internet. And from the internet back into my users, this is a separate network just being used for management. So that's what we call it out of band. Now there's different ways that you can do this. Sometimes I will set up a dedicated switch
+
+[00:16:47] With a firewall on it and I'll connect it to the internet. And I say, this firewall is for VPN and it's only for administrators. This isn't a corporate VPN.
+
+[00:17:00] And what I come in through this firewall, I hit a switch in this switch has access to management ports on different devices. So if you look at modern switches, routers, firewalls, especially things like chassis based switches, you'll see, there's a dedicated ethernet port just for management traffic. So we've got switches that are cross connected
+
+[00:17:21] that are hooked everything in our enterprise we're so focused on having everything be reachable. Well, what you can do is you can isolate that management network. So it does not touch your traditional network. There's no way to route in or out of where the users are, it's isolated, it's management only it's out of band. And then what we do is we can potentially set it up.
+
+[00:17:40] If you wanna have remote access, we can have a firewall so that somebody can access that device. But again, it would be typically a different firewall than you're using for the rest of the organization, or at least a separate virtual firewall with the different domain, different credentials, things like this. We want to keep them as separate as possible. So out of band management, not a revolutionary,
+
+[00:18:03] not a brand new concept at all, but it's a very secure way to do things, why? Because end users that are throughout the building, can't reach this network. They can't reach the IP addresses for where management occurs, so if they can't reach it, they can't bypass passwords. They can't get in through vulnerabilities
+
+[00:18:20] because they don't have basic network connectivity. So if you've got an opportunity to implement an out of band network for management, it's one of those things I would definitely recommend.

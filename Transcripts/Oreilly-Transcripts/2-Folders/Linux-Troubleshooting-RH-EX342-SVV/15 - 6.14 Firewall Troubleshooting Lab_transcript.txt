@@ -1,0 +1,45 @@
+[00:00:06] - Now that we are at the end of the section about firewall troubleshooting, let's do a lab. So here are some descriptions. Server one you have configured a firewall where no one coming from server two may access your local machine, but everybody,
+
+[00:00:20] including server two should be able to get access to the web server, and that doesn't work. Fix it, and use logging to do so. Do notice, that we have a script in order to install this lab, and for this lab to work you need to set the IP address on server two to 192.168.4.210, or else it won't work, good luck.
+
+[00:00:43] Now let me install the lab. So, the problem is that server two should be able to access the web server. And server two must be set to the IP address 4.210,
+
+[00:01:04] which is the case. So if you want to test access to the web server, elinks is a convenient solution. It's already installed on this machine, so I can start using elinks http to 192.168.4.168.
+
+[00:01:25] And there we can see that something is happening, it's trying to make a connection but it doesn't get very far, so let's analyze. If you type iptables-L, we can see roughly what's happening. Let's add some more information,
+
+[00:01:40] - V, -N, --line numbers. So, what exactly do we see? Well, we see an incoming that accepts, protocol all,
+
+[00:02:00] in star, out star, so this is accepting everything, the state of related, established. And we can see 53 packets have hit this, this incoming row already. There's probably the SSH traffic, by the way. Now we see an input chain for tcp traffic,
+
+[00:02:21] looking at the last bit, tcp destination port 22. Then we see a drop for 4.210, and then we see incoming for tcp destination port 80. I hope you already see what's wrong here,
+
+[00:02:41] but in case you do not, we need to insert a log line. So the log line should go on position number three, right before the drop of all the traffic that is coming from 4.210. So iptables, dash I, INPUT
+
+[00:03:00] three - J LOG. Let's do an iptables-L again, and back to server two where we can try to open the connection again.
+
+[00:03:20] Now server one, let's see what is happening. We can see some packets have hit the log, which is very good, and some more packets have been dropped as well. And still no packets have hit the web server. So, let's have a look at the var/log/messages.
+
+[00:03:41] And what do we see in var/log/messages? Let's start with timing, so it starts at 20:02, so a couple of more lines right now, and here we see a destination port 514, that's not what we are looking at, this is what we are looking at, destination port 80 that's been blocked.
+
+[00:04:02] So what is this coming from? This is coming from source 210, destination right here. It wants to go to port 80 and that is not allowed. And at the same time, we see a lot of port 515, so that might be interesting to analyze as well.
+
+[00:04:20] Just because I want to know grep 515 on etc/services, What is 515? So 515 is, assist log. So assist log traffic is arriving as well. But we can see very clearly that traffic that is coming from
+
+[00:04:40] IP address 210, with the destination of the web server, is getting blocked. Is there a good explanation for that? Well, if you repeat the iptables-L, V, N, line numbers again, obviously there is a good reason. Because packets are processed in order, the first packet that arrives from 210 meets the drop line,
+
+[00:05:03] so it will never get to the next line, which is the destination port 80. So, we need iptables, - -help, because we need to remove something. Let's figure out what we need in order to remove it.
+
+[00:05:21] Here we go. Delete. So, iptables-D, chain, rule number, that's what we need to delete. So what are we going to delete? In the inputs, rule number five, because that makes no sense.
+
+[00:05:41] Let's verify if this is correct, it is correct. So now we can add iptables-I INPUT, now let's make it rule number four. What do we want to drop? Well, we want to drop packets coming from source 192.168.4.210.
+
+[00:06:08] And if we analyze once more what's happening, then we can see that I made a mistake, because I used the drop line again, we didn't want to do the drop line again, so let me delete INPUT five once more.
+
+[00:06:24] I really like verify after each modification what's happening. And now we need to make sure that web traffic is going to be accepted before the 4.210 traffic is going to be dropped. So we insert in the INPUT on position number three,
+
+[00:06:43] a line for p, tcp - -dport 80. And we are going to, accept. Once more, let's check.
+
+[00:07:01] Here we can see that the web traffic should be accepted now. Also, this is inserted in a nice position, we still want to monitor what is logged in the log, the log comes before the drops, but this should allow web traffic to come in. And as you can see, the server two has continued
+
+[00:07:22] to try to make a connection, and while we edit the line to the firewall it has successfully established the connection, and we can now see welcome to this webserver. So, we have succeeded.

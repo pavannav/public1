@@ -1,0 +1,61 @@
+[00:00:00] Let's now create our state for set here and deploy the state for set in our GKE cluster. So the API version will be apps V one, the kind here will be stateful set. We will also use the name for mongo DB, stateful set here. And let's now start filling the correct fields here.
+
+[00:00:23] So the service name it does need to match what we have specified here. I'm going to copy the Mongodb SVC service name from our service file and then place it in our service name here. We're gonna have a single replica and we're gonna match here or the selector will
+
+[00:00:41] match the label with MongoDB in our pods. We will also update the my app here to match this. And now here, let's scroll down a little bit more within the containers. We're gonna have our container. The image for our mongo container will be mongo
+
+[00:01:00] colon 8.0 0.0. And the only port we will advertise here is the port 2717. Let's quickly save the file for some formatting purposes here. Now, I would also like to specify the resources. So for resources here, since we are now on the cloud and we have virtually unlimited resources.
+
+[00:01:23] We can be more permissive here. Assuming that also, of course, we are aware of the costs, right? Even though we have access to unlimited resources, this can naturally lead to unlimited costs. Right? So here, let's stay within reasonable boundaries. We just want to provide a good amount of resources here
+
+[00:01:43] so that our database can run and process requests without problems. So for the requests here, we're gonna specify for memory, we're gonna request four GB bytes. And for CPU, we will request one VCPU for the limits here, we're just gonna double this amount.
+
+[00:02:00] So for memory, we're gonna request eight GB bytes and for CPU, we will request two vcpus once again resources here. They do incur costs behind the scenes. GKE autopilot wheel provision nodes here to actually make these resources available for us. We will also explore how this happens as we deploy our state
+
+[00:02:22] for set and hopefully everything will become more clear as well. So just keep in mind that as long as you are under this free trial with the $300 or the equivalent in your currency, then it should be safe to deploy pods with this amount of resources here. And you are not likely to incur more than what is already available in the free trial.
+
+[00:02:44] That being said, always keep in mind that you should delete the resources if you are not planning to come back to this course or to this project for a while. So just delete the pods and stateful sets to prevent any costs from accumulating. Also,
+
+[00:03:00] you can always check how much of your free trial budget you have already consumed to keep that in mind when following along, let's then also define some environment variables that are required for our Mongo container. And the first environment variable is called Mongo underscore INITDB underscore root underscore username.
+
+[00:03:22] And the value here will come from a secret. So value from secret key ref the key is username with capital letters. We have defined the key here in our root credentials. That's the username key and the name of our secret will be Mongodb
+
+[00:03:41] root creds. As you can see here, we are referencing a secret that is not managed under our color DB application. So that's why we also have turned off here, the disable name suffix hash now that I'm looking a little bit more at this. So I'm also realizing that the Mongodb root credentials,
+
+[00:04:01] they will be actually only used by our color DB. The credentials that will be shared are the MongoDB call db credentials. So if you also wish to move this secret generator as an exercise into the customization here and then move the root credentials, environment file into the directories for DEV and prod,
+
+[00:04:23] then feel free to do. So that's a good exercise how we can actually move these things around. But for me here, I'm just gonna leave this as it is not to touch too much on this part of the project. So now here we have Mongodb root credentials for the username. We also would like to get the password here and
+
+[00:04:42] the key is going to be slightly different now. So it's not username, it's password. And the Mongodb root credential secret stays the same. We also would like to populate the environment variables that are needed by our initialization script. So let's once again, open our stateful set and let's add a few more entries here.
+
+[00:05:02] So the first one is DB name DB user and DB password, I just added the three here so that we can automatically populate them. So the db underscore name for that we're going to hard code, the value value will be color db, then we have the DB user and then here the key will be username,
+
+[00:05:21] but the name of the secret is slightly different. The name of the secret is Mongodb. Call D Bres, let's just copy this and paste it here. And then we also have the DB underscore password and let's just confirm that this is actually the name. Yes, that's correct. So that's the B underscore password
+
+[00:05:41] and the value for this is coming from the MongoDB color db credentials. Perfect. So now let's update our volume amount here to also mount our MongoDB config or initialization script, right? So we have here our MongoDB in it, config color or in it color db here,
+
+[00:06:00] let's copy the name of this config map. So the name for the volume mount here will simply we can say Mongo DB init config. And then we also need to add this here to the volumes section. So to the volumes section of our state for set.
+
+[00:06:20] So the name here will be has to match what we have defined above MongoDB in it config and then this will take the values or this will actually mount a certain config map for us as files. So the config map will have the name Mongodb in it called DB. So this here needs to match the name of the config
+
+[00:06:41] map and this here needs to match the name in our volume mount. We then need to also update the mount path to be forward slash Docker dash entry point initdb dot D and make sure you have no typos here. Otherwise the script will not be run.
+
+[00:07:00] We also would like to create a persistent volume here for our database data. And for that, we're gonna leverage the storage classes that we have from Google cloud. So let's come back to our terminal. Let's just run here. Cube, cut all get storage class and let's have a look at everything that is available for us.
+
+[00:07:21] So let's just change the output here. We're gonna use custom columns and this will be this will have the name column which will map to metadata dot name and it will also have the provisional, I believe that's the name. Yes, provisional color column which will map to the dot provisional field of our storage class.
+
+[00:07:43] So now we can see here the different storage classes, we can go with standard or standard read write ones or if you want to try a more expensive higher performance one, you could also go with premium. So that really depends it, it's up to you here.
+
+[00:08:00] And if we scroll up a little bit more, you will see that standard. So I can highlight here that the standard read write ones is the default one. So if we do not specify this, the the generator created persistent volume claims, they will actually use this storage class. So just to make things a little bit more stable,
+
+[00:08:21] I'm gonna specify this specifically here in our specification. So the name of our volume claim here, we're gonna add MongoDB MongoDB dash data. The access mode will be read, write once the storage class name will then be standard, read, write once.
+
+[00:08:43] And for our request here here, we're gonna request 10 GB bytes of data. All right, we have defined quite a few things here. I do hope that everything is correct. We will definitely test this. So let's switch now to the terminal. Let's clear the screen. And actually before, before we do anything here.
+
+[00:09:02] So this is actually the base, right? So this is not any of our environments neither DEV nor prod. So we still need to customize, we still need to actually create our overlays here for DEV and for prod. So let's do that here. Let's add our mongo DB stateful set as a resource in our base.
+
+[00:09:24] And that is looking good. So let's now copy this customization inside of the DEV folder here. Now the resources for our DEV folder will simply be, let's go one directory up and then let's include our entire base customization. We can then remove both the common labels and the
+
+[00:09:41] map generator. And let's now also add the name space DEV. Here. We're going to have the same thing for prod. The only difference is that the name space here will be prod. All right. Now that we have created our customization and we have included all the resources in our base here.
+
+[00:10:00] Let's then take a short break and come back in the next lecture to apply our Dev overlay and see what happens in Gke.

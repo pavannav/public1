@@ -1,0 +1,55 @@
+[00:00:00] Before we jump into the topic of setting up ingress and managed certificates in our cluster, let's create a couple of network policies. So far, we have color API and color DB both deployed, but there are no network policies that enforce any rules here regarding who can actually access the color DB pods.
+
+[00:00:20] So the first rule I would like to create is going to be under the shared configuration. And here we can also create a new folder that's going to be underscore network policies. And these are basically policies that we would like to apply to the entire name space. They are not restricted to a specific application here.
+
+[00:00:40] So I'm just gonna create a new folder here and I'm gonna create a file customization dot YAML and I will also create another file here and that's going to be DN ingress. Now, we are going to create a network policy that will basically just deny ingress in all of our pods. So let's start with API version that's going to be networking
+
+[00:01:03] dot K eight dot IO forward slash V one. The kind here will be network policy, the metadata will be here, name, deny ingress and then we will have here the spec section, we'll just select all the pods.
+
+[00:01:22] So pod selector here will have an empty object and then we will have the policy types, policy types. And the only type here is going to be ingress. We're not gonna define any rules here. That simply means that the ingress traffic will be denied by default.
+
+[00:01:40] This also means that our color API and our color db pods will not be able to communicate with each other. So we need to come here to our color db to actually allow ingress from our color API. So within the base here, since this is something that we also want to share with multiple overlays here, let's just create a new folder.
+
+[00:02:00] We're gonna call this network policies. So network policies and I'm just placing these files inside of a network policies folder so that in case we have more here, they just stay organized and they don't get mixed here within the other files. So let's now create a new file. We're gonna call this allow
+
+[00:02:20] caller API dot YAML. And before we fill out this here, let's just add our deny ingress to our customization here. So I have not filled this file yet and I also have not updated our dev and prod customizations. Let's just copy the header here, let's paste it here. And the resources we would like to include are just the deny,
+
+[00:02:42] deny dash ingress dot YAML, right. So this will then include this deny ingress in our resources here. Let's then also include a resources field here. So resources, now we're gonna also include our dot dot forward slash underscore network dash policies.
+
+[00:03:03] And this will also be the same for prod, right. So, since we cannot apply or since the network policies, the the default ones, the native ones to be, they don't support a cluster wide network policy, we then need to apply them to all the name spaces. And so now here we are going to include this into our, both our DEV and prod overlays.
+
+[00:03:26] And then we are good to go. Let's then create the allow color API network policy here which will allow the color API pod to communicate with color DB. So this will be an API version that's going to be networking K eight V one.
+
+[00:03:42] We're gonna use a kind of network policy. We will then have metadata here and the name is just going to be allow dash call API. We will then have a spec here. And now we want to select only the color DB pods, right?
+
+[00:04:00] So the pod selector here will have a match labels option and then app has to be equal to mongo DB. Let's just confirm that this is the exact label we add here. That's perfect. So now here inside this, let's set the policy types. So policy types, this is just going to affect our ingress policy
+
+[00:04:23] and then the ingress option here, we're gonna allow ingress from and then we're going to pass here a pod selector and that is going to be match labels and then the pods here that we will allow, they are going to come from the color API. So just open our color API deployment and the label is here, right?
+
+[00:04:43] So add color API like, so let's then save this file come to our customization here and let's also add this as a resource here. So that's going to be dot forward slash network policies and then forward slash allow dash call API dot emo. Perfect. So let's save this here.
+
+[00:05:02] And now let's come back to the terminal and now in the terminal, let's just confirm here that we have our resources up and running. So if you have deleted the resources, if you took a break and deleted the resources and just make sure to reapply our customizations, let's get our pods in the name space broad and we have all of them running here.
+
+[00:05:21] That's good. Let's get our pods in the name space DEV and we also have them running. That means we can now apply our deny all policy. So let's start by just applying here our customization that's going to be under shared config forward slash DEV. The moment we apply this without a network policy that allows
+
+[00:05:44] re from the color API to the Mongodb stateful set, then our color API should actually stop working. So let's then apply this policy here. We can see that we have created the ingress in the name space DEV. Let's then clear the screen and let's also apply our new overlay here.
+
+[00:06:02] So let's apply our shared config in prod as well. And let's also apply the color DB forward slash DEV in the Mongodb project. And let's also apply the color DB PROD overlay. So you can see now that we have created both the allow color API
+
+[00:06:20] in DEV, as well as in prod. We can confirm that we have our network policies here by running Cube Carol G network policy. And then name space DEV. We can confirm that we have our allow call API, which is then allowing traffic coming from the app mongo DB or actually it is targeting the app Mongod B with the project project
+
+[00:06:44] GKE. And that is because we have added the common labels here. And the moment we also describe this. So cucu describe network policy, let's edit here. Network policy allow color API within the DEV name space.
+
+[00:07:00] You can see here that this is actually mixing up a little bit of the pod select, right? So it seems like customize is a little bit confused here. We don't really want to change these values here. So one way for us to do that is we can just remove the common labels here. I think we have illustrated the example. And as you can see this can also
+
+[00:07:20] introduce a few bugs including this merge here. It's actually overriding these values and not keeping them. So one option is to remove the common labels from this file here. Let's then save this. Let's come back to the terminal and let's just apply once again the color DB DEV. And it seems that we actually need to recreate the whole thing.
+
+[00:07:41] So let's just delete here. Let's reapply this color DB DEV, that's looking better. Let's now delete the prod and let's reapply the plot, the prod here. So apply prod. And now let's have a look at whether our network policy is looking good. Perfect.
+
+[00:08:01] So now it is looking correct here. It's looking better. We did lose this additional label here. But as you saw the, the actual functionality here was a little bit buggy and it was overriding a few of the fields that we didn't actually want to overwrite. So we're just gonna keep it like this for now,
+
+[00:08:20] let's then have a look if we have everything set up correctly here. I believe so. So we still have one more network policy that I would like to apply here. And that refers to actually allowing traffic to flow from the external world into our color API pods. Currently, this is not possible, right? So if I come here to the terminal, let's clear the screen,
+
+[00:08:41] let's run a cube cut, get SVC in the name space DEV, we will get our external IP here for the color SVC because this is a load balancer service. But if we were to actually try to send a request to this A P to this IP address here, it's not gonna work.
+
+[00:09:00] And that's because ingress traffic is not allowed into our color API pod from the external world. We're gonna fix that in the next lecture. But before that, let's just take a short break and I'll see you in the next video.

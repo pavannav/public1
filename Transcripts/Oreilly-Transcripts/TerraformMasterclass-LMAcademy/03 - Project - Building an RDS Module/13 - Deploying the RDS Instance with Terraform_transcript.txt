@@ -1,0 +1,93 @@
+[00:00:00] Hello and welcome back. Let's now work on creating our rds instance inside of our module within the RDS module folder here. Let's create a new file. We're gonna call this R DS dot DF. And then within this file, we will implement a couple things. The first thing that I would like to implement with you is actually a local map in here.
+
+[00:00:23] Let's go a little bit up. We have the engine of the database and we provide a user friendly choice here where we have postgre latest or postgre dash 14. However, for us to create the rds instance, we actually need to provide a few more bits of information
+
+[00:00:42] and this information will just be defined here in our local. So let's create a los block. We're gonna say db underscore engine and then we will create a map and this is gonna be a post address. So this will have exactly the same values that are allowed to our end user. We're gonna say postgre latest
+
+[00:01:00] and this will be once again a map and we will also have Postgres 14, right. So now here the information we need to provide is first of all, the engine, the engine needs to be postgre. We also need to provide the version that we want to deploy. This will be the version 16 1 at the time of this recording
+
+[00:01:21] and the family here family will be postgress, postgress 16. And so we could also concatenate, we could go ahead and split the version at the dot here, take the first element and then concatenate with the engine to derive the family. However, I do find it a little bit more clear, a little bit clearer.
+
+[00:01:42] If we just write it down here, we will have the same thing for our Postgres 14. So the engine is this one, the version will be 14.11 and the family here is Postgres 14. This will enable us to retrieve this information here based on the input that we get from the user.
+
+[00:02:02] The next step we need to implement is a subnet group. So in our variables here, if we scroll down, we will see that we get a bunch of subnet ids. And for rds, we need to group these ideas into what is called a subnet group. So let's create a resource that's gonna be AWS underscore db
+
+[00:02:20] underscore Subnet group like so and then we'll just call this this and we will say here the name is going to be equal to V dot project name and then we also need to provide the Subnet id. So this is just gonna be the var dot Subnet ids that we receive from the user.
+
+[00:02:41] The tags here will contain just a single name tag and this will be var project name. I'm not sure whether this name here is enough to show in the AWS console. So we're just making sure that we're also passing the tech. Let's then create our DB instance by creating a resource AWS underscore db underscore instance and we will call this this
+
+[00:03:04] and then we will say that the identifier here identifier will be our V dot local or V dot project name. We then have the instance class that is gonna come from our var dot instance class. We have our allocated storage that is gonna come from our var dot storage size.
+
+[00:03:25] We then have the engine here and the engine will actually come from our locals at the top. So let's say local dot DB engine. And then we would like to get here the V dot engine that we are receiving from the user and then we will say dot engine,
+
+[00:03:41] right? So we will do the same for the engine version. So it's engine underscore version and we're just gonna get instead of engine, we're gonna get the dot version. So remember we have engine and we have version here. We also need to provide a username and the username will be V dot credentials dot username
+
+[00:04:00] and a password and the password will be V dot credentials dot password. We now can provide the subnet group name. So that's gonna be db underscore subnet group name. This will be AWS DB subnet group dot this dot name like so and then here we can also pass a few more parameters
+
+[00:04:21] by making this not publicly accessible. And then by also skipping the final snapshot here since we don't want to keep any snapshots when we terminate the instance last but not least I want to create a parameter group here. In case you would like to configure some parameters in the post
+
+[00:04:40] instance. So let's create AWS db underscore parameter group. We're gonna call this this and the name here will be once again far dot project name, we will have the family here. And this is why we have a family set in our local db engine here. So that's gonna be local dot db engine once again V
+
+[00:05:01] dot engine dot family and the only parameter that we will turn on here. So parameter, the only parameter will have a name of log underscore connections and a value of string one. Now these parameters here, they are used by the underlying postgre
+
+[00:05:21] instance of our R DS instance, right? So or the the underlying postgre configuration of our R DS instance. So we are using this to configure the postgre database that we are running these parameters here. They should then be parameters that are accepted by postgre.
+
+[00:05:40] Let's save this. Let's run a dataform format recursive. Once again, let's run a terraform plan here or actually, we could directly run the apply to see the planned changes. As you can see, there are three resources to add. Let's scroll up a little bit. We should get our subnet group. That's correct. These are the two subnets that we will use here.
+
+[00:06:02] If we scroll up a little bit more, that's our parameter group. And then we also have, if we scroll up a little bit more, we have our AWS db instance. Let's type yes here and wait for the creation to complete. And we get an interesting error message. As you can see here, we are getting an error from our subnet
+
+[00:06:22] group by saying that the subnet group doesn't meet the availability zone coverage requirement. This is for high availability to deploy the rds instance across different availability zones for us to handle that is very easy. We should just come to the networking here and we should change
+
+[00:06:41] two of our private subnet groups or subnets here. Let's pass the availability zone. We're going to say eu West one A and then we also pass the second one here. We're going to say Eu West one B. Now this is going to lead to the recreation of the subnets. And this could be a fairly destructive operation if you already
+
+[00:07:01] have a lot of infrastructure behind the scenes here. So just be careful with that. Whenever you're working with real world resources and real world projects, let's run a terraform format. Let's then run terraform apply once again. And now we should actually see that there are a couple of resources to recreate. And once again, we would have to use this dash target option here.
+
+[00:07:24] So let's use the dash target for both our subnets. We're gonna say dataform apply dash target is equal to AWS subnet dot private one and dash target. Let me just clear the console here is equal to
+
+[00:07:43] Aws subnet dot private two like so and let's see what's gonna be the plan. If we scroll up a little bit more, we will see that we have two to add and two to destroy. So this is looking good here since we have both our availability zone set to EU west one C,
+
+[00:08:01] we will replace the subnets. One of them will be in one A and the other one will be in one B. Let's type. Yes here. Let's wait for the creation to complete. This is looking good. And now I believe that running a data form apply. Let's then inspect the changes. We have two resources to add.
+
+[00:08:20] Let's type. Yes here. And let's wait for the creation to complete. I believe that we also have some restrictions around the master user name. Let's have a look here in our D so it cannot be db admin and I believe that the problem might be around this dash here. So let's just remove the dash and let's see if that's enough. Let's type. Yes.
+
+[00:08:41] And let's see if the API call will go through. So the parameter, master user password is not a valid password because it's shorter than eight characters. So we can actually add a couple more letters here. And we should also update our networking validation. Let's go up or actually it's our variable. So it's not our networking validation.
+
+[00:09:00] We're gonna say here must be at least eight characters long. Let's then change the six here to eight. Let's save this. And I believe that now let's have a look which kind of errors if we get any or whether the API call will go through. Perfect. It's not returning any error. It's actually
+
+[00:09:20] in the creating state. And when we are creating R DS instances, this operation takes a amount of time. I would expect somewhere around five minutes for this to complete can be a little bit less or a little bit more. But we can check in the AWS console that the creation is in progress in the AWS console. Let's select here, the respective region. Eu
+
+[00:09:42] West one for me, just select the one that is relevant for you. And then you can click on R DS if it appears for you or you can just type R DS here, click on the services. And as you can see, we already have one instance here. If we click here, we should see our db identifier and the status is creating
+
+[00:10:01] if we click here, then this instance, we already have some information about it, but it's still in creating and this will take a couple of minutes to complete. Perfect. So after roughly 3.5 minutes, the creation of our DB instance is complete. And if we come back to the AWS console, we should also see that this database has an available status.
+
+[00:10:24] If we scroll down, we will also see that we have an end point here. So this is probably something that is useful for us to return from the module to the user. Let's then create here in our outputs. We're going to create one output. That's going to be the rds instance ID, that's the first output.
+
+[00:10:42] And the second output that I would like to create is the is the rds instance endpoint, right? So the value of the rds instance, endpoint will come from AWS DB instance this dot I believe it's address. But let's have a look if we have no, actually we have an end point here. So let's just confirm this in the documentation. Let's copy this come to the
+
+[00:11:04] AWS DB instance page in our telera documentation. And then under once again, under attribute reference here, let's click here and let's scroll down to endpoint. Perfect. So this endpoint actually gives us the connection endpoint in an address, colon port format.
+
+[00:11:21] If we scroll up a little bit, we actually have the address here. And this sees or this returns the hostname of the rds instance. You can also see that it references both the endpoint and port attributes. So if we want to return just the hostname, we would use the address. If we want to return the entire endpoint, we can use the endpoint attribute.
+
+[00:11:43] Let's then maybe split this and provide more granular information. So we're gonna say A rds instance, address address and then we will say this dot address and we will also have the R DS instant support are these instance bought here.
+
+[00:12:02] And we'll just say this dot part and then we have the endpoint like so and now for the R DS instance ID, let's just add a value here. This is gonna be AWS TB instance dot this dot id. It's not the identifier. Once again, the identifier is the name that we are using.
+
+[00:12:20] And then we can see in the console we should also provide some description the id of the created R DS instance. We could also expose the A RN here. The A RN might actually be useful for our users. So we're just gonna say a RN here this dot A RN and we would just say the A RN of the created instance. Let's say
+
+[00:12:43] that we would like to use this A RN for creating some policies outside of our R DS module. So that the user would like to use this to reference the A RN in the policies that the user is creating. So it's useful for us to expose this. There are a couple of typos sorry for that.
+
+[00:13:01] Now it's looking better. So here we will provide the description, the hostname of the created R DS instance. We then have the port of the created R DS instance, the port of the created R DS instance. And then we also have here the end point
+
+[00:13:20] of the created R DS instance in address colon port format, right? So now we are exposing quite a bit of information from our module. This is looking good. Let's just add a couple of final dots here. And now in our root configuration, let's create a new file. We're gonna just create outputs dot TF once again.
+
+[00:13:41] And let's reference some of the outputs that we have created or that we are now receiving from our module. So let's say R DS endpoint and the value here I just would like to get from the module database dot R DS instance endpoint. Let's save this, let's run a dataform format
+
+[00:14:00] and let's run dataform apply to inspect the changes. Perfect. So as you can see here, the R DS endpoint is then receiving that endpoint from our AWS console, the same one that we can see here, but it's also appending the port at the end. If we were to use the R DS instance address here,
+
+[00:14:21] we would actually get a different value. So let's run a data form, apply and let's check the results. So you can see that the address just contains really the hostname that's looking good. We don't really need to output anything here from the root module. If you want to add this for documentation purposes, this is fine.
+
+[00:14:40] I'm just gonna have rds instance end point here. Let's save this. Let's type. No, let's run once again, terraform apply. Let's type. Yes, here just to complete the changes. And I believe that's everything that we had to do for the creation of this rds module. Let's come to our Readme file here and let's mark the 0.6 also as done.
+
+[00:15:04] And congratulations on completing this project. You have learned a lot throughout the way. You have learned about implementing R DS resources. You have learned about validating variables as well as validating more complex information by using data sources.
+
+[00:15:23] One more remark, the next lecture will be towards destroying this infrastructure. So if you will take a break between this one and the next one, make sure to run terraform, destroy here so that we don't leave the R DS instance running. Let's then take a short break and come back in the next lecture.

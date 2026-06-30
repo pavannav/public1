@@ -1,0 +1,57 @@
+[00:00:06] - All right, so this is the moment I've been waiting for. Network Admission Control or 802.1X, also known as leveraging EAP to secure our environment. This is really cool stuff. This is about as big of leap in terms of securing
+
+[00:00:23] the infrastructure that we can make in a single step. I'm very excited to tell you about this. It's something I hope that you implement. And it's of course how we secure WPA2 using that back end RADIUS server, implementing Dot1x, implementing EAP, but this is also effective for using
+
+[00:00:40] on wired networks as well. So let's go ahead and get into how it works. And I hope that this encourages you to go out and deploy it in the world. So network admission control is essentially performing dynamic port authorization. So if we think about that, we go, okay, here's a switch, this switch has got all these different ports.
+
+[00:01:00] And when we turn on Dot1x on these interfaces, the port status is going to be basically unauthorized. It's not allowed to do anything. And if somebody was to plug a cable in and try to do DHCP, they wouldn't get an offer. That's because the ports unauthorized. You see, we have to authenticate before the port will go active.
+
+[00:01:21] So by authenticating, we can assign individual security profiles to each interface, and we can additionally perform authentication securely. You can perform an insecurity as well, where it can be attacked. I'll show you how not to do it. And I'll point you in the direction of how you want to do it. So if we take a look at 802.1x entities,
+
+[00:01:44] you basically have three components. There's the supplicant, this is a device that wants to gain access to the network. You have an authenticator, this is almost like the door guy. This is a century that says, wait, who goes there? And then you have the authentication server. This would be perhaps NPS running on active directory,
+
+[00:02:03] maybe Cisco ISE. This is basically our RADIUS server. Do I have anything else to say about that for now? Not really. I'll say that the authenticator in this case is a switch. It could be a wireless access point.
+
+[00:02:21] It could be a firewall. It's just the intermediate device where it was somebody trying to gain access, they're being stopped. So again, that could be an access point just as easily, and it could be a wireless supplicant. So when we look at the technologies, you've got a Dot1x supplicant. That just means that the device that you're using, whether it's a laptop or mobile device
+
+[00:02:41] is going to have to have an 802.1X supplicant or client software in the operating system. You can sometimes install a third-party one, but most operating systems have this built-in, it's pretty standard. You need Dot1x capable authenticator. Well, most good network equipment is today. What we're looking for are the terms 802.1X,
+
+[00:03:01] RADIUS, as well as EAP, stands for, extensible authentication protocol. You'll also need a RADIUS server. This is of course, the database of users that we're going to be connecting to. And what's going to make all this possible, at least from the supplicant to the authenticator is a new protocol that we haven't spent much time talking about yet called EAP
+
+[00:03:20] or extensible authentication protocol. This actually works at layer2, it's pretty nifty. Now, when we look at EAP, there's different variants of it. There's different types of EAP, probably dozens, this is just a few. EAP-MD5 is a famous one. It's been around for a very long time. MD5 is a hashing algorithm.
+
+[00:03:40] So basically your password is going to be hashed and it's going to cross the wire. Anybody who captures that hash though, can launch attacks against it. So, the TLDR or just a real quick explanation is basically EAP-MD5, there are attacks against it. It should be avoided.
+
+[00:04:01] And what I'd say that you should use today would be something ideally like EAP-TLS. PEAP is pretty popular. EAP with generic token cards is pretty popular, but there's also many more. Let's talk about what this is effectively though. EAP is the new version of something
+
+[00:04:22] that was around for a very long time called PPP. PPP is a point-to-point protocol. This is a layer2 protocol that we used to use over WAN links. And its claim to fame was that it allowed us to authenticate each side of the connection before we brought up the link. So years later, we were thinking about
+
+[00:04:41] how to secure network services. And we say, you know, why don't we have people log in just like they used to. So they took the PPP protocol, they enhanced it and now it's called extensible authentication protocol or EAP. How extensible is it? Very, that's why there's many more versions of it. How are you going to authenticate each side? Well, if you were to use digital certificates,
+
+[00:05:02] they we're using EAP-TLS. If you want to use username and password for the client and a digital certificate on the server side, having the certificate on the server side, it means we can exchange keys securely, set up an encrypted tunnel and then pass the username and password securely.
+
+[00:05:20] So PEAP is a pretty good alternative as well. What you see in this list are different implementations of EAP, which are really just a variety of ways that we can authenticate from the supplicant to the authenticator. That's going to be where the EAP lives. So let's take a look here at the operations. I'll show you where RADIUS lives
+
+[00:05:41] and where EAP lives, respectively. So here we've got this supplicant. We know the supplicant has to talk to the authenticator. When it wants network access, it's the supplicant who basically wants to know who is they're asking for network access. It's like, it's great, I know that you want to get access to network. I see you just connected, but who the heck are ya?
+
+[00:06:01] So the way that we solve this, is this supplicant talks to the authenticator and the way that this works is basically, err- There's the full diagram, I'll walk you through it. This supplicant sends an EAP log and request to the authenticator.
+
+[00:06:20] This is an EAP message. See that switch port is an unauthenticated state, it's unauthorized. So it's not going to pass normal traffic. It's not going to pass a DHCP request, but it will handle EAP traffic. So, basically when the supplicant connects, he's or she, it could be a boy or girl computer,
+
+[00:06:41] or any type of computer that you want, that device is going to send out a request called EAP log on. And it's like, hey, I want to get some network access. Same time this switch is like, hey, I notice somebody connected, who's out there? They both have a vested interest in authenticating. In any capacity these are email messages that are used going back and forth between the supplicant and the authenticator.
+
+[00:07:01] When the supplicant gets that EAP message, it's like, whoa, I've got some wacky credentials here. I don't have a user database, let me forward that. So it was EAP coming in, but it's RADIUS when it goes out. I want to be very clear that the EAP content that was sent by the supplicant to the authenticator is now payload
+
+[00:07:22] inside of, let me clean that up a little, inside of RADIUS, which rides on top of what? UDP, which rides on top of IP. So EAP is being carried here as payload. It was a layer2 protocol when it came in,
+
+[00:07:40] but we encapsulate that EAP message inside a RADIUS, inside a UDP, inside a IP. If we want to go all the way down on top of ethernet, and we pass it back to that RADIUS server. The RADIUS server processes the EAP, and comes back with the accept or reject, a pass or a fail. It says you're getting in, or you're not.
+
+[00:08:01] Here's the neat thing about this. The authentication and the authorization process, kind of happen in one foul swoop. So let's say that the credentials were correct. The AAA server says, yes, that's the correct username and password and here's the authorization attributes for that particular user.
+
+[00:08:20] So when we talk about authorization attributes, this could be something like a VLAN assignment, an access control list assignment. There's also a capability that you could dynamically allocate a MACsec policy to the port. It's a little bit outside the scope, but what MACsec says, is that all the traffic that goes between this link and this link need to be encrypted,
+
+[00:08:42] it's hop-by-hop encryption that we can implement on switches. It's really select, it's very helpful in data centers. If I wanted to deploy a MACsec policy to this user, I go, oh, this user is working on a ransomware case. Our network is compromised, I don't know what I can trust. I want to make sure that everything's encrypted.
+
+[00:09:02] So coming back to this, when the user authenticates, they also get an authorization policy, it could be VLAN assignment. Could be a dynamic, dynamically downloaded ACL. It could be a MACsec policy. These are all things that we push to the switch.
+
+[00:09:20] Then the switch applies those conditions to that port. When the user logs out, we clear all those conditions and the port returns to an unauthorized state where it only processed EAP traffic. Now their user comes along, logs in with EAP, we do the same process all over again.

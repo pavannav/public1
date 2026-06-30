@@ -1,0 +1,57 @@
+[00:00:00] Hello and welcome back. I hope I still have you with me. Hopefully, the previous lecture on setting up or introducing integrating typescript with our project was not too confusing if you are not familiar with typescript. I admit this can be a little bit overwhelming at the beginning to understand what is actually going on here. But it's very interesting for us to actually
+
+[00:00:21] understand how typescript is working behind the scenes and how it generates our javascript files. So hopefully, I didn't lose you in the previous lecture. That was where we did the heavy lifting for integrating typescript. And now we are past this tough time and we can just update our Docker file to make sure that everything is working
+
+[00:00:41] as expected with our new typescript setup. The first thing I would like to do here is to add our disk directory to the dockerignore folder or the dockerignore file. And that's because we don't really want to copy here files that are built locally. We might build these files for local testing,
+
+[00:01:01] but we do not want to include them built like so into our container, we actually want to build and output the this directory as part of our build process. Because remember the build process should have all the necessary instructions for us to build an application
+
+[00:01:20] and run this application if there is any missing instruction and the code is working, that means that there is some hidden assumption to the setup of our local machine. So we want to avoid as much as possible to have this. And for that, we're gonna avoid copying the DIST folder if we were to do that and just come here and change the command, the CMD line to this
+
+[00:01:44] forward slash index dot Js. Let's save this here. And let's see whether this is gonna work in our multistage builds. Let's simply run a Docker build command and the tag will say here, express TS and the context is gonna be the current directory
+
+[00:02:02] we have built our project. However, the moment we try to run here, Docker with a detached mode and let's map the port 3000 here to 3000. And let's try to run our Express Express ts the moment we try to do that and we call here http colon
+
+[00:02:22] slash localhost colon 3000. We are not going to get anything back. And that's because of course, if we were to just explore the logs here, then this was not able to actually start because the dis forward slash index dot Js is not present. Remember we are ignoring it. And if by any chance this was working it means that it was relying on the assumption
+
+[00:02:45] that there is a disk folder in the local directory and that I am copying it inside of the container. So let's go back to our Docker file and let's now make the changes here for our application to work. Right now. We are copying our source folder is here.
+
+[00:03:01] That means you're also copying the source forward slash index dot TS. So we could potentially try something like this. But as we saw in the previous lecture, this is not really compatible with just running a clean node and then appending this command afterwards, we're gonna get some problems.
+
+[00:03:20] So let's change a few things or a few steps here in our process. So that in the end, we have this, this forward slash index dot Js, we're gonna move this copy command to the top here. We're gonna say after our NPM C, we're gonna copy the source directory. And we are also interested in copying
+
+[00:03:40] DTs config dot JSON file. We have some file here from the previous lecture that I used for discussion. I'm just gonna delete the test dot TS file. So now here we're going to copy the source into the source directory and we'll also copy the Ts config dot JSON into the TS config dot
+
+[00:04:00] Json file. Remember we have already copied the package Jason that means that we have the build command available for us so we can come into the Docker file. And after we have copied the source and the TS config and this is important for us to copy here. Otherwise, typescript will get lost regarding the configuration.
+
+[00:04:21] So we need to copy the TS config file. And after we do that, we can actually run the command NPM run build. What this will do is this will make our dis directory available inside of this build stage. The moment this this directory is available inside of this build stage here
+
+[00:04:45] when we copy this from or we can actually add a new section here to copy this dis directory from our build stage into our local dist directory. So we're gonna add another copy here. We're gonna say from equals build
+
+[00:05:01] and we simply copy here the dis stage. We could even say here forward slash app forward slash disk into the dist directory. We're already copying your already inside of our forward slash app working directory in our distroless container.
+
+[00:05:20] So now just copying directly here from our app disc into the disc directory. Amazing. So let's see if this is enough for our application to work back in the ide. Let's clear this once again, let's have a look at which containers we have here. So Docker PS A, we have our node container express
+
+[00:05:41] ts image that exited four minutes ago with an error. Once nonzero exit code means that there was an error in the container, we're gonna remove this container. We're just gonna say Docker RM, we're gonna remove this container. We're gonna clear the console once again and we're gonna run the Docker build command once again.
+
+[00:06:01] And we're gonna just pass here the 0.0 0.1. At the moment. We do that here. We should see some commands being executed. You see copy source source npm, run build looks fine. And now we are copying from BUILD app forward slash dis into our dis directory.
+
+[00:06:20] Let's clear the console once again. And let's have a look at whether this is gonna work for now. So now we're gonna use the version here. Oops, I forgot what is it, Docker images and that's version 0.0 0.1. Perfect. So let's go with Docker run. We're gonna say the version here, version 0.0 0.1 and we could add a name if you wish to do so, I'm not gonna do it here.
+
+[00:06:43] We can immediately check the logs, Docker logs. And the moment we do that, we see that our server is perfect listening on part 3000 and last but not least if we were to grow here. Let's go once again. 3000. We get back. Hello from Express
+
+[00:07:00] congratulations on integrating typescript into the project. As you can see here, there were quite a few steps we had to do in order to integrate typescript locally here, we had to do quite a few changes in the previous lecture. However, we were able to integrate all the necessary commands, we were able to integrate all the necessary changes here.
+
+[00:07:22] And you see how interesting that is that we moved some copy commands from our distroless stage back to the build stage. Because now the typescript files here, these typescript files, they are necessary for the NPM run build command because typescript needs to output the javascript file based on this typescript files.
+
+[00:07:44] Here, we also had to copy the TS config JSON files. So that typescript knows which configuration to use. In the moment we do that, we actually have a build command here which makes the files available. The actual javascript files available
+
+[00:08:01] under the disk folder inside of our forward slash app working directory, we can then inside of our distro less image copy from this build stage, the both the application code under the disk directory as well as the application dependencies under the node modules directory.
+
+[00:08:20] And we can copy them into our new stage and then just keep the files that we actually need in this new stage. Here in the distro stage, we do not have the source folder available. The source folder is used only for building the application code but here we just keep the disk, which is the output files available for us.
+
+[00:08:43] We then set our environment variable port to the value of 3000 and we execute the DIST index Js CMD instruction. This gets appended to the default entry point of our node JSS 22 distroless image, which is node.
+
+[00:09:00] So in the end here, we would have an actual, so an effective command that would be something like node test forward slash index dot Js, right? So the C MD instruction here is being appended to the entry point node that is coming from the distroless base image. Really cool. I think we explored quite a few things here and I apologize
+
+[00:09:23] if I'm introducing some confusion when migrating the javascript to typescript. Hopefully, that was not too heavy. But if there is anything that is not clear, please don't hesitate to use the Q and A section. I'm more than happy to clarify any doubts. Thanks a lot. And now it's a great moment for us to take a short break and come back in the next lecture.

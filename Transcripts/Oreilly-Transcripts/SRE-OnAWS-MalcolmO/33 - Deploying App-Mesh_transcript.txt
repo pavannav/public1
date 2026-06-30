@@ -1,0 +1,73 @@
+[00:00:01] Welcome course takers to video number three, deploying app mesh in this video, we're going to have a quick overview of appmesh again and then we'll look at specific app mesh configuration and we'll end up by deploying our existing pod into an app mesh enabled name space and see what happens. So if you're ready, let's get started.
+
+[00:00:21] So why use a service mesh? Well, we've talked a lot in this course about embedding reliability logic and security logic into your application and the need to be able to lift up some of that configuration that used to live in the infrastructure into your application. Now it's fine. But when you have a large microservice ecosystem,
+
+[00:00:42] when you've got lots of different languages and frameworks you're using doing some of that just simply being able to embed a circuit breaker into all your code for all your API calls, for all the different languages and frameworks can be very challenging. So service mesh allows you to embed some of those reliability features,
+
+[00:01:01] controlling traffic service discovery security into the actual mesh itself and not worry about it. And so your code can operate to somewhat of a degree untouched So it simplifies the build of those blocks. Basically. Now, once you have a central point of control like the mesh, then you can deploy your code in a
+
+[00:01:21] more granular way using things like canary deployment. So pushing a small part of your traffic to a particular function or a new release before you actually test and deploy it in a kind of blue green deployment. And because you've got that central part of control as well, then it enables better telemetry tracing and,
+
+[00:01:40] and generally better observability. Now, there's quite a few frameworks out there. I've used to and console and they're both good products, linked is another one that's coming through as well. But because we're talking about Amazon, we're going to talk about a appmesh. Um One of the big challenges with something like sto is its deployment can be quite complicated. App mesh is very simple to deploy.
+
+[00:02:01] It's free, it's part of the platform and it scales across different capabilities. So you can run it across ecs and eks if you want to and you have a mixed environment. And you know, when you talk to Amazon, that's what they say. The reason they developed appmesh was because they wanted something a bit more flexible and a bit more scalable for them.
+
+[00:02:22] Not to say that sto isn't that uh and console or linkered, it's just different. So we're going to focus on Appmesh. So let's look at Appmesh specifically, here's my application. So I've got two pods in two different name spaces. Pie bookings, talks to pie cars. Uh when it needs to get car information, how does it resolve the name?
+
+[00:02:42] Well, probably DNS or some sort of name space resolution. Does it have a secure connection if it does, does it need to use htps? And how do you manage the certificates? And how do we get telemetry out of it? The answer to all these things is you embed it in your code. So one way we can change that is we deploy a proxy. So envoy is a layer seven proxy.
+
+[00:03:05] Um It's probably the one everybody uses these days, although there are other ones and there's a lot of community access for envoy and it will support connections between pods using HTP or GR PC or TCP.
+
+[00:03:20] And it allows you to enable mutual TLS. So the pods no longer talk directly to each other, talk through the envoy proxies to each other. Now you've got that central bit of control. You can then add in the appmesh functions of kind of service discovery. You know, how does pie bookings, find pie cars policies? Can pie bookings, talk to Pie cars
+
+[00:03:41] if it does you get the telemetry and then you've got all the configuration piece. How do you deploy these policies? How do you manage the actual insertion of envoy into your application because you don't want to do that manually? And the way it works is you deploy a custom resource in Kubernetes, the app mesh controller, the app mesh controller is a logical configuration, but it resolves to a pod as well.
+
+[00:04:04] The app mesh controller is a logical configuration, but it's also resolves to a pod itself. So you will see a pod called at mesh controller. And then you actually configure a number of custom resources. So there are three main resources that you will create a virtual node which basically maps onto Kubernetes
+
+[00:04:22] service and deployment a virtual router that provides all the path based routing. And then the virtual service itself, which is an abstraction of the service in the mesh. So it's basically what dependent services will configure and we'll see those in detail next. And then the other thing is you need to deploy the name space and have that enabled.
+
+[00:04:42] So here you can see the name space has a annotation around using this web webhook injector. So when you try to deploy into that name space, the app mesh controller will get invoked and try to manage that container for you and manage that name space for you
+
+[00:05:00] more detailed view. This is exactly what it would look like. We've got still got our two services and deployments with our various pieces in there. Now they have envoy configured within them and then we have a virtual node representing both of those. And then we have our virtual router with paths to both of those virtual nodes and we have a service called PI global that would be configured.
+
+[00:05:21] And if you use the guide up here, this allows you to very easily configure these attributes and install your app mesh controller. And if you want to build a appmesh enabled cluster to begin with, then simply use ESCTL, then use eksctl and just configure this app mesh access at the end.
+
+[00:05:41] So let's look at the configuration. So I've already deployed my cluster. So we'll just use lens because it's a nice easy configuration. Let me connect to my cluster um have a couple of nodes running. Um So if I look at my pods, here's my app mesh controller pod. So this is my app mesh controller we talked about and because I've installed it,
+
+[00:06:01] what I end up with is some custom resources. And I've got in there the mesh, the virtual node, virtual and virtual service, none of which exist today. So we need to create those things. Now, we could use terraform to create the, the mesh. But because we're starting to work with Kubernetes,
+
+[00:06:21] it's probably a better idea to use Kubernetes to deploy these resources. And I think that's the Amazon suggestion as well. So in my app mesh I A repository, um I've got my mesh definition. So now we're using the app mesh API to create a mesh called P
+
+[00:06:41] global. So we'll just run that and I'm just going to use the create option and it'll go back and create the mesh. Now, if I go back into here and click, refresh, what I should see is I've now got my mesh enabled. Now, ideally now I'm not, I'm not going to use the console to create or manage any of this.
+
+[00:07:02] This should all be managed through helm or directly through Kubernetes manifests at this point. This is purely should be used more as a UI. Now, if I look in lens, I won't see anything other than in my mesh custom routes, right? This is not a Kubernetes construct. Everything we're doing now is actually based down in the
+
+[00:07:23] in the custom resources. The next thing I need to do is create a name space, star Ly cars, name space, what we had before we specify two additional labels here. One saying which mesh it's connected to and we're also going to create the sidecar Injection. So if I just do,
+
+[00:07:45] I can see, I've got a couple of appmesh specific frameworks or name spaces that get created as part of the install, but I don't have the name space I want. So I'm just going to create the name space and there I have it. Now, if I go back into lens, if I look at name spaces,
+
+[00:08:02] this is the first native Kubernetes object I've created and you can see the labels are there. What this is basically doing is saying it right? This name space is now enabled for appmesh. And so for every name space you want to use, you need to either add these annotations and these labels or you create them from fresh.
+
+[00:08:22] OK? And the final thing I need to do is now I need to deploy a node into or a service into that name space. What I need to do is make sure I have a matching virtual node. Otherwise when I try to deploy it, it will fail. So let's go back and look at our virtual node.
+
+[00:08:41] So again, we're using the mesh API we're saying, giving it a name, we're saying what pod we're gonna use? What port? And then we say what's the service that we're going to integrate with? Now, this must match the service that you're deploying as part of Cinetis. So if we go back into our cti's
+
+[00:09:00] service for Pi cars and look at our K eight service, we can see the name is Pyc cars dash service and the app selector is PYC Cars. So that's our URL and that's our DNS name that will be created. So if I look at my virtual node, Pyt
+
+[00:09:21] service, Pyt. So now I just want to deploy that as well. And there we go. And then if I go back into lens, what I should see custom resource, I now got high P cars and with lens, for example, I can actually edit this if I want to. OK. So we've got all the prerequisites set up.
+
+[00:09:42] We've got our container, our cluster created, we've got our mesh created. We've added a name space for the with the and it with the labels. And now we've added a virtual node that maps onto a kubernete service. Now, if you remember
+
+[00:10:01] we had our Pie Cars application, I'll get rid of this. So here's pie Cars and we had our scaffold. Yamm. All said, deploy our deploy, do our deployment and service. I'm not changing any of that.
+
+[00:10:20] So if I just put scaffold dev, what that will do is build my Docker container and then it will just deploy it. Now, it's interesting. We're starting to see some envoy messages coming through. Now, I haven't added envoy into my application. I'm still deploying the same set of containers that I did before.
+
+[00:10:43] So what's going on? Well, let's have a quick look. So we've got our deployment, here's our cars deployment. But now we've just got our pods within that. If I look at the pods, I can see there are actually two containers. That's what those two green dots mean.
+
+[00:11:00] And I've got this pie cars, but I've also got envoy and I've also ran an init container which just sets up the environment. So without doing anything at all, what I've now deployed, what I've now deployed is an envoy proxy sitting in between my pod, the pod that I defined in
+
+[00:11:21] my code, the pod I defined in my code and the pod that's been injected by the app mesh controller. And the same thing will happen. Now if I create another name space and deploy the bookings application and then I need to configure um the resources, the policies to allow me to talk between those.
+
+[00:11:42] And I do that through the virtual router basically. And the service and I do that through the virtual router and the service and other configuration files. So there we have it, we've created our cluster, we've deployed our controller that's all running. And then as part of our application, we simply did a little bit more admin.
+
+[00:12:00] We created the mesh and we created the name space. We enabled it to use the mesh through the labels and then we've deployed our application and applied it into the pod itself. So I hope you found that interesting. Please join me for the next section, surviving a failure of global scale. Thanks very much.

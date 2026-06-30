@@ -1,0 +1,101 @@
+[00:00:00] Hello and welcome back. Let's now discuss how we can import infrastructure that already exists outside of terraform into our Dataform project. This means in practice that we already have some pieces of infrastructure that are already running, but we wanna start managing them via terraform.
+
+[00:00:20] This can come from something that was manually created in AWS or this can also come, let's say that some team is transitioning something, transitioning some services to our team and they are removing from their terraform configurations and we are importing into our terraform configurations. Bottom line is the resource already exists. We don't want to create it from scratch.
+
+[00:00:41] We just want to start tracking and managing it with data form for that. Let's create a new file here inside of our folder 16 state manipulation. Let's just call this import dot DF. And there are two ways for us to import resources. Similarly to the move resources, we can either import via the CLI
+
+[00:01:02] import via CLI or we can import via the import block. I'm here in the console and there is one piece of information that we have created at the very beginning of this course. When we talked about remote backends. We have created an S3 bucket manually
+
+[00:01:20] because we need to have an S3 bucket already deployed so that we can use it as a bucket for our remote S3 backend. However, this bucket was not created via terraform. This bucket was created from the AWS console. You can check earlier sections to see how we did that. And let's say that after having created this bucket,
+
+[00:01:42] we would like to start tracking it with terraform. So one way for us to do that is to actually import the bucket into our terraform configuration, we already know that an AWS S3 bucket is the resource type that we would like to have here in our configuration.
+
+[00:02:00] However, instead of just going and showing you the CLI command, I would rather look here inside of the documentation because this is very important that you are also aware of each resource here. It has a section. Let me scroll down here. It has a section, import section. And if you click on this import section, you will find the two ways that we can
+
+[00:02:21] import existing S3 buckets into our terraform configuration. The first one is using the import block and the second one is using the CLI. And as you can see here, we have two arguments when we are using either of them. The first one is the target here, the resource within our terraform configuration.
+
+[00:02:41] That's a combination of the resource type plus the label and the second argument is the bucket name. If we come here to the console, this here would be our bucket name. So you can see that both for the import block as well as for the CLI we have the same structure first argument or actually in the import block.
+
+[00:03:00] The two argument, the order here doesn't matter, right. So the two argument is gonna be the resource within our configuration in the CLI. The first argument will be the resource within our configuration. And the second or the ID argument here in the import block will be the bucket name. While in the CLI the second argument will be the bucket name. So let's see how we can import this S3 bucket into our configuration.
+
+[00:03:22] Let's come back to the IDE. And as you know, here from the documentation already, we need to have a resource that is matching or basically, we need to have an S3 bucket here. That's gonna act as the target whenever we are importing something. So back to the IDE, let's create a resource. This resource will be an S3
+
+[00:03:42] AWS S3 bucket and the name here, let's just put remote underscore state and the bucket here, we will have to pass the bucket name. So this will actually be the name of our bucket as well here. If we were to copy this and then paste it here,
+
+[00:04:00] that is pretty much everything that we need to pass as an argument for us to be able to import this bucket. Let's change into the folder once again. And let's see now if we can import now, I don't wanna directly commit this action. So similar to the move, I will pass the dry run here and then the target will be AWS underscore S3 underscore bucket
+
+[00:04:23] dot remote underscore state and the name here or the bucket name is gonna be this bucket name here. I'm gonna put it between a single quotes and let's press enter. And that's interesting. I'm getting an error here and I believe that's because the dry run is not supported,
+
+[00:04:40] even though that's a little bit funny. But let's have a look at the documentation. See if there's anything here, dry dash run, there is no dry run option here. If you also look over the options here, that's not gonna. So I mean the in the import command documentation slightly important to highlight and I'm looking at the, the options here
+
+[00:05:00] and I don't see any dry run, which for me is a little bit funny. But anyways, let's go with that. Let's clear the console. Let's then try to remove the dry run and see what's the result of this comment. And the moment we do that, then you will see that we get some stuff here, AWS bucket, remote state importing this ID here. And once we do that, then we will see that the import was successful.
+
+[00:05:24] It's important to highlight that the only thing that really happens here with the import is that we add something to our state. So if we come here to our state and now we look to S3 underscore bucket, we will find our remote state here if we were to come here and actually delete this thing.
+
+[00:05:41] Let's delete the whole thing here. That's the whole object. I don't know where it ends. But let's see. I believe that should be here. And let's see a little bit more. So that's three indents. That should be this one here. Let's remove this one. The moment we remove this from state. Let's save this here. And let's run a Dataform
+
+[00:06:00] import once again, we should see that this is imported again and you can see here that this is added to the state. So basically, there is no magic happening anywhere else other than in terraform. Basically terraform is just adding to the state. And it's saying, hey, from now onwards, this resource here will actually track that remote infrastructure that
+
+[00:06:22] was not known to me before you imported it. Let's give another try here. I'm just interested. What's gonna happen once we remove this, let's remove this once again here. And once we come to the import, let's pass another an invalid name here. So let's say that this name
+
+[00:06:41] is actually not matching the name of our bucket. So let's see what's gonna happen here when we try to import dataform says, OK, I have actually imported it. So as you can see, there is no error, even though the names here are mismatching. However, now when we run a Dataform plan, we should see that Dataform will try to change
+
+[00:07:00] the bucket and that's exactly what's happening here. Let's have a look, scroll up a little bit and that's also coming from our previous move state here. Let's go up a little bit more here. And as you can see, this is our S3 bucket. And terraform is saying, hey, I need to replace this bucket because you are changing the bucket name.
+
+[00:07:20] So when we import a resource via terraform, what we get is not the configuration that is specified here. What we get is the information that is available for that resource that is already created. So this is the actual name of the bucket that is imported to our state. If we come to the state here
+
+[00:07:41] and we scroll down a little bit, we will see that the A N as well as the bucket, they do include this remote backend suffix. What terraform is doing is basically just taking the information from the existing resource and saving it in the state and then in subsequent plan and apply runs.
+
+[00:08:00] Terraform is gonna look at the actual configuration that we have specified in the files. And if there are any changes, Dataform will try to apply these changes, but it will not give you an error if the configuration that we have in the data form files is different from the configuration of the running resource. Well, we don't want to do this here. We don't want to, to delete this remote state.
+
+[00:08:24] So one possibility that we could do is to add a life cycle method and we will say prevent destroy equals to true. This is normally good practice whenever you are handling remote state. For example, because this is a very important bucket, you, you don't want to destroy this bucket out of nowhere.
+
+[00:08:40] So you will add a prevent destroy. In most cases, in our case here, for us to remove this replacement, all we have to do is just add the remote backend here. Once again, let's save this and let's run the data farm plan. And now we will see that we have nothing to destroy and also no additional S3 bucket to create.
+
+[00:09:01] We just have the two resources from the moved block that we are from the moved section section that we are not really interested in recreating. One interesting aspect here, let's come and let's say tags. And now we would like to add a couple of tags here and we will say managed byte that is
+
+[00:09:20] dataform. And we will say here, let's say a life cycle tag, life cycle is critical. So you can also mark for example, critical resources via a life cycle, critical tag so that they are handled in a little bit more careful way. I mean for terraform, this means nothing, right. So this is just an arbitrary key value pair here.
+
+[00:09:42] And it doesn't, doesn't imply anything to our terraform configuration. However, we might use other AWS resources that are looking for resources that have a life cycle tag of critical and they are doing some additional work on top of it. So this is just one example. Let's add the tags here.
+
+[00:10:00] Let's run a dataform format because this is a little bit ugly. And now let's run a Terraform plan. As you can see now, we have one resource to change. And if we scroll up a little bit, we should see that we will change the tags in our remote backend for the sake of visualizing things on the in the console. Let's run a dataform apply.
+
+[00:10:20] We will send an auto approve here and we will recreate some of the resources in our move state file that is OK for us because we are interested in the modifications in the S3 bucket. Let's now come to the console here. And if we come in our bucket, let's have a look where we can find our properties. Probably here are the tags. And as you can see
+
+[00:10:40] that we have now successfully modified the resource, this S3 bucket, our Terraform project. Perfect. So back here to the IDE, we have successfully imported this S3 bucket into our Terraform project and now we can manage it via our configuration file. If we were to change the name here.
+
+[00:11:01] So let's have a look, let's remove the name and now let's run a data form apply. Once again, we will see that this will force a replacement. However, we will get an error here saying that the instance cannot be destroyed. So this will prevent the plan, the apply from going forward. And this is very good if we want to protect the bucket against deletion,
+
+[00:11:22] I believe that this bucket would not be deleted anyways because I believe that buckets have to be empty before they are deleted in, in AWS. So that is an additional layer of protection. All right, there is another way for us to import something into our Telecomm project. And that is via the import block for us to practice that.
+
+[00:11:42] Let's use another resource that is available in terraform and it's called an AWS S3 bucket public access block. We have seen that when we created our public, our static website in S3 and we saw that we wanted to enable the public access. However, here we do not want to enable public access.
+
+[00:12:02] So let's have a look at our, at our S3 bucket. And if we click here on the permissions tab and scroll down a little bit, you will see here block public access. And this is basically saying that we are blocking all the public access, right. So if we expand here, they are all set to true. And if we have a look in our S3 bucket, public access block resource.
+
+[00:12:23] We will see that this is exactly what we want to have here as the configuration. So now let's have a look at this. Let's copy this. Let's come to our IDE, let's paste it below our bucket here and for our bucket instead of using or instead of hard coding,
+
+[00:12:40] we're just gonna use this one here. So we're gonna say AWS S3 bucket dot remote state dot bucket, right? So now once we have the bucket here, we now have this resource. And I'm gonna say here, remote state just so that we know that this refers to this remote state bucket. And we would like to now import this into our configuration.
+
+[00:13:03] It already exists in AWS. However, we would like to import it here. And for this, let's use the import block. The import block receives two arguments. The first one is the two argument and the second one is the ID arguments. I'm just gonna provide both of them here
+
+[00:13:20] and let's come back to the console or actually to the terraform configuration. Let's click once again, we have the import section here. Let's click here. And then you can see we get the template that we need to provide. So back to our ide, the two section is going to receive this resource AWS accesslog
+
+[00:13:41] dot Remote state and the ID here is actually the name of the bucket. If we come back here you will see that we can import, using the bucket name, the same here using the bucket name. So let's just go back to the, to the ID. Let's copy the bucket name here and then let's paste it here.
+
+[00:14:00] You could also, you could use this AWS S3 dot Remote state dot bucket. Let's see if that's gonna work. Let's scroll down and the difference here is that now we are not running a CLI command. We are actually using another first class citizen within our terraform configuration, which is an import block. That means let's run a Terraform plan
+
+[00:14:23] and this should pick our import. And as you can see here, we got the one to import output. If we scroll up a little bit, then you will see that this is actually the action that Dataform wants to perform. However, if we open our state and if we look for an S3 bucket, public access block resource, we do not have it.
+
+[00:14:43] So while in the CLI we do not have the option of dry run for imports, we do have the option here for the import block. And that is just because we are using the plan command. So the plan command is not going to import the resources by default and that's good, right? Because it's just, it should not because it's a plan.
+
+[00:15:03] So if you want to know we can run a data form apply, have a look at the results here and if we want to import, then we can type. Yes. And this should successfully import our remote or our public access block. If we were to now come here, open the state file once again and look for it.
+
+[00:15:21] Oops, that's not here. That's inside of the file. Now, we should be able to find it. That's great. And now just similarly to the move block, if we were to run a data form, apply once again, then this import block here is have will have no changes, no impact in our infrastructure
+
+[00:15:40] that will not try to import it again. And if we were to remove this import block here, that's also totally fine. If we run a terraform apply, then there will be no changes to the infrastructure. One of the big advantages of having the import block is that we would know whether this resource was originally created by Terraform or not. Nonetheless, there are some arguments towards keeping the history of the resource
+
+[00:16:03] that would point towards keeping imports. You can also create a file that is dedicated solely to containing the import blocks here in our configuration so that we know all the resources that were imported and were already existing here because I am naming the files according to the discussion that we are having,
+
+[00:16:22] then it doesn't make sense to create another one. But you can imagine here, we could have an S3 file and the S3 file would have our resources and then the import would have just import blocks. It's really up to you if you wanna keep the import close to the resource that was imported or in a dedicated file.
+
+[00:16:40] That's amazing. So we have completed seeing how we can import things via the CLI as well as via the import block. So let's take a short break and come back in the next lecture.

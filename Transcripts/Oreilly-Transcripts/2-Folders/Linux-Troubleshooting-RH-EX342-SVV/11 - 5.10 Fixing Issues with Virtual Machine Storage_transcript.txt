@@ -1,0 +1,37 @@
+[00:00:06] - In this lesson, we are going to talk about some issues that may occur with storage in virtual machines. Before I show you how to deal with those, let's talk about some of the essentials of virtual machine storage. So, virtual machines have a file or raw device
+
+[00:00:23] as storage backend for their disks. If you are working with KVM, then it's most likely that you are working with file as storage backend. That means that every hard disk as seen by a virtual machine exists as a file on the host operating system. Disk files are common, raw devices are not.
+
+[00:00:41] In KVM, qcow2 has become the default disk format for disk image files. And to access data in image files of virtual machines that don't boot anymore, you can use libguestfs. And to access data in raw devices, you can detect the devices using kpartx -a.
+
+[00:01:01] kpartx -a on /dev/sda, for example, will create device nodes for the partitions within the device, after which you can easily mount them. Let me show you how we can use these utilities. So, if you want to access the files behind the virtual machine disks,
+
+[00:01:21] you need libguestfs-tools. libguestfs-tools is amazing, so let's install it. Now that we have these tools,
+
+[00:01:41] we can have a look at the storage images that we've got. By default, they are in /var/lib/libvirt/images/ and as you can see, we have centos7.0.qcow2. In order to access it, you need guestmount -a on /var/lib/libvirt/images/
+
+[00:02:06] followed by the name of the image that you want. Next, we need -m, and this -m specifies the device that you want to mount. If you don't know the device, you can specify just anything
+
+[00:02:22] because the guestmount utility will prompt you for devices that it has found. As you can see, it takes a while because the guestmount utility need to analyze what is in there. And now, let's have a look at the output. So, libguestfs is giving an error:
+
+[00:02:41] vfs type on the device /dev/blah, no such file or directory. Yeah, I know that. And next, mount_options on /dev/blah, also an error. /dev/blah could not be mounted. And then this is what it is all about. Did you mean to mount one of these filesystems? So, what do we see?
+
+[00:03:00] We see exactly the filesystems that have been created in the disk file that is used by this virtual machine. So, /dev/centos/root, for example, or /dev/sda1. So if we replace /dev/blah with /dev/centos/root, we run the command again,
+
+[00:03:21] and the contents of the root logical volume of this device is going to be available on the /mnt directory. And from there, you can just copy the contents over to wherever you want. This is not going to repair the file behind the storage of your virtual machine but at least, it allows you to recover the data
+
+[00:03:41] from the file, which can be quite important. So now that we are at the end of this lesson, let's do a quick lab with the libguestfs. In this lab, you have a KVM Virtual Machine that doesn't boot anymore. Mount the root file system on this VM so that you can save the data within the virtual machine.
+
+[00:04:00] Good luck. So, in order to do this lab, I need you to install a virtual machine. Make sure that you are on a KVM host and build a virtual machine, and it may be a minimal installation of CentOS 7. And after doing the minimal installation of CentOS 7,
+
+[00:04:20] well, you can just repeat the three steps that I have just shown you. Let me show them again. All right, so the first thing you need is libguestfs-tools, so yum install -y libguestfs-tools, which is telling me that's already installed and latest version. That's excellent.
+
+[00:04:40] Now, as that is the case, we can now use guestmount -a on /var/lib/libvirt/images/ and just use tab completion to figure out the name or names of images that you have available. - m on /dev/ whatever /mnt
+
+[00:05:03] I would always advice you to use this /dev/ whatever because you will never know for sure what is inside the virtual machine and this will just allow the guestmount command to probe for devices within a virtual machine and give you a list of all that it finds.
+
+[00:05:20] And next, once you have found it, you can replace the /dev/ whatever by /dev/ thing that you want to mount, so /dev/centos/root on /mnt. And now, if we have to look at the contents of /mnt, that's the mounted filesystem
+
+[00:05:41] of the virtual machine disk file, so you can do with it whatever you want. Once you finish, use guestunmount on /mnt to tell libguestfs that you don't need the image to be mounted any longer because you may wanna do something else with it
+
+[00:06:00] and if you want to do that, then it's good if it has been unmounted. That's all.

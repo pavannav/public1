@@ -1,0 +1,77 @@
+[00:00:00] Welcome back. Let's now work with matrices here by creating a new file 15 dash matrices dot YAML. The name is going to be once again working with matrices and it will run on workflow dispatch and it will have
+
+[00:00:20] a series of jobs actually just one job here for us. That's just we could think backwards compatibility and this will simply runs on. And actually this key here will specify a little bit later on. And let's specify the strategy first, which will be a matrix. And to just get rid of this error here,
+
+[00:00:40] let's add a runs on and we will replace that later on. So we'll go to latest, right? So now matrix here, we need to inform some options. The options we would like to use here are the node version. The node version will contain a series of values here. We can say 18 dot X 20 dot X and 21 dot X like so
+
+[00:01:01] and then the Os is just going to be here. We can run with Ubuntu, latest macOS, latest and Windows latest, right? So just to stay on the safe side since macOS latest is a fairly expensive type of of workflow run.
+
+[00:01:22] We're gonna remove this value in in case you are running this in a private repository, right? So um the the Ubuntu latest accounts for a multiplier of one windows accounts for a multiplier of two and macOS accounts for a multiplier of 10. What does that mean? It simply means if our workflow takes one minute, then Ubon
+
+[00:01:41] two is gonna charge for one minute Windows will charge for two minutes and macOS will charge for 10 minutes, right? So mac Os is more expensive. We're gonna leave it out here in case you are running this in a private repository and to be on the safe side so that you don't simply consume all your free minutes. Great. Let's now define our steps.
+
+[00:02:00] And the first step we need here is to set up node and then we will simply use here uses the actions forward slash setup dash node at version three with and then we can access here the value matrix dot node dash version, right? So this already provides also um some autocomplete and we can
+
+[00:02:23] then use this as well on the runs on here. Matrix dot OS. The second step that we would like to to execute is then just to simply perform some tests, right? So perform some tests. And then here we would have an actual logic, but for us, we would just echo
+
+[00:02:43] running tests on OS and then using once again the matrix dot Os endnode JS with the matrix dot node version, right. So this is the first version of our workflow. This is a fairly simple one where we simply use a couple
+
+[00:03:03] of values in our matrices to generate here six different jobs. Let's also leverage the name property or the name key here of our jobs. And we can use that to simply inform or to have a clearer idea of which job is using which operating system and which
+
+[00:03:22] node version in case any job fails here, then we would immediately see which one is actually failing. So the first one matrix OS dash matrix dot node version OK. There are still a few things I would like to change here to explore with you. But before we do that, let's just add this first version. Let's commit this
+
+[00:03:41] and let's see that in the UI. So let's explore how this actually works on github. So matrices and then add workflow and then we can push the changes back here on github under the actions tab, let's show more workflows, click on working with matrices, click on run workflow and let's inspect the output.
+
+[00:04:01] If we click here on working with matrices, then you can see that we have already the six jobs that were generated here for us. In oops, I had a small mistake here on the workflow. If you caught that before me, that's very good. Um I just forgot to actually properly configure here. The, the set up node, instead of passing directly to the with keyword,
+
+[00:04:23] we need to pass to the node dash version a key here under the width keyword, right. So now we can then just commit this directly to the main branch. And this should actually fix the problem. So fix 15 matrices correctly set node version, right. So once you commit the changes to the main branch, we can then here
+
+[00:04:44] um come, come back to our action step and under show more workflows. Let's then just rerun our workflow here. Now, while we rerun this workflow that we can already dig a little bit deeper into something that I wanted to discuss with you already.
+
+[00:05:00] And it's basically the fact that some jobs here failed while others were completely skipped. Now, this is a feature of matrices by default, if we are executing multiple jobs from within a matrix and any of these jobs fails, all the other jobs will basically be canceled. And this is what's called a fail fast strategy. And we can, we can
+
+[00:05:23] change that. We can configure that in the matrix. We're gonna do that in a little bit. I just want to have a look at the output of our new run. And as you can see here with our new run, everything is fine, the error is fixed and we have here six jobs that were generated with us just having to define one job in our workflow.
+
+[00:05:42] If we were to explore any of these jobs, they would be like any other standard job that we have seen basically. So everything here is already defined within the job. If we expand here, set up job, we will have also the job name here. So means it means that we basically github actions generates the jobs and it starts
+
+[00:06:03] with already the values of operating system and of the node version set for us. Let's now explore this idea of fail fast and the fail fast option is set at the strategy level. So fail fast. And then we can either set this to false or to true.
+
+[00:06:21] The default is true here. And if it is true, whenever any job fails, all the other jobs will be interrupted. Now, if we set this to false, then the other jobs will continue even if a certain job fails. Before we visualize that in the UI, there is another option that I would like to discuss with you.
+
+[00:06:41] And it's the include option. Now, whenever we define here matrices like so, so with the node version and the operating system, github automatically takes all these values and combines with all the values of all the other options. Now, it might be the case that we want to add only a single value here, let's say for
+
+[00:07:02] Ubuntu latest. And we don't want this a certain node version for example to be applied to Windows latest. So one way for us to do that is to use the include keyword and the include keyword allows us to extend the configuration. So we would be able to say for example OS
+
+[00:07:21] to latest and then node version 16 dot X. So what this will do is it will add another job. It will create a new entry to our matrix which will be Ubuntu latest and an old version of 16, but it will not add an entry for WINDOWS latest.
+
+[00:07:41] So this allows us to add specific combinations that we don't really want applied. So we don't want to have them in one of the standard options because they would applied to all the other options. And we want to target this to a more specific version. We can also use that to extend existing configuration.
+
+[00:08:01] So we have one of the possible combinations is going to be Ubuntu latest and 21 dot X, right? But let's say that the node version 21 dot X is experimental. So what we're gonna actually do here is to also say OS Ubuntu latest node version 21 dot X and then tag here
+
+[00:08:20] experimental, right? So this would basically take the matching version where we have Ubuntu latest and 21 dot X and it would add another configuration or another matrix entry here matrix dot tag and it's gonna be set to experimental. Now this is gonna be set only for the combination
+
+[00:08:40] Ubuntu latest 21 dot X. What we could then do with this experimental tag here, we could, we could actually use this to visualize our fail fast strategy. So let's just use fail if experimental and what we will do, we will simply run if the matrix dot
+
+[00:09:01] tag is equal to experimental, right. So if the tag is defined and it's equal to experimental, then we're just gonna run exit with a code. What now um this is not gonna be defined for all the other combinations different than Ubuntu latest and 21 dot X. And then here we could also add another step
+
+[00:09:24] just to sleep or rather let's even add it here because it makes more sense. And we just simply say sleep for 10 seconds, right? And then here we could also have another step, let's say upload test results and then we will just say echo,
+
+[00:09:40] uploading test results, right? So I have a couple of steps. This will take a little bit of time to execute and this one will fail if the tag is equal to experimental. So let's save this, let's commit our changes and fail fast and include.
+
+[00:10:00] And then here I believe I need to pull this in rebase and this rebase was not that straightforward. Here, we have changed a few things, but we have also added some other uh some, some other entries to our steps. So let's just fix that. This is what we want to keep, we want to keep the node version and this is what we want to remove, right. So now
+
+[00:10:20] um the conflicts are fixed here. So we have the node version, we have still the step that fails if it is experimental. And then we have the new information as well, sleep 10 and echo uploading test results. So we can add everything, we can continue with the rebase continue. And once that is done, we can save with the same changes and then we can push this to the remote repository.
+
+[00:10:43] Let's now inspect the output here. And as you can see, we have added a single entry for Ubuntu latest 16 X, there is no windows, latest 16 X. And you can see that the Ubuntu latest 21 X has already failed. But the other jobs are actually still running
+
+[00:11:02] and most of them are coming to completion, right? So the with the fail fast set to force here, this simply means that the other jobs will actually continue executing. So we could use that in case we still want the jobs to complete their execution. Even if any of the generated jobs in the matrix fails.
+
+[00:11:22] If we were to come back to our workflow file, we can do that on the browser, edit this and set the fail fast to true or remove this option completely because true is the default value. We will just commit this set, fail fast to true
+
+[00:11:40] and commit directly to the main branch. Now we can rerun our workflow. Once we click on run workflow, we should then see a much faster executing workflow. Because now once the Ubuntu latest 21 X fails, once this one fails, the other one should also be canceled, should stop running much faster than previously.
+
+[00:12:02] So as you can see, once Ubuntu latest 21 X has failed, then most of the other jobs were canceled and it might be the case depending on how fast the jobs are, might be the case that they will not be canceled, they will execute until completion. And this is simply because there is a limit of runners in github actions.
+
+[00:12:21] The github hosted runners and it might be the case that these runners become available, let's say, suppose this takes 15 seconds longer to start running and then these 15 seconds were already enough. For example, for this job to latest 20 X to complete its execution. So there might be some delays here and there might be some work for some jobs that execute to completion.
+
+[00:12:42] But the the general rule is that if the fail fast is set to true and any of the generated jobs fail, then all the other ones will be canceled. That's it for this practical exercise. Let's take a short break and come back in the next lecture.

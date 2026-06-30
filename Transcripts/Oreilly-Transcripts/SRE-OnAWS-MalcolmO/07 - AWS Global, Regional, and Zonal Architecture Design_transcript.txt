@@ -1,0 +1,73 @@
+[00:00:01] Welcome course taker to section two gaining resilience and reliability on Amazon web services. In this section, we're going to focus a lot more on the technical content and how you structure those basic building blocks on Amazon to give you a reliable service. So we'll look at the global infrastructure,
+
+[00:00:21] we'll look at storage services, database services and compute services and we'll look at the inherent mechanisms within those services that provide reliability and the slas that sit around them. So if you're ready, let's get started. So welcome to video number one, AWS Global regional and zonal architecture design.
+
+[00:00:42] In this video, we'll focus on the key global building blocks that Amazon provide that provide reliability and resilience. We'll look at some of the specific services that help you use those key building blocks more effectively transit hubs and global accelerators. And then we'll end this video with a quick look at a
+
+[00:01:02] typical Amazon sl A and the things to understand about them. So if you're ready, let's get started. This diagram provides the three key building blocks for Amazon. Hopefully you should be familiar with them. We'll give you a quick run through. So the main building block is the account. So when you sign up for Amazon, you get given an account.
+
+[00:01:21] Now, a user and organization can have multiple accounts, but an account really is the boundary for your costs. It's the boundary for your users and your IAM controls and it's where your services live. Now, you can group accounts together with organizations. We're not really gonna touch on organizations during this course,
+
+[00:01:40] organizations really provide a way to consolidate your billing, consolidate your IM policies. They don't really provide a way to manage reliability or resilience. Now, within your account, you'll then deploy services services tend to be regional or they can be edge locations. So regions at the moment, Amazon have roughly 24 regions
+
+[00:02:02] and a region will tend to relate to a geographic location, a city. So London, Ireland, Frankfurt, for example, now there are much more edge locations. I think Amazon have around 100 and 38 at the time of this recording, but typically edge locations tended to have a subset of services.
+
+[00:02:21] So they tended to be DNS and C DNS. So route 53 and cloudfront, but with five G with edge services becoming more and more important, those edge locations are expanding and so you can get a Lambda edge, you can start seeing some of the edge services or the main services are being pushed out into the edges as well.
+
+[00:02:41] So edges are gonna come more important now within a region you also have availability zones. Now, an availability zone roughly translates to 1 to 2 to 3 physical data centers linked together through uh private networking. So in London, for example, we have three availability zones
+
+[00:03:02] that will roughly translate to nine data centers, three groups of three. Now, Amazon don't give you a lot of details around this. But what you can see is that each availability zone roughly translates into three data centers with private networking. So when you deploy a service, choosing two different availability zones will
+
+[00:03:22] translate into two different groupings. Now, one thing to think about is availability zones between accounts are different. So they might have the same availability zone name, but there'll be different availability zone I DS. So when you're linking services together in different accounts, make sure you check the availability zone ideas the same.
+
+[00:03:44] Otherwise effectively you'll be going through the Amazon backhaul to get between two availability zones that you think you might be the same. But in reality, are actually different I DS and that can add Latency to you. So at a global level, we've got an account, we've got services that sit within regions or edges
+
+[00:04:03] and then we've got availability zones that allow you to specify a placement of your services to give you additional resilience and reliability. Now, within that region, the first thing we tend to think about is network resilience. So within a region, we have a VPC, this is your network
+
+[00:04:22] and then we have subnets allocated to individual availability zones. So in order to get the most reliable service, you want to have at least 356 subnets, all that map onto different availability zones. Now your AWS managed services in some cases like R DS, for example,
+
+[00:04:41] will leverage those subnets and those availability zones to give you more resilience other services. Things like dynamodb, for example, are already resilient across regions, across availability zones. And so you don't need to worry about it. So depending on the type of service R DS you need to cover and build your VPC to support multiple availability zones.
+
+[00:05:02] Dynam A db already caters for resilience within the region. The other aspect you want to think about really is how you connect your corporate data center into your network. So you have direct connect, which will connect into your VPC. Directconnect gives you access to Amazon web services as
+
+[00:05:20] well as your services running within your VPC. And so having multiple resilient endpoints, multiple resilient routers on your side is part of the direct connect architecture and it goes back to that point we were talking about in the first lesson is having multiple resilient endpoints and high availability
+
+[00:05:40] is only as good as your availability design at the network level. So having multiple direct connect locations, multiple WAN routers, multiple VPC S, multiple subnets. That's all part of a high availability design. A resilient design. Now it used to be when you came into your network from your corporate data center,
+
+[00:06:00] you came into a particular location. And in this example, we've got our corporate data center connecting into account X talking to VPC three. Now the issue was in order to be able to talk to VPC one and VPC two in a different account, you'd have to have peering and then peering wouldn't work because it's nontransitive.
+
+[00:06:21] So I couldn't jump through. So you ended up having a very complicated network design. Amazon have recently introduced transit hubs, transit hubs, give you a way to connect VPC S together so that they can be routed not only from your corporate data center, but also from other VPC S and other accounts.
+
+[00:06:43] So now you can create transit hubs in different accounts with VPC S in different regions and link them together. So you get a much broader coverage for your services and you can also access them more easily from your corporate network as well. Now, we've talked a lot about service and system access access from your corporate network.
+
+[00:07:03] What about access from your users? Well, this diagram illustrates how typically it used to happen. So we had our users wanting to access service in region X. So they would connect to their local ISP, their local ISP would have a number of peering arrangements with other network providers.
+
+[00:07:21] So in this case, they'd go through network one network, two, network, three, network four all to get towards their elastic load balance and the service running behind it in region X. And the challenge is OK. On a good day, network 123 and four are all working very well and you don't have any Latency issues.
+
+[00:07:42] However, on a bad day, network four and network three are adding significant round trip delay and the service becomes unusable. Nothing to do with your service and everything to do with the network path that your users are taking. So, Amazon have recently introduced global accelerators
+
+[00:08:00] that allow you to effectively advertise your service from an edge location. Remember, there are a lot more edge locations, 100 and 38 and then they use the Amazon network to actually reach that service. They've also added health checking and Latency management, which means that as a user, if I'm in Frankfurt and I've got a service in Frankfurt,
+
+[00:08:21] then I'll go to that service. If I'm in London and actually the Frankfurt service is better for me. Then I'll go to the Frankfurt service. So global accelerators allow you to optimize the network path for user traffic by using Amazon's backhaul network and using health checks and later seat monitoring.
+
+[00:08:41] Now, in practice, I've not used this, but in practice, Amazon say you'll get a better than 60% performance and that's a very important measurement because it means that you can provide a much more reliable service to your users. And then you also have a lot more control over that. So Amazon might suffer an outage, however, you're not having to negotiate or even try and understand,
+
+[00:09:03] you know, the network status for four other network providers. So remember, reliability is also making it simpler. So here you've got one throat to choke Amazon. Now, you might also argue that you've got one bottleneck or one provider that's gonna have an outage, it will impact everything.
+
+[00:09:20] But that's the case anyway, because your service lives in Amazon. So we've talked about network controls. We've talked about the global infrastructure and the network overlay and then some things you can do with network services to make them faster. Let's look at a general sl A because we'll focus on this when we look at the next set of videos where we're looking at products specifically. So first thing to bear in mind,
+
+[00:09:41] Amazon's service level agreement is focused around their services, not your services. So it's a joint operating model, you're responsible for the things you deploy the applications, the configurations. So if you do that incorrectly, Amazon's not responsibility. A typical sl A
+
+[00:10:00] defines four things. One, it defines the commitment and that's normally in terms of availability. So two nines, four nines, six nines, it then says what that availability refers to. So how are we measuring availability availability tends to be measured either for a duration, one day a month
+
+[00:10:20] or it could be measured in terms of a single request. So number of successful requests, then you'll get a definition of how much service credits you get. So for 99.99 availability, you'll get X for 99.9 you'll get Y and for 99.0 you'll get Z.
+
+[00:10:41] If Amazon do breach their sl A then you'll get service credits. So this doesn't have a good impact on your users. You know, do they care if you're getting some money back because their application is down? Not really, the user experience is still going to be pretty. You do get some money back and then you can use that maybe to improve your service,
+
+[00:11:00] but an sl A effectively is just managing their services and giving you money back. So you've really got to think about your application as much as you think about using the Amazon SL A and then most importantly for you to understand is the exclusions. So a lot of the times things like EC2, for example, if your software
+
+[00:11:23] fails and it causes the system to reboot or to fail, then Amazon will not be liable to provide you with any sort of service credits cos it was your fault. So it's very important, you understand all the terms and conditions in an sl A and not simply use it as a way to provide
+
+[00:11:42] a reliable service because as you can see here, it's not providing a reliable service. It's simply saying you'll get some credits back. I've included the link here. If you're interested more about understanding all the detailed slas go to amazon.com legal service level agreements, but we'll go through the main slas for every service in the upcoming videos.
+
+[00:12:04] So I hope you found that interesting. Please join me for the next video where we'll look at S3 in more detail, Amazon's global story service and we'll look at the SL A and the things that help you provide a reliable service on top of it, I'll see you there.

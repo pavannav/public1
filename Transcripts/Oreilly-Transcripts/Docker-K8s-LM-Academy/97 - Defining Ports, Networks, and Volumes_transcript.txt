@@ -1,0 +1,71 @@
+[00:00:00] Hello and welcome back. Let's continue with our shell script to start our Mongodb server. In the previous lecture, we set up the credentials for our key value database and we created an initialization script to create a user within this database. The provided credentials in this lecture, I would like to add the setup for the ports of our container
+
+[00:00:23] as well as the volume and the network. Let's then start here by setting up a few variables and this will be just let's say connectivity. And the first one here is localhost port and this is going to be equal to 2717.
+
+[00:00:40] This is the default port of Mongodb. And we also want to set the container port that's going to be 27 and 17 as well. We can then add the port information here. So and gonna say we're going to map the port on our localhost or on the network to the container port like so this should already be familiar to you.
+
+[00:01:03] We're just mapping ports here. We can then also define the network name here and we can create a specific network. So let's just say key value net and this network will be the network where both our Mongodb server and our express
+
+[00:01:21] application can talk to each other. We can also pass the network here. So let's just add after the volume, let's add a new line. We're going to say dash network and that's going to be the network name like so we can then create a new section here. Let's call this storage
+
+[00:01:40] and we simply say here the volume name. So the volume name will be equal to. I'm just gonna call this key value data and then we will mount this volume here inside of a path in our container. So the volume container path is equal to. And in the Mongodb
+
+[00:02:00] server, the path where our data is stored is forward slash data slash db. So we will add a new volume option here V and that's going to be the volume name we'll map to the volume container path like. So as you can see, we have added some configuration here around the volume
+
+[00:02:22] that we would like to store our data on. That is necessary for the data to be persisted beyond the container life cycle. Additionally, we have added a network option here so that we can connect different containers inside of this network and talk to each other by using the container name as the host.
+
+[00:02:42] There are still two pieces of information missing here, primarily the volume itself as well as the network itself. So before we can run this new container here. Let's come to the terminal. Let's check whether we have anything running here and we do have a container running. I did keep this running from the previous lecture.
+
+[00:03:02] So let's just remove this container. And once we do that, we should be able to see that there are no containers here in our machine, we will now create the volume. So Docker volume create and let's come to the ide, let's copy the volume name, just going to copy it here. I'm going to paste it here
+
+[00:03:22] and we'll also create a network. So Docker network create key value net. I believe that this is the name. Perfect. That's correct here. So let's come to the terminal, let's create the network as well. And we can now once again run our start
+
+[00:03:40] DB script, we can confirm that our container is running by running Docker PS and confirming that the status here is up for nine seconds. We can also see that the ports are mapped here and this allows us to actually run another container that will try to connect to this container. So far we have done Docker exec
+
+[00:04:02] it MongoDB mongo. Sh what this is doing is basically running the mongo shell process inside of the existing container. But what we want to test is whether we can actually connect to this container from the outside world important from within this network.
+
+[00:04:23] So let's try to do that. We will simply run a Docker run command here to test whether we can connect to our container. Let's clear the console and let's run the command Docker run. Let's remove the new container. Once we stop it, the name here, we can simply say, let's say debug
+
+[00:04:42] sh or we can remove the hyphen as well. Debug as H we want an interactive shell, we want to use the network key value net that we have just created And we would like to use once again our Mongodb forward slash Mongodb
+
+[00:05:00] community dash server, colon 7.0 dash 22204. And let's see if there are any typos here. MongoDB MongoDB. No, that seems to be correct. And now what we would like to run is Mongos H here. But now we would like to pass an argument. So
+
+[00:05:22] let's just take a pause here and understand the structure of what we are doing. So Docker run should be familiar, the remove flag should be familiar. The name should also be familiar the dash. It should also be familiar the network here should also be familiar. Then we are passing the image name
+
+[00:05:40] and then we are passing the command we want to run. Now, anything that we pass here is the command that will be run and we can use Mongo shell to connect to remote databases to remote Mongodb servers. We just need to specify here at this point. We need to specify the URL, the connection endpoint.
+
+[00:06:02] And in our case, we're going to say here, Mongodb colon forward slash forward slash mongodb. And let's try to connect here to our key value DB. And the moment we do that, we can see that we have our key value DB here, if we were to run show collections, however,
+
+[00:06:22] we will get an unauthorized error. As you can see, we do need authentication and authorization to run the command list collections. But the important thing here is that we were actually able to connect to our database in our network. Remember, our Mongodb
+
+[00:06:41] container is running inside of the same network and that's why we are able to connect to it by specifying only the name of the container here. Let's now also specify the username and the password to confirm that we are able to run operations in our key value DB.
+
+[00:07:00] Let's exit from mongo shell. This should also remove the container. So if you run Docker PS A here, all we get is the container that it's up and running. Let's then just run the Docker run command. Once again, I'm going to clear the console. Oops, that's in two lines. Let's go again here. And now I would like to pass the authorization or the username and the password.
+
+[00:07:24] And this is actually defined here before our MongoDB URL. So let's just come here and we're gonna say that we have key value, dash user colon, key, dash value, dash password
+
+[00:07:40] at mongodb forward slash key valueb. This is basically trying to authenticate into this database with this username and this password, the username and the password, they have to match what we have specified here in our start DB script. They have to be
+
+[00:08:01] the same values or they have to contain the same values of the password and the username that we are using to create our user. If we pass something different, let's see what's going to happen. So I'm just going to delete some stuff here, the password is incorrect. And the moment I try to do that, you will see that we get an authentication error.
+
+[00:08:20] The moment we specify a username and a password, they need to be valid. They need to be present in this database here for us to be able to connect. Let's now fix this and just add the key value password like so, and the moment we run this command, as you can see, we now can go through and we get the session.
+
+[00:08:42] And if we were to say, show collections here, that's no problem. We don't get any errors. This is an empty result because we do not have any collections here. However, we are able to run operations on our database. Isn't this amazing? And additionally this username and this password, they do have credentials
+
+[00:09:03] do have permissions only for this database. If we were to say, use admin here or even let's start with the showdbs, you will see that we get an empty response if we were to say, use admin here and we say show collections, this is going to return an unauthorized error.
+
+[00:09:22] So we are not authorized on the admin database. We are not able to execute this command in the database admin. That is really cool. So we are able to create a user with a password with access or with a role to a specific database. And that's exactly what we need for our application.
+
+[00:09:41] And as you can see, there were also quite a few steps that we had to execute in, in order to get this setup up and running. I would still like for us to factor a little bit our shell script to make it a little bit more robust. But before we do that, let's just exit here. Let's clear the console. Let's verify which containers we have up and running.
+
+[00:10:01] Let's stop this container here and then let's confirm that we have no containers. We do have a volume. And actually, as you can see, these are quite a few volumes here and some of them are the anonymous volumes that we talked about. The ones that we cannot really reuse efficiently. However, others are the volumes that we have created this key value data.
+
+[00:10:24] This is the volume that we have created the Mongo data. You can ignore this is from previous iterations. So it's just important to observe that the volume is still there as well as the network. So if we run Docker network, LS, we will see that we have the bridge network,
+
+[00:10:41] the host network and the key value network that we have just created via the cli there are many moves in pieces. And if you have already interfaced a little bit with Docker compose, maybe this will also come to your mind that we can define both volumes and networks inside of the same file.
+
+[00:11:00] And that's where Docker Compose really shines where we can actually create everything we need and define everything we need in a single file. So hopefully, it's becoming clear how complex managing these containers with multiple volumes and networks can become in this specific project, we will stick to the basics here. We're not going to dive into Docker Compose.
+
+[00:11:20] But in the next section, we will see how Docker Compose can help us with many of these tasks for now, let's just clean up our data here. We will remove our key dash value dash data volume and we will also remove our network. So Docker network RM and we will pass here key
+
+[00:11:40] value net. Perfect. Let's then take a short break and come back in the next lecture where we will do a little bit of Refactoring in our code to make it more robust and more intuitive.

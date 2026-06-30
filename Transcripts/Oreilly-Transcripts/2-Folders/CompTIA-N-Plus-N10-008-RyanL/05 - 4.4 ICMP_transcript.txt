@@ -1,0 +1,83 @@
+[00:00:06] - So the next protocol after TCP and UDP that I think you're most likely to come across, no guarantees, is gonna be ICMP. ICMP is a layer four protocol. What's that mean? Well, just like we've seen, we've got layer two.
+
+[00:00:22] We got layer three, inside that layer three header is a protocol field that says, this is where I'm carrying layer four. Layer four is ICMP message. So in this ICMP message, we use these for diagnostics. We can use it for testing, we can use it when things go wrong. There are no port numbers here.
+
+[00:00:41] So with, looking at TCP UDP, we had the source and destination port numbers, here we just have something called message types as well as codes. So if we were to open up a ICMP header inside of Wireshark, this is kind of what it looks like. And again, this is all of the headers just kind of squished down.
+
+[00:01:01] So we see our metadata is the first field and it says, hey this is frame number four 10. Since you started capturing packets, this is a bit about it, this is how big it is, the interface it was collected on it, et cetera. Really this is what we call metadata. It's data about data that just helps us make more sense of this frame.
+
+[00:01:20] Where did it come from? When did I record it? You know, things like that. Now, when we talk about as an hour work engineer taking this apart and looking at it, this is where we see layer two layer three, layer four, Layer two is ethernet, layer three is IP version four, Layer four, ICMP. When we open it up,
+
+[00:01:40] Notice if we go back one, I went from assemble like this, to assemble like this, we clicked on it to open it and examine the dialogue. inside a IP or IP header says, what are you using? IP version four. What's your header length? 20 bytes. What's your diff serv code point?
+
+[00:02:01] 0. This is for doing quality of service or making sure your voice over IP or mission-critical application arrives first and your bit torrent traffic arrives last. This is where QoS lives. At least at layer three. Here's your total length, here's the identification. Now, every packet that you ever sent has an IP ID number.
+
+[00:02:22] It's almost like a serial number. So if you're busy, you're sending out packet after packet after packet very rapidly, your IP ID is gonna go 1, 2, 3, 4, 5, 6. It's gonna climb really quickly. If you're sitting there idle, just kind of scratching your head, looking around and sleepy. Those numbers are gonna climb very slowly.
+
+[00:02:41] So just something that you can kind of keep track of. It's not something that most people keep track of, but it's something that you can look at if you want to infer how busy a particular system is. It can be handy in troubleshooting. What are some things that you would really care about? Right here. Time-to-live, the TTL is what we use in something called
+
+[00:03:01] trace route. So if I want to see each hop in a path, I can mess with my time-to-live to generate ICMP errors and learn who each router in the pathway is. Additionally time-to-live, it's main purpose is just so that a packet doesn't live forever. Every time I go through a router, here's my packet.
+
+[00:03:20] It has a TTL of 56. It comes into this router. The router looks at the destination IP address, looks at its routing table, makes affording decision out the next interface, right? When it does that, that's called a hop. When you come in one router and then go out of it, that's a hop. Every hop we'll decrement your TTL by one.
+
+[00:03:40] Meaning it came in at a 56, it went out at a 55. This happens hop by hop by hop. If it ever reaches one, you come into a router and it tries to move you between two interfaces, it goes to a zero because you decrement, it goes, wait a minute. There's no hops left. We can't forward this packet.
+
+[00:04:02] So instead of forwarding it, what do we do? if you thought I bet we sent back an ICMP error message, you are correct. So let's talk about that for a second. There you were doing, trying to do a TCP file transfer. Maybe I'm gonna use secure copy, which is our SEP, which is transferring files for us to saige.
+
+[00:04:22] So I sent a TCP SYN to do my three-way handshake to a host out there on the internet somewhere, on my way to that host, for some reason that shouldn't happen, the TTL expired. Maybe there was a routing loop, maybe there was some type of problem, but the TTL went 5, 4, 3, 2, 1,
+
+[00:04:40] and then, uh-oh. Once it hits one, we can't send it any further. So the router that gets a message with the TTL one tries to forward it cause we can't forward. Throws this packet away. What type of data was it? TCP. TCP came in and we go, it's not gonna make it. And we send back ICMP.
+
+[00:05:00] Is that cool? So from your computer's perspective, you're sending out a TCP packet, you get an ICMP message back. That's weird. I was expecting a SYN-ACK, right? But the ICP Mac message says, sorry, TTL expired in transit. It means that the packets that you're sending, they went, you know, from like we see 56 here.
+
+[00:05:21] Boop, boop, boop, boop, boop. It keeps going down one at a time and it went all the way to zero. So, there's something wrong in networking, your packets not gonna make it, good troubleshoot, try again. So ICMP is our diagnostic protocol. It's what we use when things go wrong. This is what it looks like close up. You know, once we open up, this is our IP header.
+
+[00:05:43] I was showing you things that you care about the most. And for our discussion now, TTL is one and notice what's right beneath it. Protocol. This says, Hey, IP, layer three. What are you carrying down here at layer four?
+
+[00:06:01] You know, if we look at this field, it's just a bunch of crazy hexadecimal. But when it says we're carrying one, one is the protocol number for ICMP. A UDP is 17. TCP is six. There's different protocol numbers, which referenced different protocols, which lets a system know how to take all this
+
+[00:06:20] hexadecimal gibberish and turn it into something that's actually useful. We decode header by header by header. Remember at layer one, this is ones and zeros just crossing the wire. When we say this type of link is an ether net link. We go, oh, I know there's ones and zeros should have a certain delimiter. It should work like this.
+
+[00:06:41] It allows us to collect the ones and zeros, convert them into an envelope. And when we look at that later, two envelope, it says, what is your ether type? And the ether type says, I'm carrying an IPV4 or I'm carrying IPV6, We get sweet IPV4. We look inside that header. We got IPV four. What's going on?
+
+[00:07:00] He says, here's my source, here's my destination. What else is exciting? The protocol, cause that says what I'm carrying down here at layer four ICMP TCP, UDP, GRE, ESP, lots of options. Pretty cool. Huh? So looking at ICMP, this is are layer four header,
+
+[00:07:20] being carried by a layer three header. Does ICMP have port numbers? It doesn't, it has these message types. So when you send an ICMP message out and it says, Hey, this is a type eight. Well, that's an echo request it's saying, Hey, are you there? And what we do is we include this wacky data. It's kind of funny.
+
+[00:07:40] Notice that it says A through W and then it starts kinda over again here, different operating systems put different, I'm just gonna call it gibberish, into their ICMP payload. What's neat about this is if you're geeky enough, you can look at other people's packets crossing the wire, You can look at that ICMP field and go, Ooh, that's a Linux host.
+
+[00:08:01] That's a windows host. You can say that's windows 10 versus windows seven. Sometimes. Why? Because there's all these attributes, all these identifiers, all these sequence numbers, all these windows sizes. Different operating systems use different defaults. So the art of passive OS fingerprinting is looking at
+
+[00:08:21] traffic as it goes by in inferring, based on these fields, what type of hosts are communicating. The other way to do that is through probing them directly. But by looking at communication as it passes through and looking at the nuances in it, we can kind of figure out what's what. So that's, I think a little bit of like
+
+[00:08:40] a sexier reason to look at some of these fields and appreciate them. Cause again, once you sign that, find those differences, we can start using them to deduct things. It can be pretty useful. So just for example, if you do a ping, your computer's generating an ICMP type eight echo request, and if it comes back, you're getting what's called a type zero,
+
+[00:09:01] an echo reply. It's kind of funny that you send a type eight to get a type zero back, but that's basically ping, just means that it worked. So, you haven't seen ping before, drop a dos prompt down. This works from all operating systems, but just ping 4, 2, 2, 2, or your lucky IP address of choice.
+
+[00:09:22] And depending on your OS, it'll just send like you saw here, maybe four or five messages and it'll stop. If you do this from Linux, it's gonna do it continuously, it's gonna keep pinging until you do a control C. Now, if I wanted to, I could use Wireshark. It will bring this down.
+
+[00:09:40] And with Wireshark, it says, what interface do you want to capture on? here's those VMware interfaces, and here's my regular ethernet. If you're not sure, see these lines, they show you the activity. And I can just go ahead and click on that. It's gonna start capturing. It's gonna be pretty busy. Now, if I want ICMP only I can put a filter here for ICMP. I can apply it,
+
+[00:10:00] and it's only gonna show me ICP messages. Pretty cool, Right? So I can stop that. When you take a look and we see the source and we see the destination of each of those ICMP messages. So not to spend too much time on this, but there's basically three big windows. There's this one on the bottom,
+
+[00:10:21] see it about to disappear. This is the actual data, the zeros and ones that come off the wire. Now, do I draw Ms. Zeros and ones? No, no, no. Binary. That'd be too ugly to look at. We're gonna look at the byte code all in hex. So highest value we'll see as FF, the lowest zero zero. In each pair of numbers that you see there,
+
+[00:10:41] or potentially letters is a byte from zero zero, from like I said, zero zero to FF, which is basically 256 different values. Zero zero being the highest to, zero being the lowest 255 being the highest. So point I was trying to make there is that this bottom window shown us that
+
+[00:11:01] the actual data representation of what's coming off the line with a little bit of ASCII representation or breakout over there on the right is handy. But that's where I spend the least amount of my time. This just show me the real data. What I tend to look at are the headers. Here's my layer four, ICMP. Here's my layer three, IP.
+
+[00:11:21] Here's my layer two, which is ether net. There's the source Mac address, there's the destination. here's my ether type. So this is an envelope here. It says it's sourced from here, destined here, I go well, what are you carrying? And it says, IPV4. This type lets me know how to break out the layer three header. See when I pick the destination Mac address,
+
+[00:11:42] see how it highlights that in this bottom window, that's the destination Mac for CCC. Look at the source Mac that follows, see how it's highlighted in blue. This zero eight hundred, That's my IP before, that's the hexadecimal value that says IPV4. If it were IPV6,
+
+[00:12:00] if I have any IPV6 traffic, see here the ether type is eight six D D. We're here at 0 8 0 0. So this either type tells us what we're carrying at the next header. Pretty slick. We'll look at this a little bit more later,
+
+[00:12:20] but for now realize that ICMP, layer four protocol. It rides on top of IP. We see it here in this protocol field, protocol number one. And if you open it up, you'll see these types in these codes. which can be pretty handy. If I were to bring up Firefox
+
+[00:12:40] and we do a quick search for ICMP codes, there should be a Wikipedia page. This will work though. Here's the page, type zero, echo reply. Type eight is the echo request. But you see things like router advertisement, time exceeded. That's an important one. Why'd your time exceed?
+
+[00:13:01] Cause the time-to-live exceeded in transit or it was fragment and the fragment reassembly timed out, like I broke it. I broke a piece of data into multiple little pieces. I started sending those fragments across and a timer expired before I sent everything. So you've got different codes, which are like sub conditions of why something broke.
+
+[00:13:22] The takeaway is that ICMP is a diagnostic protocol. Last thing with Wireshark, don't forget to stop. This is where we start our captures. Notice you hit that red button to stop it. If you forget to stop it, you can run out of memory or run out of disk and crash your computer. So just don't do that.
+
+[00:13:40] And when you close you typically want to quit without saving, unless you do you want to save your data, but if you're doing this on a fast link for a long time, you could actually get a pretty big data capture. So just be careful about what you save.

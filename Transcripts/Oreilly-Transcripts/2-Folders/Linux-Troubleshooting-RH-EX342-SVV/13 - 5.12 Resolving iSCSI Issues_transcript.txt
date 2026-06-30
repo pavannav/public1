@@ -1,0 +1,31 @@
+[00:00:07] - In this lesson, I'm going to teach you how to resolve iSCSI issues. First a slide, then a demo. So, there are some common iSCSI misconfigurations. That can relate to authentication settings.
+
+[00:00:21] The client authentication settings typically are defined in /etc/iscsi/iscsid.conf. If you change any authentication settings in the client, you mustn't forget to restart the iscsi service after changing that. Because otherwise the client won't apply them. By default, there is no authentication.
+
+[00:00:40] If you want to set up authentication, CHAP is the solution. Another common issue is that the IQN name that relates to the ACL is wrong. To verify that, you can start targetcli, figure out what you've got, and the client IQN itself can be set in /etciscsi/initiatorname.iscsi.
+
+[00:01:03] And another nice issue is that the target service needs to be enabled and started after configuration. Because if that is not the case, after reboot everything is gone, and you can start the troubleshooting right from there. And that is exactly what we are going to do in the lab with this lesson.
+
+[00:01:23] So, after setting up the iSCSI configuration and rebooting your machines, all is gone. Fix it! Let me explain how you can do this lab. This lab does not have a set script. If you have done exactly what I have done in my demo, then the only thing you need to do is reboot.
+
+[00:01:41] If you cannot reproduce the lab situation in your own environment, just watch the video. I will guide you through the steps that are required to fix this issue. Alright, we are back at the iSCSI target server, just after reboot. Let's type targetcli and ls, and as you can see, it's gone.
+
+[00:02:02] Now, let's troubleshoot it. First, we type exit, and here we can see something that's already useful. So this global preference auto save on exit is true, and the last 10 configs are saved in /etc/target/backup. Configuration saved to /etc/target/saveconfig.json.
+
+[00:02:21] So let's have a look at this /etc/target. We can see saveconfig.json. And what is in there? Well, really nothing. This is the last configuration that was saved on exit, and in this configuration we have nothing at all.
+
+[00:02:40] But if you look in the backup directory, you can see that couple of file exists. And here we can see a couple of files with a size of 4473. Look at the timestamp and you can see that there are three of them, and the latest one was created 14:22. If we have a look at this saveconfig,
+
+[00:03:12] 14:22, then we can see that this actually does contain some configuration.
+
+[00:03:22] And can we see the configuration that we have created? Well, we can. Storage object /backstores/block/lun0, the node_acls, strip parameters, this looks like the configuration we have created. Look, this is the IQN of the iSCSI initiator.
+
+[00:03:40] So there is still hope. How are we going to fix this? Well, first systemctl status and target. The target service needs to be enabled, and here we can see the problem, the target service currently is not enabled. So, let's do a systemctl enable dash dash now target.
+
+[00:04:01] We start and enable the target service. Another targetcli is showing us that by just starting the target service, doesn't come back. Do we have anything that can help us here? Well, you can see there's a saveconfig command, you can also see there's a restoreconfig command.
+
+[00:04:21] Let's try this restoreconfig, and in this restoreconfig, let's work on the saveconfig that was created 14 colon 22. So configuration restored from saveconfig.
+
+[00:04:40] How about typing ls again and here we go, we have the configuration back. So, now I can type exit. And now we can reboot, and after the reboot, it should still exist.
+
+[00:05:02] So we are back after the reboot. Let's start using systemctl status target. We can see that the target service is actually running. Targetcli, ls is showing that the configuration is still available. So, this problem has been fixed.

@@ -1,0 +1,55 @@
+[00:00:00] In this video, we will look at ways to troubleshoot networking issues, but before getting into troubleshooting aspect we'll have a very quick overview of the Kubernetes makeup model. Now, this is very important to understand. Of course, this section will not go into the details of Kubernetes network model and the radius plugins, a brief overview we should be good enough to understand some
+
+[00:00:20] of the nuances of Kubernetes networking, and you can use that information for troubleshooting aswell. According to the Kubernetes network model, every pod gets its own IP address. Pods and nodes can communicate with all the ports on all the nodes without neck. Now, what it means is all the ports in the cluster can communicate with each other and there is
+
+[00:00:40] no network address translation in between to make that happen. Agents on a specific node can communicate with all the pods that are running on that node. This is the basic tenets of Kubernetes network model. As I had mentioned previously, there are radius networking options for Kubernetes, Calico, Weave, Flannel, Cilium, and many more. If
+
+[00:01:00] you'd go and look at the reference link, it has a very good overview of Kubernetes network model, along with descriptions on the available options. So, now since Kubernetes supports a variety of network plugins, each one of them can fail in its own way. So consequently, the troubleshooting steps are plug-in specific. Many of the troubleshooting steps are plug-in
+
+[00:01:20] specific. In that context, of course you will need to know about the details of the specific network plug-in that is in use. But what we will do in this section is we will look at some generic options as well. We'll need some maple imaging tools. Now, this is the list of some basic network debugging tools that are available on any Linux distribution. I'm not going to talk about each one of
+
+[00:01:42] them but just listing it here. It's always helpful in a Kubernetes context to have a Docker image which you can deploy in your cluster. And as you see in the slide I mentioned two of them. We'll see how we use this option for anybody. Okay, so first what we will do is we look at something for gathering techniques
+
+[00:02:01] that will aid us in troubleshooting. Then, in the later half of the section we'll look at some Calico specific debugging in my test cluster. I use Calico as a container networking solution. Okay, so this is my cluster. As I have said, what we will do is we will try to gather some info about the network. Now, this is very
+
+[00:02:20] important. Before even you go ahead and do any debugging you need to know the network topology, what are some of the network characteristics of the cluster and so on. So, the Calico config is stored in the config map by name Calico config, which
+
+[00:02:40] is in the kube system namespace. I'm going to see the Calico config for my cluster. As you can see now, this output is not very friendly. Let's describe the bonding map. Okay, this is much bigger and easier to read. Now, what we want to find out is what my pod submit is. Every
+
+[00:03:01] plugin will have an IP address management mechanism, how pod IPs are allocated. What's the IP address mechanism being used here. You see the highlighted entry. Now, every plugin will have its own mechanism. In Calico this is the option that is used. The use pod CIDR setting implies that Calico will
+
+[00:03:21] monitor the pod see idea field in the node object, and we use that if populated. So, I need to look at the pods the idea field in the node object to find out the pod subnet. How we can get the node object. It's very easy. We do a keep clear to describe node and we look at the pod CID event in the description. Let's do
+
+[00:03:42] that. So, we need to look at the ports the idea entry, let's take a look at that. Okay, you see the highlighted entry, so this is the submit that is used for org. Now, instead of doing a cubicle to describe not vm1 and then going through all the output
+
+[00:04:00] what we can do is we used JSON part mechanism to directly get the ports the idea field. So, what I do is use JSON part option and directly bring the ports the idea from the node description. I get it for all the nodes. I have two nodes in the cluster and I get pod submit for both the nodes. Now, this gives me an idea
+
+[00:04:21] of what will be the IP range of the porch. This should not overlap with the cluster nodes or any other subject that might be existing in your network. Now, this is a typical planning activity that should happen. We should ensure that pod submit doesn't overlap with any existing submit in your network. Now, of course as you saw in the config map there are so many
+
+[00:04:41] options, these are all specific to Calico. Now, we are not going to the details of each one of them. You can always refer to the Calico documentation for details on any of these options. So, now we have a fair enough idea about the ports of net right. Just for simplicity we'll run the command again and we see the two subnets. What it
+
+[00:05:02] means is each node handles a slash 24 ports of net, which means maximum of 256 ports per host. The 256 IPS will be allocated. Now, what is also helpful in some of the debugging scenarios is the grouping table on each of the node. We will try to get net also. Now, let's log
+
+[00:05:20] into the nodes. So here are my two nodes. I am logging in and we look at the routing table. So, the command could do that it's clean simple route command, use that. And as you see, this is the routing table and recall the submit that is being used for pod is the lavender submit, and that is
+
+[00:05:42] what we see. The interface is that if she prefixed with Cali followed by alphanumeric string, these are all the pod interfaces. All the 11 11 0 dot increase our four ports that are running on the specific host, which is vm one. Now, there is also another host vm 2, so how the
+
+[00:06:01] communication happens between ports on this node and pod under under node. Now, recall that as per the Kubernetes network model or two pod communication between nodes should be without any network address translation, so how does it happen. The highlighted increased the easier. The traffic for different pod subject which is in different node is
+
+[00:06:22] routed while attend the interface. It is routed why the tunnel 0 interface. Now, this is an IP / IP tunnel that is created by Calico. So, this is again really plug-in specific that. This is how Calico works. Many other plugins also have similar mechanism, so you can go ahead and look at the details and try to
+
+[00:06:40] map it with specific commands. Now, let's login to the other host. [Silence] Now you see the same thing here. If any pod in this host wants to ditch to report that is on the lavender 11.0
+
+[00:07:02] Network, which is on the other host wium one it has to go by the tunnel interface. Now, with this information at hand any issues with respect to packets getting dropped or performance being slowed, which has been attributed to network, we can start looking at it from these angles. Now we will see some of the
+
+[00:07:20] scenarios where users have reported the performance is slow. How do we go ahead and debug such issues. But before that again we have to find out see more information. Now, how do we find out what's the Calico interface that is attached or that is used for a specific pod. We saw the new output,
+
+[00:07:40] we saw so many Calico interfaces. Now, we have this Calico interfaces and associated IPs. What we want to find out is which IP belongs to which pod and consequently what is they associated interface that is used for the part. This will be needed for many of the debugging and troubleshooting step really would want to caption it for traces for
+
+[00:08:00] example, and you would want to do that for a specific pod. So, how do you find out which interface belong to which pod because that will be needed for you to collect a TCP dump output for capturing packets. Now, let's see that. So, we have these servers, we have these ports that are running so what I will do is I will
+
+[00:08:20] use the - Oh wide option to get the IP addresses of the pod and the node on which Despard is running. So, let's take the example of the metric server. Now, my metric server is running on vm 1 and IP address is this 11 got 11 0.85. I want to find out what's the
+
+[00:08:40] associated Calico interface for this pod. So, what I have to do is I'm logging into vm 1 is the vm 1 IP. Now we'll use the route command. Easiest ways just dripping ford IP. So, this is the IP that belong to matrix server and this is the associated Calico interface. Now,
+
+[00:09:00] knowing this interface as I said will be helpful when you want to capture packets using TCP dump. In the next video, we'll go through the steps to deploy the debug tool.

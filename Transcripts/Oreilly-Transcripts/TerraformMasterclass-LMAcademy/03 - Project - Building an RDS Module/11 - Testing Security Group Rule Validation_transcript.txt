@@ -1,0 +1,53 @@
+[00:00:00] Hello and welcome back. Let's now create the necessary resources for us to test the validation we have implemented for our security group rules. Let's come outside of the man. Let's come to networking and let's make a small division here. So I'm just gonna copy this header. I just want to highlight here that this is related to VPC
+
+[00:00:21] and Subnet. So I'm gonna say VPC and subnets and then we will also create another division here and we will simply say security groups, right? So we could also put them in on their own files. We could put the VPC and subnets under a VPC dash subnets file and security groups under security groups file,
+
+[00:00:43] but I'm just gonna keep both of them on the same one here. So remember we now need to create a couple of resources here. I'm just gonna add what we will create. We'll create a source security group. This will be from which traffic. So from where traffic is allowed into our security group. So remember
+
+[00:01:03] we have mentioned, we do need to have here a reference security group ID and this is basically the security group ID from which traffic will be allowed. So this is the source security group, we create, we also want to create an allowed security groups here. So a
+
+[00:01:20] compliant, let's say compliance security group, security group, we also need then under the security group to create a security group rule, right? So I say here, security group rule for the compliance security group. And then we also want to create a non compliant non compliance security group.
+
+[00:01:41] And then we also need to create its respective security group rule. So there is quite a little bit for us to do, let's create with, let's start with our AWS security group. And we will say source here. And then the name will just be, we're gonna call this name is equal to source security group.
+
+[00:02:01] And we will also add a description here. We will say security group from where connections are allowed into the database. And then we also have the V PCI D here. So it's important that we provide the VPC, the custom V PCI D
+
+[00:02:21] because if we do not provide a V PCI D, this security group will be deployed into the default VPC. However, we are deploying our R DS instance in a custom VPC in a custom subnet within that custom VPC. So we would not be able to wire things up together. So we need to make sure that the security group, since they are scoped to VPC S,
+
+[00:02:43] we need to deploy inside of our custom VPC So we have the source security group. We will also then make two copies here. We will say AWS security group compliant and the AWS security group non compliant and we'll just adjust a little bit here. So we'll say compliant
+
+[00:03:00] security group and the description here will simply be compliant security group. Nothing very fancy. The V PCI D is correct already. And for the non compliant one, we say non compliant and then we're just gonna copy this here, paste this here and then change from compliant to non dash compliant,
+
+[00:03:23] right? So this is all we need to do to create our security groups. And what is missing now are the two rules, one for the compliant one and another for the non compliant one. Let's then create another resource. This is going to be AWS underscore V BC underscore security group
+
+[00:03:40] ingress rule. It's important here. If you have a look, let me go back a little bit and say source AWS VPC security group, you will see that we have an egress, oops security group, we have an egress and an ingress rule. We are interested in creating only ingress rules. And I will say here, let's just say database
+
+[00:04:01] and the security group ID that we want to associate this rule with is our AWS security group compliant dot id. We also want to reference here, the reference security group that's gonna be AWS security group source dot id. And here the front part is going to be the default port 5432.
+
+[00:04:22] That's the default port for post press. We will say that the two port is also 5432. And we will say that the IP protocol here is TCP, right? So this is just a rule that will allow ingress traffic into our database instance from this source security group.
+
+[00:04:41] We're gonna copy this here. We're gonna paste this at the bottom and then we'll just say HTTPS now HTTPS here, we're just gonna change this a little bit. We're gonna remove the reference security group and we will say Cider, IPv4, that's gonna be 0.0 0.0 0.0 forward slash zero from port 443 to port 443.
+
+[00:05:02] So this is something you would, we would use. For example, for an instance that is running an engine X server and you want to connect via secure HTTP on port 443. So this is a rule that would allow ingress traffic from anywhere. Let's say you're running some website. Anyone allow anyone to connect to it over HTTPS.
+
+[00:05:23] This is one source of security rule that you would use for that. Let's also make sure before we do anything else here that we fix the AWS security group and that this is referencing the non compliant security group. Otherwise, we would also add an invalid rule or a
+
+[00:05:41] not allowed rule to our compliance security group. And then it would also run into issues. So let's see if we can actually go through and run this. We're gonna say data form plan or terraform apply. And let's see what's gonna happen. I believe we've got an error here and that's correct because of this network call here.
+
+[00:06:02] So this is actually saying us that the security group ID is malformed because we do not have any security group I DS pass here in our variable. So let's come to the R DS FO folder. Let's then add our AWS security group ID, the security group compliant and pass its ID.
+
+[00:06:20] The moment we do that. I also believe that we will get another problem here, which is that we need to first create this before actually passing it to the security group ID. Let's see if that is actually the case. Remember we got this problem with subnets as well and this is exactly the same message saying us that we either
+
+[00:06:41] should create the resource beforehand or use the dash target here for creating the resource. So let's do that, but let's target not only the security group but also its security group rule, right? So we have this ingress rule here. So basically we need to target two resources. Let's run terraform apply.
+
+[00:07:02] And I'm gonna say dash, let me just clear the console here to make it a little bit better target. And then we will pass the AWS security group dot compliant and we will also add another target here and we will say AWS VPC security Group, grassroot dot db.
+
+[00:07:20] This should in the end create three resources for us. Let's scroll up a little bit and the resources are the compliance security group, the db rule and the source security group. This is because this source security group is referenced within the ingress rule. This is looking good for us. So the ingress rule is here,
+
+[00:07:40] the security group source is here and the other one, the security group compliant is also here. Let's type yes, let's wait for the creation to complete. That is looking good. And now we should be able to run a terraform apply without any targets here. That's looking good. Let's then type yes and let's wait for the creation to complete.
+
+[00:08:02] Perfect. So now if we run a terraform plan here, we should not have any problems. We should actually be able to see that the validation goes through and that we have no changes to our infrastructure. We can also test if the validation is working by passing a non compliant security group here.
+
+[00:08:20] Let's save this. Let's run a terraform plan and we should actually get an error message. That's perfect. That's exactly what we get if we were to also pass two security groups here. So both the compliant and the non compliant, this should also work and it should show an error only for the non compliant security group. Perfect.
+
+[00:08:41] We have created and discussed a lot of things in this lecture. Let's take a short break and come back in the next one.

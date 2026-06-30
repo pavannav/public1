@@ -1,0 +1,63 @@
+[00:00:00] Hello and welcome back in this lecture. We will discuss a few ways that we can set constraints around how much CPU our Docker containers can use by default, Docker does not impose any constraints. And if our container simply starts to consume a lot of CPU, maybe due to a bug, this can slow down the entire system. So let's see how we can tackle this by setting
+
+[00:00:22] a couple of flags in the Docker run command. First of all, let's run Docker, run with a help here and let's then do a graph for CPU. So let's just see what appears here whenever we run this command. And as you can see, there are quite a few options, we will focus on CPU shares, Cpus, CPU set Cpus.
+
+[00:00:43] This will be useful for us to actually visualize some of the other options and the CPU period and quote, why do I say that the CPU said Cpus is useful for visualizing other options. It is because some of them come into play only when
+
+[00:01:00] the resources of our host are already reaching its limits. If you have a powerful machine, then it might not be easy to get to this constrained state. So the CPU said cpus' option enables us to explicitly define the CPU in which to allow execution. We can then use a single number here to make sure
+
+[00:01:21] that all the containers will be allowed to execute in a single and in the same CPU. Let's then run a very simple container here. We're going to run this on detached mode. We will remove the container on top. We simply say here, CPU decimals just as the name. And then we will pass here the CPUS option, which is this one here, the CPUS,
+
+[00:01:43] it is a decimal and it will just specify how much or how many CPUS our container is allowed to use. This doesn't mean that the container will always use the amount that is specified here, but that if it goes above this amount, then the system will start throttling the CPU
+
+[00:02:00] usage and this will slow down the container. So let's just say here, 0.5 for visualization purposes. And we're gonna run the BZ box container with a very simple shell script here. And that's gonna be while true. We're gonna put a semi colon, we're gonna say do space colon and then semi
+
+[00:02:21] colon once again. And then we're gonna write down like, so this is a quick and dirty way of spinning up a shell process that will actually consume the CPU of our container. So let's have a look at the results here. If you do not have the image locally. Then as always, Docker will pull this image from the repository.
+
+[00:02:40] So let's now run Docker stats and let's inspect what we have here. And as you can see the CPU decimals or the CPU percentage here, which is the percentage of a single CPU that is used. The CPU percentage here keeps oscillating around 50% at times. It goes a little bit above at times, it goes a little bit below.
+
+[00:03:02] But the bottom line is that our container is limited. It is restricted to 50% of a single CPU. Let's stop the command. Let's now remove our container. So let's have a look at the name. The name is here, CPU decimal. So let's just run Docker KCPU decimals. So if you were to also specify, let's say 1.5 here,
+
+[00:03:23] this would allow the container to actually consume 1.5 Cpus at any point in time. I'm not sure whether it will show here as 150% Cpus or as 100% Cpus. But let's run the Docker stats and as you can see here, it stays at 100.
+
+[00:03:41] So even though we have specified 150% it just really doesn't go beyond that because the process is consuming the entire CPU. And there is a single loop here running inside of our container. If our container had more processes that could consume from different CPUS, then that would definitely go above this 100%
+
+[00:04:01] great. So this allows us to actually specify the hard limits here are basically an absolute number that will take, that will be taken into account by Docker whenever run in the container. But what happens if we want to actually specify relative amounts, we might not be able to determine exactly how much,
+
+[00:04:20] how many CPU cores or virtual cores we have for our Docker host. So it might be useful to say, hey, this container should be given 80% of the CPU and this less important container here should be given 20% of the CPU. So let's see how we can do that by running once again, Docker run and now we're not gonna use the CP US option. Let's remove this here.
+
+[00:04:42] Actually, let's stop our container first. So let's see here what we have running. Let's now stop this container here. Docker kill, let's kill this container. And now let's run this once again. Now we're gonna change the options from CP US here to actually use our CPU shares,
+
+[00:05:01] right? So CPU shares is the option to go to if you want to specify relative weights here, that will then be taken into consideration by Docker, these CPU shares, they are taken into consideration only when the resources are scarce. So if there is enough CPU for all the containers, Docker is not gonna worry about splitting the CP US according to the shares.
+
+[00:05:24] So for us to actually set some scarcity here. We're gonna use the dash dash CPU dash CP us. And we simply say, hey, do please run this container explicitly on the first CPU that is available to you and give this container here a weight, let's say 512.
+
+[00:05:44] And so now here we're gonna say CPU shares underscore low for the name of the container. And then let's simply run this here. And if we were to run Docker stats with this single container here, we will see that this single container will be consuming 100% of our CPU all the time.
+
+[00:06:05] So that CPU shares doesn't really seem to be doing anything for our container here. However, if we were to stop this and now if we were to run this command once again, and we're gonna inform the exact same CPU here so that both containers are running on the same CPU.
+
+[00:06:22] But now we're gonna say, hey, this container here should actually have 2048 of the share. So this basically means that Docker will add up these two numbers to 2048 from this container and the 512 from the other container. And then it's gonna allocate 2048 of the total.
+
+[00:06:40] And then it's gonna allocate proportionally to how much these shares here account for the total. So if let's change this to high so that we can see the difference here and make sure that the CPU set CPU is the same as the previous container. Otherwise, once again, if you have multiple virtual CPUS for your Docker host,
+
+[00:07:00] then this will not be taken into account because there is no resource constraint. There is no scarcity here from the host site. Great. Let's then run this command. Let's have a look at both our containers running here. We have AC PU shares high and Ac Pu shares low. Apart from the CPU shares option, these two containers are the same.
+
+[00:07:20] So let's run out Docker stats here and let's see the difference. And as you can see here, as expected, our CPU shares high is now accounting for roughly 80% of the CPU usage while our CPU shares low is accounting for roughly 20%. This means that we were able to successfully simulate here a
+
+[00:07:40] situation of scarcity where the CPU shares are actually coming into play and they are being correctly allocated and correctly enforced by Docker. Great. Let's stop this. Let's stop all our containers and just gonna run Docker kill and then we're gonna run Docker PSQ like so we're going to stop both of our containers.
+
+[00:08:02] And the last combination that I want to show you is the combination that allows us to actually use the CPU quota and CPU limit options. So we're going to just say here CPU quota as the name. And now here we're going to define the CPU period. And this is defined in microseconds.
+
+[00:08:21] The default here is 100,000 microseconds. And then we can define how much of this period is actually allocated to the container by defining the CPU quota here. So let's say that we want to allocate 75%. So from 100,000 here, we would have to allocate 75,000 like so,
+
+[00:08:41] and if we just run this command and then we run Docker stats here, then we will see that this will account for exactly 75% of the CPU percentage. Great. Let's stop this here. I know that we are discussing quite a few scenarios and to be fully honest here, this CPU period and CPU code is very rarely used
+
+[00:09:02] because this is basically equivalent to actually simply saying, hey, please do give me 75% or 0.0 0.75 of CPU, right? So these two things, they are equivalent for us here is actually much clearer to see that we are allocating 75% if we were to use the dash
+
+[00:09:20] dash CPUS like so instead of setting both the period and the quota, so this boils down basically to two options, right? So we can set a hard limit here saying, hey, I want to have at most 75% of the CPU to my container. This is the first hard and the second option is to set a soft a relative limit saying, hey,
+
+[00:09:43] I want this container to have this much weight here when compared to other containers, when the resources are scarce, which one is the best to use? It really depends on your use case. If you know that your containers need this much CPU to work properly, then you might set a hard limit.
+
+[00:10:01] However, if you are not sure and you just wanna ensure that certain containers which are more critical, they have more CPU time when the CPU resources are constrained, then you might go with the CPU shares option one small reminder, the CPU set CP us here. This is something that we're using to simulate scarcity in our situation.
+
+[00:10:23] You might want to explicitly set which CPUS can run which containers. But in practice, I haven't seen this being used very often. Awesome. So that's it for this video. Let's take a short break and come back in the next lecture.

@@ -1,0 +1,69 @@
+[00:00:00] Hello and welcome back. Let's set up the database for our notebooks backend. The process here will be fairly similar to what we have already set up for our key value store. So let's go a little bit more quickly through the steps. I'm just gonna create here a notebooks dash db.
+
+[00:00:20] This is gonna be our database service. And as you already know, the image will be the MongoDB forward slash MongoDB dash community dash server. And the tag here will simply be 7.0 dash Ubuntu 22 04. We should then set up some environment variables for our root database for the initialization script.
+
+[00:00:43] And let's put them inside of an M file. Just gonna call this dot M like so or do env if you prefer to say so let's then create this file here.in and let's add the variables. The first one is the mongo DB underscore
+
+[00:01:00] initd B underscore root and that's initd B underscore root underscore username. I'm just gonna say root once again. And for the password here, we're just gonna say root password. So password, it's gonna be root password like so let's leave this file as it is we will extend this a little bit later when we have our database,
+
+[00:01:23] our notebooks, database user and password. But for now, let's leave it as it is. And we will populate here via the end file configuration. Let's then set up here two volumes. So the first volume will be the volume for our persistent data. And we'll just say here type volume
+
+[00:01:42] and then the source will be our notebooks data. We haven't created this volume yet. So let's come here at the bottom. We're gonna say volumes and we'll simply say notebooks data like so this will also ensure that the volumes are created. We should then set the target here and
+
+[00:02:01] the target within our container you already know is forward slash data slash DB. Let's then also create here within our notebooks, backend another folder called DB. Config we're gonna just create another script that's gonna be a Mongo dash in it dot Js script.
+
+[00:02:20] This script will be very similar to what we have done so far. So I'm just gonna go a little bit faster here. Notebooks db user, I'm gonna say constant notebooks DB password. I will also say cons notebooks DB name, the user will be just equal to process do ENV
+
+[00:02:42] notebooks DB user, the notebooks DB password, very similar, just gonna copy, paste it here, password like so and the same thing for the name, notebooks DB name, we can then say console log initializing. Let's put it like this initializing
+
+[00:03:02] notebooks DB user. And I will simply say again, same code db is equal to DB dot get sibling DB. And we will pass the notebook's DB name here and then we'll say DB dot create user
+
+[00:03:21] and this receives an object. The user will be our notebooks DB user. The PWD or password will be our notebooks DB password. And the roles here will be an array of roles with the single role that we want to give is a read right row
+
+[00:03:40] 2D db notebooks DB name. Perfect. Let's save this and let's now add this to our compose file as another volume. The type of this volume will be a bind mount. So we just type bind here. The source will be our current directory
+
+[00:04:00] slash DB config Mongo in it dot Js and the target here will be forward slash Docker entry point dash in it DB dot D forward slash mongo init dot Js.
+
+[00:04:20] We will also mark this as read only by setting the read only flag to true. Perfect. The last thing I would like to do here in our Docker compose is to set up a network that's just gonna be the notebooks net and we will then use or actually we could say notebooks backend net for example, but just notebooks net, I think is enough
+
+[00:04:40] so that we can connect both containers to this network by giving the net. So the notebooks dash net here in both containers or in both services. Once we do that, we will be able to connect between these services here, we will be able to reach the notebooks DB via its name as it is defined here.
+
+[00:05:03] Let's just confirm connectivity by coming to the server. We're gonna now cost mongoose is equal to require mongoose. And then we'll simply say here before we actually listen, we will say mongoose dot connect. And then we would like to provide here process dot E NVT db underscore URL.
+
+[00:05:23] And this, we will pass as a URL here. We can already pass the URL containing both the username and the password. And then we will say then, and the moment we successfully connect, we're gonna execute a callback function and this callback function here will just trigger the app dot Listen.
+
+[00:05:42] We also would like to console log here. So we're just gonna print something console log connected. I'm gonna say connected Mongodb starting server like so and then we will simply say app dot listen here. And if there is any error, then we would also like to say,
+
+[00:06:01] or we would like to catch this error here. And then we simply consolelog or console dot error. And we will say just something, something went wrong. And then we will once again print the error here at the bottom like so perfect. Let's save this to format it a little bit better.
+
+[00:06:21] And now we can come back here to our Docker compose and we can add another environment for the DB underscore L. Now, the DB underscore URL here will have the format of mongo DB colon, forward slash forward slash. And then here we provide the user colon and then the password.
+
+[00:06:42] And then we say here at, we can then use the notebooks db here and then we say forward slash and then this is gonna be the db name, right? So now here the username we already know or actually we don't know that yet because we do not have, we have not defined it here.
+
+[00:07:01] So we have already defined the environment variables, but we did not define this inside of the ENV file. Let's just define this inside of the ENV file. And then I can also show you something cool here that we can use with Docker compose. So I'm just copying these variables and now I'm just gonna define some dummy value. So that's gonna be
+
+[00:07:22] notebooks or NB underscore user that's gonna be the NB underscore BWD or password. And then this one here is gonna be NB underscore database or NB underscore db. Maybe for this one here, we can be a little bit more explicit.
+
+[00:07:40] We're just gonna say notebooks underscore db like. So let's then save this, come back to our compose dot YAML. And now we do not need to load the E and V file here in our notebooks service, what we can do and what we should actually do here is just extract the relevant information from this file
+
+[00:08:01] to build the URL that we need for our Mongodb database. Let's see how that works. And this is called interpolation in Docker compose. So if you use this syntax, Docker compose will look for a dot ENV has to have this name here dot ENV. And then it's gonna look for the values of these variables,
+
+[00:08:22] these environment variables here and it's gonna interpolate in this string. So we're just gonna say the notebooks db user and then we're gonna use this one here, the notebooks db password. So let's just put it like this. And then we have the notebooks DB, the name of the service. And now we have the database name like,
+
+[00:08:42] so this is one alternative for us to actually extract this information from a ENV file or from environment variables. That's also fine and then build our URL and pass just a single db URL to our notebooks back end. Since we also have the N file here,
+
+[00:09:00] then the notebooks TB should also be initialized with the correct credentials here in the mongo init dot Js and our services should be good to go. Let's save this file, come back to the terminal here. I'm already inside the notebooks backend folder from the previous lectures. If you are not just change into this folder,
+
+[00:09:20] let's for the sake of completeness here, run a Docker compose down just to make sure we have removed everything and now we can run a Docker compose up build like so once we do that, we should also see that both the notebooks db and the notebook services, they are both up and running. And if we were to quickly switch to postman and
+
+[00:09:41] send a get request to our localhost port 3000, then we would confirm at the bottom here that we are still getting the message successfully. One small thing I haven't specified here is the dependency between notebooks and notebooks DB and this is still OK? Because behind the scenes, the notebook service,
+
+[00:10:01] the mongoose here that we are calling this Mongoose connect method. It is trying multiple times to connect to the database. So even if there is a small delay in initializing our notebooks DB service and the database is not available for a couple of seconds, then mogus will eventually manage to connect to it after the database is up and running.
+
+[00:10:24] We can also make sure that this dependency is explicit by just defining here. Depends on notebooks DB like so perfect. So I managed to complete the setup for our notebooks back and standalone service here. So our standalone application
+
+[00:10:40] it is composed of two services, both a notebook service as well as a notebooks DB service. And the setup here is already very familiar to you because we have done that twice. We have done that once manually by writing the Docker, the plain Docker comments. We also have done a simpler version here when exploring the different features of Docker compose.
+
+[00:11:02] Perfect. Let's quickly switch to the terminal. Let's stop here. The the running process, let's take our containers or basically stop our containers. This is not gonna remove the container. So this is not the equivalent to Docker compose down. If we were to just run Docker compose PS dash A,
+
+[00:11:20] we will get the containers here. They are still they, they still exist. They are not removed. So if we want to clean up, we can just run Docker Compose down. And once we run Docker compose PS dash A, then we get no containers back. Awesome. This is a great moment for us to take a short break and let's come back in the next lecture.

@@ -1,0 +1,43 @@
+[00:00:06] - Now that we have talked about some issues that you may have with LVM and some tools that you can use to help fixing LVM problems, let's do a lab. In this lab, a resize operation on an Ext4 file system
+
+[00:00:20] didn't work out well. Analyze it and fix it. This lab does have a script and in order to install the lab scenario, you can use the lab54.sh script. Good luck. So, let's install lab 54 by running lab54.sh.
+
+[00:00:43] So, this lab script will reboot your system as well to make sure that you get in trouble. Oh no. We have a problem. So, what's happening here? Well, this is the classical problem.
+
+[00:01:00] We can see that it wants to start emergency mode. And we need to enter the root password in order to get access to emergency mode. Almost any time that you see this, something is wrong in your file system. Now, you may want to figure out what is happening.
+
+[00:01:22] Journalctl - xb is suggested by the emergency mode program. I would advise that you start reading at the bottom and not at the top and see if there is anything that's useful.
+
+[00:01:40] So, you can see red like here. Failed to start Crash recovery kernel. And you can see many more informational items. I'm scrolling through it quite fast. I'm just looking for red. It makes it easier.
+
+[00:02:01] And there we can see a dependency failed for Relabel all filesystems. That's author Relabel but that's not really what I'm looking at. Oh, there we go, failed to mount /data. Failed to mount /data. This is interesting. So, in what we can see on the top right now,
+
+[00:02:20] unit.data.mount has begun starting up. Mount wrong fs type bad option, bad super block on missing code page, that is useful. So, we have a problem on data. So, this is telling us that we should have looked at fstab at the line where data is mounted and find out specifically
+
+[00:02:41] what's happening there. So, vim on /etc/fstab is showing that we have devvgdata/lvdata mounted on /data ext4 defaults zero, zero. That sounds pretty okay.
+
+[00:03:02] So, if fstab cannot do it, it's always a good idea to try it manually first and analyze the outputs, so mount /devvgdata/lvdata and look at the output of these commands. The very first line order is very useful.
+
+[00:03:22] Bad geometry: block count 409600 exceeds size of device 204800 blocks. So, let's talk about methodology again. What is the issue? Well, the issue is that the file system size
+
+[00:03:40] is bigger than the block size and for that reason it cannot mount. Gather information, all the information that I need is on the screen right now. I don't need anything else. Form a hypothesis. So, what can be wrong? Well, one potential problem is the file system corruption
+
+[00:04:00] but that's very unlikely because file system corruption does not modify the method data of the file system to become twice as big. And for that reason, the other hypothesis which is much more likely is that a resize operation on devvgdata/lvdata has gone wrong.
+
+[00:04:21] So, let's see if we can work with that hypothesis. In order to verify the hypothesis, we need vgcfgrestore - l on vgdata. So, what do we have?
+
+[00:04:40] Well, we can see right here, pvscan, this is not interesting, could not find volume group, that's not interesting, this one is interesting. Created before executing lvresize - L -100M /devvgdata/lvdata -f -n.
+
+[00:05:02] So, somebody has reduced the size of the logical volume without reducing the size of the file system and there is only one way to get out of there and that is by restoring the archive file, so vgcfgrestore
+
+[00:05:24] and we need to provide the name of the exact file that we want to restore. It would be convenient to have a graphical interface here but we don't, so we need to type /etc/lvm/archive/\vgdata_ 0004
+
+[00:05:42] and look at that, that's the one. Fortunately these vgdata files have a sequence number with after that the timestamp of when the modification has occurred. That's good enough for me. So, apparently something is wrong, so no command with matching syntax recognized.
+
+[00:06:01] Run vg blah blah blah. Now, this command is very nice. Vg, the nearest similar command has syntax, vgcfgrestore -f String VG, so string, let's assume that's the file name. VG obviously is the name of the volume group
+
+[00:06:21] and there we go, restored volume group data. Now that we have restored this, the best approach would be to just reboot. The problem occurred while booting, so I'm just going to reboot to see if the problem occurs again. And if not, then we have been successful.
+
+[00:06:44] So, log in shell is loading and when you see a log in shell that is loading, that is always good news. So, we didn't have any issues anymore in the fstab and data file system as we mount it.
+
+[00:07:00] Obviously, in troubleshooting, you should never assume and always verify, so let's type mount and there we can see it. It is mounted, so that's all.

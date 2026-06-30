@@ -1,0 +1,81 @@
+[00:00:00] And welcome back. Let's apply what we have learned so far to improve a little bit the design of our code. One thing that I don't like is the fact that we have this subnet count here and then under our compute when we create our subnets. And I believe that's actually in the networking file. When we create our subnet, we are hard coding, quote unquote here, the Cidr block and we are just iterating over the subnets.
+
+[00:00:22] It also makes it harder for us to reference a specific subnet whenever we are passing the configuration of our EC2 instances. So let's improve that in this lecture. Let's do a little bit of clean up first. Let's remove the E two instance, count the EC2 configure the config list. Let's remove them from our variables here. Or actually we could leave a default here
+
+[00:00:45] and a default is going to be an empty value for or an empty list for us here. And I just wanna leave that for documentation purposes in case you want to explore this validation blocks as well. Let's also remove our two instance count here. We don't need that anymore.
+
+[00:01:01] And our variable subnet count here. We will change that to Subnet underscore config right. So let's do that Subnet underscore config here. And the type is gonna be a map and this map will be a map of key value pairs where the values are objects. This object is gonna have
+
+[00:01:20] a Cidr block and this is going to be a string. Let's remove the default value here for us. And you will see that we start getting some errors here on the files. Let's go to compute, let's remove our instances from count here. We can remove this and we can also come to networking and let's now fix our AWS subnet
+
+[00:01:41] so that we create this. Instead of using the subnet count, we're gonna use the Subnet config in the terraform dot TF bars here. We do need to provide a Subnet config. So let's paste it here. And we're gonna say that this is a, an empty map for now,
+
+[00:02:00] we can now use our V subnet config here. And instead of count, we're gonna use D for each argument, right? So now this is giving us the possibility of using this Subnet config and we can then access in each dot value dot Cider block, we can access the Cider blocks that we want to use.
+
+[00:02:25] Once again, we don't have count index here. So let's erase this. And here we're gonna just use the each key. Great. So now we have a way of creating Aws subnets by using config maps. And let's have a look at our compute file here because we also need to update our,
+
+[00:02:45] we also need to update our AWS instances from list and the from map as well. We're gonna do that in a little bit. So the subnet IDS here, they need to be refactored. But first, let's create a couple of subnets. So the first subnet I would like to create, let's say we're gonna call this default
+
+[00:03:04] and it will have a Cidr block of 10.0 0.0 0.0 forward slash 24. And then we also would like to create a Subnet one here. And this will have a Cidr block of 10.0 0.1 0.24.
+
+[00:03:21] Let's run a dataform format FMT and let's run a terraform plan and see if the plan goes through. I believe there are a couple of things here that will not go through. And that's because we are using now keys instead of actually. So you're using strings instead of numbers here. And as you can see here that the message is actually quite informative.
+
+[00:03:43] It's telling us that the given key does not identify an element in this collection value. An object only supports looking up attributes by name, not by numeric index. So now let's change our C two config from map configuration here and we're gonna pass just a Subnet
+
+[00:04:01] and we're gonna say here or we can say Subnet name and now it's gonna be optional and this is going to be a string and the default value will be default by default because we know that we have a default Subnet here. So if no value is provided for the Subnet name, we're just gonna deploy it within the default subnet.
+
+[00:04:22] Now here we can update our configuration. So let's come back to our compute. And then we also need to change here our Subnet id. Let's simply pass here the default as our subnet id, so not Subnet name, but default here. And then we're gonna make sure that we retrieve the default subnet
+
+[00:04:42] within all the available subnets here so that we can get its ID. And for us here in our subnet id, then we're just gonna say the Subnet name. Let's save this and let's have a look if now the terraform plan goes through. Perfect. As you can see now everything is working as expected. We have our
+
+[00:05:02] cidr blocks already being calculated for our subnet. So we have Subnet one here and you can also see if we scroll up a little bit more. We also have the default subnet and we have then the, the correct Ami I DS that we were already working with and we are not gonna see the subnet id here because that's gonna
+
+[00:05:21] be known after apply since data firm still needs to create the subnets, but we are indexing them according to the sub the name that we receive here within our EC two instance configmap. And as you can see here, we are still with the Subnet index. That means that this engine X one here would also be deployed in the
+
+[00:05:41] default Subnet because it's just not passing the Subnet name. So if we were to add a Subnet name here, and then we're gonna just pass this, let's say Subnet one. And now we're going to run a terraform plan and let's run afterwards. A data form apply. So let's clear this. Let's run a data form apply.
+
+[00:06:01] Let's inspect the plan and everything is fine. Let's add five here and let's type. Yes, great. So everything was created. Let's come back to the console. We still have our old terminated instances here. Let's refresh this and we have now six because probably some older ones, they are actually not being shown anymore.
+
+[00:06:22] Let's click here on Nginx one. And if we scroll down, you will see that the NGX one is deployed in the Subnet one subnet. And if we were to come back here to our console and check the Ubuntu one, we will see that this one is deployed in the default Subnet. That's great. So we have managed to ensure that we have now
+
+[00:06:42] stable keys that we can use to reference subnets. We don't need to keep that cognitive load of indexes in mind anymore. We can just reference a specific Subnet by using its key here whenever we are deploying instances from our EC two instance configmap. We could also use that in our from list. We could extend our from list here
+
+[00:07:04] to include a Subnet name as well. Let's add it here. We could just include that here. And then this also becomes possible in our EC two instance config list. If we come back to our compute, we should now be able to reference this here, right?
+
+[00:07:20] So the AWS Subnet dot Main, we would simply use now the bar 0.2 instance config list count dot index dot And I believe that's Subnet underscore name. So this gets a little bit verbal. So we can also go and add this in two lines like so
+
+[00:07:40] and then we can see that that's a little bit long. I personally, I'm not a huge fan of such long definitions here. That's why I also like the map. It becomes a little bit more concise whenever we just iterate over key value pairs. And then we can use each key and each dot value becomes a little bit more concise than this. But anyways, there are use cases for both of them.
+
+[00:08:03] One last aspect I would like to discuss here with you is that we can add some small validation for our Cidr blocks and we can do that by adding a validation block here. We're gonna add an error message. This error message is just going to be at least one of the provided
+
+[00:08:20] Cidr blocks is not valid. And how are we going to actually check whether the Cidr blocks are valid? Well, data form itself doesn't for any function to just check whether a Cidr block is valid or not. However, Dataform does provide several functions that operate on
+
+[00:08:40] Cidr blocks. Therefore, they require valid Cidr blocks. Let's come to the Dataform documentation and I already have the Cider Netmask function open here. But let's type Cider here on the top. And you will see that we have a couple of functions that operate over Cidr blocks. These C Netmask function is a pretty handy function because it just requires the
+
+[00:09:03] Cidr block here. And what it does is it's just converting an IPV four address prefix given in the Cidr notation into a Subnet mask address. You don't need to know what a Subnet mask address is, but I would recommend if you're curious about it, just Google the term and read a little bit to get familiar with it.
+
+[00:09:20] However, for our purposes here, the only thing that we need to know is that the cyber net mask operates on a Cidr block. So let's come to, let's come back to the ID. Let's start writing our condition here. And this is gonna be very similar to what we already have in our list as well as in our maps. So let's scroll up a little bit.
+
+[00:09:40] We're gonna generate a list and we would like to check that all the values within this list are true values. We will now iterate over our configuration. So we're gonna write it very similar for config in values and that's gonna be var dot Subnet config. And then here we would like to simply map this config to the Cider
+
+[00:10:03] Net mask function, Cider net mask. And then we'll simply pass the config dot subnet or actually Cider block Cidr block. The problem here is that we are not really interested in the
+
+[00:10:20] Cidr Netmask result. We're just interested in knowing whether it will run successfully. So there is another function within Terraform. Let's come back here to the Terraform documentation. It's called the K function and the K function here. Let's click on. Can it basically evaluates the given expression and just returns a boolean indicating whether the expression produced a result without any errors.
+
+[00:10:44] If we scroll down a little bit, we will read here that the primary purpose of the scan function is to turn an error condition into a boolean validation result when writing custom variable validation rules, that's exactly what we are doing right now. And you can see there is one example here as well.
+
+[00:11:02] So let's just wrap this Cider Net mask in a can function like so, so basically what we are doing is we are just iterating over the values of our subnet config. And then for each of them, we are checking whether this Cider net mask will return without any errors. If that's the case for all of them.
+
+[00:11:21] We are assuming we are inferring that this Cidr blocks they are valid. As you can see. This is also a fairly simple check. We cannot do more complex checks. Like for example, checking whether there is there are non overlapping cidr blocks as we saw in the past, this also returns an error whenever we try to create subnets with overlapping
+
+[00:11:42] other blocks. But to do such a check here within the validation blocks, I am not even sure whether that's possible if it is, it's very complex. So that's not a check that we would like to add here. Let's come to the bottom. Let's also copy this here, the comment, let's paste it here. And we're just gonna say, ensure that all
+
+[00:12:03] provided cidr blocks are valid. And here we could actually skip the validation because this would return in an error anyway here whenever trying to create the seven. And I'm just trying to exercise as well, different functions, different ways that we can think of validation
+
+[00:12:21] whenever we are creating our variables. But I believe that's all that I wanted to discuss. Let's run a terraform plan here. And the moment we do that, we should see that everything will go through without any issues. And our infrastructure matches the configuration if we were to come to TF VS and we were to write, for example, an invalid cyber block. So this is greater
+
+[00:12:41] then 255 this is not valid and we were to run a data form plan, then we will see that we have an error with any valid value for the variable. Perfect. That's exactly what we wanted. Let's revert this to a valid Cidr block. Let's save this. And now since we still have some instances running,
+
+[00:13:02] let's have a look at the terraform state list comment and we will see that we still have some things that are deployed here, this aws instances. So we have to destroy them. Let's make sure that we are destroying it. And let's inspect the results here that we are getting back from Terraform.
+
+[00:13:20] That's correct. We want to destroy five instances. So we're just gonna type a value. Yes and wait for the destruction to complete. Perfect with all the resources destroyed. That is a great moment for us to take a short break and come back in the next lecture.

@@ -1,0 +1,171 @@
+[00:00:00] Welcome to ITProTV, I'm your host. [CROSSTALK] [SOUND] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome to another great episode here at ITProTV, I'm your host Wes Bryan. And in today's episode, we're continuing through our DNS text skills. And joining us yet again for this very endeavour is none other than Mr.
+
+[00:00:22] Don Pezet. Don, how're you doing, sir? &gt;&gt; I'm doing well, Wes, ready to dive right back into Microsoft DNS. And in this episode, we're taking a look at replication, which can be super easy, or it can be a little complex depending on what you're trying to do. But we're gonna do it the complex way today cuz that's more fun, but we'll get a chance to see how to get our zones to show up on more than one server,
+
+[00:00:41] which is kind of an important thing cuz servers fail. And if a server goes offline, you want somebody else to be able to jump in and take over for you. Or maybe one server just gets really busy and starts answering too slowly, it'd be nice to be able to reach out to a different one. A lot of people use replication to make it where they have main servers that are at their headquarters and then servers that are at each branch office.
+
+[00:01:00] So that people are looking up DNS records from a server that's right there in the building with them. That speeds up the lookup process. You don't want people waiting on DNS. You want them to wait on the servers so when they go to a website or an email server or whatever. DNS shouldn't be our bottleneck on this stuff. So, replicating is a key piece of that. Now, fortunately, there's two different types of replication we can do on Microsoft servers.
+
+[00:01:22] There's a super, mega easy, no-brainer way if we're in an Active Directory integrated environment, and then there's the manual, hard way that we do when we're not in the AD. The super easy way is really just one check mark. So it's not even a great thing to build a whole show around, but let me show you that way.
+
+[00:01:40] We'll start with that one. And then, after that, we'll do the fun way, which is actually replicating the full data. So let's run through that process. Now if you've been watching our Microsoft DNS shows, you know that I've already created a zone called itprotvdemo.org. So I can go into my DNS manager and I've got itprotvdemo.org sitting right there, it's on this one server.
+
+[00:02:01] And I'm authoritative for it, if this server goes offline, that's it, this zone doesn't exist anywhere else, nobody can answer for it, I'm offline, all right. I don't want that, I wanna have a second server that's backing me up. Well if I'm using my Active Directory domain controllers as a DNS server, then I can take this zone, and I can stick it in the Active Directory.
+
+[00:02:24] And when it's in the Active Directory, any domain controller that I install the DNS role on will now have a copy of this. And that's what a lot of companies do, at my branch office, I want a domain controller at the branch office, so that people are authenticating it to local server. I want a DNS server at the branch office,
+
+[00:02:40] so they can look up names on a local server. It makes sense to put them together, the two work together very closely anyway, so let's stick them on the same box. It's what a lot of people do. So you just go to each of your domain controllers, and you add the DNS role. And then on your main server that's up here at the headquarters, all you have to do is move that zone into the AD.
+
+[00:03:01] Now you can only do that when you're on a domain controller, I'm not on the domain controller. So if I take this zone and I pull up its properties and we take a look at these options right here at the top, see how my status is running, my type is primary, that's what we're gonna see either way. And then replication, not an Active Directory integrated zone, okay.
+
+[00:03:22] If it were Active Directory integrated, I'd be able to hit this Change button, or even if it wasn't, I'd be able to hit the Change button and make it Active Directory integrated. And when that happens, it's now stored in the AD. And everybody else will get a copy of it, and they'll have it up and running. That's it, it's one button. You hit this Change button, you check off Active Directory, and you hit OK.
+
+[00:03:43] Or you probably did it back when you set the thing up in the first place, right? When you create a new zone, in the Zone Wizard, it's right here on this first screen, Store the zone in the Active Directory. And if you check that off, it's now automatically replicating through the AD, and all you have to do is bring up a domain controller and
+
+[00:04:02] add the DNS role to it. And it gets all the zones. It's the no fuss way of replicating, you don't have to worry about it. The DNS records actually replicate alongside the Active Directory records. It's just using the standard Active Directory replication processes. And everything spreads out, super simple.
+
+[00:04:21] But it assumes several things, right? It assumes that you want all your DNS servers to be Active Directory. It assumes that you have the Active Directory. And it assumes that you don't mind running your DNS servers on top of your domain controllers, right? What if you don't want that? What if I don't wanna run the DNS server on my domain controllers? What if I wanna have a mixture of Microsoft and Bind or other stuff, right?
+
+[00:04:43] What if I wanna deviate from that perfect all Microsoft world where they force me to buy all their stuff, right? If that happens, [LAUGH] when that happens, right, it's not really an if anymore, when that happens, we don't want that to be Active Directory integrated. When you're Active Directory integrated, it's a multi-master model.
+
+[00:05:00] You can make changes on any server, and they will all replicate together and it all works fine. But when you start bringing in Bind or NSD or one of the other guys that are out there, when you bring one of those guys in, they don't do that whole multi-master thing. They come up as either a master or a slave, as a changeable copy or a read only copy, and they can't participate in this type of replication.
+
+[00:05:22] So instead, we can go back to the standard form of replication that we have in every other DNS server that's out there. And that's where we don't store it in the AD. And instead, you have a primary and then one or more secondary servers. And you can do this regardless of whether you have the Active Directory or not.
+
+[00:05:43] Just because you have the Active Directory doesn't mean you have to store your zones in there. Cuz you might have the Active Directory, and you just wanna run DNS on separate servers, not your domain controllers. So you don't store them in the Active Directory, and it works just fine, it does. It just takes a little more work to get things set up. And when you make changes, the changes all have to occur on the primary.
+
+[00:06:02] That's a problem if you're doing dynamic updates. Because all your dynamic updates have to go to one server. Then it's kinda nice to have multiple servers. But on a public DNS server, you wouldn't want dynamic updates anyway. And I've got dynamic updates turned off on mine. So if I want to replicate this, I can't do Active Directory integrated. Instead, I'm gonna go to the standard way.
+
+[00:06:21] Now if you pull up the properties of this thing, you'll see where my status is running, and my type is primary. And I can hit Change on that, and I can change to a secondary if I want. A secondary is a replica of a primary somewhere else. Well, I don't have a zone somewhere else, but if I wanted to import one,
+
+[00:06:40] I could go that route. But as it stands, I'm just a primary, and I can't really change that without breaking things. I guess I could go to stub or whatever, but this one's gonna be a primary. But here's where I could also change my mind about being stored in the AD or not, if I really wanted to go crazy there, all right. And notice it says available only if DNS server is a domain controller, right.
+
+[00:07:00] It's gotta run right on top of it. &gt;&gt; Don, have you ever seen a use for taking something that you've already got configured as a primary and bumping it down to a secondary? Maybe like a, or I don't know, maybe a staff change where maybe you don't have somebody on premise that really knows DNS, maybe you don't want making changes. &gt;&gt; I've only done it once. And I'll give you the scenario of what happened. It's not a normal scenario.
+
+[00:07:20] We had a primary fail, the primary failed. And normally, if the primary fails, I don't worry about it too much. All the secondaries are still up. People could do their lookups, and I just can't change anything. I can't add new records cuz your secondaries aren't allowed to change things. And I'll get in there, and then fix the primary, and bring it back online. Well, in this one scenario, we had an emergency where the primary had failed,
+
+[00:07:43] and we had to create some new records. So I took one of the secondaries, and I changed it to a primary. So that I can make changes, and they could push out everybody else, right, it was easy to do, I changed from secondary to primary. Well, in the meantime, I fixed the primary, but I didn't wanna bring it online because then I'd have two primaries, and that doesn't work.
+
+[00:08:02] So, I took the primary that I fixed, and I moved it down to a secondary. So, that I can bring it up and get it back online. And then, later on we schedule some downtime and I flip it back the other way around. So, it's back. So, that was a failure scenario. I've never had anything beyond a failure scenario where I've done that. And even in that failure scenario, I would've normally done it. If it wasn't for an emergency media craze in DNS records.
+
+[00:08:22] So, it wasn't ideal, but that's why we have those options. All right. So let's say I wanna set up standard replication. Well here on this zone does not a whole heck of a lot for me to do. All right. One thing that I need though is when you replicate between a primary and a secondary, what you're doing is what's called the zone transfer
+
+[00:08:40] the secondary is gonna connect to us and get a copy of the zone. It doesn't maintain its own copy cuz it's not allowed to change it, right. So it gets the copy from us. So, anybody I want to replicate to has to be allowed to do a zone transfer. And in the properties for my zone, not the properties for the server, but the property for the zone. Cuz you can replicate each zone differently if you want.
+
+[00:09:02] But in the properties for the zone give it a tab for the zone transfers, and the default is, that you will only allow zone transfers to servers listed on the name service tab. Right. And this normally is what yo want write my name service those are the people that should maintained as replicas. That's all I want but I tell you in real life land.
+
+[00:09:20] I run a lot of DNS diagnostic tools. And I like to be able to perform zone transfers from my own workstation. I like to be sitting at my laptop and run a query to pull the whole zone down and look at it, right? And so for that reason I want my laptop to be able to do a zone transfer but my laptop's not gonna be under the nameserver list. I don't want people looking up against my laptop.
+
+[00:09:40] I turn my laptop off, right? So in that scenario, you might go up here and say, only the following servers. And then you can add your DNS servers, and your work station, and other things. Right, as we edit this list, it's easy to come in here and say, all right well I'm going to add dns1.itprotvdemo.org. And, we start to punch that one in, and dns2.itprotvdemo.org
+
+[00:10:04] give me some, hm, wonder why it's not finding the address to that one? It's stored right here in its own stinking zone. So, no such host is known, did I not create those records? Let's verify, you do have to have valid records if you're gonna type that stuff. And looking here, I do have those, DNS1 and DNS2.itprotv.demo.org.
+
+[00:10:24] Maybe I fat fingered it, but basically we just add those in to our servers that we allow and you could add your workstation and you know what. I"m typing the fully qualified domain name. Why the heck is it not looking this up.
+
+[00:10:40] Now I'm curious. Don't think I ever managed to break a local domain like that. Yeah. It's not looking it up. Interesting, well if it fails to do the name lookup you can always punch them in by IP. It's a little more annoying to punch them in by IP than it is by name especially if you're like me and you don't remember the IP but I've got it written down over here so I can punch it in that way.
+
+[00:11:02] I'm not quite sure why it's not able to look itself up there. So I can punch it in by IP and then it's going to do a reverse lookup. Now mine are hosted up on Amazon so when it does the reverse lookup its getting the Amazon name instead of my name. You know I do actually have alternate names for these things. Let me try one of my alternate names and see if it takes that. I pro tv demo dot net and it took that one.
+
+[00:11:23] Let's get these other ones out of here and we'll switch to the dot net names. My servers My servers are hosting the dot org zone, but they're actually in the dot net zone, and so I just need to add it by that one. So I'll add in dns2.itprotvdmo.net. And we'll add that one and I've got its IP right there.
+
+[00:11:43] It resolved that one. It didn't pull an IPV6 one cuz I don't have an IPV6 address, so I'm okay with that. So I'll ignore that. But it got the other ones and put them in there so I'm fine there. And it's still gonna be upset about that. Let me delete that outta there. And this one's been entered in.
+
+[00:12:01] It was entered in twice? Let's verify that real quick. It says the server with this IP address is not authoritative for the required zone. What does that mean? Well, it means S server doesn't have the zone yet. Well it's cuz I'm gonna set up replication here in a minute, but I haven't set it up yet, so it doesn't have the zone, so I'm kind of in this like double edged sword.
+
+[00:12:21] So anyhow, it's just complaining about that. But see how it will actually let me say OK, it will let me clear through that. That is a problem, but I'm about to fix that when I turn on replication, so we're good there too. But anybody that I put in this list will be allowed to do a zone transfer. And not necessarily be used as a name server. When I go to my name server tab, they may or may not be in this list.
+
+[00:12:40] But when I go to my zone transfer, I can add my workstation and other things right in here. But in order for application to work you gotta have a zone transfers. Then when I setup a replication, replications actually worked two different ways. There's push and pull, right? A pull replication is the standard way. That's where the secondary will, every now and then, reach out the primary and
+
+[00:13:02] say, hey, gimme a copy of the zone, and it pulls the changes down. The problem with that is it does it on a timer. So let's say it's every 15 minutes. I could make a change right now, and it could take up to 14 minutes and 59 seconds to make it to the other side So anytime I make a change now I've got to wait. So I get a call from the help desk and they say this records messed up and
+
+[00:13:21] I make the change, I say okay, sometime in the next 15 minutes it will be fixed. Right? So they've got to wait. That stinks. So that's the problem with a pull application. They work, but it takes time. Is where I make a change at a primary and then it immediately pushes the change out to the secondaries, all right.
+
+[00:13:42] And they call that a notify, a notification. We send a notification from the primary where the change are made to the secondaries and we basically tell them, hey I just made a change, you should come and update the zone. And it triggers them to do a pull replication. So we send them a notify and they do a pull. So those are the two ways that we replicate.
+
+[00:14:01] In a perfect world, you'll enable both. Having push and pull is the best. That way if a notify message gets blocked for some reason or just doesn't hit the other side, you'll still do your normal pull at a set interval and reach out and get those. So this notify option down here, if I choose that I can pick which servers I notify. And the default is to do servers listed on the Name Server tab.
+
+[00:14:22] And that's typically what you want. I don't want the primary sending notifies to my laptop. On my laptop, I wanna be able to do zone transfer when I'm doing diagnostics. But not just when I'm sitting there watching YouTube, or whatever that is I do with the rest of my day. So, I wanted to pull zones when I want it. Not when I'm being told. So you typically want it to be somebody who's a name server, somebody who's got
+
+[00:14:42] the zone and is making it available to the other people on your network. So I'm gonna leave it at the default, but you can override that and add other things in for the notify. Maybe we got like a seams system, one of those security monitoring systems. And so anytime the zone changes, you wanna notify the security system so it can scan the zone and look and make sure the change is okay. So I could add that to my notify list and punch that in.
+
+[00:15:01] If I do that, I have to manually add every server that I notify. So if I have 20 name servers, I'd have to put all 20 in this list. Kind of a pain. All right, but I've enabled zone transfers. An easier solution would have been just to check, to any server, but then even attackers could connect and pull my whole zone. And while there's no secret data in the zone,
+
+[00:15:22] It does give them just a super easy list of attack targets, like. Here's everybody that I can attack. I don't even need to do the scan anymore versus normally they have to do a scan to find the host. All right. So that's taken care of here. This is my master. It's up and running and it's good to go. Now I can jump over to my secondary and configure it to do the replication, right.
+
+[00:15:45] Now the secondary might be another window server or it might be a Unix or Linux server because theres a standard replication. In my case it's going to be another window server. So on this server I've installed the DNS roll somewhere in here,
+
+[00:16:00] in this microscopic text. There we go. So this is dns2.itprotvdemo.net. And it has no zones. It's completely empty. I added the DNS role and that's it. That's all I did before the show. So I wanted to have a copy of itprotvdemo.org. So what I need to do is tell it I'm creating a new zone.
+
+[00:16:23] And when I create the new zone, I need to tell it that it's a secondary. Not a primary, but a secondary. Somebody else has the zone. And we're gonna ask them for a copy of it. And when I move forward, it's gonna ask that zone name. So I'll put in itprotvdemo.org.
+
+[00:16:42] And then it's gonna ask where I'm getting it from. And I'm gonna tell it that I'm pulling it from dns1.itprotvdemo.net. Or you can put in the IP address. Let me get this IPv6 one out of here. I could have set up IPv6 before the show, but I was in a hurry. So IPv4 is what we'll do.
+
+[00:17:01] So I'm adding that one in. That's where I'm gonna get it from. That's the master. It is useful sometimes to have more than one IP on the master. So that if one fails for some reason, you can go and hit the other one. But you typically won't have more than one master here. The exemption to that would be if I have a bind server and I'm making it a secondary to a zone that's Active Directory integrated.
+
+[00:17:23] I could point to more than one master cuz there is more than one master in that scenario. But in a normal Unix held domain, you'd only have one master. You wouldn't have more than one. So I'll move forward on that. And that's all it needs. When I finish up, it's gonna reach out to that server.
+
+[00:17:40] And it's gonna reach out right now. And it's gonna request a zone transfer. Now there's a number of things that can go wrong at this point. And if they do, the icon in that folder's gonna change. The number one thing, firewalls. If I have firewalls in between me and the other server. And I'm talking about the Windows software firewall as well as physical firewalls.
+
+[00:18:02] Any one of those can block the zone transfer. The number two thing, authorizing zone transfers on the other side. If my IP is not cleared on the other side, it can get blocked. And the mistake I normally see is where we use the private IP of a server instead of the public IP, or vice versa. And so it's trying to reach out to something that is incorrect.
+
+[00:18:22] &gt;&gt; When it pulls that zone transfer, is that going over your basic DNS port? Is that gonna be like a port 53? No different than whatever the clients would deal with if they were to query the server? &gt;&gt; It'll be a TCP port 53. Very, very rarely would it be UDP. What happens with DNS is it'll do UDP 53 unless the response needs to be
+
+[00:18:41] more than one frame. And if it's two, better more than one segment, really. If it's more than one segment, like 1500 bytes. 1500 bytes would be the frame. The segment would be a little bit smaller. And so let's say somewhere in the 1400 byte range. Most of your queries are just a name to an IP. And that fits in under 1400 bytes. It goes and uses UDP.
+
+[00:19:00] But when you do a zone transfer, the odds are you're gonna be over 1400 bytes. Which is not a hard number to exceed. So then it's gotta segment it. And UDP can't really do that. So we have to switch over to TCP, that's what happens. So when you do a zone transfer, your zone's pretty much guaranteed to break that limit. Just between the start of authority, and the name server entries and the other things you add. And so when that happens, it uses that.
+
+[00:19:21] So as long as you got that approved, it's not a special port or anything. Although, I do know some people where they'll set up things like SSH tunnels or IPsec or something to make sure you've got an encrypted session between you and the server. Because remember, all of this is in plaintext. DNS records are not secret. So they don't bother encrypting them. This is all sent in plaintext.
+
+[00:19:42] Even when you have DNSSEC turned on, all the hash signatures, they're hashes, they're non-reversible. So they're stored in plaintext right there. It's not the private key. They're all public keys that public knowledge. And that's it, there's no security on this. So you might choose to implement IPsec also to make sure that that's encrypted.
+
+[00:20:00] But it's gonna reach out, and I'm not gonna see anything right away. But if I hit the Refresh button is where I'll normally get that update. And my status here, it shows that I'm a secondary and that I'm running. And if I click on it, I've got records. That's exactly what I wanna see. If it failed, I would've got the red circle with a white x, letting me know it didn't work. And then I think I'll go into the system logs and start trying to dig in.
+
+[00:20:22] And find out what the heck is happening there and why it didn't work. But I now have a copy of that zone. I've got the records right here and I'm getting it. And because I'm listed as a name server right up here. dns2.itprotvdemo.net is listed as a name server.
+
+[00:20:40] When a change happens on the primary, it will do a notify to me. And I'll go and yank that record as soon as I can. But if I don't get a notify, I'll still do a pull every so often to make sure that I get the zone and that I stay up to date with the changes. But, If I come in here and try and create a new record. In the last episode, I would right-click on zone,
+
+[00:21:01] and then I would choose to create a new record. I don't have that option. I can't create an A record, a four A or anything. All I can do is reload, transfer from master, transfer new copy of zone from master. Well, those three sound similar. So let me tell you the difference between each one. Reload has nothing to do with the master.
+
+[00:21:21] Reload says, I've got this zone stored in RAM. And I've got this zone stored in the hard drive. Delete what's in RAM, and pull up from the hard drive again. That was Reload does. On a master, that's pretty useful if you feel like things got out of sync. Or things got corrupt, you can reload it and you do it pretty quickly. On a secondary like this, it's not terribly useful.
+
+[00:21:41] Because in some scenarios, you don't even store this zone on a drive. But usually, it does. So we can reload that. The second one is more useful, Transfer from Master. But Microsoft's DNS will do incremental zone transfers. There's two different types of zone transfers, AXFR and IXFR. An AXFR is the whole thing.
+
+[00:22:02] Give me the whole zone. That's what I just did a moment ago. We don't see it, it's on the background. I said, give me the whole zone cuz I don't have it. But now that I've got the zone, I can say, hey, my last serial number was this. This is my new serial number. Can you just give me the changes? Don't give me the whole thing. Just give me what changed. And that really helps to optimize replication.
+
+[00:22:20] &gt;&gt; Now Don, in this instance, your zone doesn't allow for dynamic updates. You've turned that off. Is there really a reason to use, I know I've asked you this question before, an incremental zone transfer if you're not constantly updating that file through dynamic updates? &gt;&gt; My answer would be no. There's really no point worrying about it.
+
+[00:22:40] But the official textbook thing is yes. Because what if you've got 10,000 records in that zone? And it's a big file. And every time you change one record, you gotta send the whole stinking thing to the other side. And it's gonna rebuild its cache and all that stuff, those things happen. My argument would still be, hey, even with 10,000 records,
+
+[00:23:00] your zone is probably under one megabyte its size. And that's just trivial amounts of data on modern computers. But back in the day, that used to be a problem. It used to be stuff we worry. We have different problems these days than we did back then. But back then, even a meg of data was a substantial amount. And so it used to be a problem. Now, we don't worry about it.
+
+[00:23:20] I don't really care about incremental transfers on DNS anymore. But it did used to be a big deal. And that's really what my choice is here. When I see Transfer from Master or Transfer new copy of zone from Master. Transfer from Master triggers an incremental. Unless it's the very first one, which would only happen if it failed on the first try and I fixed the problem. Then this one would actually do a full. But normally, it's gonna do an incremental.
+
+[00:23:41] The next one, though, that's gonna do a full. This one's always gonna do an AXFR, Transfer new copy of zone from Master. I don't trust what I've got. I'm gonna ditch it and bring in the new copy. And that'll make sure that we're up to date and we've got the latest data. &gt;&gt; Does your secondary DNS server, Don, do recursion? &gt;&gt; Yeah, absolutely, yep.
+
+[00:24:00] When a DNS server does a lookup It looks for authoritative zones. This DNS server is authoritative, itprotv.demo.org. So it'll answer right out of the zone. It can't change that zone, but it'll answer out of it. It's authoritative. But anything it's not authoritative for, goes to the normal lookup process, right? And that's why we have more than one of these servers. Cuz, what's the bulk of our stuff gonna be, we're cursive look ups.
+
+[00:24:24] You know, people abuse the internet, there's gonna be tons of lookup for crazy ads and stupid articles on Facebook and things like that. Versus you've got a static amount of file servers and mail servers that uses part of actual work. So you're true work related DNS look ups are not that significant.
+
+[00:24:40] Maybe if you got Active Directory you do a lot of look ups, find domain controllers. But your workstations cache that too. Most of them don't even update until they reboot. So you're talking about a very small amount of look ups for internal resources. So it's that external side that's really important. And I might be a secondary for this zone. And then I might have another zone that I'm the primary for. And another one on active directory integrated.
+
+[00:25:01] You can mix and match these things like crazy. So the zones are really treated as equal when it comes to a lookup. And it doesn't care if you're secondary or primary. It's just when you make changes that that matters, right? Now I can't make a change from here, but if I jump back over to my other server, I can make a change on this one, right? So I'm going to add a new entry and maybe I want an entry for Wes's laptop, right?
+
+[00:25:22] So I'll just call this one Wes Laptop. And I'll give it an IP address. I always make one up, but that's really somebody's IP. I have no idea who, but we'll do it anyway. All right, so there we go. We've got an IP now for Wes's laptop, 1.1.1.1, right? I made it here. In theory, in the background, my server just sent a notify over to the secondary
+
+[00:25:43] and it said, hey, our serial number just changed, right? I think my serial number was 18 before, so it should have bumped up to 19. If I pull up my Properties and go to my SOA tab, where is my serial number? Up here, 18, I guess It must have been 17 before.
+
+[00:26:01] But it bumps that number, and it sends the notify to the other side, right. I can manually increment if I want, but that number goes up. I guess I could just seen the number right there, which I didn't pay attention. So let's create a new entry, it's supposed to increment every time we create new record. &gt;&gt; I just hit refresh, and now I see 19. The MMC, you always got to remember to hit refresh.
+
+[00:26:20] So I created Wes's laptop and it went from 18 to 19. And then it should have sent a notify to the other side, right? If it did, the other side will update right now. If it didn't, the other side update when it does it's next pull anyway, so it's going to periodically do a pull. And I should be able to jump over to the other side. And if it got the notify and it reached out and did the pull,
+
+[00:26:41] I should be able to refresh this and there's Wes' laptop. All I did was refresh my screen, cuz the doesn't refresh for me. And I can see his entry made it over here, right? And that, one of the two things. It was either the notify that worked, or it just happen to hit it's interval. I'm pretty sure the interval is 15 minutes and that interval may have happened right there during that same time.
+
+[00:27:01] But either way I got the record and there we go. So we make all our changes on the primary and they replicate over the secondary. Pretty straight forward. All right, now once that's done I'm replicating, I'm in business. I can add more secondaries if I want, you can even do multi-tiers. I have a primary and a secondary, and then more secondaries that feed, so it'd be like tertiaries, that feed off of the secondary.
+
+[00:27:20] So you can build a hierarchy like that, but you can only make changes at the primary. After it's done, It's kind of like that rotisserie chicken, right, we set it, we forget it, and off it goes. &gt;&gt; Yeah, and I got to just gotta make sure that I can get to your DNS server real quick and pull the power on it. So you clear the cache and you can't tell what I'm really doing during my working hours there, Don. It does look like we're coming to the end of another episode, but Don, before we do.
+
+[00:27:41] When it comes to configuring replications in your zones, do you have any words that you might like to add to our viewers? Or give to our viewers before we sign off? &gt;&gt; Sure, I know I said set it and forget it, but you do need to monitor it and make sure it's getting updated. There's nothing worse than having two different DNS servers that give you two different responses. You gotta make sure that replication continues on. Just monitor your vent logs and the general health of the server.
+
+[00:28:02] Keep an eye on it, so that if that replication ever breaks that you're aware, you can get in there and fix it. All right Don, as always we appreciate you being here in the studios with us and we appreciate you the viewer watching. Signing out for ITPRO.TV, I've been your host West Bryan. &gt;&gt; And I"m Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC]
+
+[00:28:24] &gt;&gt; Thank you for watching ITPRO.TV

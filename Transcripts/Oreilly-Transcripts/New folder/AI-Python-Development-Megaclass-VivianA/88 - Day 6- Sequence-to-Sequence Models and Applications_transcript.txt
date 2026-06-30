@@ -1,0 +1,259 @@
+[00:00:00] Day six sequence to sequence models and applications. So let's start with sequence to sequence or sec to sec models and their architecture. Now what are sec to sec models, sec to sec models map an input sequence to an output sequence of different lens
+
+[00:00:24] widely used for tasks like language translation, text, summarization, speech to text and chatbots. The architecture involves an encoder which processes the input sequences and encodes it into a fixed length vector also called as a context vector.
+
+[00:00:43] Then we have a decoder which takes the context vector as input and generates the output sequence step by step. Let's get into encoder decoder framework for sec to sec tasks. How does it work? The encoder sequentially processes the input sequence using
+
+[00:01:03] RNN LSTM or GRU. And then it produces a context vector representing the entire input sequence. The decoder initializes its hidden state with the encoder's context vector, generates the output sequence one token at a time
+
+[00:01:21] and predicts the next token using the previously generated tokens. Next, let's talk about attention mechanism overview. Now why attention standard sec to sec models compress the entire input sequence into a fixed length vector which can lead to information loss for long sequences.
+
+[00:01:44] Now, this attention mechanism dynamically focuses on different parts of the input sequence when generating each output token. Now how does 10 work? It calculates a weight or score for each input token based on its relevance
+
+[00:02:01] to the current decoder state and then outputs a weighted sum of the encoder outputs creating a context vector for each decoder step. Let's look at our hands on exercise for today where the objective is to build a basic sec to sec model using LSTM for translation and experiment with the hyperparameters.
+
+[00:02:24] So let's get started today. I'm gonna use Pytorch for our project. So I'm gonna start with a new file and I'm going to save it as day six underscore exercise. And again, this today we're going to start with Pytorch. So first, let's import the libraries,
+
+[00:02:43] gonna say import libraries. First one that we need is import torch. Next, we want to import torch dot NNNN. Next, I need to import
+
+[00:03:02] the optimizers. Optimus dot Optim as Optim. Next, I want to get from torch dot Utils dot data import. We'll get a dataloader
+
+[00:03:22] and we'll get a readert. So we have that next. Finally, we'll go and import numpy NP because we might need to do some array operations here. Now, our time for simplicity, we'll use a small manually created English to French translation dataset
+
+[00:03:40] and I have that ready. So I'm gonna just use that and paste it here. Now this one has some English sentences like, hello, how are you? Good morning. Thank you. And good night now, my French is not good, but based on Google translate, I got these French sentences. Hello, is Bonjo, how are you? Is this
+
+[00:04:00] good morning? Is this? Thank you. Is this and good night is this? I'm not gonna even try to speak French right now. But anyway, so we have this here. Next step is vocabulary and Tokenization. That's what we're going to do here. I'm going to create a function called as build underscore vocab.
+
+[00:04:23] And for that, I'll pass my sentences. And once I have this, I'm gonna create my vocab equal too. In here. We'll add some padding. And so for that first is bad
+
+[00:04:41] of zero. Next, we have S OS of one. Next we'll add end of us, which is two. Next,
+
+[00:05:00] I'll add un K unknown as three. So these are different vocab key value pair that I have now four sentences that I'm getting in for actually sentence in sentences that have been passed.
+
+[00:05:22] I'm gonna run through each and every sentence I'm gonna say for word in sentence dot split. I'm gonna check if word, not in vocab, if this word doesn't exist in my vocab,
+
+[00:05:40] I'm gonna say vocab word equal to length of vocab and then I will return this vocab outside my photo. So this is my uh this will create my vocabulary and Tokenization.
+
+[00:06:00] So next step is let's create the English vocabulary to do that. I'm going to say build underscore vocab, I'm gonna call that. And then to that, I'll pass my English sentences here, I pass it here. And then when I want to create my French vocabulary
+
+[00:06:23] equal to build vocab. So this is how translations can be done using A I these days. So you got an idea of where we are heading. So now let's go ahead and next, I want to tokenize and pad the sentences
+
+[00:06:40] to do that. I'm gonna create a function called a token. And to that, I will get my sentences. I will get my vocab and I will get, what is the max length that I want to use here as inputs? Now, first, I'm going to say tokenized equal to an empty list.
+
+[00:07:02] So slide with an empty list and then I'm gonna say four sentence in sentences. I'm gonna run through each and every sentence and I'm gonna say token equal to vocab dot
+
+[00:07:20] get word four vocab of. So I think I put a little bit extra U and K and then for word
+
+[00:07:40] in sentence dot split. So that will be my tokens. Next, I'm gonna say tokens equal to, we get S OS close this class
+
+[00:08:01] tokens class V vocab of us. Next, I'm gonna say tokens plus equal to, well,
+
+[00:08:20] of next, not pading bad close. This times, oops times Mac underscore Len minus length of tokens.
+
+[00:08:40] And then finally, I'll say tokenized dot Append. That's my list here. I'm going to append whatever tokens I created into that. Then finally I'll return my NPT array of tokenized. So I'll pass my tokenized
+
+[00:09:01] array back to whoever called it along with the, that whoever called it with sentences. Vocab Max, I'm gonna return back there. Next. What I'm gonna do is I'm gonna get the max length for English and French. So for that, I'm gonna say max length of English equal to max of L off
+
+[00:09:21] San tense dot split. Now, where does this come from? Again, this is something that I'm gonna do here for sentence in English sentences plus two. So that will give me the
+
+[00:09:40] max length for English. Same thing I can do it for French. I can say Fr max length sentence or split for sentence in French sentences. There you go plus two. So that will give me the max length of French sentences. Now, when I want to create the database for my English sentences, I'm gonna say English data
+
+[00:10:01] equal to tokenize and to this, I'll pass the sentences first, then it needs the vocab. So I'm gonna, I already created the vocab and pass the English vocab and the max length, I'll pass max length English similarly. Now I can do OK? I think there is some problem here.
+
+[00:10:21] English sentence is not just sentence. OK? Next one for my French data is my tokens tokenize. I pass my French sentences. I'll pass my French vocab, I'll pass my max length
+
+[00:10:41] of French. Perfect. So this will create uh so this will have my sample dataset created now that I have my dataset. Let's define the justified dataset and data loader. So for that, I'm gonna create a class called as translation dataset.
+
+[00:11:02] So this is my translation dataet which takes the dataset as input. And here I'm going to define a each laser first initializer which takes self, we take the source data, whichever details either English or French
+
+[00:11:21] and my target data. So that's my initializer function. I'm gonna say self dot source uh SRC data equal to the source data that was passed to me. Next on self target data
+
+[00:11:40] is whatever target data that was passed to me. So that is initialized. So my initial object gets initialized here. Next, I'm gonna call the underscore underscore length and I'll pass self as an object here. And here I will say return whatever the length of self dot
+
+[00:12:00] source. So that will give me the length of the source data. Next, I can say if I want to get a particular item, I'll create a get item function. And to this, it needs self and IDX and index. So this will return back
+
+[00:12:22] torch dot tensor self dot SRC underscore data at that particular index IDX. So I'm converting that into a tensor here and it needs torch
+
+[00:12:40] tensor for self dot target data with that particular index that is past year. Perfect. So this will return back my uh target tensor, sorry source sensor and target data tensor back to whoever called it. Now let's go ahead and get
+
+[00:13:00] create those dataset elements. So I'm gonna say dataset equal to we call this translation dataset and to this, I'm gonna pass English data and fresh data. That's about it. Next, I'm gonna create my data loader. Now, data loader, I can use the data loader class
+
+[00:13:20] and pass the dataset. Something that you've done with uh with data loaders. Earlier comma I need a batch size of how big batch sizes you want. I'll set the batch size to two, keep it small enough and I'll say shuffle equal to. So I don't have that much data. So why not shuffle it? So that kind of creates our dataset and data loader.
+
+[00:13:41] Now, the next step is to define the sec to sec model components, which is encoder and decoder. So first let's create our encoder now to create encoder. I will use an NT module in here. And then first the initializer in initializer,
+
+[00:14:01] it needs self and the arguments that it needs. I'm gonna enter it here, arguments that it needs is input underscore dimensions. I need to pass embed underscore dimensions. I need to pass hidden underscore dimensions and number of layers that it needs
+
+[00:14:20] because we're gonna use LSTM. Eventually. That's why. And then here I am gonna say super encoder is what I have the class name self and initialize with empty set. Perfect. So that super is called next, I'm gonna say self dot embedding.
+
+[00:14:40] If you remember from the first few days of this week, this is what we did in uh for embedding in embedding layer. I'm gonna say it passed the input dim and it needs embedding. So if you want to refresh some of these things, you can just look at some of the earlier day of this week self
+
+[00:15:00] dot LSTM. For that, I will say I want to create an LSTM. And to this, I will pass uh this needs embed dim. Then it needs a hidden dim, hidden dimension number of layers.
+
+[00:15:20] I need batch first equal to two. So this will create our encoder initializer class. Next, we need the forward function, forward function which takes self and X as inputs. And this will create my embedded object
+
+[00:15:42] which is self dot embedding and pass the value of X. Next, it will create outputs and it will also create a hidden and cell object. This will be coming from self dot LSTM
+
+[00:16:03] and pass it the embedded that we got in the previous step and then we'll return, we don't care about the output. So we'll just pass hidden and sell back. Perfect. So that's our class for encoder. Now let's go ahead and create the class for decoder,
+
+[00:16:21] the class decoder again an module. Next step is to create our initializer method in it. I don't know. Sometimes I feel like it's easier to handwrite it self. We need uh output them
+
+[00:16:43] underscore them, output dimensions. We need embedding dimensions, embed underscore them, we need hidden dimensions same as our encoder and we need the number of layers that we need. Uh Next I will call the superclass
+
+[00:17:03] super and then to this as before we will pass decoder and self perfect. So that creates a super. Next, I'm gonna call the embedding equal to NN embedding.
+
+[00:17:20] And this will embedding needs output dimensions and embed dimensions. Perfect. So once this is done, next thing is our LSDM layer LSTM needs and then LSTM and I will have to pass the embed dimensions.
+
+[00:17:43] Next, we need to pass the hidden dimension. Next, we need the number of layers and next we need batch first equal to true. So this is takes care of. Now my FC function is equal to NN dot
+
+[00:18:00] linear and then this needs our hidden dimensions and my output dimension. Perfect. So this takes care of that. Next, I'm gonna create call my forward function. And to this, I'll pass self X hidden and cell. So my forward function now will say X equal to X
+
+[00:18:23] unsqueeze first unsqueeze with one. So this will add the time dimension. Next, I'm gonna say embedded equal to self dot embedding and pass it the value of X. Next, I'm gonna say
+
+[00:18:41] outputs comma hidden comma C equal to self dot LSTM and pass it embedded this time, we need to also pass the hidden itself. So I'll pass hidden and cell in a double perfect.
+
+[00:19:01] So that's passed next, let's get our predictions. So predictions are self dot FC allowed to take the outputs from above and squeeze them where the parameter of one. And now finally, I can return my predictions, I can return my hidden
+
+[00:19:21] and I can return myself items back in this decoder class. So I have my decoder class ready. Now, finally, let's create our sec to sec class. Now move it up all the way and I'll start with sec to sec
+
+[00:19:41] and I'll pass the NN module to it. Now inside here first goes the any slider method. So I'm going to create that in it underscore underscore I am not gonna use the autocomplete encoder. I need the decoder and it needs the device. So these are the parameters that
+
+[00:20:00] we need here inside the initializer for sec to sec. So again, we call the super pass sec to sec. Next is we pass self dot underscore underscore in it. There you go call this function. Perfect. So super is called. Now I'll have to assign the values for
+
+[00:20:20] encoder equal to whatever was passed as encoder. I'll say decoder decoder equal to whatever was passed as decoder. And finally self dot device is equal to whatever the device that was passed in this particular slis function. So that will create our basic
+
+[00:20:40] slis function. Now let's go ahead and write the forward. This is a little bit complicated because it has a lot of different elements in here. Uh self SRC target source target. Now after target, I'll say teacher forcing ratio, this is used to teach a particular
+
+[00:21:01] element at 50% is what I'm gonna set next. First start with the bad size, batch size equal to the source dot size at index zero. So that's my batch size. My target length parameter will be or variable is target
+
+[00:21:21] dot size at index one. Next thing is target underscore vocabsize for this. I will set it based on self decoder FC dot out features.
+
+[00:21:40] So that's what our target WAP sizes. So that that should work. Our next step is let's get the outputs. Now outputs in this case is first, I have to zero out uh tall dot by calling tall dot zeros and pass it. It needs bad size as the first parameter. If you see
+
+[00:22:02] in the help here, it will tell you what all the different things you need. But I have I've done it enough times that I remember. Next, I need the target length. Next, I will need the target underscore vocab size and that I'll convert dot to self dot device.
+
+[00:22:21] So there you go. That should take care of the output that will give me the output. Next, I need the hidden and cell that is coming from self dot encoder, if you remember the function that we wrote over the past SRC to it, so that will give me hidden Incel. Now, next I need is input and that I can get from TTT the
+
+[00:22:42] target, from colon to zero. That will give me my targets. Now let's go ahead and for in range of one to target underscore length. So I'm gonna run through this particular range based on the target length
+
+[00:23:02] I will get first output comma hidden by calling the decoder. So self dot decoder and decoder needs input, it needs hidden and it needs cell.
+
+[00:23:20] If you remember, that's what we, how we created the decoder which needs all these items and that's what you get output hidden and cell from this. Once I get that, I'm gonna say outputs colon T colon, I will assign output to that
+
+[00:23:40] so that those are my outputs parameter. Next thing I'm gonna do is I'm gonna go ahead. Uh And why is it moving me? OK. There you go. Top one equal to output. So from my output argument Mac, I'm gonna get the first element and that will be
+
+[00:24:00] my top one which will be used inside the input Byy TGT colon comma tea if torch dot random of one dot item is less than
+
+[00:24:21] teacher four ratio else. So if it's less than the teacher ratio, which is 0.5 has been said that or else we'll say top one is the value for input. So this, we can return back as outputs,
+
+[00:24:40] we can return back the outputs right here. So next step after once this is done, let's go and initialize the model and hyperparameters. So I'm gonna go outside here to initialize the model. So first, let's start with device equal to torch
+
+[00:25:00] device. And to this, I will say now, depending on if you what type of system you're running, I'm gonna say Q if torch dot ka ka is available
+
+[00:25:22] or else we will use CPU. So in my case, probably just use CP. Right now, I say input underscore dim equal to length of English woc cap. And for whatever sample we are using here, it will work perfectly on our
+
+[00:25:43] local computers. Output them equal to length of that is our French vocab take that. And next we need embed underscore dimension uh this, I will set it to 64. Next, I need the hidden dimension hidden
+
+[00:26:00] underscore name, I'm gonna set it to 128 and then I need number of layers that are set to two. Now these parameters are set up just so that I can create my encoder, decoder and sec to sec. So let's call the encoder function or class. This needs all the different parameters that we said first, it needs to input them.
+
+[00:26:20] So I'm gonna say input them next. It needs as you can see embed dim. So I'm gonna call give the embed dim that I've created next, I need the hidden dim. So I'm gonna provide that and then finally, a number of layers which I've also created. So I'll pass those next. Let's create a decoder. Now, decoder
+
+[00:26:40] needs, let's see what else needs decoder. It will need the output DP DEM. Next, it needs the embed. So I'll pass the embed next. It needs the hidden dem. I'll pass the hidden and finally, number of layers, number of layers. Perfect. So that will create my decoder.
+
+[00:27:01] Now let's create our model sec to sec. Now, this needs, as you can see encoder which is just created above pass that it needs the decoder pass that and it needs device here, which I've mentioned above depending on what we have seen either CP or Q depending on its availability
+
+[00:27:22] 0.2 device. So there you go. So that will have my model ready. Now, now our next step is to training. So now the model is ready as usual. First, let's create our optimizer that is using Optim dot
+
+[00:27:40] atom and I'll say model parameters, that's the first thing that it needs. And the next thing that we need is the learning rate equal to 0.001. Perfect. So I'm an optimizer next criterion criterion for this, I will use NN
+
+[00:28:01] cross entropy loss and I will ignore the ignore index equal to French underscore vocab. The bad part I will ignore that padding is ignored here.
+
+[00:28:20] So that's what I mentioned as my criteria. Now, let's create our training function. So I'm gonna create a train function. This will need model. We have to use data loader which we have created already optimizer. We have set optimizer so that another we need criterion criterion
+
+[00:28:42] that is also select created above. Next, I need a device and I need number of epochs to run this and this by default, I'll set it to 20 because we have a small dataset that we have created. So we don't have to worry about that. First, let's put it in the training mode. So I'll say model dot train
+
+[00:29:02] any slice that next, I'm gonna say for a Poc uh in the range of total number of run 20 times if not specified. Uh I'll set epoch of loss equal to zero. If you have a bigger dataset, you can probably pass that and
+
+[00:29:21] make it generate better text target in data loader. So for the source and target, I'm gonna say source comma target equal to SRC 0.2 device
+
+[00:29:40] target 0.2 device. So this will create my source and target. Next, let's create my optimizer. I mean, let's zero out the optimizer. So I'm gonna say optimizer 0.0 underscore grad. So this will zero out all the previous optimizers
+
+[00:30:00] output equal to model of SRC comma target. That's what we pass next. We set the output equal to oops output equal to output of colon from 1
+
+[00:30:21] to 1 colon dot reshape and pass minus one to output shape of two. So that takes care of our output next target equal to target of
+
+[00:30:41] colon, comma one colon uh dot reshape of negative one. So that will take care of my target. Now, let's we need the loss and then we'll call the backward class and backward function and step function on the optimizer and we'll increment the apolo. So for loss, I can get it from criterion
+
+[00:31:02] and pass it output comma target that you just created. Above next, I need to get uh as I mentioned, loss dot backward, backward bar and then optimizer step up. Perfect. So step next, I'll say epoch
+
+[00:31:21] loss, I have to implement this plus equal to loss dot Either but the same as before that you've done. Now let's do to check it out. I can always print here f of a book epoch plus one since it starts with zero
+
+[00:31:43] divide by total number of epochs number of a box. And I'll say loss is epoch underscore loss
+
+[00:32:00] divide by length of data loader. So this will give us and then again, you know, if you want to not see the entire numbers, I just say 0.4 F. So it's only four decimal places now that it's complete. Finally, let's go ahead and train it model
+
+[00:32:21] data loader, optimizer is what is needed next optimizer I have that I have the criterion. So I'll pass that. And then finally, device of which device I'm running this past that perfect. So this is done. Our next step is to translate a particular sentence, the actual code to translate whatever is provided to us.
+
+[00:32:43] We need to go ahead and translate it for that. I'm going to say define translate underscore sentence. Now what does it need for this? We need the model. We'll need the sentence that is passed. We need the English vocab that you created
+
+[00:33:02] to check. We need the French vocab. If you want to convert to that, I need that. I need the max length in French so that I can see how big, how, how much far it can go and then finally device. So this will translate. Now here, first, I'll say
+
+[00:33:20] it's pretty much translating is evaluating the model. So we start the model evaluation, I'll get the tokens equal to. Now it comes from English uh English vocab and I'll say get for word that is that we have
+
+[00:33:41] English uh English vocab. And then inside that UK is what I'm looking for U and K is my parameter that I have four. Now, where is the word coming from? Word is coming from N
+
+[00:34:00] sentence. So our sentence that we passed, if we just split that we're taking each word at a time to kind of get the tokens from there. So that will give us the tokens. The next step here is to get the tokens again based on. So first, we are based on UN K then, but we need to get the start and end,
+
+[00:34:24] start of statements and end of sentence. So for that, I'm gonna say English underscore vocab. My start of sentence is I've used Os and my tokens that I got from above
+
+[00:34:40] plus my English vocab and the end of sentence that I've used E OS sentence, end of sentence. So that will create my entire token list. Now the token list is created, let's create the source equal to torch dot
+
+[00:35:00] tensor and I'll pass the tokens to it unsqueeze. So its proper length or proper dimension 0.2 device. So that will take care of that. Now, let's go ahead and open. Let's go ahead and make sure that we ignore the
+
+[00:35:21] gradients. So no grade and this will give us here. Let's get the hidden and sell that is coming from model dot encoder that encode the class that we created and we pass the source and that will give us the hidden underscore setup, I think
+
+[00:35:41] no underscore torch. Sorry. I think when you type to first, you sometimes mess up no grad. OK. Perfect. So I have this. Now, next thing I'll get the target vocab equal to B of K four
+
+[00:36:00] K. Were we in French vocab dot Items? I usually try to use better uh parameters but it's difficult to do it when you're doing so much coding, target indices are target indices that we are looking for is inside my
+
+[00:36:20] French vocab. And the one that I'm looking for is start off sentence in the start to start with next for underscore in range of max because I don't care about this parameter. I just want to loop through the max length French.
+
+[00:36:41] Uh That's why I use underscore in here. Now, I can say TGT underscore and equal to torch dot tensor of TT underscore indices.
+
+[00:37:00] There you go. I have that of uh indices of negative one. That's where my thing is. And then I convert the two device perfect. So that will give me my target tensor. Next, I want to get the output hidden itself, output,
+
+[00:37:20] you're done and sell. This will come from model dot decoder function that we have returned or decoded object that we've given. And this needs our target tensor, hidden and cell. So this will give me my output, hidden, hidden and cell. So now I can do my predictions
+
+[00:37:41] equal to output. And from there, I'll get our argument max of one dot item. Next I get the prediction. Now I call get the target underscore indices
+
+[00:38:01] indices for these. I can now go ahead and append the predictions. So now if also another thing that I have to check here is if pred predictions equal to French. Come on French underscore vocab
+
+[00:38:21] of if it's end of sentence, then what do I do? I just break out of this? Oops break again, I forgot to put a coal in here. Perfect. So that's done. Now I'm out of it. I've got everything in now.
+
+[00:38:41] Let's go ahead and get the translated sentence equal to Target underscore vocab of I for I in, I in target underscore indices
+
+[00:39:00] of from 1 to 1 all over and then that will return back. Let's get space and join and to the end of it, let's pass the translated sentence. So that will, is it?
+
+[00:39:20] Oh I said translated sentence. OK? Translated sentence. Now let's go ahead and test all these things out. So I'm gonna do a test translation here. Now to do that first, I need a sentence, I'll say sentences, good morning, I'll try good morning and good night translation
+
+[00:39:41] equal to call the translate function, translate sentence function. Pass the model, pass the sentence that we have. It needs English vocabulary that we have created. So I'm gonna pass that. Next thing it needs is the French vocabulary that I'll pass next. It needs the max length for French. So I'm gonna pass that because I have that too max length of French
+
+[00:40:03] and then it needs the device which I also have. So that's why we created all those different things. Now, finally, let's go ahead and say translated sentence is I'll pass the translation.
+
+[00:40:21] OK, perfect. So this should work right now. I have written a lot of code, almost 169 lines of code to build this entire translation. It's not that too much if you think about it to build a translation engine. But again, my data source is just a list of items here. But you can give data list from somewhere else. If you have some dataset available,
+
+[00:40:41] you can give that as inputs here and it will work perfectly. So I'm gonna go ahead and say light on day six. Let's hope I don't have any typos, which is not possible. Again, this is not closed here. So I'll have to find, where is that?
+
+[00:41:01] I'll have to find S OS. That's what I've used. So let's make sure this is closed. Perfect. So that's good. Let's go ahead if that is the only problem. Nope, we have more issues here. So torch has no attribute ran, which is where did I give it?
+
+[00:41:23] So, Torch dot Ran, ok. I see it here instead of random I used, right. So that's perfect. Safe close. Let's clear it out. Let's run it again. And number of epochs is not defined. So let's see. Where did I
+
+[00:41:41] use that number of epochs? That is number of, what was it? A box. OK. There you go. What was the space typing? Oh, I missed the H Perfect. So let's clear it out.
+
+[00:42:00] And if you're following along, you probably have the same error or you probably already figured out. So there you go. Bin for good morning. That's right. And if I say good night, it says Bon Mute So let's go ahead and add that, clear it out, I don't need again.
+
+[00:42:20] And there you go, we have this working perfectly based on it, tries to train based on the data and gets you as less loss as possible and gives you the translated output from from this particular model. Now, just to recap today, we understood the architecture of sec to sec models and their use cases. We learned how to implement encoder decoder frameworks. With LSTMS,
+
+[00:42:42] we gained insight into attention mechanism for enhancing set to set models and developed skills in building and experimenting with set to set models for N LP task. In our case, we did the same, we kind of did a translation built translation engine. So I hope you were able to follow along and build it. If not, if you were able to get through the code and
+
+[00:43:01] implement it, that's good if you had issues or problems or have some questions, let me know in my messages and I'll get back to you.

@@ -1,0 +1,77 @@
+[00:00:00] OK. That's great. So we're now publishing our code coverage reports and we're publishing them here in the github actions. UI Now, another cool thing that we can do in github and that we couldn't really do in Jenkins is that we could publish things like these test results reports, these coverage reports, we can actually publish them in the comments on poor requests.
+
+[00:00:20] Now, we haven't actually got round to um raising poor requests yet, but this is such a cool feature. This is something that I really wanted to show you now and I think it's worth taking a little bit of a detour just to go through how we can get pull requests working, but then how we can actually make comments on those poor requests. So let's have a look at how to do that now in this lecture. So in order to do this work,
+
+[00:00:41] I'm gonna go over to my CI dot YAML and we're actually gonna add in a new job that's going to do this work for us. So we're gonna add that right at the bottom of our file and we're gonna call this job, create coverage comments. So now this job. We only want this job to run if there's a poor request.
+
+[00:01:01] So we can actually put a gift block in here. So we can say if the github dot event name, if that is equal to poor request, poor underscore request then run this job. So this job only runs if github detects it is a poor request. So again, at the moment, we've just been pushing everything up to the main branch,
+
+[00:01:20] but this is only going to run. Now when we do a poor request, we're going to see how to raise a poor request in just a second, right? For this job to run. We're first gonna just gonna do the backend test coverage report. We'll do the Frontend as well, but we'll start with just the back end one. So we're gonna say it needs the unit tests, back end job. So it needs that job to run. And again, we can say what it's going to run on.
+
+[00:01:43] So we'll say run dash on, let's say on two dash latest. Ok. So we've got the runner here. The next thing that we need to do is we actually need to add some permissions. So because we want this job to be able to create comments or to write comments, we actually need to give it permissions.
+
+[00:02:01] In order to do that, we may need to give some of our other jobs permissions a bit later on as well. We haven't had to yet but I've held off doing it for now. But for this what job, we're definitely gonna need permissions. So we'll say permissions for the poor requests for the poor request. We're just gonna give this job right? Permissions.
+
+[00:02:20] It should be put request, sorry, not for request. Ok, let's now add in the steps for this job. So the first step that we're gonna add it add is create backend coverage comments. So this step, it's going to use an existing github action. It's the action that lives at Peter Evans and it's called create dash or dash update,
+
+[00:02:47] uh comments and its version four. So then this is the great thing about the github actions ecosystem is that you can take actions that exist on the marketplace or anywhere else. You can then bring them into your project and reuse them and
+
+[00:03:01] reuse that functionality as we're going to see in this example. So again, for this one, we can give it a few parameters. So a couple of the parameters that it asks for is it asks for an issue number. So this is basically like the poor request number. So this it needs this in order to write the comment. So this is one of the fields that it needs.
+
+[00:03:20] Now, we can get that issue number or we can get that pull request number from the github. So you can just say github events and then that gives us access to this pool underscore request dot number. I'm sorry, I'm missing the dollar at the start just at the start of these curly brackets. So we do dollar double curly bracket and then we can say the github
+
+[00:03:43] dot events dot poor underscore requests dot number. So again, every time you raise a poor request in github, it gets a special number. So that just gives us access to that number here in the CI dot Yeah. The other thing that we need to add is the actual body of the comment itself.
+
+[00:04:00] So we put that under here under the pipe. So we'll just add two hashes for a heading to a back end test coverage report. That's just gonna be the title of our comment, then add the free B TS. So the opening free Pac Ts and the cosine free bac Ts, this is just for a code block.
+
+[00:04:20] And then in that, we can again use the special github S syntax. And now we're gonna say that this needs and it's gonna, so this basically lets us take output from another job. So it's gonna need the unit tests back end job. Um So that's the job that we've put together up here, this unit test backend.
+
+[00:04:40] So it needs that unit test back end job and it's going to take the outputs from that and the outputs it's gonna take are the coverage. Now, we haven't defined these yet. We're gonna define these in just a second. But these, this is um this is how we pull in that data basically into this job which allows us to create the comment.
+
+[00:05:00] OK. Let's go and add the outputs and coverage. So if we go back up to the top here, go back up here to where we're defining the unit tests back end job. So just underneath runs on 12, let's now define that outputs that we just asked for. And let's say we want the coverage
+
+[00:05:20] now in order to get the coverage that's going to all come from this job in here. It's coming from sorry, this step in here, just execute back end unit tests. Now we can't just pull that in by the name. We have to actually give it an ID as well. So underneath the name for execute backend unit tests, we're gonna give it an id of test hyphen backend.
+
+[00:05:42] What that? Because now that we've given that the ID, we can now use that in this coverage block up here. So we can do again the special github syntax, we can say look into our steps, look for the step with an id of test hyphen backend ie this ID that we just created here
+
+[00:06:00] and then from the outputs. So that's the outputs of that job. We're gonna look for the report and we're gonna create the report that it's gonna grab in just a second. So the last thing that we need to do then is make the report available So let me just make it available to that comment. So to do that, we do another echo command a little bit similar to what we did above.
+
+[00:06:22] But we say we're echoing the report and we use a special syntax with two left arrows and end of file. And we pipe that over to the github underscore outputs. So let me just write the other commands. That's just, that closes this off and then I'll explain how this works.
+
+[00:06:43] So that's the opening of the report. And then we close the report here by just putting in end of file and again, that gets published over to the github output. So again, this is where we open up the report and we, this is where we're, we're naming the report, we're calling our report report
+
+[00:07:00] and that's what that's going to be available in the output and the outputs here. And then we have the end of file. So it's basically everything between this end of file opening here and this end of file closing, that's what's gonna get sent to the comments. So the only thing then that we need to add in now is that we need to add a cat call and we're gonna call that coverage dot text file.
+
+[00:07:23] So we're gonna basically print out everything that's in the coverage dot text file here and we're going to send that to the github output. So github underscore outputs, OK? So again, if we just summarize quickly. So we're echoing out everything
+
+[00:07:43] in the coverage dot text file that's going into this report, that report then becomes available from where is it here on this output dot coverage. So steps test back and outputs on the report so that it's now available in this coverage variable
+
+[00:08:01] and then down in our create coverage comments that this is where it gets pulled in. So the actual content of the report gets pulled in here from the outputs dot coverage. So I know this is a bit long winded, but this is a really cool way to actually get output out from one part of the job and then feed that into a comment or somewhere else in github.
+
+[00:08:20] So it's really worth learning how to do this stuff. OK? Just before we merge this in and run it, I just want to make one change. So at the moment, our unit test frontend, they're waiting, they're running sequentially. So one after the other, I'm gonna change it at this point so that they run in parallel. So I'm just gonna take out the needs here for the unit test back end.
+
+[00:08:42] We'll take that out and now the back end and the Frontend unit tests are gonna run in parallel. OK? That looks great. So what we need to do now is we need to create a pull request. So I'm going to open up the terminal to do that and then for the poorest. So, so far everything we've just checked into the main branch.
+
+[00:09:01] But what we're gonna do now is we're actually gonna create a new branch. So we call it test comments back end. So I'm doing git checkout minus B for a new branch. We call the branch test comments backend, gonna add my changes to that branch. So I did commit my m testing backend comments.
+
+[00:09:25] OK? And now let's push this branch up to git. So git push origin and then the test comments back end backends ends. That's OK. OK. So I've pushed that branch up to getit if I go over now to the github
+
+[00:09:41] UI. So if we just look in the actions tab quickly, we can see that no job is being triggered. So this is not being triggered right away because we haven't pushed anything directly onto the main branch anymore. We've pushed it onto a different branch. Now, one thing I've just remembered that we've forgotten to do in our CI dot YAML at the top here,
+
+[00:10:02] we're only letting this trigger on a push to the main branch. We now want to trigger on a poor request as well though. So in order to do that, we can say when it's a poor request. And again, we specify the branches just like we do at the top. Basically,
+
+[00:10:20] when the branch is when there's a poor request to the main branch, then we trigger this workflow. So let me just add that into the pr I'll do another commit and another push. OK? That's good. Now, if we go back over to the github um browser, we're gonna say compare and pull request. So this is now gonna open the poor request.
+
+[00:10:43] So when you open the pull request, because we forked our repository, make sure that you're choosing the correct repository. So it should be choosing your repository, your repository, not my James Willett one, make sure you choose your own repository and we want to merge into the main branch. So again, make sure you choose you're using your repository
+
+[00:11:01] and make sure you're using the main branch. You should be able to see here. This is what your pull request is gonna look like. So if we push create pull requests, that's gonna open up the pull request for us when that pull request gets opened, if we go over to the actions tab quickly. So if I take a look at actions, we can see now that this job has been triggered.
+
+[00:11:22] So it's been triggered because there's a poor request and it's going to run through the steps that are in R CI dot m. So we can see here now that the backend and the frontend test, those are now running in parallel. So they're running at the same time and we can see that the create coverage comment that's waiting for the back end test to finish and it's gonna take the input from that or the output,
+
+[00:11:42] I should say from the back end comment that's going to be taken into this job over here. So that's finished. Now that's worked. Ok? It looks like the create coverage, comment job that's also worked. Ok? Ok. We can have a quick look through the logs and see what's been published. That looks good. So if we just go over to the poor requests and click on the poor request
+
+[00:12:02] and if we look now in the in the comment on the poor request, we have this backend code, test coverage report. So this is really cool. So this is with this automation now that's running, it's running the job that tests the back end produces the coverage report and then it's actually publishing the content of that report into a github comment.
+
+[00:12:20] So this is really useful again for us as testers when we're raising poor requests and we want to show things like test results or if there's a problem or a code coverage report, we can now publish these directly as a comment. OK? That's great. Let's take a quick pause here. And when we come back, we're gonna look at implementing the same thing for the Frontend. So we've got the backend coverage report.
+
+[00:12:41] We'll take a quick pause when we come back, we'll do the Frontend as well.

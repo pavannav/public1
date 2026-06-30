@@ -1,0 +1,67 @@
+[00:00:07] - [Professor] Open shortest path first, this is probably one of my favorite protocols. OSPF is a good one. EIGRP in some ways is even faster. So I've got a lot of respect for EIGRP, but OSPF is what I see most commonly in environments.
+
+[00:00:21] So let's go ahead and talk about it a bit. OSPF is an open standard. Open sounds like it's a verb. Like, hey switch, can you open the shortest path first? Can you select the best way to get there? It uses something called the Dijkstra algorithm, which is an open standard. And originally when they started rolling this out, different vendors, implementations of OSPF were,
+
+[00:00:43] I want to say proprietary, because what was happening is different people implemented different features differently and they weren't all compatible. So by definition, it was an open standard, but we didn't have feature parody. We weren't all doing it the same way for many years. So it did have a little bit of a rough start.
+
+[00:01:00] Today things are ironed out, it works really well. You're going to find OSPF support everywhere. Routers, switches, firewalls, LAN controllers, load balancers, you name it. Additionally operating systems can support this, Windows, Linux, BSD, as well as OSX. Now what OSPF is going to do for us is first off, create a map throughout the environment.
+
+[00:01:22] When we say link-state, think about it. All we're asking is what is the state of the link? Is it good, is it bad? Is it up, is it down? Based on knowing the link state I can make better decisions. So what OSPF does is it talks to all of its neighbors. Remember we talked about RIP and I said, there's no neighbor adjacency.
+
+[00:01:40] In OSPF we do multicast. And we say, who wants to do some OSPF out there? Other devices will come back and answer us, assuming that all of our parameters, authentication type, authentication key, network mask, MTU has to match, your link speeds, etc. There's all this stuff that has to be in synchrony,
+
+[00:02:00] to become neighbors. But if you do become neighbors, then you start exchanging routing information. You get this idea of the way that the world looks. We call it drawing a map. We build this map. We put ourselves, each router, at the center of the map, like it's the center of the universe. And we say, what is the fastest way to get to everywhere we've ever heard of and the Dijkstra algorithm runs against all of the
+
+[00:02:21] links against all the paths and you could have guessed it, it's basically going to output what our best routes are. So the link-state algorithm runs, we've got this Dijkstra algorithm that's in use. Come right here, Dijkstra is what's used to calculate the best path. And from a control plane perspective, this is what's done in the control plane.
+
+[00:02:41] Once our decision is made, it goes into the RIB, the routing information base. And then that gets pushed down to the data plane where the forwarding information base is responsible for pushing those packets through. OSPF is much more scalable than RIB, it has the ability to go very, very, very large. But the tricky thing is,
+
+[00:03:00] and I didn't know this when I first started learning it. When there's changes on a device, in a network, let's say the link was up and now it's gone down, and it went up and then it went down again. You go, what the heck is going on at that link? Well, maybe it's a point to point link on a radio tower, and the tower is damaged and it's swaying or moving. Yikes. So it's constantly going up, constantly going down.
+
+[00:03:20] Every time the router goes up, we go, hey, there's new routing information. You tell all your neighbors, they'd run Dijkstra. They get the best routes. And then the wind blows and the towers off track again. Oh no. So the link has gone down. Everyone gets a notification. They all recalculate the routing tables. They have the best routes until what? The tower comes back in line again.
+
+[00:03:41] Link instability. So it's going up, it's coming down. And every time that happens, every other router has to do a lot of work, a lot of thinking, a lot of processing, to figure out the best routes. So one of the things we can do as network architects, is kind of limit the damage. We go if there's a problem, we don't want everybody to recalculate. So we've got this concept of areas.
+
+[00:04:02] Think about an international network that exists in many countries, you've got teams all over the world, working different hours, managing different parts of it. Wouldn't it be nice to corral some of it together, and say when there's a change, when there's going to be administrative things like filtering, when there's going to be things like summarization, we can do it within these groups.
+
+[00:04:22] Maybe I've got one for North America, one for South America, one for Europe. So the administrators in each region, can administer those individually. Additionally, when they've got changes or challenges, let's say in South America, they've got links that are bouncing up and down. I don't want to recalculate those in North America. So while OSPF is big enough to scale, get it's IGP.
+
+[00:04:44] So we've got inside of our offices and all the different locations are all exchanging routes, they're all learning things. When there's a problem, we can isolate it to a specific smaller group, really pretty slick. So that's not something that we're really thinking about when we're looking at RIP, this concept of scalability.
+
+[00:05:02] If you need something that goes bigger than OSPF there's another protocol called ISAS, which is used in the service provider space, pretty commonly. When we turn OSPF on. We turn it on per interface and look at the router, maybe it's got an interface revealing 100. And I say, let's do OSPF there. Once it's enabled for the interface,
+
+[00:05:20] it starts sending out hello messages. Just like it sounds, it's out there looking for friends, looking for neighbors. So if you can discover other neighbors, and they have the same parameters as you, they're in the same area type, cause there's different types of areas. You have the same area ID. You've got all the same timers, and you've got all the same weights.
+
+[00:05:40] We can say, you know what? We look very similar, we're doing things the same way, let's become neighbors. Once you become neighbors, you can exchange all the information that you know about, and you're going to tell the other router everything you know, they're going to tell you everything that they know. That information goes into something called LSDB, link-state database.
+
+[00:06:00] So a lot of times what we'll do to troubleshoot OSPF is we'll do a display or show command, that shows us the contents of the link-state database. If the network doesn't make it into the link-state database, it can never make it into the routing table. This is the first point in troubleshooting. Once our link-state database or LSDB is populated, we run that Dijkstra algorithm. Dijkstra algorithm is what's really responsible,
+
+[00:06:22] for calculating the shortest path first. We want to find the fastest way to get somewhere. So to do that, we use Dijkstra. Dijkstra is also used by the mapping system. When you use GPS and you're driving around and maybe it recalculates you based on accidents or construction. All of that is Dijkstra, which is really pretty slick.
+
+[00:06:42] The whole goal of this is to look at the network, to understand the links and choose the optimal path, realize that we're doing so because every single router running OSPF considers itself to be the center of the universe. So by discovering neighbors, by learning what else is out there, it's going to calculate this big map of the inner of the
+
+[00:07:02] internet or your intranet we should say. And it's going to figure out what's the fastest way to get to each possible destination. These optimal paths are pushed to your routing information base, your RIB. Realize that there's going to be competing factors here. You might have some information come in through OSPF, and it looks really good,
+
+[00:07:20] but there's a concept called administrative distance. Every type of routing information has different value to it. And we say, well, how much can I trust this? How reliable is that data? And the most reliable data on earth is a directly connected interface. If you've got a network interface and it has an IP address, we know that network is there, that's not a rumor,
+
+[00:07:40] that's not something we learned dynamically. We know because we're participating in it. So directly connected is king. Next, we've got static. Static routing is where the administrator comes along. Statically configures like a stick in the mud. Orlando, Florida, Disney world is in that direction. And that's it, you just stick it there, it's stuck, you go, it's not dynamic.
+
+[00:08:00] Dynamic, that's where we start getting into RIP, OSPF, etc. So you could have multiple protocols running, RIP and OSPF. OSPF is typically more trusted than RIP. So the reason that I say all this, is your routing information base is going to be populated with the best routes. But the optimal path for OSPF, is just the best path for OSPF,
+
+[00:08:21] it's still competing with things like a static route. So competing with things like directly connected interfaces. In each source of routing information has a different, what we typically call administrative distance, or what is our weight that we give to preference? How much do we trust each of these? How good do we think they are? And that's something that you as an administrator,
+
+[00:08:41] can actually define. So how hard is it to set up OSPF? It's really pretty easy. At least from a Cisco configuration. We go into global config, and that's just where we say enable. And then config T from our global configuration, we'll say router OSPF, 10. This is a process ID. It's locally significant.
+
+[00:09:00] Doesn't have to match on the other routers. And then what we say is network 192.168.45.0.0.0.0.255. If this looks funny, remember that's just a wildcard mask. It's an inverted subnet mask, which would be 255.255.255.0. Which none of you would ever read that over the phone
+
+[00:09:20] with somebody. If you're talking to another network person, you'll just say /24, and they wouldn't have to hear you say all that. And what is this? /24 wildcard mask. What are we doing? We're saying, hey, router, I want to run the OSPF process on any interfaces in this range, of 192.168.45.0 with a /24 mask.
+
+[00:09:40] Now, other ways that you could do this, is again specifying the entire network, or we could specify the interface IP address with this /32 wildcard mask. Or you can do crazy stuff, like say all zeros with all 255's. Let me show you how these are different. The middle one is exact.
+
+[00:10:01] This is so precise, it's with a scalpel. We're saying, hey router, I only want to run OSPF on the interface with this exact IP. This doesn't have any impact on the statements that you advertise. You're going to advertise everything you know about. But when we start the process, this is telling it where to run. So I'm saying I want to run OSPF only on that one interface,
+
+[00:10:23] in that one IP. Alternatively, we can say all zeros, this says I want to run it everywhere. And I want to include every interface I have.
+
+[00:10:40] So in any of these scenarios, you'll have a neighbor on the other side of the link. What's different is the way that we start the process, you see with this bottom statement if I have other interfaces, especially things like loop backs, they'll automatically be included in OSPF. So this is kind of like an autopilot. The downside is that it's very specific.
+
+[00:11:00] It's going to include everything you've got. Even if you don't necessarily want to advertise it. If you're wondering, why wouldn't I want to advertise a network link? That's a good question. You typically want everything reachable, but if there are things that you were trying to keep private, or you didn't want to exchange OSPF routes with, maybe you're a service provider on the WAN, we want to be more careful and say only run OSPF exactly where I specify.

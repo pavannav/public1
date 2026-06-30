@@ -1,0 +1,123 @@
+[00:00:06] - Let's dive a little bit deeper into this concept called Quality of Service. Once we start applying Quality of Service controls to our network, it's no longer an environment of FIFO. FIFO stands for first in, first out and see idea that is basically all packets are equal.
+
+[00:00:22] Whatever comes into the interface first, whatever we come up with, whatever we buffer first is gonna be the first thing that we go ahead and we send out. So, this is how everything works by default. And what we're trying to do, our goal is to move from a FIFO based solution to something that makes a little bit more intelligence,
+
+[00:00:40] something that makes a little bit more sense. And that starts off with the concept of classification. Through classification, we can identify what are important traffic flows and the way I typically describe this is kind of like an if condition. Imagine that you're having a conversation with a switch, router, firewall, wireless LAN control, or whatever it may be, and you say,
+
+[00:01:00] "Hey firewall, when you see packets that look like this," And it's just kind of left there, it's like an incomplete thought or sentence. Our if is what we're gonna be matching on. Now what we match on, we might prioritize, or we might delay We might actually inject some type of policy
+
+[00:01:20] or controller delay that's gonna make certain applications perform more poorly than they regularly would. That seems kind of strange. Like why would you do that? Well, any application, especially things for file transfer, we use 100% of the available bandwidth. We're gonna use everything that's available. So what we will do, you and I as network engineers,
+
+[00:01:42] is we'll set the network to identify that traffic flow. We say, "Hey router, if you see packets going from point A to point B, now those could be IP addresses, those could be protocols, whatever. I say, when you see this particular traffic flow, what I'd like you to do is rate limit it to this particular speed,
+
+[00:02:01] or maybe I'd like for you to accelerate it and I'd like for you to deliver it immediately and actually let it cut the line in front of other packets." So, those are the types of behaviors we take. But the first step to that is classification. We have to identify it with an F condition. Now, one of the things that we do for classification
+
+[00:02:20] is I might classify based on an access control list. I might say, "Hey router, during this time range of 9:00 AM to 5:00 PM for all IP addresses from over here to over there on this one particular protocol." And he's like, "Yeah, what do you want me to do next?" I say, "Well, I'd like to mark it."
+
+[00:02:41] Marking is where we go in. And this is sometimes coloring, called coloring in some books. It's where we basically go in and we edit the type of service marking. Remember our type of service marking at layer three is found right there in the IP header. The IP header is typically gonna stay with that packet from one end of the communication till the other. Of course, you could have network address translation
+
+[00:03:00] occurring at the edge, but when we not, we can take those QS markings and transfer them as well. So if I classify, I could do so with an access list, I could then mark, which says, go into the packet and change the diff serve code point, DSCP value, what happens then? Well, other devices in the network, instead of using an access list to classify the traffic,
+
+[00:03:23] will look at that marking that's in the type of service field. And it'll say, "Oh, if it's these particular markings behave one way, if it's other markings behave another." So, classification is the identification process. The marking process is where we basically go in
+
+[00:03:40] and we edit the default type of service values. Everything's got a zero by default and we're gonna take it from a zero and change it to something else. And then based on that, that'll be our classification metric on other devices. What does this lead to? Well, quite often expedited forwarding. This whole chapter here is on unified communications
+
+[00:04:03] where a lot of us might just think voice over IP, but don't forget that we've also got video, we've got PowerPoint slides we can share. We've got whiteboards we can share for collaboration, but for the most part, just simply put, we could say, we'll think about voice. It's a real-time application. We don't want it delayed. Expedited forwarding says, "Hey, when you're busy,
+
+[00:04:22] these are the packets that go first." How do we know what goes first? Based on the classification, the original classification might've been based on an access list, maybe even just like a Mac prefix list, looking at the Mac address of the phones, we say, "Hey, if you see devices that look like this, what do you want us to do?"
+
+[00:04:40] "Well, we want you to go ahead and perform expedited forwarding." Now for other types of traffic, we could do delays. Think about file shares that are just synchronizing to the cloud or backups that are happening. I don't wanna back up to ever cut off a phone call. So I can say, "In times of congestion, delay or throw away certain applications, but always deliver others."
+
+[00:05:02] Dropping is what we do when there's basically too much traffic. If there's too much traffic, what could happen is the pipe could congest. Well, think about it. We've got one pipe. We've got tons of different communications occurring. If it goes completely fall all at once, everybody's communication is gonna drop
+
+[00:05:20] and they're all gonna retransmit at the exact same time. This is called a TCP global synchronization and basically means we've got multiple TCP flows. Now, remember TCP has got this concept of a sliding window. That is to say that a TCP or file transfer will start off very, very slow.
+
+[00:05:40] Watch the speed on your file transfer typically starts off slow, but what happens? It speeds up. It goes faster, faster, faster until it tries to go too fast, choke something, and then it starts to back off a little bit. Then what does it do? It revs back up again. So, we can use dropping in a fairly clever way.
+
+[00:06:00] I'll talk about that for a second. So when we drop traffic, we can do it randomly. And this is what we call RED, random early detect. And then sometimes it's spelled with a W for weighted random early detect. So what we do with red is we say, here is our utilization. Let's say that this is Gig 0/0,
+
+[00:06:22] this is what connects us to the internet. And we know if utilization hits 100%, we're gonna drop everything. We definitely don't wanna drop everything. We wanna drop things randomly and I'll show you why. So just to reiterate, we don't wanna hit 100%. So, once we start to hit, let's say 85%,
+
+[00:06:42] we can implement something called RED, random early drop or random early detect. We're detecting that this interface is about to be fall. So what do we do? We look at our number of flows. We see that we have 100 flows. I say, "You know what? Let's take one of them and let's drop a packet." What's that going to do?
+
+[00:07:01] It's gonna cause the TCP process to slow down and retransmit. So basically, if you looked at the speed for this one flow, it was climbing up and then we did a drop which made it come back down here and say, "Hey, I'm just gonna try to send this through nice and slow." Did that work? And if it does, it sends some more data,
+
+[00:07:20] some more data, and it'll try to speed up again. And as it starts to hit this threshold, we will perform a drop. So, the switch, the router that's performing this operation is doing it randomly across different packets. It makes sure that no particular flow tries to take 100% of the bandwidth. Now, additionally, there is a concept
+
+[00:07:41] of global TCP synchronization. With global TCP synchronization, it means all of them are speeding up at the same time and then they're all dropping at the same time. That's bad. I'll show you why. What would happen if we've got a global TCP sync is that our utilization is gonna skyrocket.
+
+[00:08:00] It's gonna hit the roof of 100%. And they're all gonna stop at the exact same time. Now, what's our bandwidth like 2%, 1%. What happens? They all start connecting, transferring data, getting more confident and going faster and faster and faster. And they all had a wall again at 100% and they all fall off again.
+
+[00:08:21] This happens and it starts to look like a Sawtooth blade. We've got these peaks and we've got these valleys and I'm just gonna use blue to highlight that valley. You see that blue there? This is where our interfaces not being used efficiently.
+
+[00:08:40] We've got all this bandwidth available, we've got a link that's maxed out, and we keep hitting the maximum and then everybody comes to a screeching halt. If you've ever been on the interstate with a lot of other cars at rush hour and it's congested, all of a sudden it opens up, everybody gets excited. You go from like doing 12 miles an hour to like 80. And then what happens?
+
+[00:09:00] We'd ride up on some more traffic and everybody slows way down again. That's very much like this global TCP synchronization. I'll show you what RED does. RED, if we come in here and we use the second box right here, as traffic starts to hit that 85% utilization mark, we drop individual flows.
+
+[00:09:20] So, what happens is that one flow slows way down, but the others go pretty quick. And as other flow starts to get towards this maximum percentage will drop it. So, what you'll notice is if you graph that interface, you'll see your utilization looks something like this. And again, I'll highlight the blue part.
+
+[00:09:41] Notice how much more efficient this is overall? Because we're constantly sending a good stream of data. Why? We're slowing down individual flows out of order. And when that one flow slows way down, the others are going pretty quick, when one gets too fast, we slow it down. So, this concept of RED with the W or weighted RED
+
+[00:10:02] says, "You know, when you're throwing packets away, how about you never throw a voice over IP packets? How about you never throw away mission-critical applications that I know are not gonna saturate the link? In that case, I'll take certain traffic flows and I'll drop those, but I'll treat others a bit differently." And this is just called weighted random early detect.
+
+[00:10:22] Some other terms that we wanna be very aware of when dealing with network quality. First off, latency can't be avoided. There's just delays in networks. Whenever we wanna take a signal and send it across a wire there's propagation delays, just taking the data, getting it onto the interface, transmitting it through an electromagnetic wave,
+
+[00:10:41] transmitting through light, whatever it is there's gonna be some delay. The delay might be the speed of light. It's not a very slow delay, but it's still a delay and they can add up. So, latency is delay. What is jitter then? Jitter is the variation in latency. So, if I was trying to do real-time communication with you
+
+[00:11:02] and we have 150 millisecond delay, it's not ideal, but it's not horrible. We'll have a little bit of funniness, like right when a sentence ends and the other one begins, maybe both of us try to speak at the same time if we're both caffeinated, but for the most part, it's predictable, it's tolerable.
+
+[00:11:21] Applications like predictable latency, because they can give you a steady stream of information and make the application feel very much real-time. What challenges us is this concept of jitter. What jitter does is it says, "Well, our latency varies." I go, "Uh-oh. I want low latency, ideally,
+
+[00:11:41] but second if I can't have low, let me just go ahead and have something very predictable and stable." Jitter's the opposite of this. What's our latency, 50 milliseconds. I mean, 500 milliseconds. I mean a hundred. I mean, back to about a whole second down to 50 again. When you get those variations in latency, it becomes very difficult for an application
+
+[00:12:01] to give you a consistent stream. Imagine that you're like writing on a cake with frosting, you know how you want the frosting to keep coming out of the end of the nozzle there so that your letters look good? That's what we're trying to achieve. Imagine if it was sputtering, if it kept coming out and then it sputtered and then it was good again,
+
+[00:12:20] it would be very difficult to write. Well, this is kind of like network performance and jitter. We just have variations in delay, which make it hard for an application to give you what would feel like a seamless delivery of consistent packets. Packet loss is exactly what it sounds like. We sent a packet through the wire and it didn't make it.
+
+[00:12:40] Wasn't transmitted. That's normal. That could happen with things like RED. That could happen because of errors. That could just happen because of the link is saturated. Well, in any case, if a packet is lost, it has to be retransmitted. That is gonna be a little bit more time. That's gonna be a little bit more delay. And this is one of the things that we typically look at
+
+[00:13:00] with a counter. If we see tons of packet loss, we know that something's wrong and we wanna dig in and investigate a little bit more. Throughput just refers to the rate at which data can be transferred. So whenever we buy an internet connection, whenever we buy a pipe is basically rated based on the throughput. So, mission-critical data is gonna be different for every customer. Maybe you work for a law firm,
+
+[00:13:21] that's gonna be different from a hospital, which will be much different than working for a restaurant, which would be a much different than working for a defense contractor. Everyone has different types of data. And that data is, you know some of it's very valuable, some of it may be regulated by government compliance needs,
+
+[00:13:42] some of it might be intellectual property. So, when we look at the data in terms of securing it, what's most important? When we take a look at the actual transmission of data, what are your mission-critical apps that cannot go down? Is it something for real-time communication? Maybe it's just something that is,
+
+[00:14:01] let's say that it's a hospital, and while phone calls are very important, they're not quite as important as reading heart monitors. So if it were a hospital, if we're looking at heart monitors, I could put all that stuff on its own subnet. I could use its own dedicated links. I could use dedicated switches, but what we tend to see is this kind of desire
+
+[00:14:20] from customers to wanna share links. They wanna share equipment. They wanna get a lot of utilization out of a couple of components, which means we need to have good software configuration so that we can regulate the flows between different applications and so that we can prioritize whatever it is that's going to be mission-critical. So we talked to the customer, we figure out what applications they have
+
+[00:14:42] and what's the level of importance. We wanna know the IP addresses, we wanna know the subnets. Of course, we wanna know the ports that are going be in use. If we know these details, we can start to create rules that will not only allow this traffic to go through, but also guarantee it a certain level of performance.
+
+[00:15:01] Another thing we think about are backups. Backups can be very, very, very large. Is it important for mission-critical applications? Of course, there's ransomware, there's vulnerabilities, there's exploits flying around. We wanna make sure that we have good backups, but because they're large and they're typically not latency sensitive,
+
+[00:15:21] we wanna make sure that our backups occur at a time when a mission-critical business isn't peaking, right? Like maybe in the middle of the night. And we also wanna make sure that if a backup is occurring and a phone call is occurring, it's a phone call that goes out first. Another application that you wanna think about is VDI or virtual desktop infrastructure.
+
+[00:15:41] With virtual desktop infrastructure, what you're doing is you're providing an end-user with a thin client. It's just a little box, not a lot of computing power, keyboard, mouse, maybe couple monitors, speakers, headset can all plug into it. That device just runs a little crummy operating system, probably Android or something similar, and it loads a client.
+
+[00:16:01] That client is gonna basically remote log you into a virtual desktop, which is really just a Windows or Linux system running somewhere else and other hardware within the organization. Now, the traffic going between the thin client and wherever your VDI infrastructure is, that's pretty important
+
+[00:16:20] because it's somebody's live session. If they're clicking on things, if they're typing, if the writing, we don't want there to be a lot of delay. So, this is a good type of application. We'd take a look at the source and destination IPs, we figure out the port numbers that are in use and when we're classifying traffic, this would be one of the things that we classify. "Hey router, when you see packets that look like this
+
+[00:16:40] they're VDI." And he's like, "Okay, sure, whatever." And then I go, "Hey router. Now that you know what VDI traffic is, if you see it, send it first." It's just that easy, or you could say send it second. What goes first routing protocols, router diagnostics. If that stuff goes down, we're all in trouble. What goes second, maybe voice over IP phone calls.
+
+[00:17:01] What goes third, maybe virtual desktop infrastructure. You based on the queuing strategy you have available to you, you're gonna have a different number of cues that you can use. And then you're gonna assign applications to those cues based on customer needs. Another good example. Again, this is gonna be totally dependent
+
+[00:17:20] on your organization, but how about medical instruments within a hospital? They say, "Hey, there's congestion right now. Somebody is downloading the latest dancing nurses viral video." We don't have time for dancing nurses right now. We have to make sure that the actual equipment that's monitoring life is up and running. That there is no congestion. A lot of this stuff is wireless.
+
+[00:17:41] We wanna make sure there's no contention, there's no congestion in the air that's gonna slow this down or that's gonna delay it. So again, by using things like traffic shaping and policing, we can make sure that non mission-critical applications aren't wasting lots of bandwidth. And then by using advanced cueing strategies, we can go in here and make sure
+
+[00:18:00] that our critical applications get serviced right away. Real-time applications are something we always wanna keep our eyes on because if there's delay, the user's gonna feel it. They're gonna know that there's delay, there's lag. And they're not gonna be real happy with the network. And last but not least, realize that each industry is unique, each customer's unique. They're all gonna have things that are important to them
+
+[00:18:20] or things that are challenging the environment. So, we can do a bit of discovery to figure out what are our top talkers. What's actually causing the challenges that the users not always great about telling you, but when we ask them what's critical, you might ask five users and get five different answers, but we can find critical applications pretty easily. The bandwidth wasting ones you sometimes have to hunt for.
+
+[00:18:42] So, we talked about classification in the last section. I said this is effectively our if condition. That if condition could be met by looking at things like access control lists, we could look at things like Mac addresses, we could look at particular flows. So communication between a particular source and destination, IP, and port.
+
+[00:19:02] We can also look at things like the traffic markings. So your layer two, layer three markings within the header that say this is an important packet. In any of those scenarios think of it as an incomplete sentence. We're basically talking to that switch, a router, and saying, "Hey router, if you see this..."
+
+[00:19:21] And then the... Is where we come in and we do something such as bandwidth limiting. I would say, if you see traffic sourced from port 80, source from 443 coming into the organization, I think that's an HTTP or HTTPS download. Maybe I rate limit this to 60 megabits per second.
+
+[00:19:41] I wanna make sure that our one gig internet link doesn't get totally saturated with HTTP downloads. Traffic shaping is us coming in and applying rule sets to interfaces to basically apply a QoS policy to the environment, to do exactly what it is that we're describing here.
+
+[00:20:00] Things like implementing queuing strategies, the cuing strategy comes back to a classification where we say, "Hey, router, if you see packets that look like this, direct them into..." And you could think of it as the VIP line or the best effort queue. What goes into the VIP line? I like using the term VIP because we could easily make it VOIP,
+
+[00:20:22] voice traffic real-time applications that get serviced first. What about everything else? Now, just throw it in the best effort queue, it'll sort itself out.

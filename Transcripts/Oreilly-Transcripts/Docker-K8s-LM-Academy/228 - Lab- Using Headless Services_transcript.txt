@@ -1,0 +1,73 @@
+[00:00:00] Hello and welcome back. Let's discuss headless services, why they are useful and how we can couple them or use them together with stateful sets to provide a stable DNS identity DNS entry for our stateful set pods. The definition of a service is very similar to any other service that we have created.
+
+[00:00:21] So let's just create a new file here, we'll call service dot YAML like so and then here we will define the API version that's going to be the one, the kind will be service metadata. And this is important that we keep in mind the name of the service here is it is important that we need to inform this also in our state for
+
+[00:00:41] file. So let's just choose this. We're gonna call this color service like so and then the specifications, we will redirect traffic on the port 80 target port will also be 80. And let's then define here our selector and the selector will just use the app label
+
+[00:01:01] with the color API value so far. This is pretty much the or actually this is a cluster IP service, right? So this is the definition for a cluster IP service to make this service headless. All we have to do is to add a cluster IP option here and set this to none. It's important that the IP is both in upper case
+
+[00:01:23] and the non here is not the equivalent of not setting the option. This is a special string in Cnis and it reveals or it signals the intention of creating a headless service. So we've been talking headless service, headless service. What is the difference? Well, what a headless service does the difference is that it
+
+[00:01:41] does not have a cluster IP assigned to it. So it does not provide any load balancing and we cannot talk to it via its cluster IP because it doesn't have one nor via just its name. So the whole point of a headless service is to actually just provide a stable DNS entry that we can use to talk to specific pods.
+
+[00:02:04] This as you might imagine is very useful in the context of stateful sets because our pods they are supposed to have state, right? So let's now just apply here our service like so and we will see that we have the color service created here. Let's then get our services and we will see that there is no cluster IP here
+
+[00:02:25] if we were to now describe the service color service like so we will say that there are no end points. So this is useful or it's useful for us to talk to specific pods primarily in the context of stateful sets.
+
+[00:02:40] You can think of a stateful set as maybe a database application and then our data is saved in a specific pod. And we want to talk directly to that pod. The default load balancing, that cluster IP and nodeport services provide it makes that virtually impossible because the load or the traffic is redirected to different pods every time we hit the service.
+
+[00:03:03] And that's where headless services come into play. They enable us to talk to specific pods via their pod names. So let's create our state for set here. And I do apologize for using the color API application. Once again, the color A P application is not the state for application,
+
+[00:03:21] but it will enable us to visualize this talking to specific pods behind the scenes a little bit later on. In the course, we will also implement a Mongodb database in Kernis and we will use stateful sets and handless services. We'll practice this once again and there we will see the difference or the behavior of talking to different pods whenever they have different data.
+
+[00:03:44] So let's just explore here the behavior rather than ensuring that we are working with a directly stateful application here. So the kind is going to be stateful set, we're going to call this the color stateful set like. So let's remove here, the error here and the selector match labels that's going to be color API like.
+
+[00:04:04] So let's also add the name here and the name here as well. And let's then change the image to use our LM Academy image or whatever username you're using here, call our API. And the version is 1.2 0.1 we can leave the volume amount
+
+[00:04:22] here with WWW or we can actually just change this to the data because once again, we don't really have any stateful data in our application. Let's just change this to temp data like so and here we have the metadata that's good. The specification access modes, read the right ones
+
+[00:04:40] and let's then set the storage class name like so and this will be the standard class name, the standard storage class. This is already as already mentioned coming by default with Minicube and it does allow dynamic provisioning of host path volume types. So let's see whether there is anything else we need to update.
+
+[00:05:02] Yes, there is the service name here as I mentioned before, the service name, it must match the service here. So if these names don't match, then this is not gonna work. So we just add the color service here as the service name and let's increase this replicas to three, right?
+
+[00:05:21] So this is not gonna make any difference for us. Now, I just wanna have three replicas here for us to experiment with. So let's scroll down a little bit and I believe that everything is looking good here. Let's save this. Let's now come back to the terminal. Let's clear the screen and let's run cube cut, apply color stateful set like so we can also watch the creation of the of the pods.
+
+[00:05:45] So let's see if the pods are already created. Now, we have just one here. Perfect container creating running. Then we see that the second one is created and now the third one will be created. Perfect. So we have our three pods here if we were to now describe our service. So let's describe our service. Once again,
+
+[00:06:04] we will see that we have three endpoints here. The pods were already registered with the service and we should be able to reach them by name. So now the name of the pods are color stateful set or SS here and then 01 and two, we don't have any pod that we can
+
+[00:06:21] ssh into let's or that we can exact into. Sorry for that. So let's just create a debug dot YAML pod here and the kind will be pod and then we can just use here, let's say debug like so or actually let's call this scroll. And then here we're gonna use our alpine cURL image, right? So let's just use here LM Academy
+
+[00:06:42] forward slash alpine dash chro version 1.0 0.0. And this just allows us to quickly run chros. Let's save this. Let's come back to the terminal. Let's then apply this new file here, the debug file and let's confirm that the pod is up and running.
+
+[00:07:00] That's perfect. So now we can exact into this curve pod and run the shell command. Now we get our terminal and let's clear here. Let's see if we can clear the screen. Perfect. So now for us to reach out to our pods in the stateful set, what we will use here if we are inside of the same name, space
+
+[00:07:22] is the pod name. So I'm just going to come back here. Let's take that's going to be color SS zero and then dot the name of the service, let's come here to the service. That's going to be color SVC like. So, so if we send a call request to this address here from within the same name space,
+
+[00:07:44] as you can see, we will talk directly to the pod. Caller SS zero. If we were to, then also send a request forward slash API, then we can confirm that this is also working as expected. If we were to send a call request now to a second pod, let's say to the dash two here,
+
+[00:08:03] then we will be redirected to this dash two pod, right? So as you can see here, we are always being redirected to the same pod. Let's try to send a request just to the service itself. And as you can see the moment we do this, we are redirected to the first pod.
+
+[00:08:22] That's great. Let's clear the screen and we can also use here. So let's run. The name will be color SS zero dot color SVC. And we can also use the fully qualified domain name with the default or dot default dot SVC dot cluster dot local.
+
+[00:08:43] That's a very long one. But this is what we would use if we wanted to talk to a specific pod from a specific state for set within another name space. It would just change the default here to the name space name and we would be able to talk to these spots.
+
+[00:09:00] And so this is what the headless service is actually doing for us. It's basically just enabling us to reach out to very specific pods that are backed up by a state for set once again, because we are talking about state for sets. This makes sense, right? So state for sets would create state for pods
+
+[00:09:20] and each pod has a persistent, has a stable identity in terms of storage as well. That means if the first pod gets deleted and recreated, then it will be assigned to the same volume claim to the same persistent volume claim and the same underlying persistent volume. That means having this stability to reach out to
+
+[00:09:41] the same pod is a very desirable characteristic. That's great. Hopefully the concept of headless services and what they enable us to do is clear. Now, I just want to make a small comment. I did run into a couple of bugs when experimenting in different computers
+
+[00:10:00] and at times, let me clear here the screen at times whenever I try to just reach out to the pod via the short name like this. So call SVC, it has not been always working for me. So sometimes this would not resolve to the actual underlying pod, but using the fully qualified name domain would.
+
+[00:10:23] So I don't know if this is a bug that is somehow present either in CLIS or in the core DNS service that is handling this DNS resolution behind the scenes or in minicube, I don't know where the source of the bug is, but I just want to inform you in case you come across this.
+
+[00:10:40] Now, another small thing um I do tend to create the service before the stateful set. And when I created things in different orders, orders, sometimes the service would not register the pods from the state full set correctly. Now, once again, these are all intermittent things, but I'm just mentioning that in case you run into this issue.
+
+[00:11:01] So if the pods are not identified or not picked up by the service, then try to delete the stateful set and the service and then recreate first the service and then the stateful set. If even after that things don't work, then just as always don't hesitate to use the Q and A section more than happy to try to find a solution together with you.
+
+[00:11:23] That's great. So that's it for this short distance question around headless services, let's come back to the terminal, let's clean up our cluster. So I'm gonna delete with force here and I'm just going to delete everything, right. So here this once again is a controlled environment. So there's no problem for us to delete.
+
+[00:11:41] And even so after we do that, if you do wish to delete the persistent volumes, then you would also have to do that manually so we can delete our persistent volume claims manually. Here, all the three claims will be deleted and then the persistent volumes should also be deleted behind the scenes since they are dynamically provisioned.
+
+[00:12:03] That's great. So now we are with a clean state. Once again, let's take a short break and I'll see you in the next lecture.

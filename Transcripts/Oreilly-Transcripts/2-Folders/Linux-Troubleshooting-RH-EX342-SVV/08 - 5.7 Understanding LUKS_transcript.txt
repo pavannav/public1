@@ -1,0 +1,57 @@
+[00:00:06] - Before you can start troubleshooting LUKS, you need to understand how it works. So, let me quickly give you an overview of what is happening when you are working with LUKS before I'm demonstrating how to do it.
+
+[00:00:20] So the starting point in LUKS is that you've got a hard disk. And on this hard disk, the very first step that you are going to make, you're going to use fdisk or gdisk if it's gpd hard disk. It doesn't really matter. And the result of your fdisk operation is that you will create a partition.
+
+[00:00:43] Now in step two you are going to do something nice with the partition. You are going to format the encryption layer Using cryptsetup luksFormat. Notice the use of the uppercase in the
+
+[00:01:02] LUKS commands, by the way. When you are using cryptsetup luksFormat then you are adding a layer into the partition. Lets say that red is the encryption layer. And this encryption layer,
+
+[00:01:21] well after the cryptsetup luksFormat, just exists. You cannot do anything with it yet. Cryptsetup luksOpen. And the result of cryptsetup luksOpen will bring you to the
+
+[00:01:42] environment of the device mapper. And in the device mapper, you've got your device that you just created. And on this device you can do whatever you want as if it where a new device. Let me use a different color to make it clear that at this point you are going to use device repo commands.
+
+[00:02:02] So command number four would be where you are going to create a file system. So mkfs /dev/mapper and lets just assume that the name is secret. We've created a file system
+
+[00:02:20] on the device mapper device. And the interesting part is that the file system is only visible from the device mapper device. Not from the partition. Now, once you have created the file system also on the device mapper level, you can use mount /dev/mapper/secret or whatever
+
+[00:02:43] the name of your device is and you mount it somewhere. And then users can start working with it and write data. Now once you shut down your system you disconnect your LUKS device, or in any other way you want to stop working. You are going to use a command that
+
+[00:03:01] closes the device nepal layer. So cryptsetup luksClose is what you are going to there. And you know what's actually going to happen when you use cryptsetup luksClose, you make device (mumbles) device disappear.
+
+[00:03:21] And you get back to the original situation where you just see your partition with an encryption layer. And anybody trying to access this will get nothing because this is encrypted. You need to open it and in order to open it, you need a password. That's how it works. So let me show you how to create LUKS devices. LUKS devices, as I've just mentioned,
+
+[00:03:41] starts on the device level. So I need a device. If we look at proc/partitions now you can see that we have sda that has some partitions. We have a sdb and sdc that I've not used at all. So let me do fdisk /dev/sdb.
+
+[00:04:00] And create a primary partition with a size of one gigabit. There we go. Now that I have my partition I can verify using lsblk. We can see that sdb1 exists. There's nothing on it, just exists.
+
+[00:04:20] So I'm going to use cryptsetup. Cryptsetup luksFormat. In all of these LUKS commands, pay attention to the uppercase. Its LUKS in lowercase and then what you want to do and the what you want to do part is always in uppercase. So I'm specifying dev/sdb1.
+
+[00:04:40] This will override data on dev/sdb1 irrevocably. You know, this goes wrong with many people. Because they type yes. That's not what you should type. You should type YES, in uppercase. Otherwise it won't do it. Next it will prompt you for a passphrase. And if you think that you can just type anything,
+
+[00:05:01] it doesn't work. It needs to be secure. So I need to try it again and enter a securer passphrase. And now it has created the cryptography layer on top of the device. Now that the cryptography layer exists,
+
+[00:05:21] we can use cryptsetup luksOpen on the device. So dev/sdb1 and next we are using the LUKS name, secret, that's a nice name. So the secret is the device mapper device name that will be created.
+
+[00:05:41] After entering the passphrase, of course, because that is what LUKS is all about. Now if we go to the dev/mapper/ directory, at this point, we can see that there is a new device with the name secret. Which has been created as a device mapper device with a name dm-2.
+
+[00:06:01] Now this is a device that we are going to work with. So mkfs.ext4 /dev/mapper/secret will put in the ext4 file system on top of it. And if you want to use it, well then we are going to put it in fstab and also in the crypttab file
+
+[00:06:20] to make sure that it will be mounted automatically. Obviously we can mount it manually but mounting manually doesn't make sense because it doesn't come back after reboot. So if you want to use LUKS devices, then typically you want to mount it persistently. So let me first create it directly with the name secret.
+
+[00:06:40] Which is going to be the mount point. And now I'm going to edit my etc/fstab. And in etc/fstab I'm making sure that it will be mounted. So what are we going to mount? Dev/mapper/secret. Where are we going to mount it? On secret, the file system is ext4 and mount options are defaults and 00
+
+[00:07:03] and that will do it. But this is not enough. If you want to mount a LUKS device you also need to put it in the crypttab. So I'm editing etc/crypttab. And in etc/crypttab we need to put something as well.
+
+[00:07:20] And the something is not completely random. The very first thing that you are going to enter, in here, is the LUKS name. And the LUKS name is going to be secret. That's the device mapper name that we have just seen. And next you specify the name of the underlining device. And then you can either specify the path to a keyfile or none.
+
+[00:07:41] I will talk about keyfiles later. I will first do it using none. Which means that we are not referring to anything that contains a passphrase or whatever. And that has a very specific result. Lets reboot so we can figure out what is happening.
+
+[00:08:03] If you look carefully, you can see right here, please enter passphrase for disk Vmware_Virtual_s (secret) on /secret. So what is this? This is crypttab. Crypttab wants you to open then disk and in order to open the disk you need to enter the passphrase. This is not very convenient because
+
+[00:08:21] you need to do it in the middle of all the system d output. You can see the asterisks, right here, when I start typing. If you don't enter the passphrase, it will not continue booting. So this is very inconvenient. So if you want to avoid this,
+
+[00:08:41] either you need to make sure that you don't put in etc/fstab, in crypttab, or you need to do something to ultimate the entering of the passphrase. We'll talk about that later. But first I want to verify that the LUKS device has been successfully been mounted.
+
+[00:09:00] (typing) so back in the root prompt, I'm typing mount and here we can see the LUKS device has successfully been mounted. Now there's more you need to know about working with LUKS. Lets go to the slides, for awhile,
+
+[00:09:21] so that I can explain that.

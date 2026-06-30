@@ -1,0 +1,55 @@
+[00:00:07] - Let's try to understand partitions. So, to understand the partition, you need to understand a little bit about the layout of a hard disk. Let's say, this is a hard disk.
+
+[00:00:20] And in a hard disk, you may use of it-- you are going to create partitions. These partitions are created in the Master Boot Records. For simplicity's sake, I'm using the BIOS Master Boot Record model here, in GPT partitioning there's no fundamental difference.
+
+[00:00:41] Notice that the Master Boot Record is 512 bytes in size, that's all. Now, from the Master Boot Record, you are going to address partitions. Let's say that this hard disk is using three different partitions. Let's say that the first partition starts at sector 1,024 then it goes up to, let's say,
+
+[00:01:08] ten thousand, the second one goes up to 20 thousand, and the third one goes up to one million. These are just random numbers.
+
+[00:01:20] We don't care about these numbers too much. It's the idea that counts. Now, within a partition, you are going to create file systems, so, let's say, that the red information is the file system. So, this can be an XFS file system.
+
+[00:01:42] This can be an ext4 file system. And this can be another file system, V-FAT, if you want to. Now, what exactly is a partition? Well, a partition is a label that exists in the Master Boot Record.
+
+[00:02:01] In the Master Boot Record, we are going to define partition number one, partition number two, partition number three and partition number one starts here up to there, partition number two starts here up to there, partition number three starts here up to there. Now, what is going to happen if you delete
+
+[00:02:21] a partition using F disk, the only thing that's going to happen is that you remove the entry from the Master Boot Record. Nothing physically on disk is going to happen. You are just removing the indicators of where the partition starts and where the partitions ends. And that is exactly why recovering
+
+[00:02:40] of partitions is relatively easy. If you delete a partition, the file system was not deleted as well, the file system just stays on disk and if you really want to delete the file system, well, you would need utilities like dd if equals def0, of equals your file system. That's a different story but if you have just lost a partition because of an error
+
+[00:03:03] on the hard drive, recovering of the partitions is relatively easy. There is one approach that we are going to use to recover partitions and that is the approach that you have lost all the information. What we are going to do in that case, well, you always know that
+
+[00:03:21] the first partition starts at 1,024. So, we are going to create one partition in this case. A partition that goes from 1,024 up to one million. Which means all of this disk space. After creating the partition, where you mount it
+
+[00:03:41] in the beginning of the partition, is we'll find the file system, so, it will mount successfully. And next, if you analyze the size of the file system, you can calculate your original size of the partition. So, the next step will be that we are going to delete this partition again and after analyzing the file system, we know that the original size
+
+[00:04:00] was from 1,024 up to ten thousand. We recreate that and next we can recreate the next partition on the sector right after that. Let me show you how this works from the command climb. Before showing you a demo about partition storage, let me summarize what is really important.
+
+[00:04:21] So, what's really important is that you know MBR partitions are stored in byte 446 up to 510 of the Master Boot Record. GPT partitions are stored in the on-disk metadata area, which is beyond the MBR, so, it's more difficult to find but there's more space for storing them.
+
+[00:04:40] Also, backable to GPT partition table is stored at the end of the device and if a GPT partition gets damaged, it is easily recovered. Let me show you. So, to analyze the partition tables, you know, of course, utilities F disk dash l or G disk dash l. But they don't tell you anything
+
+[00:05:00] about the physical location, xxd does. So, if I'm using xxd -l 512 on dev sda, with a little bit of fantasy, you can recognize the partition table which is right here. It starts at byte 446, it ends at byte 510.
+
+[00:05:20] The last two bytes is the magic code. Which is an identifier of this very special first sector on disk. In case you wonder how I recognize the partition table, well, you can see it right here. The 83 and the 8e which are the partition types. Which are just written to the Master Boot Record.
+
+[00:05:42] So, one partition is big like this. This is the first partition, then, we get the second partition and the third and fourth partitions are still available. If you repeat this on the sdc device, which is a GPT device, then we can see
+
+[00:06:01] that not much is happening there. Something is written to the end of the boot sector but this doesn't look like a partition table. Let me show you, gdisk -l on dev sdc is showing that we have three different partitions sitting in this partition table.
+
+[00:06:20] So, the partition table on GPT is not in the Master Boot Record. If you want to figure out where it is, well, you need to dive a little bit deeper and in fact, it's not so easy to find it. So, if you use the xxd command again, then you can see that here something is starting
+
+[00:06:41] U EFI partition but it's not easy to figure out the partition ideas, then here we can see some more information, Linux file system, and Linux file system, and Linux file system, so actually, these are the actual partitions
+
+[00:07:00] that sits somewhere in the 2nd kilobyte of the metadata area of your GPT partition. In GPT, it's not so important that you know exactly where the partitions are because if something is wrong, then, it's easy to recover them. Let me show you, I'm using dd if equals dev zero
+
+[00:07:21] of equals dev sdc, bs equals 1024 and count equals 4. So, the first four kilobytes are going to be wiped. Now, let's use G disk on dev sdc again.
+
+[00:07:41] And what's happening, well, G disk is scanning and it's telling us that something is wrong. Caution, invalid main GPT header, but valid backup, regenerating main header from back up, so, what else is it telling us? Let's read, after loading partitions,
+
+[00:08:00] the CRC doesn't check out, warning, main partition CRC mismatch, so, that is a result of the same problem. So, found invalid MBR and corrupt GPT, what do you want to do? Using GPT may permit recovering of GPT data, we are going to use
+
+[00:08:20] option number one, use current GPT. Now, if use P, we can already see that the partition table has successfully been recovered and w to write and it is warning us, write GPT data will overwrite existing partitions, yes we do want to proceed
+
+[00:08:40] because that's exactly what we want. And the operation has now completed successfully. So, here you have seen because of the back up that is created of the GPT partition table, that it is very easy to recover the GPT partition table. In MBR partition tables, it's a little bit more different
+
+[00:09:00] but I will show you in the upcoming lab.

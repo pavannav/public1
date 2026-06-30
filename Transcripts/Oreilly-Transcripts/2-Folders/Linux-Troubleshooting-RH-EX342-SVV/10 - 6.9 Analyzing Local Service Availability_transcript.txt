@@ -1,0 +1,71 @@
+[00:00:06] - The next thing we want to talk about is analyzing a local service availability. Let me give you a quick demo of the utilities involved. So, the first utility that I want to talk about, in fact, it's an old utility and you
+
+[00:00:20] shouldn't use it anymore. But it's a convenient utility and it's showing a lot- netstat -tulpen. T for tcp, u for udp, l for listening, p for protocol, e for enhanced, n for names. And in particular, I like the fact that I can make a word out of it. Tulpen, that's Dutch for tulips. That's my national flower.
+
+[00:00:41] So, let's back the output through less. And here we can see everything that is currently listening. So we can see it sorted by tcp, by udp. You can see the local address that it binds to. Which in this case is 0.0.0.0 . Which means all interfaces, 111.
+
+[00:01:01] The foreign address, in case anybody has been in touch with this port, the state that it's in. The Inodge, which is useful as well. So it brings you back to the file system and the program name that is listening on this specific board. But again, next set is kind of a deprecated command.
+
+[00:01:21] You should use ss. Ss which stands for short cut statistics. And as I like to combine the options into a word, let's do ss -tuna. So what do we see? Well basically, the same. Ports that are listening and the addresses on which they are listening.
+
+[00:01:40] The way that it's written down is a little bit different. We can see that instead of 0.0.0.0, there's a star. And also, there is a ipv6 addresses. There were in netstat output as well but I just want you to be aware of this. Ss does have a couple of options, as well,
+
+[00:02:00] to display as much information as you would like. But I like the output of ss -tuna because it's giving you compact output, showing you exactly what you need to know in most cases. Then there is lsof, as well. Lsof for open files. Which can be convenient.
+
+[00:02:21] For example, lsof -i :25 is showing you what is listening currently on port 25. Lsof -i is for ip and :25 is the convention to specify that a specific port should be looked at.
+
+[00:02:41] So that's about all I want to show you about monitoring activity on local ports. Lets do a quick lab with that. So in this lab, you are trying to start the unbound service on a CentOS 7.4 server but it fails. Fix it! Okay, in order to do this lab
+
+[00:03:00] lets do a quick setup of unbound. Yum install unbound. Unbound is a cache only dns name server. And in order to configure it there is the unbound configuration file, unbound.conf and we need to configure
+
+[00:03:20] a couple of parameters. Lets scroll down so that we can specify the interfaces. This is one of the important lines. Interface 0.0.0.0. It will listen on all interfaces.
+
+[00:03:40] In the next part you want to configure in unbound is some access control. So lets open this one for everybody and say access-control everybody allow.
+
+[00:04:02] Also, I want to open domain-insecure. Example.com because that's my local domain so that it can cache information for that domain as well. And the last part we want to include
+
+[00:04:21] is the forward-zone. The forward-zone is where you want to be looking at. So I want this unbound to forward for everything. So name is going to be set to '.' Which means everything in dns.
+
+[00:04:40] And forward-addr is going to be the 8.8.8.8 name server. And that should do it. So let me save this configuration. And let me use systemctl start unbound.
+
+[00:05:01] And next a sytemctl status unbound. And there we can see, oh no! It failed! So lets talk about methodology again. Because here we are at the point that we should analyze.
+
+[00:05:21] We should define the issue. Well define the issue, that's pretty obvious if you look at the output of system.ctl status unbound. We can see that there's an error: bind: address already in use. So next we need to gather information. In order to gather information,
+
+[00:05:40] if you get a bind address already in use, then you should know which address dns typically is using. Not everybody knows that it is port 53. If you don't then you can always look it up in the etc/services file.
+
+[00:06:00] So etc/services is giving you a list of all services and their default ports as they have been assigned. And here we can see 53 is domain. And it can be udp or tcp. Or just look in the unbound configuration file you will learn it from there as well.
+
+[00:06:21] So we have an address already in use. So we need to gather information. How do we gather information? Well lets try ss -tuna because ss -tuna is showing us that there is somebody on port 53. Lets use nestat -tulpen.
+
+[00:06:44] Which is the same commands but in this case is giving us the name of the process that's listening on port 53 which is dnsmasq. Or, lets use lsof -i :53
+
+[00:07:00] which is showing us that the command dnsmasq with PID 1414 is listening on this specific port. So, I think we've gathered sufficient information and we can form a hypothesis. Now, hypothesis we can not start unbound
+
+[00:07:20] because dnsmasq is listening here. Now the next question, of course, is where does dnsmasq come from? Well in the days of systemd it's a good bet to use systemctl status on the name of the servers. Which is dnsmasq. And there we can see and that's interesting,
+
+[00:07:40] dnsmasq is loaded but disabled and disabled. So dnsmasq does not come from the dnsmasq servers. Hmm, that's complicated. Maybe there's another way to figure it out. Lets use ps fax and in the output of ps fax which will give you
+
+[00:08:01] a forest of processes. Lets have a look for dnsmasq. I like piping it through less. Because in less you can easily move up or down and there we can see that process 1414 is not really
+
+[00:08:27] bound to any specific barance. And we can see that dnsmasq is using a configuration file and well, the configuration file is telling us something. The configuration file is var/lib/libvirt/ .
+
+[00:08:42] Libvirt - that's the virtualization stack. And here we can see another libvirt. So apparently libvirt, the virtualization stack is responsible for starting this dnsmasq. Can we get some more information about it? Well if we go back to netstat -tulpen then
+
+[00:09:03] you can see that dnsmasq is bound to IP address 192.168.122.1 . Which is the lipvirt default eternal IP address for your virtualization stack. This is interesting because it means that if we would have tried to
+
+[00:09:21] start an unbound on a specific IP address, it might have worked. But we have configured unbound to listen on 0.0.0.0 . Which includes 192.168.122.1 as well. And that's why it did not work. So, the hypothesis, it can be
+
+[00:09:41] redefined as we can not start unbound because dnsmasq, which is apart of lipvirt, is currently listening on port 53. So now we can test if this hypotheses is true. Lets use a systemctl stop libvirtd.
+
+[00:10:04] Now we can do the netstat -tulpen again. And apparently the stopping of libvirtd has not stopped the dnsmasq process. So lets just kill it.
+
+[00:10:22] Verified it's gone and now we can see that its gone. And systemctl disable libvirtd. Obviously at this point we should be able to start unbound. Systemctl start unbound and
+
+[00:10:42] verify that it works. And as you can see it's running. But I don't consider this a solution yet because we have not verified that our reboot, without libvirtd being enabled, dnsmasq is not coming back.
+
+[00:11:00] So if we want to verify and really test that this solution is going to work, we need to reboot. Alright, now that we are back
+
+[00:11:25] lets use lsof -i :53 to figure out if anybody is listening in port 53. That's not the case. So now we can use systemctl start unbound.
+
+[00:11:42] And verify that it is working. And now that we have fixed it we can use systemctl enable unbound. And there you go, problem fixed.

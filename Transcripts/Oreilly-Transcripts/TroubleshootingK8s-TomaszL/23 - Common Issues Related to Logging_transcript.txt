@@ -1,0 +1,29 @@
+[00:00:00] In this video, we'll look at common issues with Kubernetes logging. Resource issues are due to incorrect sizing or capacity issues in the cluster. A most common consequence of incorrect sizing is logging pods getting home killed due to breach of configured resource limits. So, disk wastes issues can result in missing logs, or worst case node instability. Auth issues can result in
+
+[00:00:22] communication failure between logging agent and the back end, or accessing of the logs and so on. Configuration errors predominantly can result in functionality issues like missing sending of critical system logs to the centralized backend. The general flow of resolving issues is the same. So, look at the pod details, see if the basic pod
+
+[00:00:41] logs gives any hint, and gradually dig deeper to root cause the issues. So, let me search for errors or want messages in the log. Now, if you see the period of logs is between May 15th till July 14th. However, I see only logs till July 8th.
+
+[00:01:00] Now, the remaining logs from July 9th till July 14th are not available, so in other words there are missing log entries. So let's root cause it. I will go back to the CLI. So, this is my cluster having two nodes, VM 1 and VM 2 and these
+
+[00:01:20] are my logging related pods. I'm using the EF case tag, which is Elasticsearch, Fluent, and Kibana. So, let me use the wide output option with kubectl to see the nodes on which pods are running. So, as you can see in the output there are two Fluent agent pods, one running in no DM 1 and another
+
+[00:01:40] running on node VM 2. So recall the node agent pattern. So, the node agent sends the log files to the centralized back in for further processing, and you have the node agent that is running on all the nodes in the cluster. So, now that we are missing log one of the first things to investigate is whether the Fluent agent is sending logs or not. So, let's look at the Fluent
+
+[00:02:01] pod logs which are available by default in Kubernetes. So, let me take a look at the last few entries of the log. Now, as you can see there are errors logged in the Fluent pod. So, the forbidden / 12 / index right. So, this error usually occurs
+
+[00:02:20] when disk space issues are preventing new writes by Elasticsearch. So, Elasticsearch makes the indexes read only to avoid data corruption, and consequently no new logs are available. So, fixing this issue requires ensuring free spaces available in the node running the Elasticsearch. Subsequently to ensuring availability of free space we need to
+
+[00:02:41] change the indexes back to right because Elasticsearch has converted the indexes to read-only. So, what I did is I went ahead and created some free space on the node running the Elasticsearch pod. So, I will go to the dev tools and apply
+
+[00:03:00] settings to the light cluster. So, this is the way to update the live configuration of the Elasticsearch cluster. Now, this requires knowledge of Elasticsearch. So, Elasticsearch documentation contains all the parameters and associated details which should help you. So, the get called gives me all the available settings. So, as you can see this gives all the
+
+[00:03:21] settings that are available for the current cluster. So, I will use the put call and set the indexes to write again. So, this is the way to apply the settings, I need to mention the exact variable. Ok, it has successfully executed the setting.
+
+[00:03:42] So, I run the search again, still I don't see the latest logs. Still I see log still July 8th so I just narrowed down the window. So, I'm seeing between July 7th and July 14th, just to narrow down the window. And as you can see, I still see log still
+
+[00:04:02] July 8th, so I don't see the logs beyond that. So, let me see the pod logs and the pod log still shows the forbidden error. So, what really is happening is after you make the settings it takes some time for the setting to get affected, so we need to wait for some
+
+[00:04:22] time before we start seeing the log. So, as you can see now the logs beyond July 8 have started appearing all right. So, you see logs for July 14th and so on. So, let's look at the pod logs as well and as you can see their pod logs doesn't
+
+[00:04:40] throw the forbidden error anymore. So, the index has been converted to write, the logs have started coming, and you see the latest logs in the Elasticsearch. So, this shows how capacity issues can lead to missing critical logs from the infrastructure. In the next video, we'll take a look at resource allocation and configuration aspects of logging back-end.

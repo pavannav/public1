@@ -1,0 +1,73 @@
+[00:00:07] Hello and welcome to the lesson on scaling platforms. This is where platform generating gets really hard. Everything you have built so far was about creating value and you have done that. Now the question is how do you deliver that value at 10x100x1000x scale?
+
+[00:00:24] And that is the focus of this lesson. We'll start by understanding the scaling complexity across performance and replication access. We looked at this a little bit in the previous lesson, so you might have a general idea of what it is, but we'll look at a little bit more detail. Then we'll talk about scaling control plane roles with load balancing
+
+[00:00:42] and deployment consistency. After that we are actually going to get into the idea of dynamic release pipelines that sort of adapt to your cluster inventory. This is something that is very important because static pipelines break at scale, so you can't have that as your primary ways of having your release pipelines.
+
+[00:01:03] After that we're going to be talking about adopting distributed configuration management for release velocity because as we know, just like the static pipelines, the centralized push models are also a huge bottleneck for you. Then we'll introduce this concept of event driven platform architectures
+
+[00:01:20] for decoupling and scalability. We know that as much decoupling that we can do is something that's going to allow more of that scalability. After that we are actually going to be introducing. We talked about this a little bit, but introducing in a little bit more detail what these operators are all about. This operators itself is a huge lesson in itself. We can talk a lot
+
+[00:01:40] about it. So that's outside the scope of what this cloud native platform engineering is. But we can't talk about cloud native platform engineering without talking about operators. So this is for sort of self service stateful workload provisioning. So examples of it is database and queues that require like special handling. And we'll talk about some very specific examples of that.
+
+[00:02:04] Then we'll conclude by doing an event driven pipeline coordination demo and where there'll be some automatic issue created so that you can really see that simulated through the whole cycle. Let's start with the fundamental challenge of scaling control planes. So success is a big trap, right? Because you have been very successful.
+
+[00:02:22] Now everybody expects you to do things very well as you move forward. Now when you talk about scaling, what got you here isn't going to get you there, right? You need to be thinking about things differently. But if you had not thought about how to scale it to that next hundred, you're probably not going to be able to just change everything.
+
+[00:02:40] And that point Right. You have to really go back to your starting point and decide it differently. So the idea would be the processes that worked with that manual oversight. Because when you have small set of services, you have some level of manual oversight. Those things won't work with, you know, higher number of services. So you have the process that managed maybe three clusters, and that's
+
+[00:03:03] not going to work for 30. Right. There'll be things that would have required some level of manual coordination, some ad hoc deployments, perhaps some tribal knowledge, and all of those things fail at scale. So scaling isn't always about doing more of the same. Right. This is that key insight that people tend to forget.
+
+[00:03:22] You can't just add more people or more servers and expect things to work right. So you need to fundamentally change the way you operate. This is why I think a lot of very successful early platform efforts sort of hit the wall after that initial success. Right. They build something that works, but they built it in a way that can't scale. So they face the choice like, do you have to rebuild everything based
+
+[00:03:42] on the learning that I've had so far or watch my continued progression into the platform become bottleneck. And in reality, what happens is more of that latter, unfortunately, because once you have actually invested in building your platform for 10 services, nobody is going to. Your leadership isn't going to agree with that. None of your consumers are going to agree with it, that you
+
+[00:04:02] have to go back and do it from the scratch. When you say that, they'd say, oh, you must be over engineering everything and you don't want to create. You want trying to create a perfect system that's going to work. So the onus is on you as the platform leadership, the platform engineer, the platform product manager to get this right.
+
+[00:04:21] So let's talk about some of the scaling complexity challenges. Right? So scaling requires that intentional architectural shifts across two dimensions. Like we spoke about in the previous lesson, you need to understand both and sort of plan for both. So we talked about these two axes earlier, the performance axis. This is where you have your node pool customization, your regional
+
+[00:04:40] customs, resource optimization. And then you also have your replication axis. This is about creating more of the copies of that isolation and autonomy. So then you have different lines of business needing separate environments. Contractual requirements may mandate perhaps a dedicated infrastructure.
+
+[00:05:00] You might have some contract, your organization might have some contract with a customer. So you might also have your compliance boundaries that say it has certain things have to work within this kind of physical separation. So this is a dimension that actually overlooked a lot of the times, unless and until it becomes urgent, and sooner or later guarantee you that it will become urgent.
+
+[00:05:23] So having brittle complex architecture at scale will lead to some of those slow operational maintenance. So when every change requires careful coordination across dozens of clusters, your platform becomes a drag as opposed to a supporting activity. Right. So it's not going to improve the velocity, it's actually going to decelerate everything.
+
+[00:05:44] So early decisions compound. Like I've been mentioning for the past few minutes, deciding for scale from start is the solution is the way to go. The choice you make when you have three clusters determine whether you can actually get to 30, 300.
+
+[00:06:00] Right. Retrofitting scale is really, really hard. Don't try it, because it's been proven over the years that that is not the way to do it. So we talked about these two dimensions of scaling. Let's revisit that a little bit. Right. So scaling requires those architectural shifts across multiple dimensions. And this map is something that's the first step that you should have
+
+[00:06:20] in navigating the complexity. So if you look at it from the point of view of performance and replication, replication sort of create more copies for isolation and tendency, multi tenancy and all that. Whereas in performance, what you will have is that making those individual systems bigger and more powerful. So Y axis is all about replication.
+
+[00:06:41] It sort of creates more copies for isolation and tendency. And moving up means that more separate environments, more clusters, more isolation boundaries. Whereas X axis is all about the performance. So you're making your individual systems bigger and more powerful. And moving right there on the X axis means that you have more capacity and
+
+[00:07:00] you have more resources, more per cluster, all those things that would have on the performance side of things. So understanding this map is the first step in navigating that complexity. When someone says that, hey, we need to scale, your first question should be which dimension? Right? So if you are trying to plan for it, maybe you should plan for both,
+
+[00:07:20] depending on where the business is, where the business is going to go. But at the same time, as you're starting to scale, you need to first understand which dimension are you going to do. And in some cases it might be both. Right? For larger enterprises, it's guaranteed to be both. Both performance and replication, both X axis and Y axis. So different scaling requires different solutions. So scaling for performance might meet, like adding more node pools. So scaling for
+
+[00:07:42] replication might mean like spinning up new clusters, Right. So these architectures are fundamentally different. So let's talk about this idea of multi cluster control plane. So when you have multiple clusters serving the same role, you need additional Infrastructure, right? Just think about it for a second,
+
+[00:08:02] right? So you have multiple clusters trying to serve the same role. What you really need is that additional infrastructure. So what are these layers that we are talking about? First one is the load balancing, right? So essentially the load balancing layer is you need to go do some geo routing to direct users to the nearest cluster. So if you are having somebody using it from Asia or somebody
+
+[00:08:22] using from Europe or North America, you need to have the right kind of georouting there and you need the failover to handle that cluster outages. So this is that whole new layer of infrastructure that didn't exist when you had one cluster. So this is why even in earlier lessons, one of the things I've been
+
+[00:08:41] talking about is like try and build for the future. The other one is this deployment consistency. What that means is that all clusters within a role must have identical configurations. For example, US east has version 2.3 and US west has version let's say 2.2. For the sake of argument, you have a problem there because your
+
+[00:09:02] coordinated deployments ensure that the same version gets everywhere. And that is very critical. Next one is this idea of consistent policy enforcement. Your security policies, your network policies, resource quotas, all must be sort of synchronized across the board, right? If you have a drift between the clusters, it can create some of the
+
+[00:09:20] security gaps that you see. And then debugging becomes so difficult to do and then comes to my pet peeve across the board, right? I mean that unified observability, you need to see all the clusters in a single pane of glass. When an incident happens, you can't just say that, hey, I'm going to go log in to each cluster and find what went wrong,
+
+[00:09:40] where, and that is not a way to do it. The isolation requirements is another thing to think about where some clients or contracts may require independent control planes entirely. And that's okay, right? A healthcare customer might need their own cluster with no shared infrastructure. And this is replication at the extreme. But you know, those things happen.
+
+[00:10:01] Each pattern has some level of operational overhead, something that you should acknowledge and the cost implications, right? So the right choice eventually would depend on the specific requirements. For example, I gave this idea of healthcare clients wanting that isolated cluster. I think there are cases in which you might have to think about that and you should plan for it as you move ahead.
+
+[00:10:22] So let's talk about the topology of scale, right? When replicating, you must choose some level of isolation strategy. So this is a business decision, as much of a technical decision, right? Because you can't Technically say, hey, this is how I'm going to do it. Now you look at it from a business point of view, is this
+
+[00:10:40] really worth the cost? Then the kind of patterns that you should be looking at here are around like, you know, if you're having shared clusters for dev and test, maybe this is there are low risk workloads that can share that infrastructure. Right? I mean that might be a possibility. And the cost savings would be better if you were to go and look at it
+
+[00:11:00] from the point of view of consolidated clusters. So most organization typically start there. Then you have like you need to have dedicated clusters for production. That is non negotiable. Right. So lines of business have to be separate and there should be basic compliance requirements. So production workload should get their own clusters.
+
+[00:11:20] Then think about the fully isolated clusters for regulated industries. If you are in a regulated industry, think about those contractual requirements from enterprise customers. So you can have this air gap environment for government or defense. You can have maybe a complete separation in that case for with no shared components. And that is fine too. Right. Each pattern has a different operational overhead here.
+
+[00:11:43] So not just operational overhead. Right. It might also be a cost overhead, might be a compliance overhead. So moving from that shared to more of that dedicated to isolated. So with shared to dedicated to isolated ways of doing it requires more of that security and experience. So it's a question of you trying to
+
+[00:12:00] match that isolation level with the actual requirements so that you're not over engineering something or under engineering. Both are problems when you have that. So these are the three typical topologies that you should be thinking about as you're scaling.

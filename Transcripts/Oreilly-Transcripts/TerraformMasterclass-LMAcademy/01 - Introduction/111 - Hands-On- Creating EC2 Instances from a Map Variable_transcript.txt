@@ -1,0 +1,67 @@
+[00:00:00] Hello and welcome back. Let's now change this year, we left it as an invalid value at the end of the previous lecture, let's change to a valid one. And now let's run our dataform plan and actually let's run the apply directly. Let's have a look at whether everything goes through. That's perfect. We're gonna
+
+[00:00:20] ips and wait for the instance creation to complete what I want to show you in this video is a particular behavior of lists and why this can be quite tricky whenever we are creating multiple resources, we will then use that as a motivation to explore using maps instead of lists.
+
+[00:00:40] Perfect. All our resources were created. And now what I would like us to try here is to just flip the order within this list. We're gonna take the engine X and we're gonna put it here in the first place and the Ubuntu image will be in the second or the index zero here for the next and index one for
+
+[00:01:01] two. And the moment we do that then not next. But the moment we do that, let's run a data form apply once again and have a look at the plan. And as you can see here, just flipping the order will actually lead or cause data form to destroy our previous resources and to add two new resources,
+
+[00:01:22] our previous instances will be deleted and our new ones will be created. You can see here that dataform is actually thinking that we are changing the AMI ID. While in reality, here we are just flipping the order, they are still the same instances. And we would like to, we, we wouldn't like to really recreate them.
+
+[00:01:44] There are ways to go around that. Later on, we're gonna explore the move block where we can inform Terraform that we did this change here. We can explicitly tell terraform. Hey, please do not recreate them, just update your state to track the new indexes correctly.
+
+[00:02:01] We can do that, but this can get quite cumbersome whenever we have multiple lists and whenever we need to change orders that we are not very sure like which index it is maybe we are also generating this list from somewhere and this can become very tricky to maintain effectively.
+
+[00:02:21] So while there are ways for us to inform Terraform about this change, there is a more robust way that we can improve that. And it is by using maps. So let's come here to our variables. We're going to copy the config list this first part here, we're gonna paste it here and then we're gonna close the curly brackets and then we'll say config
+
+[00:02:41] map like so and now here instead of a list, we're just going to change this to a map. So now we have a map object here and let's come to our, to our tele dot TS file here. And let's add config map. And the only difference is that now we are not using a list, we are using a map.
+
+[00:03:01] That means we need to provide a key for each of these instances. This can be any arbitrary key. So this could be like, let's say Ubuntu underscore one. And then this key is going to be equal to a value. And this value here, I'm just going to copy the configuration of our Ubuntu image.
+
+[00:03:20] And now we can also have the engine X one here. The next one, let's add a white line engine X one. And we will say here we will copy the same configuration. So let's just change from Ubuntu to Nginx. So now we have two keys here. We have
+
+[00:03:40] an Ubuntu key and we have an GPS. Let's remove here from the top. Let's lead. Let's let's end or leave this as an empty list here. And we're gonna now work only with the map. Let's also understand the differences. The first thing that I would like to highlight is that you can see here that with the list,
+
+[00:04:01] we are actually using the indexes to identify the instances. Now, we would like to create instances based on this config map here. So we need to come back to our code and we will copy the resource here that we are creating from the list and we will paste it here. And now we're gonna say from map.
+
+[00:04:22] And if you remember from a couple of lectures ago, the one use case for the four each here is actually maps, right? So we can use for each to iterate over maps. And now here we can directly pass our bar to instance configmap.
+
+[00:04:40] Now when, whenever we do that here, whenever we use the for each with a, with a map, we are gonna get two available pieces of information here within our resource block. The first one and I'm just adding this for reference, the first one is called each dot key. And this will
+
+[00:05:00] this represents or this holds the key of the map, right. So this here we can think in terms of this, each variable, it's going to contain each of the key value pairs within our map. So this map is a map of object, it has two key value pairs. The first one is
+
+[00:05:22] Ubuntu one, the second one is next one. So for each of the iterations, we will have each key. This is gonna refer to Ubuntu one whenever we are working with this first key value pair, and then it will refer to the next one whenever we are working with this second value pair. So once again, back to our
+
+[00:05:41] while the each key is going to hold to one, the each value is going to hold this object here, which means that we can use each instance type to retrieve this value here. So let's come back to our compute and maybe I can update the comment here a little bit.
+
+[00:06:01] Let me just make this looking a little bit better. This holds the key of each key value pair in the map. And then this holds the value of each key value pair in the map, right? So now we have each dot key that we can use in each dot value.
+
+[00:06:21] So for each we're gonna pass in, we're gonna pass this config map. The AMI here that we would like to use now is local dot ads. And now instead of directly using the V 0.2 instance config map here, we can actually use our each dot value
+
+[00:06:40] each dot value dot ami, right? So think here that we have each dot value refers to these two entries. And then we're using the dot Am we can also update our instance type to use directly our each dot value dot instance type.
+
+[00:07:00] We now unfortunately do not have the count dot index anymore. So let's remove this and let's pin this all to the Subnet main zero. We can also provide the within our variables dot TF dot TF. Here, we can also provide, let's say a Subnet index and this would actually be a number
+
+[00:07:21] and we can go even a little bit better here and say that this is optional. So this is optional. It's gonna be a number. And if no number is passed, we are, we are just gonna get a zero as default. So if we wanted to deploy the engine X one in a Subnet index equals one here, then we could do that. OK?
+
+[00:07:42] Let's leave it as it is just one example here. So the first one, the Ubuntu one has no Subnet index. The next one has a Subnet index of one. And if you are asking yourself why am I using Subnet indexes? This is not really very good to work with and I am completely in agreement with you.
+
+[00:08:01] This is definitely not the best way of doing that. However, I'm just thinking in terms of using or migrating this with the least effort for now in the next lectures, we will update that to a more robust approach. So now we can use here this as well. Each dot value dot Subnet
+
+[00:08:20] index, we also don't have the counter dot index anymore, which means here that we would have to use the each dot key, right? So let's use now each key here because this holds our to one and the next one entries or the strings here. That's wonderful. We have created to one and
+
+[00:08:41] next one, we have updated our resource here or we have created a new resource from the map and we have also removed our list, right? So our list now is empty. We have also instance counts zero here. So we are not deploying anything more. Let's scroll down to the bottom and we're gonna type no here. And now what we would expect from a data
+
+[00:09:04] form plan or a data form applied, please pause the video and think what's gonna happen once you figure that out, then play the video again and let's explore this together. So what do you think is gonna happen as we are removing the list, then we would expect two instances to be destroyed.
+
+[00:09:20] And as we are adding a map, then we would expect these two instances to be created. So we would expect two to be destroyed and two to be created. Let's have a look if that's the case. And yes, that's correct. So two to add and two to destroy what we see here that we are really adding stuff. We are not replacing things. We are adding the instances from our map and
+
+[00:09:42] we are completely removing the instances from our list. Now, before we move forward here, let's scroll down a little bit. And let's see the difference. You can see that. Now the indexing of the from map happens based on the key of the map and not on any numeric index.
+
+[00:10:00] So this is one thing that would enable us to later on retrieve this based on the key. So let's just scroll down a little bit. Let's type P and let's wait for the, for the process here, for the changes to be executed. Great, two resources were added, two were destroyed. And if we were to come back to our
+
+[00:10:22] two console, let's here, refresh the page or click on the refresh here. And then we should see that we have a few more instances here. So we have a couple of instances that were destroyed from the lists that we were playing around with. And then we have here within our, at the bottom, we can see here that we have our engine
+
+[00:10:44] and our Ubuntu images that are running as expected. Congratulations on completing this lecture. We have done so much here. We have started working with maps. We have also seen the difference between working with lists when we are creating resources and working with maps.
+
+[00:11:01] And we have seen also many aspects of using the for each key here or the for each option within data form. Let's then take a short break and come back in the next lecture.

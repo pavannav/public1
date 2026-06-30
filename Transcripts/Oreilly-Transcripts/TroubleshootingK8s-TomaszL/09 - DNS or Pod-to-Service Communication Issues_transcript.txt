@@ -1,0 +1,35 @@
+[00:00:00] In this video, we'll look at torubleshooting DNS or pod-to-service communication issues. Specifically, we will troubleshoot a scenario where pods are not able to resolve service names, or unable to connect to other Kubernetes services. So, you have this Kubernetes service. You can look at the services in all the namespaces as well. But for now, I am
+
+[00:00:21] looking at the services only in the differ namespace. So, these are all the other services but we are going to focus only on the Kubernetes service, which is in the default namespace. The pods are not able to resolve the service name, so how do we go ahead and debug this. So, what I will do is in order to demonstrate this scenario I deploy the
+
+[00:00:40] network debugging tool in the pod network. Now, I can always exact to a pod and do a Mis look up there, but in many practical scenarios your container may not have this command at all, and so on. So, what we will do is we will just deploy the debugging tool and go through the scenarios using the debugging tool itself. So, I am deploying the network debugging tool in the pod Network.
+
+[00:01:03] It's getting created. Let's wait for some time. Okay, so it's running. I will exit to this pod. Now, your users have reported that they are unable to resolve the Kubernetes
+
+[00:01:20] service. What we will do as a first step is we will try to do a nslookup and see what's the error we are getting. Now, whether this is a problem specific to a pod or specific to a host, or what exactly is the problem. So let's do that. Okay, so nslookup got stuck. Now it's not returning anything and this is not a good sign. So, this is a simulation of the
+
+[00:01:41] problem that is experienced by your user. Eventually, the this look of wait timeout, so let's find out what could go wrong. Now, there is a DNA service that is provided by Kubernetes which is responsible for resolving the service names. What we will do is see if the DNS pods are running fine or not.
+
+[00:02:01] Okay, so DNS pods are running fine and there are no issues. So, what could be few other things to look at. Now, we can look at EDC resolve dot convey in the pod. Now, let's do an exact again and see if resolved confess proper or not. This is good. We have the name server as
+
+[00:02:22] 10.9 6.0 10, which is provided by Kubernetes and we also have the search options properly specified. What we are not able to do is able to get a resolution in place. If we have done some of the basic debugging so DNS pods are running find, resolve dot conf is fine, so
+
+[00:02:40] what could be other problems. One of the things to look at when there are issues like this in a Kubernetes cluster is to go to the nodes and see if IP forwarding is enabled on the nodes or not. IP forwarding is a kernel setting that allows forwarding of traffic coming from one interface to be routed to another interface. IP forwarding setting is must
+
+[00:03:02] for the containers. Usually, this is set during the install time. In some cases, what can happen is this could be reset by your security team or by your change management team after running of some periodic security scans. I've seen that in many customer places. The security hardened image of the node may have the
+
+[00:03:22] IP forwarding turned off. Now, as we have already discussed the setting is important for container network to work. Now, if it is turned off the container networking will not work properly. So, let's see if the setting is on or not in our cluster. I will log into the node and take a look.
+
+[00:03:46] As we see, IP forwarding is turned off. Now let's turn it on and see whether we are able to resolve the service names or not. You can use the ctl command again to enable. This is enable now. Note that
+
+[00:04:00] this is not persistent. If I reboot the system this will go away. So, this needs to be actually set in the CCT icon for it to be persistent. Now, first let's see if the problem gets resolved or not. Let me exact to the pod again and try to run NS lookup. NS lookup worked fine. It did a query and returned the address. So
+
+[00:04:22] this is one part. IP forwarding was turned off, that's why we had the issue and we turned it on and the issue went away. It could also happen that IP forwarding is on but still there are problems in service resolution. That could be more likely with some firewall settings. What you need to do then is to
+
+[00:04:41] really go back and see if there are any firewall issues or not. The best way to check is to use TCP dump for packet capture. First, figure out where the pod is running and then do a TCP dump. So let's see. We have seen that in previous section, but just for completeness let's find out how to run TCP dump. So, let me
+
+[00:05:01] create this part. Now, this pod is running on VM 2. Recall how do I find the Associated Calico interface because that's what we need to capture the packets. So, I use the route command to find the Calico interface for this specific pod. So, now I have the
+
+[00:05:20] Calico interface so we have two options. If TCP dump is already installed on the node then I can use TCP dump to capture trace for this one. Now, if TCP dump is not installed on this node the other option is I will deploy the network debugging tool as a DaemonSet, running on the host Network, and then run TCP dump to capture the packets. So, after TCP dump capture you can
+
+[00:05:41] analyze it and that definitely gives good hints on potential issues. If the packets are going but getting blocked somewhere, no responses are coming and so on, it helps you to try and identify issues with Network. In the next video, we'll look at a scenario where Kubernetes dashboard loading is slow.

@@ -1,0 +1,65 @@
+[00:00:00] Hello and welcome back, we have defined which policies we would like to attach to each role and we have also created the roles. However, we have not attached any policies to any roles. That's the scope for today's lecture. Let's start by transforming a little bit this format that we have here because even though this is a good
+
+[00:00:22] representation for us to manage the different policies that are managed that are attached to each of the roles. This is not a good format for us to use a for each loop. For example, within terraform for us here, it would be much better if we had a list of objects so that we can use the count functionality within
+
+[00:00:43] terraform and then we can attach this individually to the roles. So let's do that here by creating a new entry in our locals. And we're gonna say role policies, lists or just list like so and this is going to be here.
+
+[00:01:00] We're gonna start mapping, we're gonna say four role and policies, right? So each role here might have multiple policies in local dot role policies. We want to then actually map these policies here. So this list of policies, we actually want to map to a list of objects where we have the role name and the policy,
+
+[00:01:25] the role name and the policy. So let's see how that would look like so far role policies in local dot role policies and what we, we want to create here for each of these policies in this, in this list. Here, we want to create an object.
+
+[00:01:41] So we want to map each of the policies in the list to an object. And in the end, we're going to have a list of objects. So this is an object. And then we're gonna say here for policy in policies, right? So each of these individual policies here then create me an object where we'll have the role,
+
+[00:02:01] the role is gonna be equal to this role here that we have here and the policy will be equal to the policy. So policy equals policy, right? So this is a first step, let's run a data form format, let's output this actually in the console just for us to see how that looks like output policies.
+
+[00:02:22] And then we're gonna say value is equal to local dot role policies list. Let's save this here and run a data form plan and then see the output and let's scroll up a little bit. As you can see here, we now have combinations we have a role read only and then a single policy developer and then a single policy again,
+
+[00:02:43] developer and then a single policy. Now it becomes easy for us to actually iterate over this combination of roles and single policies and then just attach this policy to this role. So we will have multiple attachments, right? For the developer role, for example, we have three attachments,
+
+[00:03:00] each of them to one specific policy. The only problem that we have here is that this is a list of lists you can see here, that's a list and this is a list with one entry. So to tackle that, we will actually wrap this with a flatten function which is going to get rid of this lists within lists here.
+
+[00:03:20] For us. Let's save this. Let's run it at a form plan. And then in the end here, now you should see that we have a single list here. This is the end of the list and we have multiple objects within this list. Perfect. So we managed to actually map from this object here to a list of pairs between role and policies.
+
+[00:03:41] And now we can iterate over this list here to create our policy attachments. But before that, we actually need to get our policies from AWS. These are managed policies. So let's use a data source. Let's scroll down a little bit more. Let's add our data here. So data AWS
+
+[00:04:02] Im policy and then we'll say here just managed policies and we will iterate over the policies that we want to retrieve here. We are gonna leverage this list of objects that we have here because we can then just access the policy property in each of these objects.
+
+[00:04:22] We're gonna say local dot roll policies list. And then here we're gonna pass the split expression dot policy and we will make sure to transform this into a set so that we also remove the duplicates. And the A RN of this policy here is going to be,
+
+[00:04:41] let's add an equal here and that's going to be just A N colon, Aws colon im colon, colon Aws colon policy forward slash. And then we have here the each dot value, right? Whenever we are iterating over a set with for each here, the each dot value and each dot key, they are the same,
+
+[00:05:01] but it's best practice to always use each dot value. Great. Now we have a final step here where we need to connect these policies with our roles. We have the different roles and that is done via a AWS AWS im policy
+
+[00:05:20] attachment. And this is going to be we're just gonna call this role policy attachments. And now here we're gonna once again use a count or for the first time I believe in this project. And the count here is going to have a length of the local dot role policies list. So basically,
+
+[00:05:40] we're just taking the length of this list here and we will iterate through all of them. The role here is going to be equal to AWS underscore im underscore roll dot roles here or how did I call it? It's actually, yeah, that's roles, perfect roles. And then we will simply retrieve this via the local dot roles policy list.
+
+[00:06:02] And we're gonna use the count dot index and we will say here dot row and then this one is gonna be the dot name, right. So we are doing here quite a bit. We are looking into all the rows that we have created. We are taking the relevant one here and then retrieving the name.
+
+[00:06:20] And then we also have the policy A RN and the policy A RN here is gonna come by our data dot AWS im policy dot managed policies here. And then we will use once again the local dot role policy dot or the count dot index or local dot role policies list called index dot policy. And then you are gonna say dot A RN
+
+[00:06:43] and if you hover over here is just saying that the required attribute name is missing. So I believe I just messed up here that should be named. Sorry for that. Let's save this. Let's run a format. Let's move these things here to a new line just for the sake of having everything visible, same here for our policies, managed policies. Let's move this to a new line
+
+[00:07:04] and then let's run once again a terraform format that's looking good. And now we actually have done everything that we need to connect these policies or to connect these roles to the policies that we want to allow in these roles. Let's run a terraform plan
+
+[00:07:22] and once we do that, uh huh, we are still getting an error here. That's because this is a missing required argument. OK? I missed this a little bit. This AWS IM policy attachment. This is for users. We are actually interested in the role policy attachment and that's why I was having the role here. Perfect. So now
+
+[00:07:40] believe that this should fix the problem. As you can see here. Terraform is also very helpful in identifying the problems that we need to solve. As you can see, we have six resources to add. And basically these are the six attachments, right? So the fifth one here is going to be between the read only access and the read only role. Then we have the R DS access and developer,
+
+[00:08:02] easy to access and developer VPC access and developer, security audit and auditor and the administrator access and admin. So this will actually give the permissions to the roles to do anything within our account. Let's apply this data form, apply,
+
+[00:08:21] auto approve should be fairly straightforward here. Nothing to worry about everything got created. Let's come back to the console and let's refresh this here. And the moment we refresh it, we can see that we get a different message. Now we get that no matching instances found if we come to the EC two dashboard, all the API errors gone.
+
+[00:08:43] And if we were to come here, for example, to S3, let's say we come here to S3, you can see that this API error is also gone. If we come to S3, we should also be able to see the buckets here. That's exactly what we get. So if we scroll down a little bit, you will see that this is,
+
+[00:09:00] these are the buckets that currently exist within the account. So I am not in here or I am not using the permissions of Lauro, right? So I'm not using the permissions of Lauro. I'm using the permissions of the role read only if we were to create a bucket here. Let's just give whatever name here we want and let's scroll down to the bottom and click on create.
+
+[00:09:21] We will get an error because the role is a read only role and we cannot create it. So last but not least, let's give it a try now here and let's switch back from the role to the user. Lauro and the moment we do that here and we try to list our buckets, then you will see that we get an error.
+
+[00:09:40] So Lauro itself as a user doesn't have any permissions. However, Lauro has the permission, it is allowed to assume the read only role and this read only role by itself has the permissions. So this is great because if Lauro just wants to do some reading some checking debugging on the account. He can just assume the read only role here. And now he is able to see the information.
+
+[00:10:06] Congratulations. You have just managed to do delegate access to your Aws account two roles that can then be assumed by users. There are however, a few things that we still need to do now, the role is still just coupled to Lauro
+
+[00:10:20] here. So Lauro basically is the only person who can assume and even worse here. Actually, Lauro can assume all of the roles. Let me show you what I mean. Let's come back to the console. Let's copy this here. Let's switch the role and we're gonna say that's the account. And now I wanna be an admin and let's switch the role and there is no problem.
+
+[00:10:40] And Lauro who is logged in is actually able to switch to being an admin and suddenly Lauro can do everything within the account. So this is definitely a problem we want to fix. So right now, Lauro can assume all the roles and no other users can assume any roles. We're going to fix that as well in the upcoming lectures. But right now, let's take a short break and come back in a few minutes.

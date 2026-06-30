@@ -1,0 +1,61 @@
+[00:00:07] - So let's talk about multicast a little bit, I'd say the primary use I've seen for multicast is live television shows. Anytime we have a TV stream and we want to deliver it to multiple people at a time, we want to think about what the actual bandwidth requirements implications are
+
+[00:00:24] of that particular application. The bandwidth that's going to be required for video delivery really varies. It's going to vary based on actually the quality of your link between the client and the server. The quality that you stream at,
+
+[00:00:40] there's something that you can request and you say, "I want to have it in 4k high quality audio, go nuts." Well, as the video is being streamed, there's actually diagnostics that are being sent back and forth between the client and server, that include things like how many dropped frames there are. And if the network can't keep up with the video stream, it'll automatically lower the quality,
+
+[00:01:00] degrading the quality, but shrinking the amount of bandwidth that's required, so that you can deliver it a little bit more easily. Now, big takeaway from that is how much bandwidth does it take to stream "Game of Thrones" at 4k? I don't know, a lot. It depends based on audio quality, based on the video quality, et cetera.
+
+[00:01:21] But if we look at 4k resolution based on the stats that I looked up just before recording the class, they're saying anywhere from 25 to 50 megabits per second. Now, this is where it gets tricky, when you want to start looking at the sound, how much bandwidth is a sound take? There's audio codecs that can shoot audio
+
+[00:01:40] by like eight kilobits per second, it can be teeny, teeny tiny. However, the way that we get audio to be very, very tiny is by doing samples less often, by converting stereo to mono, by taking the frequencies and cutting the very, very top off and the bottom off. So, it's basically being degraded.
+
+[00:02:00] As you improve quality, if you want to go for Dolby TRUEHD, six channel surround subwoofers, maybe left and right subwoofers, each of those audio tracks adds additional bandwidth and as you add high quality to each of those audio tracks, it goes up. So you are seeing rates of six to 18 megabits per second,
+
+[00:02:21] just for the HD audio stream. Now, you might have an application that does a lot lower, maybe you've got something that's higher, these are some of the common stats that I found. But what you want to think about is well, how much network do I need to deliver video to many people at once? You could look at this and say, "Oh my gosh, "50 megabits per user, I've got a thousand users,
+
+[00:02:41] "like where do I ever get that much bandwidth?" And of course that's where multicast is going to come in. Multicast has different use cases. Of course, routing protocols use multicast, that's how they do their neighbor discovery, et cetera. But videos, I think we see it almost make or break.
+
+[00:03:00] So, let's imagine a scenario where you had 14,000 simultaneous users. I've got a friend who has to do capacity planning for a service provider, they've got to think about things like the Super Bowl and all the people that are going to watch the Super Bowl and making sure that the bandwidth is there. If I was trying to give a 50 megabit stream to 14,000 users, can you imagine trying to come up with all that bandwidth?
+
+[00:03:22] Well, here's the thing about multicast, by taking a video stream and sending it to a multicast destination, I only need one copy. So I take one copy of my live TV show at 50 megabits per second and I send it to a multicast address.
+
+[00:03:41] Who's it for? Multiple people. Anyone who's interested can subscribe and they will get a copy of this frame. Now, what makes this so good is we can send one frame from one switch to the next or one router to the next and then that frame can go to lots of different users if they're interested. So, let's talk about the components that make this possible.
+
+[00:04:02] First off, we're going to get into class D address space. Remember we talked about A, B and C earlier. Class D is multicast, so everything from 224 to 240 is classified as a multicast address. From above 240, you get into class E
+
+[00:04:21] and that's going to be your experimental range, which I don't really see a lot of people using. This class D behave separately the normal IP addresses. This is a group, it's not an individual IP. So if I want to send to a group of users, I can send it to 225.25.25.25, and anyone who's interested can ask for it
+
+[00:04:41] and they'll get a copy. The way that you make your offers and you make your requests are essentially through IGMP, not ICMP, but IGMP, the G is for group. What we want to do is perform group management. I want to say, "Hey, I'd like to join," or "I would like to leave this particular multicast screen."
+
+[00:05:00] When you send your joins and leaves on IGMP, the local router hears you, and the local router will retrieve the stream for you using something called PIM, Protocol Independent Multicast. It's protocol independent because it's going to get to the server, wherever the source is, and it's going to find its way there
+
+[00:05:20] using your routing tables, regular IPv4 unicast routing. You see, the source that you want to get to or whatever you're trying to reach out to we're going to discover, we're going to find the best possible way there through OSPF, through EIGRP. Now, while we're watching that stream, if a link comes up,
+
+[00:05:40] there's a more optimal path we can re-build the multicast tree to always have the most efficient path to get back to the multicast source, it's really pretty clever. PIM is responsible for multicast routing, IGMP is responsible within your subnet, within your villain, for a client requesting a multicast stream,
+
+[00:06:02] and then multicast transmissions are typically going to be UDP-based. And additionally, if you ever want to set this up in your house, a neat way to test it is with the application VLC, VLC can be both the client and a server. So for example, I can be over here on my laptop with VLC, I can take a movie or TV show,
+
+[00:06:20] let's say TV show, "Mr. Robot," and I can send Mr. Robot season one, episode one.MP4, I can start playing it and I can tell VLC to stream it to 225.25.25.25, that's a multicast address. Now I come over here another device, I'll fire up VLC,
+
+[00:06:44] and I'm going to tell it to join this stream, that's at 225.25.25.25. At that point, we're going to send out that IGMP join, and IGMP join, if the switch is running IGMP snooping,
+
+[00:07:03] is going to see that join request and go, "Oh, you want a copy of "Mr. Robot?" And it'll start sending us those frames. As soon as we get them, we're going to see the video stream start in VLC and now we're actually streaming a TV show from one computer to the other, just like a TV network. Now, what makes this so slick is
+
+[00:07:21] let's say that you've got a 4k or maybe even an 8K copy of something, 8K, the bandwidth gets really big. So, we start sending out that one stream, we start looking at the bandwidth counters and we go, "All right, cool, it's working." Watch how easy it is to add client three, client four, client five, client six, start going into other subnets and start joining clients.
+
+[00:07:41] You can see how PIM starts to work. What's so neat about this, I think, is that once you get the initial stream up and running to add an additional client is no big deal, it's not additional overhead. The whole idea of multicast and the special addresses that are used is that your router in your switches,
+
+[00:08:00] maintain a multicast forwarding table. So, as clients use IGMP to join the stream, the switch is going to see that and go, "Oh, anytime I have a multicast frame come in, "I'm going to send it out to these three ports, "to these seven ports." It's basically replicating that frame and sending it to lots of people at once.
+
+[00:08:20] The cool thing about that is that we're not using additional bandwidth from the source server, very, very cool. So, looking at IGMP operations, IGMP is the protocol that's used from a client to a router. Now, when I say router, it could be a layer of three switch,
+
+[00:08:40] but this is how I send a message it says, "I want to join a multicast stream." And when I'm done watching it, I can say I want to leave the multicast stream I don't need it anymore. Now, when I send an IGMP message to a router, the router is going to find that stream wherever it is out there in the world, using a protocol called PIM, Protocol Independent Multicast.
+
+[00:09:05] It's protocol independent because PIM is going to run on top of OSPF or EIGRP, or ISAS, whatever you're running inside your company, this is what it's going to leverage to find its way around. If you've got lots of redundant links here,
+
+[00:09:21] it can look at the cost of each of those links using your routing protocols metrics. It can always come up with the best path. In PIM's job is to construct a loop-free path and the best path to a multicast server. So, if that's our server up there in the right
+
+[00:09:40] when the IGMP join comes in, we go, "Oh, we need to retrieve that multicast." And again, using the routing table, we will find the most optimal path for that stream. And what's going to happen here is a tree, it's what we call this, a tree is constructed, where that video stream is now crossing all of these links.
+
+[00:10:00] If anyone else needs it, it just feeds off of that link and it doesn't require any more upstream bandwidth, we're just sending copies of the frames to other devices.

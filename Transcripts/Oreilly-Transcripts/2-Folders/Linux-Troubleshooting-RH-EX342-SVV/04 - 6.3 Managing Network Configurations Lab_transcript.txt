@@ -1,0 +1,43 @@
+[00:00:06] - Alright, time for a lab about basic network configuration. So your server is configured with a fixed IP address. You have just added a secondary IP address, but ifconfig doesn't show it. Fix it, good luck.
+
+[00:00:21] By the way, in order to install this lab, there's a script. Lab 62 is the name of the script. Run the script, analyze what you see, and good luck fixing it. So let's start by running lab62.sh.
+
+[00:00:46] So I have just rebooted, let's analyze what's happening. Ifconfig. The lab assignment was about ifconfig. Hard stop, ifconfig? That's not going to happen.
+
+[00:01:00] Look, man ifconfig. This program is obsolete. For replacement, check IP errors and IP link. You knew that, didn't you? So, don't use ifconfig. Using ifconfig is an error by itself. Nothing to troubleshoot about it. Go troubleshoot yourself if you are still using ifconfig. You should use ip a.
+
+[00:01:21] And here we see that we are on the device with the name eth zero and this device, eth zero has an inet name 192 168 4231, which is dynamic IP address. Hey, this interface is supposed to have a static IP address.
+
+[00:01:42] This machine is supposed to have IP address 192 168 4.168 so what is going wrong? Let's apply our troubleshooting methodology again. So first, we need to define the issue.
+
+[00:02:01] The issue is I get a wrong IP address. Next we need to gather information. So what do we need to gather? Well, we need to work on the ip a output. The ip a output is already telling us something. It's dynamic, so apparently it's ignoring
+
+[00:02:20] the static information that has been created for this interface in its configuration file etc/confignetwork-scripts. In there, we have ifcfg-ens33. So for some reason, this machine has switched
+
+[00:02:40] the interface ens33 to eth0. What's happening? Let's have a look at the configuration file in which we can see BOOTPROTO is none. Now that's interesting. We don't even have a boot protocol set to dhcp here. So the only reason why this may happen
+
+[00:03:00] is if this configuration file is totally ignored. So if this configuration file is ignored, that means that this system is confused about its network interfaces. Which brings us to the hypothesis. The hypothesis is that file's dev name
+
+[00:03:20] for some reason has been disabled on this system. So this has created like a ghost interface that is doing dhcp while it is ignoring what we have right here. So let's continue and try to understand this configuration file, the important parameters. We have name is ens33, we have device is ens33.
+
+[00:03:44] Device is ens33, no. The device of this system is eth0. So this configuration does not match and the IP address is still correct, so there is no error in the configuration file, there is an error something else
+
+[00:04:00] in the file's dev name configuration. Let's analyze some more. Nmcli connection show. What does nmcli connection show showing us? It's showing us that we have a connection ens33 for a device that does not exist.
+
+[00:04:21] You can see dash dash which means no device. And we have a device eth0, our new device which has created a connection that doesn't have a configuration file with the name wired connection one. That's what's happening if you have a device
+
+[00:04:41] with no matching connection. Network manager will automatically create a dummy connection and put that to the hcp. So, we can make the hypothesis a little bit stronger. Somewhere, somebody has disabled file's dev name and we should undo that to get back
+
+[00:05:01] to the original situation. Not before I'm showing you also nmcli dev show for the devices. Oops, that is too much information. Let's do dev status. And in dev status, we can see the device status where eth0 is using connection wired connection one.
+
+[00:05:22] Network manager doesn't know about any ens33 anymore because these device names have changed. Do we need to go into you dev? I wouldn't think so. The best bet is to go into etc default grub
+
+[00:05:40] and in that configuration file, to make sure that nobody has messed up. And here you see somebody did mess up. Do you think that this is a realistic scenario? Well, I have seen it with some of my customers. Not everybody likes file's dev name.
+
+[00:06:00] And if you figure out that this is how you can disable file's dev name, that's true, but if you disable file's dev name that way, you will mess up your total network configuration. You know what would be a good idea? Use these boot options which are net.if names is zero and file's dev name is zero.
+
+[00:06:20] Use them when you install your server and you will get good old eth0 and eth1 without messing up your network configuration. That's what I would recommend. Now we can use grub2-mkconfig -o /boot/grub2/grub.cfg
+
+[00:06:40] to write the new group configuration. Next we are going to reboot and after the reboot, I would expect that we have our original situation back.
+
+[00:07:08] So we are back after reboot. Let's type ip a and what do we see? We are back on IP address 168 on ens33. So, this issue has been fixed.

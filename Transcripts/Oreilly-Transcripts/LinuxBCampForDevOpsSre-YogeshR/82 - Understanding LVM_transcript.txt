@@ -1,0 +1,91 @@
+[00:00:00] Hello and welcome to this lecture on LVM. In the previous section, we discussed traditional disk management methods such as attaching a disk formatting it, partitioning it and creating file systems while effective and static environments.
+
+[00:00:20] This approach has limitations in dynamic production settings. For instance, if you have a 500 GB disk, but you only use 400 GB, the remaining 100 GB remains unused. Moreover, expanding the file system typically requires reformatting which
+
+[00:00:43] can lead to data loss and significant downtime to overcome these challenges. Linux offers the logical volume manager or LVM. LVM provides flexible and dynamic storage
+
+[00:01:00] management by decoupling physical storage devices from logical storage used by the operating system and applications. This allows you to adjust the size of the file systems on the flag. Imagine a bustling library that continually acquires
+
+[00:01:23] new books and occasionally retires old ones to manage its ever changing collection efficiently. The library employs a dynamic shelving system. Physical shelves are the actual wooden shelves where books are placed.
+
+[00:01:44] The library groups several physical shelves into sections each labeled for a specific genre or category within each section. The library maintains a catalog that lists books allowing them to be easily located and managed.
+
+[00:02:06] This system offers flexibility. Say, for example, if a section becomes overcrowded, the librarian can add more shelves to it without disrupting the existing arrangement.
+
+[00:02:21] Similarly, if a section has excess space shelves can be reallocated to other sections in need. In the realm of Linux storage. The LVM functions similarly, physical volumes or PVS are the raw storage devices
+
+[00:02:44] or disk partitions like individual shelves in the library. Instead of using a disk directly, it is initialized as a PV allowing it to be pooled with others for better storage management
+
+[00:03:01] volume groups or vs are collections of multiple pvs forming a single unified storage resource just as a library sections, organize multiple shells. This allows storage to be allocated efficiently based on different
+
+[00:03:22] needs such as separate groups for application data and databases. Logical volumes are resizable virtual partitions created within a V just like books cataloged in a library section.
+
+[00:03:41] LVS divide storage into manageable units once formatted with a file system and LV functions like a traditional partition but can be expanded or reduced dynamically as storage requirements change.
+
+[00:04:00] A key advantage of LVM is that the file system resides on top of the logical volume allowing on the flight adjustments if storage needs change, an LV can be resized and the file system can be expanded or shrunk accordingly often without
+
+[00:04:22] unmounting it or causing downtime. This makes LVM particularly valuable in production environments where uninterrupted access is essential by leveraging LVM. Linux administrators gain a dynamic and scalable storage solution,
+
+[00:04:43] ensuring adaptability without service disruptions just like a well organized and ever growing library. LVM offers several advantages. LVM allows for the aggregation of multiple devices
+
+[00:05:02] and partitions into a single logical volume enabling file systems to extend across multiple devices as though they were a single large one logical volumes can be extended or reduced in size with simple software
+
+[00:05:21] commands without the need for reformatting or repartitioning the underlying devices. This capability allows for dynamic adjustment of storage allocations as requirements change. LVM supports the migration of data between physical devices within a volume group
+
+[00:05:45] while the system is running facilitating hardware maintenance or upgrade without downtime. LVM enables the creation of snapshots which are read only or read,
+
+[00:06:00] write copies of a logical volume at a specific point in time. Snapshots are useful for backups and testing purposes as they provide a consistent state of the file system without interrupting ongoing operations by pooling storage resources. LVM
+
+[00:06:22] reduces wasted space and allows for more efficient use of available storage as logical volumes can be sized and allocated based on current needs. The latest version LVM
+
+[00:06:40] two introduces several improvements over the original LVM including more efficient metadata storage and better recovery formats. Enhancing the flexibility and reliability of storage management. Consider a real world scenario.
+
+[00:07:02] You're managing an online e commerce platform with distinct storage areas for various workloads. Initially, your system is set up with separate storage for application data and logs. And another for the database.
+
+[00:07:21] In a traditional partitioning setup, you might allocate fixed sizes for each area. However, as your business grow, you could find that the application storage needs more space while the database storage remains sufficient.
+
+[00:07:40] Adjusting the partitioning sizes in a static system could involve reformatting or migrating data. A process that risks downtime and potential data loss. With LVM. You can initialize multiple tests as PVS and organize them into distinct vs
+
+[00:08:02] from these V. You can create LVS that correspond to your storage requirements. If your application data grows and needs additional space, you don't need to reformat or disrupt services. You can simply add a new disk, initialize it as PV and extend the existing VG.
+
+[00:08:27] Then you resize the LV and the file system dynamically. This process ensures that your system can adapt to changing demands with the minimal disruption
+
+[00:08:43] in our upcoming demonstration. We will explore the practical application of the LVM to effectively manage storage in a dynamic environment. Here is how we will proceed. We will start by attaching multiple disks to an EC two instance,
+
+[00:09:04] these disks will serve as the foundational storage units in LVM. Next, we will initialize these disks as physical volumes or PV. This process prepares the disk for use with LVM, allowing them to be combined into a unified storage pool.
+
+[00:09:25] We will then combine these pvs into a volume group or VG. This step creates a unified storage pool from the attached disks enabling efficient management of storage resources.
+
+[00:09:41] From this VG, we will carve out logical volumes or LVS. These LVS acts as flexible partitions allowing us to allocate storage based on specific requirements. Once the LVS are established, we will format them with a file system
+
+[00:10:02] using the MKFS command. This step prepares the LVS to store data by setting up the necessary file system structures. After formatting, we will create directories with the MKDIR command to serve as mot
+
+[00:10:22] points. These directories will act as access points for the file systems. We will then mount the file systems onto these territories with the mount command, integrating them into the systems territory hierarchy.
+
+[00:10:42] Once the storage setup is no longer needed, we will decommission the resources. This involves unmounting the file system, removing the logical volumes, volume groups and physical volumes and detaching the disks from the EC two instance.
+
+[00:11:01] Before moving into the demonstration, let's quickly understand some of the commonly used commands and their syntax. For easier understanding, we will separate the LVM management commands into those of PV VG and LV. Let's quickly go over the key LVM
+
+[00:11:23] commands for managing physical volumes. PV. Create command is used to initialize a disk as a physical volume for LVM preparing it for using volume groups. Pvdisplay command displays detailed information about a specific
+
+[00:11:43] physical volume showing configurations like its size and status PAAS provides a summary of all physical volumes in the system including their sizes and usage PV, scan command,
+
+[00:12:00] scans all disks to detect physical volumes useful when adding new disks to the system. B, we remove command removes a physical volume, wiping its LVM configuration and removing it from the system. For VG management. We have
+
+[00:12:22] VG create command which creates a volume group, combining multiple physical volumes into a single logical unit for storage. Vgextend command adds a new physical volume to an existing volume group.
+
+[00:12:41] Vgdisplay command shows detailed information about a specific volume group like its total size, free space and physical volumes. WGS gives a summary of all volume groups on the system, including their sizes and free space
+
+[00:13:02] V scan scans, all disks for volume groups and detects new ones. V removes a physical volume from a volume group. V, remove command deletes a volume group that contains no logical volumes
+
+[00:13:24] for LV management. We have LVM disk scan which scans all SCU EDI disks, multiple devices and a bunch of other block devices in the system. Looking for LVM PVS
+
+[00:13:41] L we create command creates a logical volume within a volume group which you can later format and mount LV extend increases the size of an existing logical volume. The LV reduce command is used to reduce the size of a logical volume.
+
+[00:14:03] Be careful when using it as shrinking of volume can lead to data loss. Also note that XFS does not support shrinking, use E four if you need to reduce the size of the file system. Lvdisplay shows detailed information about a specific logical
+
+[00:14:24] volume such as its size and usage. LVS displays a summary of all logical volumes in this system, including their sizes and attributes. LV, remove deletes a logical volume from a volume group.
+
+[00:14:45] We have seen most of the file system management commands already. In the previous section. We will cover one more in this section which is expanding the file system. The command XFS underscore
+
+[00:15:00] is used to resize a mounted XFS file system after LV extent. If you're using two or three or four, you need to use the command, resize two FS. That's it for this lecture. See you in the demonstration.

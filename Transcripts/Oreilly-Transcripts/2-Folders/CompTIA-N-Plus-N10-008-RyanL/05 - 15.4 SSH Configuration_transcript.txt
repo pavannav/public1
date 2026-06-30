@@ -1,0 +1,55 @@
+[00:00:06] - Let's take a moment to look at what it takes to get SSH up and going. The first thing that you're gonna need is a host name and a domain name. The reason for that is when you generate a key pair, the key pair's associated, at least in Cisco devices,
+
+[00:00:20] with your host name and domain name. Now those might be auto-populated by the device. For example, if you've got a Switch, it's gonna have a host name of "Switch." If you've got a router, it's gonna have a host name of "Router." If you've got two routers, they've got the same host name on both of them. So if we are trying to keep things orderly, if we are trying to understand where we are at,
+
+[00:00:40] what shell we are looking at, it's not gonna be very helpful. Point being, before you go to generate your keys, make sure that you have the device named the way that you'd like it. So, just using the host name command, we can change the host name. Using the IP domain name command, we can put the device into a domain, like pearson.com, or if it's just internal, we can maybe use something like pearson.local.
+
+[00:01:01] Now, additionally, this isn't ever fun, thinking about, talking about licensing. I have gone into a lot of businesses and gone, "Okay, things are not secure. "Have no fear, Ryan's here. "We are gonna make your network solid. "Let me just turn on SSH. "Let me turn SNMP version 3." I start typing commands and I get an error.
+
+[00:01:20] The device or the version of code that I am running does not support cryptography. Well, let us talk about that. When vendors ship equipment to people, it is sometimes running a code base that is acceptable to export. Here's why. When Cisco wants to sell you a router, for example, they use a distributor like Ingram micro tech data.
+
+[00:01:42] These are huge warehouses that are handling a bazillion transactions, making about a nickel on each one of them. So they are getting the, you know, thousands and thousands of firewalls to all the resellers. Well, if you are working with all this equipment, you have to pay attention on where you can ship them to. Maybe you are an international company like Tech Data,
+
+[00:02:00] maybe you are sending things to South America. Can you send a router or a firewall with encryption on it to Venezuela, right now? Can you send it to Syria? There's people in prison for doing this. So there is some countries on a non-expert list. You are not allowed to send them software with encryption. There are so many boxes, going so many places,
+
+[00:02:22] that a distributor will often not want to worry about what devices have secure code on them, and which don't. Now in other scenarios, they can pay attention to this. They can flag it in a database and control where it goes. But if I've got a product that has no encryption in it, I can ship it anywhere in the world. If it has got encryption on it, now there is limitations.
+
+[00:02:41] So having that encryption could potentially be a liability to a reseller, wacky stuff. Additionally, sometimes you have to pay for a certain license for it to have Crypto, just comes down to your vendor. So I have seen scenarios where I go, oh, tell him that. That is no good, let us turn us on SSH. And they go, "Nope, this switch,
+
+[00:03:00] "this router does not have the right code on it, "to run us SSH." And I go, "Oh man, well, "let me go to the vendor's website "and download the operating system." Spoilers, what happens when you try to do that is most vendors are going to say, "Hey, where is your software contract? "Where is your service agreement?" Not all customers have this the way they should.
+
+[00:03:20] If they don't have a service contract on the equipment, I can't go grab new code that has encryption on it. So I am stuck using Telnet, what can I do? Well, that is where we start getting into management only networks. I can have a dedicated network without anything else on it where I'm using insecure protocols. Is that what I want to do? Heck no, but it's what I can do, based on what I'm given.
+
+[00:03:43] So when I say, you know, don't use Telnet turn on SSH. That's not always that easy, gotta have the crypto licensed to do it. Additionally, there are bad ways to do AES encryption. AES is the standard that the NSA says that you should use.
+
+[00:04:02] What does that mean? Well, there are unfortunately some crummy versions of AES out there. So just because you are using AES, doesn't actually mean that it is any good. For example, there is an implementation called AES-CBC, where the way that they encode your data, is really, really crummy.
+
+[00:04:21] And you can actually visualize the encrypted bits versus not. And you can bypass the encryption in some circumstances. It is not good. AES-GCM is quite a bit better. At least at the time of this recording, it is still recommended by best vendors. The problem is, and again, this is just network plus, if you don't know all your AES types in now,
+
+[00:04:42] don't worry about it. Just the takeaway that I'd like for you to have as a student of my class is to appreciate, that, while a lot of compliance and regulations mandate that you have to use AES, you need to take a step back and go, "Well, what implementation of AES?" Because we have screwed it up historically,
+
+[00:05:01] what you want to do is, I just call it cipher pruning or weak cipher pruning. We go into the configuration of our firewalls or load balancers or routers, and you'll see cipher suites, types of encryption that it will do or not do, all this is negotiated, and what we want to remove are weak ciphers. They're there there for backwards compatibility.
+
+[00:05:21] But people can do downgrade attacks with men in the middle where you will actually still use them. And you don't want to. So, to summarize this, I have been talking for a bit. AES is not always good enough. You want to look at the actual mode of AES, if possible. And like I said, GCM is a better mode to be in.
+
+[00:05:41] Additionally to do SSH, We're going to need our public and private key pair. Even if you are using username and password on the client side, the server side, whatever you are logging into is going to authenticate to you using its public key. The SSH service known as the SSH Daemon or SSHD is also gotta be up and running.
+
+[00:06:01] And then if you have got intermediate devices, switches, routers, wireless access points, if they have got access lists, we need to make sure that TCP port 22 is allowed from the client to the server, or you won't be able to establish the connection. Now here is an example of setting up SSH on a Cisco device.
+
+[00:06:21] Again, it's not a Cisco class but this is all good stuff to know. Notice our prompt here, with the greater than sign. This just means that we are in unprivileged mode. When we type enable, we go into privileged mode. Notice the prompt change with that pound sign. When we say config T this brings us into global config. So from global config, I say my host name is new host name.
+
+[00:06:42] My domain name is pearson.com. Now, when I generate my RSA keys, those RSA keys in my local configuration are going to be for new hosts named.pearson.com. Great, next, I'm going to turn on SSH. There is multiple versions that you can run. Version two is better than version one,
+
+[00:07:00] so we are specifying that here. Now, additionally, on your device, there is this concept called a VTY or a virtual terminal. When we say VTY04, this is basically saying, "Hey switch, hey router". For the virtual terminal, zero, one, two, three and four, I want the input for them to be SSH, opposed to what?
+
+[00:07:23] Well we could say transport input, Telnet, transport input, maybe our login, if it still supports it. What we are doing here is defining the protocols that are allowed, for communication, into the virtual terminals. What is a virtual terminal? Well a TTY is just your regular terminal
+
+[00:07:40] like you are sitting there at the device with the keyboard and mouse. The virtual terminal is kind of like where you land, when you come in remotely. When I first started doing this, I was a little bit foggy on it. So I thought about driving around my city. And when I drive around the city, we have got these things called a central office. So in the old days there was a phone company called GTE.
+
+[00:08:00] Now we have got Verizon, and Verizon owns most of the central offices. It is just a brick building, no windows, via maybe a generator, a bunch of telco equipment. If you look in front of that building, there are parking spots, not a lot of them, maybe five. So when people that work at Verizon pull up in their van, that is where they park.
+
+[00:08:20] Think of this, line VTY, as the parking spaces, for administrators to come in and talk to your router, how many do we support? Five. Is that a lot or a little? Well, here's the thing. You can say VTY 0 9. Now you have got nine VTY's. That means nine different people or zero space nine would be 10.
+
+[00:08:41] It means 10 different people can come along, and log into that device and help you troubleshoot and work on it at the same time. Did you just cringe? I don't want nine other people in the same device as me working on things, but if you need more space for more people to log in, you can just modify that VTY command. Cisco is really good with their command line
+
+[00:09:02] where you can use a question mark. So we can say line VTY 0?, and it will show you the highest number that that device supports on that particular version of code.

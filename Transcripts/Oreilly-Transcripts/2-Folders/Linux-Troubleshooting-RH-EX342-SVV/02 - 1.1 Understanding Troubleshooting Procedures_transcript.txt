@@ -1,0 +1,73 @@
+[00:00:07] - Let's start by discussing some troubleshooting procedures. So, what exactly is troubleshooting? Troubleshooting is about encountering a problem, gathering information about it, analyzing it, and finally fixing it.
+
+[00:00:21] Now, roughly, there are two different approaches to troubleshooting. There is the quick fix. There's nothing against applying a quick fix and see if that works, but for more complex problems, that doesn't really work and you need a more consistent methodology. Let me explain this more consistent methodology
+
+[00:00:41] which is also known as the scientific approach. So, let's talk about methodology for troubleshooting. I have listed the five essential steps on the whiteboard. First, you will start by defining the issue. Defining the issue means that you are going to say,
+
+[00:01:00] in a very specific way, what is wrong. If you cannot connect to an FTP Server, for example, you don't state it as the FTP Server isn't working but you state it as I cannot connect to an FTP Server from my machine that is running on that machine. So, be specific. Provide details when you define the issue.
+
+[00:01:22] Also, be aware that, very often, the reported issues are symptoms of another problem. So, the issue by itself doesn't say anything. Next, you need to gather information. Gathering information means that you are going to look at the relevant log files. On current REL-7, systemd is integrated
+
+[00:01:43] with systemd-journald and you can often find some excellent information. Not too much information, just enough information where you use systemctl status on your service, for example. Don't go to far while gathering information. I would advise that you gather just enough information
+
+[00:02:02] to prove your point and it makes no sense if you are not sure yet what is happening to use utilities like strace to go in depth in your specific problem. Next, you will form a hypothesis. This is just a best guess.
+
+[00:02:20] By itself, it doesn't mean anything but it's going to mean something when you are going to test the hypothesis. So, if you think that it's because of SE Linux, well, you investigate, you go test it. If you think it's because of firewall that you have a problem, you investigate, you go test it and once you have tested the hypothesis
+
+[00:02:41] and validated the hypothesis, that is what it's all about; you need to validate. Once you have validated, you can successfully fix the problem, hopefully. But, still, fixing the problem, is still based on the current hypothesis and sometimes that doesn't work
+
+[00:03:02] and it proves that your hypothesis was wrong. And, if that is the case, then you will start all over again from the beginning, by defining the issue, gathering information, and forming a new hypothesis because you will notice that, on many cases, your first hypothesis is not always right.
+
+[00:03:22] In the next demo, I'm going to show you how to apply this procedure in real life troubleshooting. Now that we know about troubleshooting methodology, let's do a quick lab to apply the scientific procedure. In this quick lab, a user has problems logging into a server using SSH.
+
+[00:03:42] To install the quick lab, I have provided the script. The script is Lab 11. Run the script and then fix what the script is doing and no cheating because if you read the script, you can easily see what is happening. Let's start by running the script.
+
+[00:04:00] In order to run the script, and that goes for all scripts in this course, you need to open a root help. I have copied the scripts to the directory Scripts and, in this case, the name of the script is lab11.sh. So, let's run it and let's figure out. So, the complaint is that the user
+
+[00:04:20] with the name Linda, has trouble logging in from the remote server. So, I have opened a tab already with the remote server prompt open and in the remote server prompt, I am currently user Root. So, we have SSH problems logging in as Linda
+
+[00:04:43] to the first server which is listening at this IP address. So, here we go. This is the normal initialization of SSH. At this point, we are at the stage of defining the issue.
+
+[00:05:02] So, the thing is, if you try to reproduce the problem and while reproducing, you observe. One observation, for example, is that SSH is operational because, otherwise, it would not answer. And, now, it is asking for the password of user Linda.
+
+[00:05:21] I'm typing the password and I'm getting a permission denied, please try again. So, define the issue. The issue, at this point, seems to be that user Linda cannot log in through SSH. Alright. That is stage one of the scientific approach.
+
+[00:05:42] Now, we need to gather more information. Only when we gather more information, we can define a hypothesis but before going there, we need to gather information. Gathering information may mean that we are going to try to do it in a different way.
+
+[00:06:00] For example, sshroot@192.168.4.168, we try logging as Root. By doing so, we can narrow down the problem a little bit and analyze if there is a severe problem with SSH or if the problem is more bound to the user account.
+
+[00:06:22] And, as you can see, user Root has no problem logging into the remote server. We now have a prompt on the remote server. So, in gathering more information, we need to figure out some more stuff, like analyze the log files or have a look at the systemd-journald output
+
+[00:06:42] that is produced in the servers. I like that approach, so let's use systemctl status sshd. And, in systemctl status SSHD, we are getting a couple of messages, including failed password for Linda
+
+[00:07:01] from 192.168.4.215. That's a pretty obvious message. And, based on this message, you can, of course, continue and be complete, but, you know, failed password, that is so obvious that this is a very good candidate
+
+[00:07:21] for our first hypothesis. The hypothesis is; there's something wrong with the password for user Linda. Now how can we test this hypothesis? We can try to log in as Linda locally but as it is so obvious in this case, we might immediately try to fix the problem.
+
+[00:07:41] So, in order to fix the problem, as user Root, I'm going to set a password for user Linda. There we go. I have set the password and now we can try it again. After applying a fix, of course,
+
+[00:08:00] you need to verify that the fix has been successful. So, now we get back to the original situation where I'm trying to log in as user Linda and I'm typing the password, and, hey, this is interesting. So we can see something different is happening here. Let's analyze. So, here we logged in as Linda.
+
+[00:08:22] Here it's prompting for user Linda password. Now we can see last failed login there were two failed login attempts since the last successful login and connection to 192.168.4.168 is closed. So what do we see here?
+
+[00:08:40] We see that Linda is, in fact, capable of connecting to SSH but she's getting kicked out immediately. So, apparently, our fix was not successful, which means, we need to start again. We don't have to define the issue anymore because the issue is still the same; user Linda cannot login to SSH.
+
+[00:09:01] But, where it may have gone wrong is in phase two; gathering information. So, let's get back to the prompt on the target server, which is here. And, let's analyze and see if we can find some more information.
+
+[00:09:20] Tail-f/var/log/secure, for example. Var/log/secure is about security-related messages and we can see that a session was opened for user Linda and a session was closed for user Linda. That doesn't really mean anything. So, this doesn't bring us further,
+
+[00:09:40] so we need to continue and gather more information. Systemctl status sshd. Here we can see accepted password for Linda, so, from the perspective of SSHD, everything is alright. That makes it less likely that we need to do troubleshooting on SSH. So, what else can it be?
+
+[00:10:02] Well, it might be bound to the account of user Linda but before we form a new hypothesis, let's also have a look at var/log/messages; the generic log file. Often this generic log file can provide some useful additional information.
+
+[00:10:21] So, as you can see, nothing useful is happening here. Now, as this problem seems to be bound to the user account and not to SSH, we can use getent passwd Linda to figure out what is happening with the user account.
+
+[00:10:40] Now, look at that. The shell for this user account is set to bin/false, that is the go away shell, so the new hypothesis is that user Linda doesn't have the correct shell. And, we can continue and we can try to verify that hypothesis. Now how are we going to do that?
+
+[00:11:01] Well, I'm going to use usermod-s/ bin/bash on user Linda. Let's do getent again. Now user Linda has a normal shell and now we can see if this fix really was the solution. So, I'm going back to the other server.
+
+[00:11:22] I'm logging in using SSH and, yay, it works. So, we have now verified the solution and the problem has been fixed. And that brings us to the end of the scientific approach for fixing this problem. You should notice that in the scientific approach,
+
+[00:11:40] there are these five phases in the methodology. So, we have define the issue, gather information, form a hypothesis, verify the hypothesis, and apply the fix. You have also seen that in this specific solution, sometimes two of the phases in the scientific approach
+
+[00:12:01] can be dealt with in one single step. That's no problem at all, as long as you keep the five phases in the scientific approach in mind.

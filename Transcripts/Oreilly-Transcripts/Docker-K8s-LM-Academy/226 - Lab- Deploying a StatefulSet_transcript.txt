@@ -1,0 +1,83 @@
+[00:00:00] Let's then create our stateful set definition here. And I would like to come back actually to the definition of the pods that we had using box. So I'm just gonna come here to the local volume example. Once again, let's get both the pod and the persistent volume claim because this might be useful also for creating our persistent volume claim templates.
+
+[00:00:24] Let's save this. Let's come back to our stateful sets directory and let's just paste it here. Now, we're not going to use this as it is because we will use stateful sets, but I just want to have an overview of what we have here. So let's get started with creating our stateful set. The API version will be
+
+[00:00:43] apps forward slash V one. The kind here will be stateful set. And now we would like to create our metadata and the name here will be very straightforward, can be anything. So we're just gonna say demo stateful set. And now in the specifications, we will have a bit more information,
+
+[00:01:04] there are a couple of top level fields here. So we can set a service name if we wish to do so. And that will simply, we simply set this to busy box, we can also use or we can also define the number of replicas. And that's gonna be two replicas. And we should also specify the selector here similar to the deployment.
+
+[00:01:25] Basically, the stateful set is also managing a set of pods. So it needs to know which pods it will manage. We also define the template and we also define what is called a volume claim templates,
+
+[00:01:40] right? So these are the top level fields that we will start defining here and they will specify the first one. The selector is which pods are actually managed by this stateful set. The template here, very similar to how we worked with deployments. It specifies templates for pods. The difference here is that the volume claim templates, it also is used by
+
+[00:02:02] Kernis to create volume claims or persistent volume claims automatically. So this is also something that is new and this prevents us from having to create this persistent volume claims manually. So let's start with the selector here. We're gonna use match labels and we'll simply use your app.
+
+[00:02:21] We're gonna call this, let's say box just like. So and the template here is going to be fairly similar to what we have in our pod. We're gonna copy both the metadata and the specification here. Let's copy this and let's paste under the template and let's now fix a few things, right? So we have spec metadata here.
+
+[00:02:41] You can see that this is not really very well aligned. So let's just fix that and that is looking a little bit better. So now we have a metadata for our pods. We should not include a name because that's gonna be managed by the metadata name of the stateful set plus an ordinal index here that will be increasing.
+
+[00:03:02] So we will update the labels from name to have the app busy box like so and then the container here will be just our busy box container. Once again, that's the name of the container, not of the any labels or of the stateful set. This could be anything we wish to use.
+
+[00:03:21] We will also sleep for one hour here. The resources are here and now we can also create our volume mounts. We're gonna use once again a local volume and we're gonna mount this under slash mount forward slash local. Another thing here is that we don't really have access to the index
+
+[00:03:40] inside of this definition, right? So now we will have two stateful sets created via the replicas here, but we cannot use something like let's say we would like to mount here and then interpolate some kind of index like so this is not currently supported. So we're not gonna change that.
+
+[00:04:00] We're just gonna leave the mount local like so now we will not specify volumes here. So we're just gonna remove this and we will leave the volume claim template section here. Let's fix that this should be a little bit better aligned. So just make sure that it is aligned to the template section like so, right?
+
+[00:04:20] So we have selector template and then volume claim templates. And this is a list of objects where we will specify once again metadata and specifications, right? So metadata and spec and very similar to how we bring the pod definition here, we actually also bring persistent volume claim definitions here.
+
+[00:04:43] So the metadata will be, let's say here, the name is going to be local storage and the specification here will be access modes. So we're just gonna specify that we want to create a volume claim template that has a read write ones like so, so let's copy the read write ones.
+
+[00:05:03] Let's come here, let's paste it here and the storage class name here, storage class name. It will also be from our persistent volumes, that's going to be the local storage. So let's copy this and paste it here and then we will also have resources
+
+[00:05:22] requests and then we'll say storage and that's gonna be, I believe that we are using 128 mebibytes, right? So let's just copy this, let's paste it here. And as you can see, this is very similar to what we have defined here. The only Exception is that we are not creating this volume mode,
+
+[00:05:40] we are just leaving it out. So let's now remove this persistent volume claim because we don't need it anymore and we also don't need the pod anymore. Now, you might be wondering what happens actually with this name of local storage here. And actually this is the name that we should match our name of the volume mounts here.
+
+[00:06:04] So maybe this is getting a little bit confusing with the storage class name. I will just update to match actually the name that we already have defined in our volume mounts. In this case here, whenever we are creating a stateful set, we don't need to specify the volumes section under the pod template.
+
+[00:06:24] This is very important because before when we were working solely with persistent volumes and persistent volume claims, we would also specify a volume definition here and on the same level as the containers in the pod specification.
+
+[00:06:40] But with stateful sets, we don't need to do that. CORS will manage behind the scenes and it will create the necessary volume definitions in our pods and they will match this metadata this name here in the metadata. We can also add multiple volume claim templates. If we wish to have multiple persistent volumes mounted in our container,
+
+[00:07:02] then there is nothing that is stopping us from adding a second one. So we could very well come here, create a second one and then change the name to local volume two, for example. And then we could also create a second volume mount by just copying this here and then pasting it here, local volume two mount local
+
+[00:07:22] two, for example, this is perfectly fine. So we can also mount persistent storage from different sources and we can use that inside of our container for now, I think that this definition here is already getting a little bit confusing enough. So I'm not gonna go into any other types of customizations here.
+
+[00:07:41] But if you go through the documentation, then you would also see that there are other ways that we can customize our stateful set. Let's save our files and let's now come back to the terminal here and let's now apply our stateful set file. Like so and you will see that the demo stateful set will be created. So now we can get our pods here
+
+[00:08:02] and you will see that instead of having a random string in the end here, they actually have very stable IDS. So we have the ID zero, the ID one here. And as you can see if we have a look at the age, we can see that the one with ID zero has been created before the one with ID one
+
+[00:08:22] and the stateful set also make sure that this pod here gets the. So the first pod or let's say the previous pod gets into a healthy state before creating the next pod. We can also have a look at the stateful set. So cube Qle get stateful set. I'm not sure whether this has a shorthand.
+
+[00:08:40] I don't know if SS stands for stateful set, no, it doesn't. But we could also describe then the stateful set and have a look at its configuration if we have a look at the persistent volumes. So let's just clear here, have a look at the persistent volumes. We will see that we have two volumes which are bound
+
+[00:09:00] and still a third one which is available. If we were to now have a look at the persistent volume claims, we will see there are two persistent volume claims and they follow the same principle here. So local volume stands for the name of the persistent volume claim that we have specified here in the template. That is the name.
+
+[00:09:20] In addition to that Kernis is appending here, the name of the state fat. So demo state fat and then it's also appending an index here. And you can see that this is actually bound to the state fat zero state for that one. And these are the volumes, right? So these are actually not the statefulset pods,
+
+[00:09:41] but the volumes that we have created, you can also identify this match here on the top. Now, if we were to actually delete a pod, so let's get the pods here and let's now try cube cut delete pod, demo SS zero. And the moment we do that, it will take a little bit of time. Let me add here the force.
+
+[00:10:03] Once again, let's have a look that's looking good. And now if we were to get the pods, once again, we will see that the pod was recreated with exactly the same index in comparison to deployments. This was not really possible. So the the suffix here that was appended by deployments was a random string.
+
+[00:10:21] That means if pods were recreated, they would get a new random string at the end of them with stateful sets. It is possible to have this in a more stable situation or scenario and that has its own use cases. So let's now exact into, let's clear this, let's now exact into one of the spots.
+
+[00:10:41] So exact it and the name of the pod, we're gonna go with demo SS zero. And what we want to execute here is the shell command. That's perfect. So we have mounted our volume under the forward slash mount forward slash local directory. So let's just echo something here. Echo, hello from SS zero or from demo
+
+[00:11:04] stateful set zero. And we're gonna write this to mount local hello dot txt, right? So now we have the file here, let's exit. And if we were to now exact once again into this pod and just get the contents of the file.
+
+[00:11:21] So let's just copy this here and let's paste it here. We will get hello from demo stateful set zero if we were to now exact into the second pod that was created by the state for set. And we were to try to actually print the results here, we will see that it's not possible,
+
+[00:11:40] right? So the persistent volumes they are mounted once again under different directories. That was a conscious choice that we did here. So they don't really share the underlying directory, right? That means the data here from our first pod is or actually from our first pod here is written under SS ZERO. While the data from our second pod will be written under SS one.
+
+[00:12:03] So we cannot retrieve this data here. Let's exit and let's now delete once again our pod with or the pod SS zero here. And let's have a look at what happens once that pod is recreated. So the pod was recreated here and we can now exact into this pod once again.
+
+[00:12:23] And if we were to print the contents, oops, if we were to print the contents of mount local. Hello dot TXT. Oops, sorry, I exact into the wrong one here. I exact into the one. OK. I was wondering what, what kind of mistake I did but that that was just the name of the
+
+[00:12:40] apologies for that. Let's exact into the one with zero here. And now let's get the contents of this file and perfect the file is still available here. That means the statefulset took care of correctly identifying the correct persistent volume claim to bind to this pod as well.
+
+[00:13:00] And so if we have a look at the persistent volume claims here, we will see that their age didn't change. So the persistent volume claims were not deleted, they were kept whenever we deleted the pods. And then when the pods were recreated, Kernis was smart enough to identify that this claim actually should be
+
+[00:13:20] connected to our SS zero or demo SS zero pod here. And that's how we can get our pods to have a stable storage behind the scenes. Awesome. So hopefully, this helps understand a little bit more how the persistent volumes and stateful sets work with each other. And I believe that's a great moment for us to take
+
+[00:13:40] a short break and let's come back in the next lecture.

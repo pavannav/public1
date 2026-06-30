@@ -1,0 +1,63 @@
+[00:00:00] I would now like to explore what happens when we pass an invalid configuration to the pods. What happens if the pods cannot really start and get to a healthy state? How do deployments handle that for us to simulate this? Let's just come back here to the ide and let's pass an invalid image tag.
+
+[00:00:20] So let's say that by whatever reason we introduce a Typo, we forgot the dot here before the one and we ended up with an invalid tag here, we then committed the file, pushed it and the CICD pipeline kicked in it eventually got to the point where the changes will be applied. So we're just going to run them manually here. Cube cut,
+
+[00:00:40] apply engine X deployment. We got the message great. It was configured. However, when we look at our deployment here, the deployment, we will see that there are actually four pods instead of the desired five, there are three up to date and there are four available and we're like, oops, there is probably something a
+
+[00:01:02] little bit misleading. A little bit wrong with our deployment. How would we go about it? The first thing that I would like us to explore is let's first of all, just describe this deployment. So let's describe the deployment engine X deployment. And as you can see here, let's have a look at where there are lots of messages here.
+
+[00:01:21] And as you can see, this doesn't really provide a lot of information around the errors that might be happening with our deployment. The image here, we can see that this is the buggy one. Yes, that's correct. We have five desired, we have three updated, we have seven total, we have three unavailable. So it's a fairly tricky scenario here.
+
+[00:01:41] We don't really have a lot of information here, but we can also find more information whenever we are looking at the pods. So let's just get all our pods. And as you can see here, we have three pods that are showing an image pull back of error. This is much more promising than the description of our deployment.
+
+[00:02:00] So let's describe the pod instead. So we're going to run cube cut describe pod, we're going to pass the pod name. And as you can see here in the events section, we can now get a much better, much clearer picture of what is actually going on. So we have an error here, image pull back off
+
+[00:02:20] and then we see here pulling image the engine, this engine next image and then we have a warning here that it has failed. So the message that is shown here is that it failed to pull this image. And the error response is that it was not able to find this image, right. So Manifest for this image tag here was not found.
+
+[00:02:41] So whenever we see image pool back off or like we're not able to find the Manifest or image pool here in the error message, then I would directly look or the first thing I would look at is hey, is this a valid tag? Is this a valid image name, a valid tag? Did I add here any username or repository in front of the image?
+
+[00:03:02] What could actually be going on? Right. So now here we can also see that our pod is not in a ready state. So we were able to identify the potential source of error. It's interesting that the deployment, it doesn't move forward, right? So we still have four pods from the old replica set here
+
+[00:03:22] and these pods they are up and running, they are able to serve requests. So the deployment because it's using the rolling update strategy did not delete all the old pods only then to create the new one and basically potentially introduce some downtime. It started creating the new ones.
+
+[00:03:40] It to move towards the new replica set. It didn't manage to because the pods did not become healthy. So it stopped the rollout and it kept the old replica set up and running if we get the cube cut rollout status here for our deployment. So deployment forward slash engine X deployment. And then once again, just to highlight this forward slash is entirely optional,
+
+[00:04:02] you can remove that. It's no problem. You will see here waiting for deployment rollout to finish. Three out of five new replicas have been updated. So the status is basically stuck. As you can see here, it's just stuck because these spots here, they are not able to get to the running state. Now, if you don't have access to the configuration file and let's
+
+[00:04:23] say that things are burning in production in your life. But what went wrong? How do I fix that? I don't know, I don't have the time. It's a lot of pressure now and I just want to revert to the previous working version. Assuming that the immediate previous rollout was the one that was working.
+
+[00:04:40] Then we can simply run a cube cle rollout and do and then say deployment engine X deployment like so. And once we do that, we will see that the engine X deployment is rolled back. If we now get cube cut, get pod here, we can confirm that a new pod was added. So it's seven seconds old here. So a new pod was added
+
+[00:05:01] according to the previous version, the previous hash of the template. If we have a look at the cube cut rollout history here, let's have a look at what this outputs on the screen. And as you can see, we get that, the seventh revision here is once again, updating this to the version 1.27 0.1 Alpine.
+
+[00:05:20] Ok. So, undoing the deployment here, the rollout is one option. But once again, this is temporary because it simply it's going to revert the changes that you are trying to apply. But these changes are already saved in the configuration file, right? So it's like once you try to apply them again, then you will get stuck once again in this buggy rollout here.
+
+[00:05:43] So the tempor the permanent, the permanent solution is for you to go back to the file, fix the problem and then apply the new configuration. We're going to do exactly that. However, I just wanted to present this in case it's a lot of pressure or you don't know the exact fix to the breaking pods,
+
+[00:06:01] so you can revert that to a previous working state. Let's apply once again our incorrect configuration. Let's have a look at the rollout history here and see if there is any new information. And as you can see, we are still using the old annotation here. So if we were to now run cube car
+
+[00:06:20] annotate, let's annotate with the new version here, update engine X to tag 127 and we show the rollout history, then we get this new version here. So now this is the buggy one and hopefully this message was created automatically, so you can immediately identify what the problem was. And let's then come back to the ide
+
+[00:06:40] to fix the issue. We know that the issue is around the missing dot here. So just going to add the dot Let's just save this file. Come back to the terminal and trigger a new rollout with cube cut. Apply F now before they apply, let's run a div here just once again to see the changes that will be applied.
+
+[00:07:00] And as you can see our generation here keeps increasing. So this is monotonically increasing. Every time you make a difference or every time you apply something new, the generation increases. Now you see that OK, perfect. Seems like our image will be fixed. So we're just going to run cube cut, apply F cube cut or dash FGX
+
+[00:07:20] deployment dot YAML. We can now annotate this as well. So let's annotate this with the new annotation here. Change cause is fixed incorrect tag back to 1.27 0.1 dash alpine. And so now this is much, much better, much more readable here. If we have a look at the history,
+
+[00:07:41] then we will see that we have a couple of revisions and eventually we have fixed incorrect tag back to 1 27.1. You will also see that the change cause here that was prior on the top, it was between these two, it has been updated to this new one here. So because the hash of the template file, the hash of the template is the same
+
+[00:08:03] then Cnis is annotating the one that is actually corresponding here to the previous number seven. As we scroll up a little bit more here, we should have number seven. Exactly. So that's number seven here. And as you can see at the bottom, number seven has, has disappeared here
+
+[00:08:20] and it has become number nine. If we were to now run the rollout history here with the revision set to nine and output this as the EO configuration, we will also see on the top here. Let's scroll up. You will see that the revision history is exactly showing that both five and seven were the previous revisions for this replica set. All right.
+
+[00:08:43] So has this solved the problem? Let's have a look at our pods, cube cut, get pods that's looking pretty good. And if we now have a look cube cut get deployment, we should also see that our deployment is looking good here. And if we were to now have a look at cube
+
+[00:09:00] rollout status and pass the deployment, the next deployment, we can confirm that the deployment was successfully rolled out. Awesome. So we saw different ways that we can go about debugging a failed rollout here. We saw that we can introduce breaking changes and the rollout might get
+
+[00:09:20] and we learned different ways that we can debug the issue, try to find the solution and both undo a rollout temporarily until we are able to fix the configuration or roll forward with the correct configuration. Once we have the file fixed with the cube cut, apply command. Before we wrap up the lecture. Let's just delete our deployment with cube cut,
+
+[00:09:42] delete F and let's pass the deployment dot YAML file. This will delete our deployment. It will delete also the replica sets from the deployment. There are no replica sets and it will also delete the pods from the deployment. That's amazing. Congratulations on completing these lectures.
+
+[00:10:02] It's very, very important. What we have discussed here is very important because this happens very often. It's very common that we misconfigure something and that we want to know how to fix it. That's why we have the rolling update strategy in deployments in COTIS so that if we break something in the configuration,
+
+[00:10:20] the old version is still up and running able to serve requests, our application is not down, we can stop our rollout, we can figure out the problem, address it with the proper solution and then roll out the new working version. That's amazing. Let's then take a short break and come back in the next lecture.

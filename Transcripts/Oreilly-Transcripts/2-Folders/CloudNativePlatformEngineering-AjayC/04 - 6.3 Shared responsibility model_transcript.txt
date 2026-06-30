@@ -1,0 +1,43 @@
+[00:00:07] Like we spoke about earlier for other aspects of platform engineering, observability and reliability also has a clear shared responsibility model. So let's look at who's responsible for what within observability and reliability.
+
+[00:00:21] Start with platform team. Your platform team is responsible for things around infrastructure ownership, your service discovery data, backend, virtualization, enablement and documentation. So these are things like where should the observability stack run, then configuring how the metrics should be collected.
+
+[00:00:42] Then if you want to sort of scale your storage as a whole for metrics, locks and traces, any of those things, how should that be done then and who should do it? It's also about like providing that abstracted observability interfaces. So we talked about having OTEL and those kinds of things, so that actually gets done there.
+
+[00:01:02] Then you also have, depending on the team topology model that you have, your platform team might act as that initial enablement team that can help the development teams instrument their code. If your team topology is set up in such a way that you have an enabling team that is actually responsible for it, that's great, but. But most organizations won't
+
+[00:01:20] start there. So you might want to have your platform team think about the enablement at that level. Then you also need to maintain the guides and the best practices and things along those lines. Even like committing the SLO code, you know, those kinds of things, you know, which we talked about briefly, like SLO code should be in the git and how it should be managed,
+
+[00:01:40] why you should do it that way. All those things would become platform teams responsibility. On the other hand, the development team is responsible for adding the metrics, logs and traces to application code that should never be thrown back to the platform team saying that hey, I have the functional code now you add the observability code.
+
+[00:02:00] Now that is wrong. You should not have that. That is a responsibility of the development team, sort of the endpoint exposure. What that means is we talked about implementing the health or ready or metrics endpoints, right? So this is how you would actually know what is happening in production. That exposing those ones, making sure that that's available in the code is part of the responsibility of development team. You also need the
+
+[00:02:23] development team to be passed the trace IDs between services. So that is that context propagation we are talking about. Then ensuring that the logs are structured and include the required fields. This is not a responsibility of somebody else because development team knows most about what are the kind of data they would need to ensure
+
+[00:02:42] that this service works reliably and SLI definition is where development teams can determine what metrics matter for their service. Nobody else can tell that. If I'm developing a service, I am best qualified to tell you that what are the metrics that matter to me then? The dashboard creations like we talked about, the infrastructure for
+
+[00:03:02] creating the dashboards provided by the platform team, but the actual dashboard creation sort of goes to the development team. This is why I like tools like Grafana, which provides you easy capability for any developer to go in and put together dashboards that sort of makes a lot of sense for them and then they can actually use that as the single
+
+[00:03:20] point of communication. So this is how the responsibility works within this. As you're really looking at it in a little bit more detail, a little bit more technically, this might be a good checklist for you to see like how it sort of works. So we talked about OTL collector deployment. So OpenTelemetry collector deployment. So service discovery, config the actual database, scaling
+
+[00:03:42] the provisioning the Grafana and maintaining the starter gates, those are all platform teams responsibility. But you also find that things like code, instrumentation, custom metrics, definitions, endpoints such as the trace, context, propagation and self service dashboards that are very specific to their services.
+
+[00:04:01] That's all the responsibility of the development team. But at the same time there are some activities here, as you can see, where both teams are responsible. What are those things? Like your sli SLO definition. So this is something like we spoke, what they have to development team and platform team has to work together to make sure that they establish this.
+
+[00:04:21] Then you have your alert rule creation. So if you're creating an alert rule that development team is not ready to consume, platform team is doing that based on their prior experience. That isn't going to work. So same thing with the incident response. So use this as a checklist and in your organization things might be slightly different, but this could be a really good baseline to start with.
+
+[00:04:42] Now let's talk a little bit about the data ingestion models. So this is where we really talk about how are we actually going to get the data, you know, from various systems into your observability system. So main idea is that there are different telemetry types have like different collection patterns, right? So understanding these patterns are
+
+[00:05:00] something that's very important for the architecture for metrics. Prometheus is the most popular one. Prometheus tool is probably the most popular way of doing things. This sort of scrapes your slash metrics endpoints. So developers have exposed the slash metrics endpoint. Prometheus can scrape that at sort of defined intervals so you can have more of that pull model to do it.
+
+[00:05:22] Then the server reaches out to the targets, right? So the targets just expose that endpoint. So the pros of these things are essentially your server controls the load. So no need to configure targets to push anywhere. An obvious con is the fact that targets must be discoverable, right? I mean, so if it's not, you know, if it's a really short lived job, then you
+
+[00:05:41] won't have much of a, you know, benefit in maybe able to do that. When it comes to logs, either model sort of works, right? So because you have situations where you're using something like Otel, then the sidecar collection will sort of tail the files to look at the tail of the file and sort of. Or you'd have situations where app can push directly to it.
+
+[00:06:02] So the sidecar model is interesting and it's probably the more popular one. This is especially if we are using containers. So containers can write to warlog and the sidecar container can tail it and forward the push model. What happens? This has been the more traditional model of doing it. In the pre kubernetes heavy world you'd have your application send log
+
+[00:06:20] directly to the log aggregator. So I think that is how you could probably do the data ingestion for the logs. From a tracer's point of view, applications pushing the spans to ortel collectors is the default way of doing it. More of that push model. This is where applications can send trace data to a collector endpoint and then again you'd probably use OTEL for this activity too.
+
+[00:06:44] The benefits I can see there is that it sort of works for any application that can make an HTTP call. And this is good because then you don't have to do any specific discovery. The downside of it is that application need to know where to send the data. So if you don't know that you can go ahead and start overwhelming
+
+[00:07:02] the whole collectors. So the again summary here is that consider using Prometheus for Prometheus full for metrics or tell push for traces and for logs use the sidecar or push. So I think this is how you should probably be looking at that.

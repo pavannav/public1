@@ -1,0 +1,77 @@
+[00:00:07] - So the Domain Name Service is I think a pretty fun service to learn about. Of all the things we talk about, Network Plus, I bet this is one that you'll definitely count on coming up against at one point or another. When DNS works, there's not a lot that we need to think about,
+
+[00:00:21] but when it doesn't work or while we're configuring it, we need to have a pretty good understanding of what it is that we're trying to accomplish. So just as I've got above me here, a switchboard operator. And in the good old days used to pick up your handset and a switchboard operator would basically answer the other side, and we would ask them to connect us to someone else. The switchboard operator would of course, take the circuit,
+
+[00:00:42] that we're one calling in on and connect that to another circuit. And that was basically a manual process. So if we think about that, anytime you want to talk to another system on the internet, you're going to use the Domain Name Service or DNS, to be able to find that system. Our initial connection, to talk to a web server or a mail server,
+
+[00:01:00] or establish a VPN connection or whatever it is that we may want to do, is typically going to begin the journey through the process of DNS. So let's go ahead and take a look at it, and discuss some of the major components. So first and foremost, we need to have the name, resolve to an IP address. So if I type in www.pearson.com,
+
+[00:01:23] we ultimately want that to become an IP. Now, in order to do that, we have to establish a record of what the name-to-IP address mappings are. This is typically done on a static manual administered basis. So someone who has rights to a domain, you can purchase your own domain for about 15 bucks a year.
+
+[00:01:42] Let's say that I create Ryanlindfield.com. I can then go into my DNS server configuration, and I can say, www.Ryanlinfield.com goes to this IP, VPN.Ryanlinfield.com goes to this other IP address, NS1 and NS2 for my first and second name servers
+
+[00:02:00] would go to these IP addresses, and I'll just go through and start statically populating names to IPs. Now that's for just traditional regular server base administration, that's how we typically do it. Realize that there's also dynamic registration available. You use that in scenarios where you have dynamic IP addresses. So let's say that I have a house.
+
+[00:02:21] At my house, I've got internet access, but the IP address is not static. I can run a dynamic DNS client that will basically register and say, "Hey, my IP address changed." But here it is with this new IP. And that process will just pull and check in regularly. There's other ways to do dynamic DNS as well.
+
+[00:02:40] But the point that I'd like for you to take away from this, is that DNS registration can be either static or dynamic. For most of our servers and for traditional infrastructure it tends to be static, but we can do quite a bit on the dynamic side as well, from dynamic registration of users that are just kind of coming along or popping up
+
+[00:03:00] to virtual machines that are being brought in line in different data centers. And if we want to steer traffic or redirect traffic, we can do some really neat things with DNS as well. Continuing on, DNS gives us the ability to maintain a global hierarchy. So if we look at things like what we call TLDs or top-level domains,
+
+[00:03:20] You've got .com, .net, .org, .co, .UK, .edu's et cetera. Once we define these, then we start registering fully qualified domain names to them, these work around the entire globe. You'll also know that we have domains that are registered to specific countries. So for example, maybe Japan,
+
+[00:03:40] you'll see co.jp, the UK, co.uk, et cetera. Requirements for many users and applications. So DNS is something that we tend to assume is gonna be there for us. Of course, you've got DNS working. How else am I gonna perform updates? How else am I gonna be able to connect to central servers or other peers?
+
+[00:04:00] And if you think of it as 4, 1, 1, or the operator for the internet, we're basically saying we want to connect to www.amazon.com, we need that to basically translate into an IP. So looking at DNS operation, it typically happens via UDP. So UDP is very simple. We don't have to do the three-way handshake,
+
+[00:04:20] establish sequence numbers and so forth. With UDP, all we have to do is a quick query and a quick reply. So I say, "Hey, who's pearson.com?" And I get an answer back that says, www.pearson.com equals this IP address. It's just a quick query and a reply, almost like the way that a ping works, where it's an echo request and an echo reply.
+
+[00:04:40] Now, alternatively TCP is sometimes used for DNS. TCP is used first and foremost for zone transfers. What's a zone transfer? Well, we'd like redundancy, we don't want DNS to go down. So if we have one DNS server, maybe we add some new host entries on it, and we want those entries to be replicated to another server,
+
+[00:05:00] we wanna keep everything synchronized and the same, we can use something called zone transfers. And a zone transfer is very much like the name suggests just the records that are on one server, being copied over to the other. That transfer of records is going to use TCP. So if we think about what port numbers need to be permitted for DNS to work,
+
+[00:05:21] if that's all that they ask us, we might need to say UDP and TCP 53. In reality, in production, UDP 53 is what I leave open. TCP 53 is either blocked or it has very specific access. I only allow that TCP 53 to go back and forth between two name servers.
+
+[00:05:41] It may be worth noting that sometimes when you make a DNS request, that the reply could be larger than standard. And in certain scenarios, this is pretty rare. I wouldn't worry about this too much for exam purposes, but just so you know that it's out there. If you do a DNS request and the reply is very large,
+
+[00:06:00] you can start the request in UDP and you can move over to TCP to complete the transfer. So it can start in UDP, it can pivot to TCP, if the response is very, very large. I've only seen this about twice in my career, where there was something funny happening with the customer network. We couldn't trigger figuring out exactly what was happening.
+
+[00:06:21] Through packet captures and sniffing, we saw this occurring and all we had to do, is open an access control list to allow that TCP traffic to flow. So a lot of times that's something that could occur, and you may not even know about it because you're not blocking traffic. But if you do have very large replies, it could require a TCP 53.
+
+[00:06:40] It's kind of a weird one like out in left field, but it's just good to know about. So other things that are good to know about. DNS provides no integrity. So you say, "Hey, how do I get to the bank?" And somebody tells you it's down that hallway, third door on the left. And you go to the third door to the left, it's not a bank at all. Well, we can be certain that people are not lying to us
+
+[00:07:03] about the DNS reply, if we use something called DNS SAC. It's basically gonna have an integrity checksum and prove that the DNS reply is actually valid. Without that, there is no real integrity. DNS provides no security. Now, when I say security, you could think confidentiality or privacy here,
+
+[00:07:21] anybody who's sniffing your traffic, can see which websites you visit, in which frequency. Now analysis of DNS traffic is very, very useful as a security control. We can look at the DNS queries that are going out, we can look for things like domains that host malicious content, it can tell us a lot about what's happening
+
+[00:07:40] inside of the organization. So looking at DNS client operation, first off, if we have a DNS lookup, we go, "Okay, this name that I'm looking up, it's not my own name, right?" That'd be pretty silly, if I asked, "Who, is Ryan Lindfield?" And it's like, "You are a silly." So if I was trying to resolve a host name, that was myself, I'm not gonna go any further. I'd want to know that that's me.
+
+[00:08:01] Next, I can check something called a local HOSTS file. It's all a capital, just like that. Windows Linux, they've got these host files. And it's where we can go in with a note pad or whatever text editor that you like. And we can edit and say, this particular host name goes with this particular IP. That gives us the ability to override
+
+[00:08:20] whatever is happening dynamically with DNS. Something good to be aware of. This is something that malware authors will sometimes do when they put malware on your system. If they wanna stop you from getting your software updates from Microsoft, or maybe Kaspersky or whoever you use for antivirus, it's gonna have a static entry. It says, if you want to go to Sophos,
+
+[00:08:42] let's say updates.sophos.com, go to 127, 0, 0, 1, your local host. We don't want that to happen, right? 'Cause basically we just connect to ourselves, we'd never get our updates. So this is something that can be modified by malware authors. If you think your system has been compromised, and maybe somebody edited this, you can just go ahead and view it pretty easily.
+
+[00:09:03] Just kind of sticking to the order of operation stuff, if the entry that we're looking for is not to find our local host file, this is where we check DNS. So I would say the vast majority lookups that you perform are not gonna be yourself. They're not gonna be found in that local host file, but they will be found in DNS.
+
+[00:09:20] Things that can't be found in DNS, we can then go do a NetBIOS query for it. NetBIOS is what a lot of us were using to name our computers and to find things in a workstation environment before active directory, and before DNS were heavily utilized. So what is NetBIOS? NetBIOS just gives us the ability to shout or multicast.
+
+[00:09:41] Hey, I wanna find whack whack. And you may. Actually I say whack, whack. You'll type into your address bar, something like whack, whack, Ryan_pc. That's not a fully qualified domain name, but if you shout for it, there may be a computer with that host name. And if that computer is running NetBIOS, it's gonna hear you shout and say,
+
+[00:10:01] "Hey, I'm right over here, and here's my IP address." In a lot of ways, it looks kind of like AARP. Remember with an AARP, we do a broadcast, everyone gets a copy, and actually the person we're trying to find, will reply to us and say, this IP address goes with this Mac address. It's kind of like what NetBIOS does. You could think of it as being a local way
+
+[00:10:22] to resolve other computers, just using multicast. Now, if you wanted to make it more scalable and actually register with the central server, or make it DNS ask, you can do that. There's something called WINS. W-I-N-S, you can have a WIN server to resolve NetBIOS names. It's something good to be aware of just 'cause it happens.
+
+[00:10:41] It could be a potential factor for abuse. In reality, though, most enterprise environments you're gonna be in, are gonna leverage active directory. All of the resources should be registered in DNS. In smaller environments, where you don't have centralized formal DNS structure, NetBIOS can be pretty useful for finding other systems
+
+[00:11:02] based on host names. So DNS server operation, remember that you've got this concept of local records. You could have entries that say, this is where something exists. It could be your host file, or it might just be local DNS cache. If you don't know where something is, we tend to do what's called a recursive DNS lookup.
+
+[00:11:23] And recursive lookup, is where, here's my client. I make a request to my local DNS server, and I say, "Hey, do you know who www.ebay.com is?" Well just like I would do, they're gonna say, "That's not me." I say, "Okay, nope. Is it in my host file?
+
+[00:11:40] Nope. Is it in my local DNS cache? Nope. Hmm, well, I better go look for it somewhere else." So recursion means that that local DNS server that I just requested, it doesn't know, so it's gonna go find out for me. It's gonna take it upon itself to get that answer. When it does, it will return it to me.
+
+[00:12:01] With iterative what's gonna happen, is the client accesses the local DNS server, and it says, "Do you know how to get to ebay.com?" And that server says, "I don't know how to get to ebay.com, but here's the TLD top-level domain for .com, I would start there." And then what happens is that the client
+
+[00:12:21] will have to talk to .com and say, "Okay .com, who is pearson.com?" They go, "Well, pearson.com, here's his authoritative name server." And I can ask that name server who's www.pearson.com, and then I'll get this specific answer. Notice it in that second example, the client is doing a lot more of the work itself,
+
+[00:12:40] where with recursion, we ask a local DNS server and it does all the additional digging to find the answer for us.

@@ -1,0 +1,61 @@
+[00:00:00] Hello and welcome back. One thing that is really bugging me here is as you might expect, we don't want to have these values hard coded. We don't want to have an assume role policy here just in line like this with an escaped JSON version. And we also don't want to have this managed policy ARN here hard coded better is for us to actually have this
+
+[00:00:20] in TFORM. So let's start in this lecture to migrate here, this first point, the assume role policy. And for that, we're gonna use a data source which is in AWS IM policy document. And then here we're just gonna say assume row and we can say here Lambda execution role, assume or assume Lambda execution role,
+
+[00:00:41] let's say Lambda execution role. And then here for us to define this, we will add a single statement here and the statement that we will add, let me actually add, let's change this a little bit just so that we can see it a little bit better. So that's gonna be like this EO and once we add a new line now we should see that we have a multiline string.
+
+[00:01:01] So let's just add eo one second and I just want to, to format this a little bit better so that we know exactly what we are adding, right? So let's just have a look here. We're gonna have a statement and then this statement will be an array or a list of actions as well as their configuration. So there is action here and then this action will be sts assume role
+
+[00:01:23] and the effect here on a new line. So this effect is gonna be allow and the principle here that we will allow this effect. So let's add the principle on a new line here is going to be our service. And this service here is the Lambda service, right? So that would be something like this Lambda,
+
+[00:01:42] Amazon AWS. And then this here is closing the principle, this is closing the statement and this is closing the array. And then we also have the version here, which is this version 2012 and 1017, right? So perfect here we have now a multi line or basically just a multi line string.
+
+[00:02:01] You could use something like this if you want to, we can also transfer this into our statement here in our data source. So what we're gonna do here is we'll have an effect of allow, we will have principles here and the type of the principle is a service. And here the identifiers of this principle is going to be just the Lambda service.
+
+[00:02:24] So I'm gonna say Lambda dot Amazon aws.com, this is matching here the same, the same service that we have in this principle and the effect is here and the actions that we want to allow the actions is just here,
+
+[00:02:41] the sts colon assume role. So what this is doing is basically whichever role has this policy document attached as an assume role, policy will allow Lambda to assume this role, right? So here, Lambda would be able to assume any role that has this policy document attached as the assume role policy.
+
+[00:03:02] We could be more restrictive about which lambdas are actually allowed to assume this role. But that would be for our use case here too much. We don't need to go that far. So let's clear this here. And now we can say data dot AWS im policy document assume Lambda execution role dot JSON,
+
+[00:03:20] right? So now we have managed to remove the hard coded statement here, which was hard to read and hard to maintain. This one is easier to read and easier to extend. Let's run a form format here, recursive so that we format everything even though we have just one directory. So this doesn't make any difference for us. But now let's work here towards removing the managed policy A RNS
+
+[00:03:43] for that. Let's come here to our policies page or actually, I believe that our policies page is gonna be too much here. There is too much information, let's close this and let's come to our roles page. So here in the roles, we don't have too many roles. We can directly identify the manually created Lambda role.
+
+[00:04:00] And if we click here and we come to the permissions and we click on this permission, then you will see that this is marked as a customer managed permission if we were to come to policies here and this is not opening on a new line. However, let's take just the administrator access as an example. This is marked as a an AWS managed permission.
+
+[00:04:22] So the customer managed permissions are just the permissions that AWS is not going to maintain for us. It's not gonna change them. We are fully responsible for them. So it does make sense that we import them into Dataform and that we manage them via dataform. Let's give it a try to import this policy.
+
+[00:04:40] So let's then come back to the Dataform documentation to the AWS provider documentation. And then let's look for an AWS Im policy here and let's see if we can find the resources they are under Im AWS Im policy. Let's click here. And then as you can see, this provides an Im policy. So this is the one that we want to import. Let's use this here.
+
+[00:05:02] Let's have a look at the import here. And as you can see this one is a little bit different because we're not gonna use only the name. We will actually use the entire A RN. So if you have a look here at the documentation, we can use an import block and then we will use the A N. So let's copy this.
+
+[00:05:20] Let's come to our ID and let's add here on the top, we're gonna say import to Aws I policy dot Lambda execution. And then here we're just gonna copy the A RN from our, from our console. So we're gonna copy this back to the ID. Let's paste it here and let's see if this is enough for us.
+
+[00:05:40] So let's clear the console, run a Terraform plan. And let's see if terraform will be able to, I actually forgot to add a generate config out, right? So terraform plan dash generate, config out, generated and then this will give us the file. Perfect. So we have one to import nothing will change. And if we click here on generated,
+
+[00:06:02] we will get exactly what we want. Let's then copy this here into our A IM file. So let's copy this and let's paste it. Probably let's say here on the top, right. So this is the policy here, the Lambda execution and then this is the managed policy A RN. So we would actually remove this from here.
+
+[00:06:23] This is the A N and would then simply add in AWS underscore IM policy Lambda execution dot A RN, right? So this will replace our hard coded value here. However, instead of using this strategy here, I particularly prefer to use an IM role policy attachment.
+
+[00:06:43] So if we were to say a resource here, AWS IM role policy attachment. And then here we simply say Lambda execution, Lambda execution, then here we would get a role and the role here would come from AWS IM row Lambda execution dot name I believe.
+
+[00:07:02] And the policy here, the policy A RN will then be our policy A RN here, right? So we will just copy this, paste it here and now we can get rid of this managed policy. And I'm not sure whether this will recreate the role behind the scenes. We need to have a look at the data farm plan because we are actually changing here.
+
+[00:07:23] Something that is pretty inherent to the role, which is the P which are the policies that are attached to it. But let's let's hold that thought for now, let's just clear a little bit this here, remove some of the information, let's also remove this here, let's also remove this here.
+
+[00:07:41] And as you can see, our names are also getting a little bit like they, they have some random strings behind them. And also here, I'm not gonna change the name because name pro and I believe that it leads to recreation of resources and we are just importing things. We don't want to recreate anything. At least as of now, we would go into doing a bit of Refactoring here and changing
+
+[00:08:03] the names and recreating some stuff after we are done importing. If you wanna try that, then by all means, go ahead and do it. So let's have a look once again at a terraform and then we can go directly with the apply. Here, there is a duplicated resource. So let's have a look. Where is the duplicated resource? I believe it's the one that I have imported
+
+[00:08:23] in the generated file. Exactly. Right. So this is here duplicated. We're just gonna remove that and let's then run the data form, apply once again. Perfect. So as you can see, there is one to import one to add here. And what we're gonna add is the role policy attachment.
+
+[00:08:40] And very interesting here, we're actually not modifying our role. So I'm curious about Dataform. What's gonna happen once we run this apply? Once we confirm it, let's type. Yes here and let's come back to the console to actually inspect what has happened. Let's have a look at our role. Let's refresh our role here and let's see if the permission policies they are still correct. OK.
+
+[00:09:02] That's perfect. So I'm not sure what exactly happened behind the scenes because we have removed that managed policy, a RN from our role resource here. And we have created a policy attachment, maybe this means the same thing and we're just expressing it differently in terraform
+
+[00:09:21] and that's why Terraform didn't have to change the im role resource. Great. Let's remove the generated file once again. We're gonna delete it here and let's just inspect what we have done in this lecture. So in this lecture, we have imported the policy here that was created for us when we created our Lambda manually.
+
+[00:09:40] We have also added the resource here and we have removed unnecessary arguments. We have then migrated the IM roll away from the managed policy arns we have then migrated the IM roll away from the managed policy ARN to using a policy or a roll policy attachment, which from my perspective is a little bit cleaner.
+
+[00:10:01] That's great. Before we move forward. Let's take a short break and we will come back in the next lecture.

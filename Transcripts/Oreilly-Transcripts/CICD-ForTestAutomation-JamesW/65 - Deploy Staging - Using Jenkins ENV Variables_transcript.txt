@@ -1,0 +1,95 @@
+[00:00:00] So let's now start writing out our Jenkins file so that we can do the deployment to fly dot IO through Jenkins. So I'm back in my ID. I'm gonna open up the Jenkins folder and I'm gonna open up my Jenkins file. We're gonna scroll down to the bottom. We're gonna scroll down to the bottom then just after our last stage here, but just before the post call,
+
+[00:00:20] we're gonna add another new stage and we're gonna call that stage, deploy staging. So within this stage, we're basically going to have three different sub stages. If you like the first substage is where we're going to actually install Fly CTL, get that all installed and working in Jenkins. And then in the other two stages, we'll deploy the back end and then we'll deploy the Frontend as Frontend as well.
+
+[00:00:44] So let's start by just installing Fly CTL. So I'm gonna add in another stage that's gonna do that and I'll just give it the name of install FLY CTL. So to install it again, we could, there possibly is like a plugin in Jenkins. I did have a look before I couldn't really find a plugin that would do it.
+
+[00:01:00] So I think what we're going to have to do is we are going to have to manually install it each time. Luckily, it's not too difficult. We can just do it through a few different shell commands. So I'm gonna show you how we would do that. Now, the first thing that we'll do is we'll add a shell command that's gonna make a new directory and then we're gonna supply in basically the path that we want fly CTR to be installed into.
+
+[00:01:21] So I think what I'm just gonna do is I'm just gonna add that in as some environment variables with a fly CTL install path. And what might be a good idea to do actually at this stage is to add some actual environment variables into this script. Um Cos we are gonna have a few, a few different ones that we're gonna use basically.
+
+[00:01:40] So just above that, let's add in a new block for environment variables. So this is how you add environment variables into your Jenkins stages and then those environment variables you can use throughout, throughout the rest of the stage in the Jenkins file. So the first one that we needed to add is the one that we just created. So that's the fly CTL underscore installation directory.
+
+[00:02:04] You can have one as well just below that for the path and we'll have another one below that for the home directory. So let's fill in what each of these will be. So this one, first one, this is just gonna be our workspace. This is just the home directory is just gonna point to a variable for our home space.
+
+[00:02:22] So this is just our Jenkins home space. Um Jenkins workspace essentially, that's what we're going to set our home directory to in terms of the path. So the path, this is gonna be the fly CTL, uh whoops, not with the brackets. It's gonna be I need to put the brackets here. This is gonna be the fly CTL
+
+[00:02:42] underscore install. So this is gonna be the same one that we're setting above here. And then it's gonna be, we're gonna point that to the bin folder and then we're gonna add that into the path as well. So this is just when you set up your path, um you always add because we're just adding fly CTL
+
+[00:03:01] into the path basically just so that we can call that directly without having to specify so that we don't have to specify the full path to the fly CTL installation. Now, in terms of the fly CTL installed, there is a slight bug when we installed it that I have found with, with the workspace that we have to trim a certain bit of white space from the data.
+
+[00:03:21] So I'm basically just going to show you the code that we need to add in that will just get this working out of the box. So I did have to play around with this a little bit before just to get it to work. But what we do is we take our workspace environment variable and then we can call on that this replace all method. So the replace all method we want to say, basically take anything where there's an empty string
+
+[00:03:43] where there's a where there's a space I should say and just replace that with just get rid of the space basically. So all of the data it does is it just trims all of the empty white space from our path, a ball. And again, this will help prevent any bugs that we have when it comes to the fly CTL um environment,
+
+[00:04:00] we can take that and then just say forward slash dot fly on the end like so and I need to wrap all of that in double quotes as well. There we are that looks good. The one last thing that we need to add is that we need to add in the fly API token. And this is the one that we just added previously to our Jenkins.
+
+[00:04:20] So the way that we can access that is we can call the credentials keyword and we just specify which credential we want. And what we called it if we remember is fly underscore API underscore token. There we go. So that should be our four different environment variables set up here. So this is what we need to get those in place and these,
+
+[00:04:40] we'll be able to use some of these environment variables to go ahead and get Fly CTL installed. Ok. So, coming back down to the stage, so we've got the first stage here where we're making the directory for Fly Fly CTL. Um The next thing that we can do is we can make a cURL call just to download Fly CTL. So we're gonna just download it from their main page,
+
+[00:05:00] which is fly dot IO forward slash install dot sh. And then we're just gonna make sure that we pipe that over to sh as well. So that's just gonna download and install Fly CTL for us in Jenkins. Uh The last thing we can do is just check that it's working so we can just say fly CTL version and then that will just print out the version number,
+
+[00:05:23] make sure we respell version correctly and that's good. And then that should be everything that we need for that stage. And I've just noticed a typo here. Apologies. We do need to make sure that we add in the steps here as well. So just make sure you add in steps there above and I'll just move these up into here,
+
+[00:05:44] fixed formatting. There we go. That looks better. Yeah, just make sure that you put everything in a different stage in the inside steps like so, ok, so that's the fly, that's the install fly CTL stage. The next stage that we'll have is where we're going to deploy our back end
+
+[00:06:02] to add another stage below to deploy to the back end. Again, we add in the steps for that. So again, we wanna make sure that we're talking to the bug tracker backend directory. So just add in the directory for bug tracker backend, which looks like. So
+
+[00:06:20] and then for that directory, we can just execute one simple shell command which is gonna be fly CTL deploy, say minus C fly dot staging dot tunnel. And we can also add in a special flag here called remote only. What this will do is it will make sure that the Docker image that fly CTL is building,
+
+[00:06:40] it will make sure that that gets built on the fly CTL servers rather than on our Jenkins um our Jenkins box. So that should make that a little bit quicker. So if you remember this fly dot staging dot tunnel in the back end, that's just gonna make sure that it's pointing to this file over here because we're building the staging environment in this step. And that's the only command that we should need to
+
+[00:07:00] run because we should have installed fly CTO above here. We should have it then on the command-line and we should be able to just run the fly CTL command here like so OK, that looks good. We just need to add in the ba uh the Frontend stage as well. So that's gonna be really similar. So I'm actually just gonna copy the back end one
+
+[00:07:20] go down and I will paste that over here. Oops, let's try that again. Paste that down here. So this one's gonna be deploy the Frontend and the steps are similar except we're deploying the Frontend this time and the fly t deploy command that basically stays the same. The only real difference is that we're now deploying into the Frontend.
+
+[00:07:44] OK? That looks good. The only thing we probably need to add here that we're missing is that we only want this to happen when we're building on the main branch. So although we haven't set up poor requests yet, in Jenkins, we wouldn't want the deployer staging to happen on a poor request branch.
+
+[00:08:01] We'd only want it to happen when we're building out the main branch. So in order to do that, we can actually add a when block at the top of this stage. So we can just say when and then we can say an expression and we can just basically just check that we're only on the main branch.
+
+[00:08:21] So to do that, you can do return E and V dot get underscore branch and you can say only check when the or when the branch is origin dash name. So what this expression at the top basically does is that it just checks that we're on the main branch that should be origin forward slash main priorities.
+
+[00:08:41] So this will check that we're only on the main branch. Basically, it will just make sure that this stage will only run when we're on the main branch and not on. So if we're building like some other branch, we make a different branch to do some changes. First, we don't want that branch to deploy to staging. We only want the main branch to deployed.
+
+[00:09:00] OK? That should be all of our code. So let's open up the terminal at the bottom. I'm gonna make sure I CD into the root folder to get, get status to check what I'm committing, gonna get at dots get commitments um and say deploying staging for Jenkins,
+
+[00:09:27] I'm gonna push that up to the main branch. So when we push this up to main this, it will run through our github, but it's not going to deploy that to staging yet because we haven't added in any code.
+
+[00:09:40] So it will just build staging and run the tests in the same sort of way. So we could disable that if we wanted to, that might be a good idea. So if we go over to the github CI dot YAML, the easiest way for us to disable this is probably just to go up to the top here when we're doing on the push to the main branch. What we could probably do is just comment that out.
+
+[00:10:02] So I'm just going to comment that out at the moment just so that we don't have like different branches being built on different CI tools and possibly conflicts later on. So I'm just gonna add in that change as well. Let's say, disable building
+
+[00:10:20] projects on hip hop fictions, my watch and push that up to main as well. Ok, great. Let's now jump over to Jenkins. Let's go back to our project. So go to the dashboard and the bug tracker. I'm gonna click build now.
+
+[00:10:42] OK? So now the pipeline looks like I might have a syntax there on my scripts. Oh yes, sorry, I forgot to add in the stages, keyword there. So we need to wrap everything of these three different stages. They need to be wrapped inside that stages. So just grab all of the three stages here like so
+
+[00:11:03] paste them in here and then I'll just fix up the formatting quickly. Oops. So if you need to format everything, you can just select all and press tab, fix up some of the white space just to try and keep this a little bit tidy.
+
+[00:11:26] OK? That looks good. So yeah, everything just needs to be within that stages, the stages, uh wrapper there. Let's commit that again. So I can get that up to commits
+
+[00:11:40] just to say fixing formatting and Jenkins file and then you push that back up to mine. Let's head back over to Jenkins again. Click the build now. OK? Good. This time the project's building. So let's let the pipeline run through and then we'll see
+
+[00:12:00] how the deployment gets on whether the staging deployment happens. Ok. So it's taken a few minutes, but it looks like it's deployed. It's installed, fly TCTL and it's deployed everything successfully. So it did take a few minutes to download, fly CTL. I noticed that the coal command to do the download was running a bit slow. I don't know if there was some congestion. Hopefully. Now it should cache anyway. So it should be quicker going forward
+
+[00:12:22] and then it did the deploy to the back end and the Frontend. If we go over to our apps on our fly DTL dashboard, you should be able to see the bug tracker, the back end that should have been updated here just a couple of minutes ago on our staging environment. If you can just see here, it was
+
+[00:12:40] that one minute ago and two minutes ago. So that's really cool. That's actually deploying straight away through Jenkins for us. Another thing that we could do is we could actually update the version number within our applications. So if we go over to the bug tracker back end, if you go into internal and config version dot go,
+
+[00:13:00] we could actually set this to a different version. So at the moment, it's 1.0 0.0 I'll set that to 1.0 0.1 save that. Uh And then as well as the back end, we can also change the frontend version, we're going to source I think it's in config at dot Ts. Uh We could change this one over to 1.0 0.2.
+
+[00:13:21] So I'll update that one. Let's change them both to 1.0 0.2 actually. So that's the Frontend set to 1.0 0.2. And I'll also set the back end to 1.0 0.2 as well. So let's just commit those two changes. Uh So let me just check what we're committing. That's it.
+
+[00:13:41] So we're updating both the version of numbers. So let's say updating to version one dot two, push this back up to the main branch again. Uh Let me jump back over to Jenkins. Scroll over here. I'm just gonna build the project again.
+
+[00:14:02] So I'm just gonna let the project build again and then we'll check that the version numbers that we can see in the application get updated. So if we take a look at the moment, we can see that the version number is 1.0 0.1 for the Frontend. So we're still just waiting for the deployment to finish when the deployment finishes. Let's see if that changes over to 1.0 0.2.
+
+[00:14:23] Ok. So the deployment has now finished. If we look through this time, we can see that the where we actually installed FLYCTL that was much quicker this time because I guess it's already cache. So that's pretty cool. And the deploy back end and Frontend, those were much quicker as well because we didn't have to build the Docker images from scratch.
+
+[00:14:40] If I just go over to the staging environment here in the web, ui if I refresh the page, let's see it loads, we can see now look at the version number up here has changed. So we know that the deployment is definitely happening through Jenkins. That's pretty cool. So that's how we verify the Frontend. If we also want to verify the backend,
+
+[00:15:00] we can make the cURL call to the health endpoint. And we can see again that the version that we get back is 1.0 0.2. So that's our application deploying properly now through Jenkins, which is super cool. So what we're going to do in the next video now that we're deploying to staging, what we can do now is we can actually run some automated tests on the staging environment.
+
+[00:15:22] So the idea is that we're gonna run through the pipeline, deploy to staging. Once staging happens, we'll then do some verification tests. So this will basically just be an end to end test. But on the staging environment and what we'll eventually do after that is once those automation tests pass on the staging environment,
+
+[00:15:40] we'll then move on and be able to deploy to production. So this is the full continuous deployment solution, basically deploying to a staging environment, running some manual tests and then deploying it to production after that. So I know this has been a long video, but let's take a quick pause and then when we come back, we'll work on adding in our postdeployment tests.

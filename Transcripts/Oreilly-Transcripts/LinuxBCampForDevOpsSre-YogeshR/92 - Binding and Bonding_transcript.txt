@@ -1,0 +1,153 @@
+[00:00:00] Hello and welcome to this lecture on Binding and Bonding in network interfaces on an Ubuntu 24.04 L TSVM running on AWS. In the previous lecture, we added a new network interface to our EC two instance. After attaching it, we verified its presence in the system using the IP
+
+[00:00:24] ADR command where we observed two interfaces NX zero, which is the default interface with the private IP assigned by ewsex one which is the additional interface we attached, which is now has the elastic IP.
+
+[00:00:40] In this lecture, we will go further and configure binding and bonding. Let's start with binding. Imagine you have a single network cable connecting your system to the network. Normally it has only one IP address. But what if you need multiple IPs
+
+[00:01:01] for different services? That's where binding comes in. It allows us to assign multiple IPs to a single network adapter without adding new hardware. A common use case of binding is in web hosting. If you host multiple websites on a single server,
+
+[00:01:21] each website can have its own unique IP address for SSL certificates and traffic segmentation. This can also be useful in cases like running different applications that require dedicated IP S communicating with multiple subnets without adding extra interfaces.
+
+[00:01:44] In our case, anx one already has an elastic IP. Instead of using an X zero, we will bind additional private IPs to AX one. Let's see how binding works. In real time. We will follow three simple steps.
+
+[00:02:01] Check the existing network interfaces bind additional IPs to AX one, verify and make the changes permanent. Let's first check the current interfaces IP AD dr this shows our existing interfaces ENX zero, which is the default AWS network interface ex one which
+
+[00:02:23] is the additional interface with an elastic IP already attached. Next, let's bind additional IPs to your next one. This command assigns the IP address 172 31
+
+[00:02:41] 7 5020 to the network interface NX one with an alias NX one colon zero using IP ADR add command. Similarly, this command assigns the IP address 172.1 0.7 0.51
+
+[00:03:02] slash 20 to the network interface ex one with an alias eex one colon one to check if they are already added successfully. Let's try the command IP ADR show DEV in X one
+
+[00:03:20] we see it's been already added. Let's copy these IP addresses right now. The changes are temporary and will be lost after a reboot to make them permanent and to persist configuration. Even after reboot, we need to update Netplan.
+
+[00:03:43] Netplan is a tool that helps configure networking on Ubuntu Linux systems. It's been included by default on Ubuntu Neo versions. Let's first change the config file CD slash etc slash
+
+[00:04:01] netplan list by LS hyphen L. You can observe the YAML file 50 hyphen cloud hyphen init dot YAML,
+
+[00:04:22] just below set name, colon AX one. Let's paste the copied IP addresses. These are IP addresses which are being manually assigned to the network interface, an X one, save the file and exit.
+
+[00:04:57] So do IP link, set your next one up
+
+[00:05:01] the interface disconnects from the network and then reconnects. This helps resolve minor connectivity issues. Now, let's configure Apache to serve different websites on different IPs. Let's install Apache pseudo app update
+
+[00:05:20] and to verify it's installed. Let's execute systemctl status Apache two, we see that it's active and running as Apache two by default has document routes, set to folder.
+
+[00:05:45] Let's create two config files, site one and site two.com in directory sites. Hyphen available of slash etc slash Apache two folder pseudo mkdir, hyphen P
+
+[00:06:00] slash slash slash slash slash slash to create configuration files in the location. Apache two sites hyphen available for the first configuration file, edit site
+
+[00:06:21] one.com using pseudo nano slash etc slash Apache. Two sites hyphen available site one.com mention the first virtual host IP colon 80 for Apache two set the location of document route and specify the path in directory tag
+
+[00:06:44] and set the permissions to allow override all to override all the previous or by default set permissions, close the directory tag and close the virtual host tag, save, then edit the second con file for the second website site,
+
+[00:07:02] pseudo nano etc, Apache two sites hyphen availables two similarly add virtual host, I document root for C two and then for permissions and directory tag
+
+[00:07:21] allow override all, close the directory tag and the virtual host tag, save and exit.
+
+[00:07:50] This is for the first site and we will do the same thing for the second site as well. Now to enable both the files under slash
+
+[00:08:00] etc slash Apache two, use CD slash etc slash Apache two slash sites. Hyphen available now SUDU A two insight site one site two and then restart the service Apache
+
+[00:08:20] two by using SUDU system CTL. Restart Apache two. Let's test this setup now cURL HTTP colon 1 72.31 0.7 0.50. It gives the output. Welcome to site one similarly
+
+[00:08:40] cURL HTTP 1 72.31 0.7 0.51 it gives the output. Welcome to site two that ends this demonstration. We have successfully used binding two IPs associated to a single network interface. Let's move on to bonding which serves a different purpose
+
+[00:09:02] unlike binding, which assigns multiple IPs to one interface wanting combines multiple interfaces into a single logical interface. This provides two major advantages, higher Bandwidth that is the traffic is distributed across multiple interfaces.
+
+[00:09:23] Second is fault tolerance. If one interface fails traffic automatically switches to another bonding is commonly used in data centers and enterprise networks where high availability is critical.
+
+[00:09:40] Now let's talk about the different modes of load sharing that can be used in bonding. Each mode determines how network traffic is distributed across the bonded interfaces. Let's explore them one by one. First is a round robin mode. In this mode,
+
+[00:10:00] network packages are sent sequentially across all available interfaces. This ensures even distribution of traffic making it great for load balancing. However, it may require additional configuration if used with virtual machines and bridges.
+
+[00:10:21] Next, we have active backup mode here. Only one interface is active at a time. If the active interface fails, the backup interface takes over, this is ideal for fault tolerance but does not provide load balancing exclusive or mode assigns network package to a specific interface based on
+
+[00:10:44] a hash calculation of source and destination mac addresses. It ensures that traffic to a specific destination always follows the same path making it efficient for consistent communication within the same network.
+
+[00:11:03] In broadcast mode. All traffic is transmitted over all interfaces simultaneously ensuring maximum fault tolerance. However, this can lead to inefficient Bandwidth usage and may not work well with virtual machines behind a bridge
+
+[00:11:23] 8023 is a dynamic link aggregation mode that groups interfaces into a single logical link balancing traffic across them. It requires a switch that supports a CP or link aggregation control protocol
+
+[00:11:42] making it a great choice for enterprise environments in adaptive transmit load balancing or TLB mode, outgoing traffic is distributed based on the load of each interface. While incoming traffic is received only on a primary interface.
+
+[00:12:03] If the primary interface fails, another takes over its mac address. Next, we have adaptive load balancing or ELB which extends TLB by balancing both incoming and outgoing traffic using
+
+[00:12:21] ERP negotiation. It works well in environments where all network traffic is local to the kernel bonding module but is not ideal for virtualized environments with bridges. After understanding the modes in detail,
+
+[00:12:40] let's start with a quick demonstration on network bonding in VirtualBox. As we have already explored network bonding allows us to combine multiple physical or virtual network interfaces into a single logical interface providing redundancy and improved performance
+
+[00:13:03] in cloud environments like AWS modifying DHCP settings for a bonded interface isn't practical because the cloud provider manages AWS network configurations and does not allow direct control over
+
+[00:13:20] bonding parameters. Therefore, for this demonstration, we are using VirtualBox which gives us full control over the network settings. We will configure network bonding in up to 24.04 inside a VirtualBox VM. We will set up bonding in active backup mode ensuring that
+
+[00:13:44] if one interface goes down traffic seamlessly switches to the other to verify this, we will install an Apache web server and check if the website remains accessible. Even if one interface fails. Let's get started
+
+[00:14:03] before powering on the VM. Select the VM and go to settings network in the adapter. One, select NAT which provides the internet access for adapter two, make it bridge adapter set promiscuous mode to allow all enabled cable connected
+
+[00:14:25] adapter. Three will be similar to that of the adapter two bridge adapter promise case mode to allow all and enable cable connected click. OK. Then power on the virtual machine.
+
+[00:14:41] NAT provides internet access to the VM bridge adapter makes the VM appear as a separate machine on the network which is necessary for wanting promiscuous mode. Setting it to allow wall ensures smooth traffic handling across both adapters.
+
+[00:15:22] Let's execute the command again to list the bonding modules using
+
+[00:15:27] a small pipe grab bonding. Now check network devices, NM CI device status, check the status is in connected mode or not
+
+[00:15:41] list current network connections using NMCLI connection. Show node the device names first is NAT device name is a NP 0 S3 and the other two wired connections are bridge adapters with device name, ENP zero S eight and ENP zero S nine.
+
+[00:16:04] This might be different for you. So be cautious to note the one displaying in yours as we will be using these device names to point for bonding. The prerequisite is that bridge adapter needs to be unplugged without an IP address.
+
+[00:16:21] So let's execute this command to disconnect nmcli device, disconnect EP zero S eight, similarly NNC device disconnect EP zero S nine next by using NM CLI device status. Let's check the status.
+
+[00:16:42] The bridge devices are disconnected by executing IP, observe the status up but they don't have any IP address. Next, let's create a bonding interface. Bond zero with active backup mode for failover protection.
+
+[00:17:05] Let's try NMCLI connection type bond con name bond zero, F name bond zero bond options in the double codes mode equal to active hyphen backup.
+
+[00:17:24] Now let's add our two physical interfaces which is ENP zero, S eight and S nine as slaves to bond zero. Nmcli connection type Ethernet slave hyphen type
+
+[00:17:42] K hyphen name bond zero, hyphen port one name ENP zero, S eight master 10. Similarly, let's do it for S nine as well. Simply replace port one by port two and S eight by S nine.
+
+[00:18:04] Next, let's check the bond configuration by using the command cat slash bro slash net slash bonding slash bond zero. If this cat command shows the slaves with device names, it works as desired.
+
+[00:18:22] But if it doesn't and it displays slaves as none. Even after successfully adding the interfaces, it means the bond is created but the slave interfaces are not active to fix this. We need to manually bring up the bond and the slaves.
+
+[00:18:41] So to NMCLI connection up bond zero, similarly pseudo nm CI connection up bond zero hyphen port one pseudo N MC connection up 1 0 hyphen port.
+
+[00:19:00] Now check bonding status again, we can now observe the currently active slave and the two slave interface with the device name. Since bond zero acts as a single network interface, it will have only one IP address
+
+[00:19:20] which remains active regardless of interface failover. Now you can assign an IP address to bond zero either statically or via DHCP for THCP. Let's try nm CLI K mod
+
+[00:19:40] bond zero IPV four dot method auto to apply the changes. Use the command nmcli connection up bond zero.
+
+[00:20:00] This command activates the bond zero network connection, making it live and functional. Let's verify the assigned IP IP A show bond zero. Next, you can even execute IP show and observe two slaves and one master bond.
+
+[00:20:20] The slaves are attached to master bond zero and that bond zero has been assigned with the IP status is up for both the slaves and master born zero to test bonding. We will install Apache and serve a simple web page through bond
+
+[00:20:41] zero IP to verify installation, execute systemctl status Apache
+
+[00:21:00] two. We see that Apache two is active and running since 10 has only one IP address. We will configure Apache to listen to this IP and serve a web page. Let's create the document root directory. So MKDIR
+
+[00:21:20] hyphen P WW bonded underscore create the virtual host configuration, edit the configuration file, pseudo nano slash etc slash Apache two slash sites. Hyphen available slash
+
+[00:21:40] bonded underscore site.com at the following. As done in the binding demo, virtual host as the IP of board zero
+
+[00:22:00] let's save and exit.
+
+[00:22:25] So to a two insight bonded underscore site.com A two inside stands for Apache to enable site used to enable a virtual host configuration. Now let's verify and display the apache's active virtual
+
+[00:22:43] host configuration and their bindings if any by using pseudo Apache CTL hyphen S this command shows that it's also listening on localhost and that's not all we need to disable the default Apache virtual host
+
+[00:23:02] by default Apache listens on eight and serves requests on localhost which can override your bonding configurations, disable it by using pseudo A 2 0 0 0
+
+[00:23:20] hyphen default.com and finally reload Apache to ensure the new configurations are used pseudo systems. A TL reload Apache two. Now verify the website is accessible. Check using the cURL command cURL http and the IP address for your bond zero.
+
+[00:23:51] Let's execute it again cURL and then the HTTP colon IP address of the bond zero, we get an output network bonding is working
+
+[00:24:23] verify failover in bonding by using the command cat slash
+
+[00:24:28] bro net slash bonding bond zero. We see that the other interface which is ENP zero S nine is currently active
+
+[00:24:40] test website accessibility. Again, we see that the web site is still accessible and that's it. We have successfully configured network bonding in active backup mode on open 2 24.04 inside VirtualBox. We confirm that even if one interface fails the other seamlessly
+
+[00:25:04] takes over ensuring uninterrupted access to our Apache web server. This is an essential technique for high availability environments to prevent downtime. We can make the link up for the interface ENP zero S eight by using the command
+
+[00:25:24] pseudo IP link set ENP zero S eight up. That concludes this lecture. Thank you.

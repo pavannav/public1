@@ -1,0 +1,45 @@
+[00:00:06] - So here's the lab. Your colleague has configured your server with a new fixed IP address. You don't get answers while trying to ping google.com. Analyze what is wrong. Good luck. Oh, and by the way, this lab has a script as well,
+
+[00:00:20] and the script is lab64.sh. So let's start by running the script, lab64, and, oh no, it reboots.
+
+[00:00:43] So let's apply the methodology again. You suspect that there are connectivity issues, so first you need to define the issue, and the issue may be ping to google.com doesn't work. That's a good starting point.
+
+[00:01:01] So we don't have connectivity. Next we need to gather information. How do we gather information? By analyzing the runtime network configuration. So let's start by using ip a. What do we see in ip a? Well, we see that we have
+
+[00:01:20] an IP address, a DHCP assigned IP address, 192.168.4.168. That seems pretty okay on ens33. We also see that there is a dynamically assigned IP address. I don't know what it's doing there, but that doesn't matter. Both of them should allow us to get to the internet.
+
+[00:01:43] Next ip route show. What is ip route show showing us? Default via 192.168.2.4. Now if you don't see anything suspicious on that, then you might try to ping it. Ping 192.168.2.4.
+
+[00:02:02] That's always the first step that I would recommend to fix any connectivity issues, and as you can see it doesn't answer, and we are getting an answer from 192.168.4.231, which is one of the local IP addresses I am using, and here we are seeing something strange.
+
+[00:02:21] The router is on a different subnet than the local IP address. That's not good. So what is happening? Well, apparently the router is wrong. So if you think the router is wrong, then you are going to fix it in runtime. So ip route show is showing current routing.
+
+[00:02:41] Ip route del default via 192.168.2.4, and then we can fix it. Of course you need to know the name of the router that will work. There's always someone around who can tell you,
+
+[00:03:00] and you have fixed it you can try and see if at this point you can reach the internet, and, oh no, ping 8.8.8.8, network is unreachable. So still there is something that is not going all right.
+
+[00:03:20] So what do we see here? We see that our routing table is still messed up. So we have this router, 192.168.2.4 dev ens33, which is not connected to any specific network, which is kind of odd,
+
+[00:03:41] and we also have the route to the local networks. Now can I ping my suspected default router? There we go. I can ping it. Now for some reason ip route add default via 192.168.4.2
+
+[00:04:01] is not working. You know if that's happening, you can use dhclient. We have seen that this interface is getting a dynamic address anyway. So if you cannot do it manually and there is no good reason why it doesn't work manually, just request a DHCP client, and ip route show is now showing
+
+[00:04:23] that we have nothing at all. So, that is strange, but at least this old line referring to 2.4 has been removed. Let's try ip route add default via 192.168.4.2
+
+[00:04:40] again and ip route show to verify, and now it has been entered into the routing table. So at this point can we ping, and we can ping. So can we go to the outside world? That works as well.
+
+[00:05:00] So in runtime everything is fixed now. Now that in runtime everything is fixed, we need of course to check the configuration. That would be /etc/sysconfig/network-scripts/ifcfg-ens33. Oh, and that files seems not to be closed properly.
+
+[00:05:21] So I'm going delete the swap file so that I can edit it, and here we can see gateway is set to 2.4. Let's fix that, and let's set it to 4.2. Anything else? Well, now that we are here we might want to remove DHCP as well.
+
+[00:05:41] I don't know why DHCP is there. I just want my fixed IP address because one thing is for sure, if you have fixed configuration and DHCP, it's not going all right. Now that I've applied the modifications to persistent, I can use nmcli
+
+[00:06:00] connection down ens33, nmcli connection up ens33. Let's see if we can still ping the rest of the world, and, oh no, still something that is not right. So ip route show. What do we have?
+
+[00:06:20] We have a default, 2.4, so that seems to be okay. Ip address show. What do we have? We have still two IP addresses, 4.168 and 4.231, and how about DNS? In resolve.conf we see 8.8.8.8.
+
+[00:06:43] Something odd is going on here. So once more ping 192.168.4.2. It's working. Ping 8.8.8.8. It's not working. This is an interesting situation
+
+[00:07:01] because what has happened here? Well, we can ping the router, but we cannot ping beyond the router, which means that our router currently seems to have stopped routing. So there is nothing we can do about it. Talk to the guy who manages the router and tell him to get his stuff together. That's the only thing that I can recommend
+
+[00:07:20] so far for troubleshooting network configuration. That's it for network troubleshooting because we have done everything we can.

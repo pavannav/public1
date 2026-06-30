@@ -1,0 +1,87 @@
+[00:00:01] Welcome course takers to section four, deploying our Pi simple application on AWS. So in this section, we're going to get our hands dirty and actually learn how we deploy a more reliable application onto AWS. So we're gonna look at the things we need to do to optimize and migrate our code, looking at some Amazon tools that might help us along the way,
+
+[00:00:22] we're then going to create some containers and establish a basic C process to do that. We'll deploy our supporting infrastructure, ecs and rds for our application. And then finally, we'll deploy our application itself in a containerized form. And the last video we'll look at what's good and what's bad about the solution,
+
+[00:00:41] what we need to improve and that will form the basis of the next section. So if you're ready, let's get going. Welcome to video optimizing and migrating our code. So in this video, we're gonna look at how we actually optimize our code to be a little bit more cloud native. We'll look at the things we need to create in Amazon to actually hold our code. So our codecommit repositories and we'll create those with Terraform
+
+[00:01:01] and then we'll actually migrate our code from github and code commit will be what we use for the rest of the course. So if you're ready, let's get started. So here's an overview of what we're trying to do. So we're moving improving our application from on premise, which is a VMWARE based application, a Linux container, a Linux virtual machine running postgre and Python all in one. And we actually want to then
+
+[00:01:24] deploy that as a container into Amazon on reliable infrastructure, push the code into code commit, use code build to produce the basic C pipeline store, a containerized version of our code in ECR and monitor all through Cloudwatch.
+
+[00:01:40] And we want to do this all with automation and we want to minimize the amount of changes here. So we're not going to change the back end database at this point into anything other than Postgre. So there's a lot to do so. In this step, step one, a we're going to use some Amazon tools to actually validate our database. And potentially our codebase,
+
+[00:02:00] we'll build in some additional functionality to support health checks and Cloudwatch metrics. And then we'll add some basic documentation and some additional tests. And what we'll end up with is an optimized code running in code commit. So if you're ready, let's go here. We have our AWS service, we're going to end up with a repository
+
+[00:02:21] in codecommit. So at the moment in London, we just have one codecommit repository where we're running our I AC code and we're talking more about infrastructures code and terraform in a second. But we need to figure a process of how to get the code into that repository. So one of the first things you might do is look at your database
+
+[00:02:40] here. We have the AWS schema conversion tool. So I'm just gonna start a new project. It's gonna be a transactional database and we're going to go from Postgre to postgre. So nothing significant here. Now, what I want to do is connect to my on premise Postgre server and look at that.
+
+[00:03:00] So I connect to there, just type in the password test my connection, right? And what that's done now is logged on and pull back all the schema information. So we can see stuff in here. We can see the tables. For example, we've got three tables, we can look at detail how those tables are made up.
+
+[00:03:22] I can see have I got any triggers and I do have one here which is all about resetting and availability and I can see everything I need to about the database. Now, if I click on schemers and create report, I get a nice easy to use report that I can share with other colleagues or management around. Can I migrate this server? Now? We're going from Postgre to postgre.
+
+[00:03:43] So I would expect it. So yes, you can is the answer. So you can move all the database objects and you can move any of the functions and triggers. Fantastic. This is more useful, I guess if you're actually moving across platforms. So if you are moving to Aurora or we're looking at NOSQL type databases,
+
+[00:04:01] but nevertheless, it's still a good easy check to do. You can actually connect to your Amazon rds database. You can do a lot more things when showing here. But schema conversion tool is a helpful tool for just looking at the database side of things to see. Am I going to run any migration problems? And the answer here for us is no, you're not.
+
+[00:04:20] If we go back into console, Amazon have recently released a new tool called color Codeguru. Um It's not available in London, it is available in Ireland and what Codeguru allows me to do is connect some repositories so I can connect my existing github repository. I can do code reviews. So here I've got it based on my pull request of one.
+
+[00:04:41] It's got a number of code reviews. There are no recommendations. This is Python and Codeguru currently only supports Java. So it's a useful tool. If you're running Java and like all Amazon products, it will get better and better. But the back end of this is a machine learning tool that helps you understand how you're using things like the Amazon SDK,
+
+[00:05:02] you can do code reviews, you can do profiling of your application and Amazon say themselves that this is something they use internally. So I imagine that this is just gonna get better with time and code reviews are a challenging part of any kind of migration. So using any kind of tool that gives you a little bit more control and information over it is a good thing.
+
+[00:05:23] So I'm showing you this, it doesn't help us in our use case today. But in the future, this is probably something that will help us a great deal. So if I go back to our associated repository, so I can just go into my github repository from here. So everything we're currently doing is in a branch called better. And the easiest way to look at the changes
+
+[00:05:42] is through the eyes of the pool request. So we look at what's changed. Well, the first thing that a major that's changed is we've added this Aws helper and in Aws helper, we basically have a function that allows us to create any client based on the service. And then it has two explicit functions for a service.
+
+[00:06:00] One is the first is Cloudwatch metrics. So this effectively allows us to publish custom metrics into Cloudwatch. And then the other one is to actually pull back the DB instance A N. So the specific A N we're going to use for our database or we have used for our database running in Amazon
+
+[00:06:20] rds. And this can be useful later on when we're looking at using events or if we just want to identify the actual Amazon resource. We're talking about when we get into the main body of the code, we obviously import our helper. And then the first change is we've added this db health, global variable and set it to zero when it starts. Now
+
+[00:06:40] db health is used in our health endpoint. So we've added a new health endpoint and all it does is if db health is equal or less than three, it returns to 200 and if it's greater, so if it's so or greater, it will return at 500. And it also provides the number of errors we're seeing.
+
+[00:07:00] So we've created a health endpoint. It's looking at a variable, it's not doing any queries. So we decouple the actual process of updating the variables from the variable itself and how we update them is basically when we generate a 500 error. So in this case, we've got an error to do with our insertion into our database, we increment our health
+
+[00:07:21] variable, our db health variable by one. OK. So our health check just looks at that variable doesn't do any polling. You can hit that endpoint as often as you want and it will simply provide the same response, but it's the functions themselves that are updating that value. Now, the other thing we're doing, if CW logging is true,
+
+[00:07:41] then we'll also generate metrics into Cloudwatch based on if it was a failure. But also if it was successful as well. So thinking about our SL I, we need to know the percentage of requests that are successful as much as we need to know the ones that are failures. So we're both updating metric, which is our SL I db success request and SL I db failed request.
+
+[00:08:05] And we also put in a number of dimensions to do with the URL that's being pulled and the actual service it's coming from now. the way we initialize that service is we create using our clients Aws helper client. We create a client for cloud watch,
+
+[00:08:21] we create a client for rds and then we populate rds A N. If we do not have an rds database running with the same name as the database we're using in post grads, then we set CW to log into false. So we don't generate any Cloudwatch events. We don't generate any cloudwatch metrics.
+
+[00:08:42] If it's true, if there is an rds database running with the same name as our cars database, then we set it to true. And that's how we do our initialization. So we've got DB health value that we set to zero and then we increment if we have any 500 errors. And if we've also got a corresponding rds
+
+[00:09:00] database, we'll also send Cloudwatch custom metrics to that based on good success and also on failure. The other thing we've done is we've actually added in a whole set of environment variables. Now, when we're configuring a container. You know, at the moment, we use a file and the file is great.
+
+[00:09:20] But if we need to change the file, then we need to change the container and rebuild the container. So it's probably easier to provide environment variables. You may want to embed your container configuration inside your container and then have to update the version of that container, the tag. But for us, it's much easier to use the environment variables. So I've added those in
+
+[00:09:40] and then what we'll find is if we don't get the environment variables, then we use this, that we fall back on to using the local file to actually get the configuration. So it will support current development. And if we want to change it more to a container, then we can add in the environment variables and then it will use those.
+
+[00:10:01] So the three things we've really changed is added in the AWS helper that allows us to handle cloudwatch events. And also query what the database ARN is. We've added a health check and decoupled that health check from the actual creation of the metrics to the choosing. And then we've added environment variables.
+
+[00:10:20] OK? So we've optimized our code. Go back to Europe. We now do need to create a repository somewhere to push the code. So if I now go into my AWS, I've got my ise template terraform. You don't need to know terraform is a couple of things you don't need to be an expert in terraform.
+
+[00:10:41] I provide these Terraform scripts as part of the course, they're not production worthy, you know, they are just used for, for building out resources within the course itself. So here we're using S3 based state buckets and I'm just saying store all the state under co commit E US two. Our main
+
+[00:11:01] is very simple. We basically, we say we're going to build an aws code commit repository. We just give it an internal reference of Pi simple. Here's the name of the repository itself and the description. So it's a very straightforward task. So if I now go into co commit and run a terrible plan,
+
+[00:11:21] we can see it's gonna add one. So if I run a terraform apply off, it goes to create the repository. And one of the things it does is give us the clone URL here so I can go back into our console. If I do a refresh, I should see, I've got pi simple in here,
+
+[00:11:43] but at the moment, there's no code here at all. We can go back into our command-line. I'm just going to see the back up into the main route directory and I can just issue a git clone with this URL, then you shall have windows.
+
+[00:12:01] Now, one thing to bear in mind you have to normally install the git helper, the AWS git credentials helper. So it uses your credentials underneath. I've done that before. So if I now have CD into my simple. I've got my directory, nothing in it. Now, you can obviously do things with git clone and pushing repositories.
+
+[00:12:22] But because I've got already got the repository here and it's on the branch that I actually want it to be. I'm just going to run an xcopy, copy everything over. Then I just do it
+
+[00:12:41] and push, go back into here. I do a refresh and here I've got one in my repository. The code now is in co commit. It's stored in Amazon in the private repository. You have to use iron credentials to get it. I can stop developing on github.
+
+[00:13:00] I can set up some sort of sync if I really want to. But for the rest of the course, we'll be using this codecommit repository. Now there's a couple of things, additional things to notice. I didn't really go through the main changes. So we've added a simple read me. So it is very simple. Ideally, you know, you'd be fully documenting your code as part of the migration. You know, this is something that multiple people are going to start working on.
+
+[00:13:22] So it's probably have a good view of what the documentation should be. It doesn't need to be overly complex. A very good read me works every time this is an example of a good read me. But if you go to github, you can see some very good examples of readme. The other thing we haven't talked about much and we'll come on to this in more detail. In later parts of the course is the test folder.
+
+[00:13:42] So in the test folder, I've just used pie test. I've created a basic fixture to get my data and then I'm just doing some assertions to actually say right. Do I get a response? 200? Do I actually, is it adjacent, does it have adjacent content type? And is it Jason, Is there some Jason content provided?
+
+[00:14:03] So this forms the basis of our testing strategy? Whereas in the previous code, we didn't have any kind of unit test whatsoever and we'll continue to develop this and integrate it into the CI pipeline as we go forward. So I hope that's been interesting. Please join me in the next video where we're creating our container with codebuild.
+
+[00:14:22] Thanks very much.

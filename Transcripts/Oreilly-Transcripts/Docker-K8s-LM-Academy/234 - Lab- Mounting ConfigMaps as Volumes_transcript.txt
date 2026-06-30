@@ -1,0 +1,91 @@
+[00:00:00] Hello and welcome back. Let's now explore how we can mount config maps as volumes. And what happens when we do that in our containers. Let's create a new file here. We're gonna work with another config map. So let's create green dot config or green config dot YAML. And let's create once again our config map here API
+
+[00:00:21] version V one kind will be config config map. The metadata here will be the name will be green config like so and now we will just remove that application and let's start here setting our data so we can set the data once again, this is arbitrary key value pairs.
+
+[00:00:41] So let's start by setting the first key here as color dot TXT. Now this dot TXT once again, this from the perspective of Cnis, this is just a random string. It doesn't really matter the contents here as long as it has the allowed characters. So the color that we will use here will be green for now.
+
+[00:01:00] And then I also want to create a multi line. So let's say hello from green dot Js. And then this will be a multiline script. We're gonna say console log hello from. And then we also say here console log the green config map, right? So just very straightforward here, we have two keys with values as well.
+
+[00:01:24] Now this look like or these two here they look like files and that's OK. That's perfectly fine. But we can also set here. Let's add our config or color underscore config underscore path value. And this, we will simply set here to the path where we want to mount this color dot
+
+[00:01:44] TXT. Let's say that inside of the container, we're gonna retrieve this value from the mount config color dot txt file, right? So now here we are just once again, this is all data. We're not using this anywhere for now. But later on our application expects an environment variable like this
+
+[00:02:03] to be able to retrieve the color from a specific file, this file, we will soon configure it to be mounted under this path here. So let's create a new pod or actually let's copy, paste the pod that we have here. And now all we're gonna do is we're gonna have green color API like. So
+
+[00:02:22] let's change red for green. Also here in the lab in the in the app here in the label and let's also change from the config map reference. Now I'm going to change this a little bit here. And instead of loading all the file or all the data as environment variables,
+
+[00:02:40] I would like to load only one environment variable. So we're going to say environment variable. So the name here will be the color config path and then the value will be a value from config map key ref the key that we will reference is inside of our green config file.
+
+[00:03:01] So this is our green config here, we're gonna use, we're gonna set the value of our color config path environment variable based on the key of the config map with the following name green config right. So now here this is one example where we have more information in
+
+[00:03:21] the config map than we actually want to pass as environment variables. So we have one environment variable and we have two things that we would like to mount as files. So for our pod, we will just extract the information here that we want to pass via environment variables. And the rest are basically we will also mount the config map,
+
+[00:03:41] the entire thing here as a volume. So let's go now to mounting it as a volume and as with any other volumes, we do need to specify the volumes key here, the configuration under the pod definition file. So this is a sibling to containers. It's not under containers
+
+[00:04:00] here. We are declaring all the volumes that will be available for this pod and for its containers. So the name of this volume will be called color dash config. And then the config map here, the config map option we can set to basically mount a config map as a volume. So under here,
+
+[00:04:20] we just need to specify the name of the config map and the name of the config map is green config. So now we have a volume which is named color config. And all we need to do now is to mount this volume under a certain path. So we have specified here in the color config path that we would like to mount this information or actually,
+
+[00:04:42] we would like to retrieve the color information from this specific file here. So if we mount the config map as a volume under the mount config path, then all the data, all the keys here will be created as different files inside of this directory.
+
+[00:05:02] So let's use this configuration here. So this path, let's come back to our pod and let's now define here the volume mounts and we will specify a single volume mount here. The name will be the name of our volume, right. So this needs to match the name of our volume. So that's gonna be color
+
+[00:05:20] config. And then we can specify the mount path and the mount path will be forward slash mount forward slash config like so and we can optionally also set this volume as read only so that we cannot really change the contents of the files that get mounted. They will be coming directly from the config map. All right. So just to go over again, what we did here.
+
+[00:05:43] So we have a little bit more complex setup. Now we have a single config map that contains both one environment variable of interest for us, which is the color config path as well as two files of interest for us, which are here the color dot TXT and the hello from green dot Js.
+
+[00:06:02] What we are doing here is we are extracting the value of color config path and passing it as an environment variable to our container. This is the only value that will be passed as an environment variable from the whole config map. What we are also doing, we are mounting the config map as a volume.
+
+[00:06:20] And then or actually we are declaring it as a volume here and then we are mounting as a volume here under this path. That means or in practice, what this will do is it will mount each of the key value pairs as different files. The key being the name of the file and the value here being the content of the file.
+
+[00:06:42] So the color config path will also be mounted as a file. And we will explore that when we exact into the container in the pod, let's now come to the terminal here. And let's create first of all our green config map. So green config like so that will then create the config map and now we can create our pods,
+
+[00:07:01] we're going to say green color API like so and that's going to create the pod. Let's have a look at the pod here and confirm that it's running. That's perfect. And now we can exact into this pod. So let's exact into the green color API pod. And let's run a shell script or let's get a shell here inside of the container.
+
+[00:07:22] So now remember we have mounted this under mount forward slash config. So if we show all the files in this directory, as you can see, this is actually matching the keys from our config map. And even though there is no extension here, this doesn't really matter, right? So this is just a file, we can print the contents of color config path like so
+
+[00:07:45] and we will get that these are the contents, right? So this is just there is no line break here. Let's add enter, we can also get the results of color dot TXT and we can confirm that the green is here. Now, we can also execute here our hello from green, right?
+
+[00:08:01] So if we were to just run node, let's confirm that we have it. And we should because this is a node based image. So if we were to just execute node, hello from green, you will see that we get the message printed on the screen. So this is also one use case whenever you want to, let's say pass an initialization script and you want to mount it
+
+[00:08:21] from a config map as a file inside of the container, then you can also use this pattern if we were to try to overwrite. So let's say if we want to try to set yellow as the color and we would like to overwrite this in our color dot txt, then we will get an error because this is a read only file system.
+
+[00:08:41] So basically behind the scenes, when a config map is mounted as a volume bottom line is that its keys become files and each value for that respective key becomes the content of that file. Let's now exit here our container and let's clear the console. We can now expose our pod. So let's expose pod green
+
+[00:09:05] color A P. So that's gonna create a service and then we can go with Minicube service, green color API and that should open a new browser window. And if we have a look at the results here, then we should see now the green color showing up.
+
+[00:09:23] Awesome. So this has shown maybe a little bit of a more complex situation or a complex scenario where you have mixed data inside of your config map. And then once again from the config map perspective there, it doesn't, it's not really aware of any mixed data or anything. It's just key value pairs, that's all
+
+[00:09:41] interpreting this and making sure that it makes sense. Everything that we write here, that's our job, right? So we might mix data here that we have some environment variables set here and also content that we expect to be used from files that's perfectly fine. We might also come to the decision and say, no, I don't like this approach.
+
+[00:10:01] I would like to split this up and instead of using it like this, I actually want to create two config maps. So we would say API version V one and I'm just gonna copy this from here. The kind is config map and then we could say green and vars, right, green and bars
+
+[00:10:20] and then green files like so and then we would mount like let's change the pod definition here. So now instead of having this here, we can load all the data. So environment from and then we'll say Configmap ref the name will be green and vars. And then here instead of mounting all the green config,
+
+[00:10:41] we would mount the green files and then the green files will be once again mounted under this mount config here. And the environment variables will be mounted under the environment variables that we are loading via M from. So we can also split the concerns split or and create some separation here
+
+[00:11:02] so that we can then just load all the environment variables from here and then all the files from here. So which one to use really depends on your preference. I personally do find this segregation helpful in most cases because it does give us a very clear usage intention behind the config maps. I tend to frown upon config maps that have too much data and a lot of mixed stuff here
+
+[00:11:25] because this can very quickly get very confusing. So if you can leverage this for some segregation and then managing different config maps with different intentions here. Behind the scenes, I do find that this may might make your life easier in the long term. But once again,
+
+[00:11:41] this depends on the use case and it's really variable from project from situation to situation. We can just confirm that this works by coming back here once again to the ID. Let's just stop this. Let's now delete our pod or let's delete. Yeah, let's delete the pod first. So the green color API
+
+[00:12:00] let's also delete our config map here. Config so delete configmap green config because that is not defined. Oops, sorry for that. That's a small typo here, config map green config that's looking good. And now here we can still leave our service. And then we can also confirm. So if we were to run cube,
+
+[00:12:22] cube, describe as we see and then green color A P, then we will get here that there are no end points, right? So basically there are no pods that will receive the traffic. The moment we create our new pod, then it will start receiving the traffic. So let's now apply our file green config once again
+
+[00:12:43] and both config maps will be created and now we can then apply our pod file. So green color API like so and let's have a look at whether the pod is up and running. That's looking good. So now if we were to exact into this pod, we can then change into our mount
+
+[00:13:03] config directory. And if we were to list the files here, now we will see that there are only two files, right? So we are not mounting the environment variable as a file because we have excluded from the config map that is being mounted. And now if we were to just run, execute here, this once again,
+
+[00:13:20] node hello from green, that's perfectly fine. Everything is working as expected, but it does make a little bit more sense. Whenever we are actually having a look at what is present inside of the container, we can then have a look here at the service once again. So cube cut describe service, we can confirm that the pod was added as an endpoint. So now we can expose this
+
+[00:13:42] via minicube service, green color API and as expected, it is still up and it's still green, right? So we are able to actually pass the information here. I didn't make any Typos that's good. There's always the risk for typos but and we are good to go. So hopefully this small discussion also helps us understand not only how to
+
+[00:14:02] set environment variables and files inside of the containers via config maps, but also some of the principles that we might want to use and apply to actually manage our configuration data in a more decoupled and a more isolated and more segregated way. That's perfect. That's a great moment for us to take a short break.
+
+[00:14:22] But before we do that, let's just stop everything here. Let's also delete everything that we have created. So we're gonna delete all the files from our, basically based on all the files here, we're gonna delete a bunch of stuff that we have created and we now have two services that we have created that are still available. The green color API and the red color API.
+
+[00:14:42] The services were created via the cube cut exo. So we do need to delete them manually. So let's delete both services, green color API and red color API like so and then if we have a look at our services once again, we can confirm that just the Cobern
+
+[00:15:00] service is present. If I have a look at our config map, then we can confirm that just the root certificate is available as well. So we're good to go. We have a clean slate. Let's take a short break and let's come back in the next lecture.

@@ -1,0 +1,53 @@
+[00:00:00] I would now like to start discussing patches with you. And so far, we have done actually a lot of customization in our project. We have added prefixes, suffixes, common labels, common annotations. We have also updated images here, updated the number of replicas of our deployment. We have generated config maps and we also have generated secrets
+
+[00:00:23] while this allows us to do a lot of cool things. There are still cases where we need to have more fine grained control over the changes that we apply to specific objects inside of our bases. Let's now suppose here that we have this deployment. So we have the engine X deployment inside of our base.
+
+[00:00:42] And let's now say here that we have for example, another deployment which also leverages the engine X image. So let's just say that this is some reverse proxy deployment like so and we're gonna change it here for reverse proxy for the name, reverse proxy. And that's just gonna be an engine
+
+[00:01:00] X reverse proxy, right? So just one very simple example here, but we are also going to leverage the engine X image, right. So now here we have the engine X image here being used inside of both our reverse proxy deployment and our deployment. Let's add the reverse proxy as well to our customization here to our base.
+
+[00:01:23] So to the list of resources, reverse proxy deployment dot YAML and let's now save this here and come back to our DEV overlay. So we have this images field here and these images, what we actually do is it will look for all the images with the engine
+
+[00:01:41] X tag and it or with the engine X name, sorry. And it will change the tag to 1.27 0.1. Let's save this. Let's come back to the terminal. Let's clear the screen and let's run our overlay and immediately you can see here that we have our X 1 27.1 image here
+
+[00:02:01] inside of our reverse proxy, right? So maybe our intention was to actually just change the image from our engine deployment and not the one from our reverse proxy. Just by adopting these general top level field images here. It does not give us enough flexibility to target
+
+[00:02:22] a very specific object inside of our base. So what we need to leverage here is to actually use patches. And so I'm gonna remove these images here so that we can see the difference between the two deployments and for us to use patches. There are a couple of ways we can write patches,
+
+[00:02:41] both the patches, Jason 6902 here and the patches, straight ST merge, they are deprecated and you're encouraged to use just the top level patches field here. And now here we can start, let's start by defining a patch. So an inline patch here. Now what this inline patch will do is we can now start writing, let's copy this here,
+
+[00:03:04] let's copy everything. We can basically just write a partial definition of a resource here and then this will be merged with the corresponding resource in our base. So now instead of defining here everything that we need for our resource,
+
+[00:03:23] the only thing we would like to change here is to actually inside of our template. And then we are not interested in changing any metadata. We're just gonna leave the metadata here inside of our spec containers with the namex imagex 1.27 0.0
+
+[00:03:41] and the rest we're interested in leaving the same. So now we can be very targeted here. Let's say that we want to change the reverse proxy to 1 27.1 or I believe that the other one that the example I mentioned was the engine X deployment. So now let's copy the engine X deployment, the name, let's save it here
+
+[00:04:01] and then let's update our image now, this will change the image only inside of our engine X deployment. Let's save this here. Let's clear the screen, let's then run our command once again and you can already see here that for our reverse proxy. The image is still the old one. It's still 1 27.0.
+
+[00:04:22] Let's scroll up a little bit more and you can already see here that for our app engine X, we are actually having the new image. Let's take a step back here and understand what we just did, right? So here, this really looks like a partial Manifest for a
+
+[00:04:40] deployment and that's pretty much what it is. So what we are doing here, the important information that we are passing, we're passing the API version and the kind. So that customizing CORS know which kind of schema to use here for this partial configuration, we are then passing the metadata name here so that customize and
+
+[00:05:01] know which deployment, which specific deployment we actually want to change. And then we are specifying here only the paths are the part of our definition that we want to update. So we only need to specify what exactly we want to change in the existing objects. It's also important to highlight that the
+
+[00:05:21] behavior here when merging lists of objects, it really depends on whether there is already a container with a namex. And so it's gonna look here under our deployment, it's gonna search for a container with the name Nginx. If it finds it, it will update the fields that we provide here.
+
+[00:05:41] So we can also update other fields in addition to the image. But if there is no container with this name, so let's suppose that now we have just a busy box here or actually let's do a little bit different. Let's have the engine X like. So and then let's have another container here box and we're gonna have Busy Box and the version will be 1.36
+
+[00:06:02] 0.1. So if we have the busybox container here or we have specified the busybox container, but there is no busybox container in our default configuration or in our base here, then customize will actually append this to our list of containers. So if we were to save this and come back to the terminal,
+
+[00:06:22] let's now run customize once again and let's scroll up a little bit here and you will see that our engine X image has been updated. The tag here has been updated and the new entry for our container for our bus box container has been added. So this is also very powerful because if you wish
+
+[00:06:41] to append to add certain containers here in different overlays, that's also possible with this patches functionality. Let's now say that we want within our container here to actually change our resources. So now if we were to come here to containers, namex, let's now copy the resources that we have here.
+
+[00:07:01] And let's now say that we wanna set some requests, right? So we have resources here. Let me just fix the indentation here. And let's now say that for our requests of resources, we would like to have 128 mebi bytes. But for the CPU, we just want to reserve 100 millicores. And the moment we do that here,
+
+[00:07:21] let's have a look at whether this will merge the fields or whether this will replace our field. So if we come back to the ide, let's then run this once again, let's just scroll up here. And as you can see, this will also merge the fields, right? So if the keys here are different,
+
+[00:07:40] then customize this is smart enough to actually merge the things here, we could also do a little bit different. So let's say that now, I'm interested in overwriting the CPU for our requests and the memory for our limits. So if we were to set your limits memory, and now I would like to have here 256 megabytes between single quotes.
+
+[00:08:03] Let's also add some simple memory here for our requests just so that everything is correctly set here. Now, you can see that we're gonna set the requests and the memory in our limits should be updated. So pay attention to this value here. And after running the command, we can then see that the value is actually updated.
+
+[00:08:24] This is a very powerful method then to actually truly customize our individual objects coming from our base as long as we have a unique identifier here that we can use, and we normally have that 99.9% of the times that we know in advance,
+
+[00:08:41] we know beforehand, then we can use it here and we can customize this object. There are multiple ways that we can pass these patches here to the patches option. Let's then take a short pause and I'll see you in the next lecture.

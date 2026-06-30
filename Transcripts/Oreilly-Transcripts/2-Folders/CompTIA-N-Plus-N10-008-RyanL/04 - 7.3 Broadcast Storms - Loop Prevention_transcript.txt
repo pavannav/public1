@@ -1,0 +1,53 @@
+[00:00:06] - Let's take a quick look at broadcast once again. Remember that broadcast and unknown unicast are treated the same way. And that is whenever they come into a switch, we look at the source MAC address. We look at that destination MAC address.
+
+[00:00:20] And when we look at the destination MAC address, especially a scenario like this where it's gonna be all Fs, we know that that destination MAC address goes everywhere. So it comes in on port one. We look at the source MAC address. We update it in our MAC address table. We look at the destination, we see that it's all Fs and flooding occurs. The same way you'd flood an unknown unicast.
+
+[00:00:41] Now a broadcast storm can be created in a larger environment. It's gonna take multiple switches that have been configured into a loop. You could basically do this with two switches and two wires if you wanted to, and in that scenario, a broadcast can become quite a bit more problematic. Will it always be problematic? No, depends like everything in tech, (laughs)
+
+[00:01:02] the answers aren't always that easy. If you see switches and they're Cisco switches, Cisco typically runs Spanning Tree. Cisco does run Spanning Tree by default. When you look at other switches that are not Cisco switches, you can't always count on Spanning Tree running. So let's just talk about what's wrong with broadcast storms,
+
+[00:01:20] and then we'll take a look at what Spanning Tree can do for us. So the goal of our network topology here was to add redundancy to give us multiple paths, right? If one of those links fails, we still have other ways to get around the network. The network doesn't go down, everyone can still communicate okay. The catch here is that there's no time to live at layer two.
+
+[00:01:42] Remember layer two is frames, layer three is packets. In packets we do have time to live. That's how we're able to do trace route. And that is that the time to live which is just a value that set in that packet, it goes down hop, by hop, by hop as the packet goes on. That doesn't exist with a frame. So what can happen is you can cause instability
+
+[00:02:02] in the MAC address table. Why is that? Because the source MAC address keeps hopping around. We don't know where it actually lives, and we've got frames that just keep going around and around again and again. And it winds up just maxing out our CPU and wasting all of our resources. So to prevent this from happening,
+
+[00:02:20] we actually wanna block on one of the redundant links. So let's look at a broadcast storm real quick. We'll bring in a sample frame. We see the source addresses of all As destination of all Fs. When that comes into the switch, switch looks at this destination of all Fs, and it floods it everywhere. There it goes out. Next switches, they flood it everywhere.
+
+[00:02:40] What's that next switch do? It floods it everywhere. Now those frames are coming back in the direction that they started. As all of this is occurring, what's happening is the MAC address tables of each of these switches goes, wait a second, where's source A? And it goes that way. And it's because source A keeps coming out on the left interface, then the right, then the left again.
+
+[00:03:00] So you'll wind up with packet loss, you wind up with very poor performance, you'll wind up with, if anyone's using real-time applications like voice over IP, phone calls will drop or become just horrible quality. It's a pretty big deal for these broadcast storms to exist. So let's just bring up a whiteboard real quick and talk about what we can do to prevent them.
+
+[00:03:20] Now there's gonna be a whole section on Spanning Tree, but just so that we've heard it a couple of times, let's kind of revisit this scenario. Here we've got switch one, switch two, switch three and switch four. And once we cable these up, if Spanning Tree is enabled, Spanning Tree Protocol,
+
+[00:03:43] it's gonna send Bridge Protocol Data Units, BPDUs. Remember that a switch is a bridge, well bridges send messages that are protocol data units, they're just called BPDUs. It's kind of a regular thing to send. So the Spanning Tree process is running and they're basically announcing themselves and figuring out
+
+[00:04:02] who their neighbors are. So in all directions, you've got these STP messages that are kinda going out, they're learning about each other. And what they're basically trying to do is figure out who's gonna be the boss. And the boss is decided first by having the lowest priority, and then second having the lowest MAC address. That's pretty important to kind of understand that.
+
+[00:04:22] If you don't manually set your priority, it's gonna go to basically a tie where everybody has got the same priority and they settle that tie by going to who's got the lowest MAC address. Well, let's just review MAC addresses for a second. Remember a MAC address is how many bits? 48, the first 24 are your organization's unique identifier.
+
+[00:04:44] The last 24 are basically the local ID of that MAC address card, or the MAC address that goes on the network interface, just a local identifier. But this OUI defines who the vendor is. Is it Cisco? Is it Aruba? Is it Fortinet? Who built this device?
+
+[00:05:01] So these OUIs are actually, you have to register, you have to buy them if they're allocated to you and they just kind of go in order. So the oldest OUIs out there are lower and the newest ones are higher. So when we go to do a Spanning Tree election to figure out, hey, who should be the king
+
+[00:05:20] of our entire network and we're gonna flow everything through them. We've got the oldest switch, of course. Go, that's a terrible idea, why would we do it like that? Well you wouldn't, if you set the priority, if you manually set the priority on your switch to be lower, whatever switch you define to be the route can be the route. And then we typically try to pick a backup route for whenever we're doing our software updates
+
+[00:05:40] or should things fail, right? If we don't manually define the route, it could go to the oldest device in the network, which could make... The environment still gonna work, but you might be blocking some really fast links that you didn't intend to. I've seen that in customer environments before. So we wanna kind of figure out who our roots is gonna be.
+
+[00:06:00] We'll say that it's a switch up here in the top left. Once we know who the root is, all the other switches look at their links and they go, what's the fastest way to get there 'cause each of these links have got a cost. And what we'll basically do is we'll figure out that this switch can use this link to get to the root and our switch up in the top right can use this link to get to the root.
+
+[00:06:20] Now the switch in the bottom right has got two paths to get there and they're gonna be equal costs if all these links are the same. So how do we figure out which one to use? Well it's a tie and we're just gonna go with the lowest interface ID. That's enough to be the breaker. So let's say that this path is chosen. What's gonna happen is that this other port
+
+[00:06:40] is gonna be placed in a blocking state. So this link is effectively down for passing user traffic. We're gonna still send diagnostic traffic across that link. We're gonna know that there's a switch on the other side and it's available should anything fail, we can switch over and use it. But as things go today, we're just gonna forward things
+
+[00:07:01] over this particular path. So if I can grab my highlighter, this link is active, this link is active and this link is active. So we've effectively broken the loop in the environment, how? By logically placing this port into the blocking state.
+
+[00:07:20] So this prevents broadcast storms. Tell you one scenario that I had, there was someone that was just rearranging their desk and they had too many wires down their network cables, and they plugged a network cable that was going into the wall right back into the wall. Well, what did that do? There was a patch panel in the wiring closet and it went to two different switches and it created a loop. It took down the entire business.
+
+[00:07:40] They send everybody home for the day. They had to shut the process down, it was a big printing company. They brought me into to try to figure out what had gone wrong. You know, you console into the switch, you plug into the console port 'cause you can't reach anything by IP address, everything was being crazy, and the switch won't even respond. And you're right there on the console port, it's really, really slow. So we reboot it and it worked really fast.
+
+[00:08:02] But then as soon as there was a broadcast the CPU had 100% and everything slowed right down again. So we had to track down where that particular loop was, removing all those cables and figuring out where the problem was and then eventually we're able to bring everything back online. It was quite a bit of work though. So just get things to think about.
+
+[00:08:20] Spanning Tree will prevent you from getting into problems like this because it's gonna to identify the loops and it's gonna go ahead and shut them down for you. Good topology, reference with these four switches and just remember that you don't wanna have a loop. Your network diagram, it's probably not that simple real world, but just realize that, should we ever come up
+
+[00:08:40] with a physical loop, which is okay, that's redundant link, we just don't want it to become a logical loop where we're forwarding across it. And Spanning Tree is one of the protocols we can use, and the most common protocol that we'll use to prevent that.

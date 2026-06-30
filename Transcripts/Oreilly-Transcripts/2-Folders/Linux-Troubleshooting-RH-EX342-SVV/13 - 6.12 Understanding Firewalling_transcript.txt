@@ -1,0 +1,65 @@
+[00:00:06] - In this video I'm going to explain Linux firewall. So Linux firewalling happens in a Linux kernel. The Linux kernel is offering this functionality that we call Netfilter.
+
+[00:00:25] And you don't have to load anything in order to use Netfilter. Netfilter is part of the package. You can not separate Linux kernel from its firewall. Now in order to address firewalling, we need a utility, we need a service, we need an interface.
+
+[00:00:42] And the default interface is iptables. No matter which Linux distribution you are on, no matter which command you are using in the end its always iptables addressing Netfilter. Iptables works with different tables, and a table is a collection of chains.
+
+[00:01:01] To keep it easy, I'm just going to discuss the default chains here. In the default, there is an input chain, there's an output chain, and there's a forward chain. So you could just imagine that as the input chain, which is for all incoming package.
+
+[00:01:21] The output chain filters outgoing package, and a forward chain is in case your system is a router. So if you want to graphically represent it, this is the input chain, this is the output chain, and this is the forward chain.
+
+[00:01:44] Now iptables can be managed as such, and if you really want to go into depths in your firewalling, you can use the iptables commands to create configuration for your different chains. But that's not how we do it anymore on most Linux distributions now a days.
+
+[00:02:02] If you look at Redhat, Redhat has offered the firewalld service. But the story is no different for SuSEfirewall on SuSE, or UFW on Ubuntu. So in firewalld you will use the firewall-cmd command.
+
+[00:02:22] Firewall-cmd talks to the firewalld service, and in the end, the firewalld service writes to the input chain, the output chain, and the forward chain in iptables. In case you wonder, how does this make it easier to troubleshoot? Well it does not, because there is an additional layer on top of it.
+
+[00:02:42] But the reason that all kernel Linux distributions are using this additional layer is that a command like firewall-cmd is very intuitive. Whereas the iptables commands to directly manipulate the contents of the input, output, forward chain, or maybe of even other tables is not intuitive at all,
+
+[00:03:02] and needs a real expert in order to configure firewalling. Now let's have look at how this works from the command line. So let me show you a little bit about firewalling. I will assume that you already know a bit about firewalling. So firewalld, you've probably learned that in RHCSA,
+
+[00:03:22] So I'm not going to talk about that too much. I will talk a little bit more about iptables. Now let me show you how I can configure an iptables firewall on this system. So it starts with system CTL status firewalld. You can not have firewalld
+
+[00:03:40] if you want to play with iptables. Even if in the background, firewalld is using iptables. Firewalld takes over everything that iptables is going to do, I don't want to do that, so I'm going to use systemctl disable - - now firewalld. And I'm even going to use systemctl mask firewalld.
+
+[00:04:05] You can see that that creates a symbolic link from firewalld.service to /dev/null. So it will be impossible to start the firewalld service because it links to /dev/null. Which means that at this point, we can take care of iptables.
+
+[00:04:22] Let's start using yum search iptables, and now we can see everything that's involved. We have iptables, iptables utils, iptables services. So yum install iptables-services,
+
+[00:04:40] and iptables-utils, that should be enough. The iptables package was already there. Now we can use systemctl enable --now iptables. So the first command you want to use in iptables,
+
+[00:05:01] is iptables -L, it will show you what you've got, and we can see that we get some default configuration. I don't want to use default configuration. I want to create my own, so I'm going to flush everything in the input, and forward, and in the output chain.
+
+[00:05:21] So iptables -F input, and -F forward. The output chain is already empty, so now I could use iptables -L for list again, and everything is empty. Now if you want to build a decent firewall with iptables,
+
+[00:05:40] I like starting with a policy, and I like building a policy where everything is denied unless I specifically allow it. I'm just making this a quick demo, but I want you to be aware of how it works anyway. So iptables -P input drop, And we do the same for output.
+
+[00:06:03] And in this quick demo I'm going to ignore the forward chain, we are not going to forward any packages. So if I'm using ping localhost, and I'm getting operation not permitted. Now why is that? Even if you ping localhost you go though the firewall, and the operation is not permitted.
+
+[00:06:22] So let's start by allowing localhost traffic. Iptables -A input - s localhost - j accept. - s stands for source. - j is the action that we want to have
+
+[00:06:41] if this is happening and we want to allow incoming packages that have a source of localhost. Let's also use iptables -A output - d localhost and -j accept. So now if we ping localhost,
+
+[00:07:04] we can see that localhost at this point is allowed to do everything. Now let me give you one more example. We want to make sure that we have incoming ssh traffic, that is allowed. So that will be iptables -A.
+
+[00:07:21] Why -A? Well -A is append. Instead of -A you could also do -I for insert. - A puts the line at the end, and ordering methods in iptables firewalling. So you need to think about it because in iptables, the first line that matches the incoming package,
+
+[00:07:41] will be applied. So ordering does matter, but in case there's not much ordering to worry about. So I'm using iptables -A input. - p tcp - -dport 22 -j accept.
+
+[00:08:02] We are going to allow incoming package, on the tcp protocol destination port 22. So that is the incoming package that will allow ssh traffic to happen. Now you also want something outgoing to be allowed. So iptables -A output.
+
+[00:08:25] - m state - -state established,related - j accept. Now what is that doing? Well that is allowing package to come in
+
+[00:08:41] but its also allowing package to get out. If the package is related to something that you have allowed to come in to the system. So at this point, I should be able to ssh into the system. Let's try that. So here I am on my Mac, and on my Mac I'm using ssh
+
+[00:09:04] root@192.168.4.210. It's asking for the password so I'm on trouble2, so it works the firewall is operational. So we have just seen that the firewall is operational, let's type iptables -L.
+
+[00:09:22] This machine has an input chain and an output chain and it allows only one thing and that is incoming ssh. Which means that ssh 192.168.4.168, is going to fail at this point. Now why is that? Because we didn't allow it.
+
+[00:09:40] If you want to allow it, we need to do something like this but in the opposite direction. I leave that up to you if you think that's important. Now if you like what you have done, then I would suggest that you use iptables-save. Iptables-save or this is writing to the standard out, that's not really what I want.
+
+[00:10:01] I want /etc/sysconfig/ and in /etc/sysconfig/, I want the file iptables to get contents. And now look at this, this is old configuration. I want to override the old configuration so I'm using iptables-save
+
+[00:10:21] and I'm writing to the iptables files. The result is if the iptables service in system d is started and enabled, next time, upon restart, it will automatically enable the lines that we have in iptables.
+
+[00:10:40] And that is the end of my quick introduction to iptables firewalling.

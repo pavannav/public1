@@ -1,0 +1,69 @@
+[00:00:00] Hello and welcome back. Let's discuss the check block in this lecture. As you might remember from our discussion on the slides, the check block doesn't really lead to an error and it doesn't interrupt the execution of our terraform apply command. However, it does issue a warning. So it's good for us whenever we want to warn the user about some potential error or some sub optimal configuration.
+
+[00:00:23] So let's see two use cases here that we can use the check block for the first one. Let's go with the simpler one. The first one is, let's say that we wanna make sure that our AWS instance has a tag which is called cost center. So instead of adding a post condition and checking this in here,
+
+[00:00:42] we actually just want to warn the user and say, hey, you didn't add a cost center tag. That is OK for me, I'm I'm not gonna stop the execution, but you should consider adding it. So for that, we should actually add a check block. And this here we can say cost center check,
+
+[00:01:01] right. So here now we can within the check block, we should use an assertion block or an assert block. And this has the same structure as our pre and post condition blocks. It has a condition and an error message. Let's start with the condition and I'm just gonna add here true for now. And the error message, we're gonna add an empty string just so that this quickly lines go away.
+
+[00:01:23] So let's start with the condition here. And when we look at our resource, then this is the AWS instance resource. So we're gonna say AWS instance this dot tags. And then here we could say um cost center, right? So cost center like so or like so dot Cost center.
+
+[00:01:43] And here we can actually just check whether this is here populated. How do we do that? We could simply say you can and then wrap this around a around the parenthesis here. And we could say let's check that this is different than an empty string. So a fairly straightforward check if the cost center
+
+[00:02:02] is anything that is different than a string, that's fine. If the tag is not defined, this is gonna throw us an error. So the can is gonna return false because there will be an error. And if the cost center is also not defined or if it is now, then it will be different than the string. So we just wanna make sure that the T
+
+[00:02:20] cost center are actually different than the string. So here, what we can write is just say your AWS instance does not have a cost center, right? So just something like this, a cost center tech, let's save this because we're not adding anything to our instance. Then we should actually see this warning message.
+
+[00:02:42] Let's run a form format, Terraform format recursive here. And let's run a terraform plan. As you can see here, Terraform is already able to run this check block because it can also see that the tag here is not right. So there are no tags here. So we cannot access cost center.
+
+[00:03:01] Therefore, this whole thing fails and we get the error message or rather the warning message. If we were to go ahead here and run a data form apply, we will see that we will be able to apply this configuration. We get the warning here, but the moment we type, yes, then this will just create our things.
+
+[00:03:20] It's not gonna stop the creation. So this warning here is not really the or this check block, it's not really good whenever you want to check for critical configuration validation. If you have some critical things that you need to validate, you would not put them inside of a check block. As you can see the apply was completed. We see again the warning here
+
+[00:03:41] and this is something that we should then act on but that it does not prevent the deployment of our EC2 instance. If we were to then come back here to our C two instance, let's add the tags and then this tag is gonna have a cost center, right? So cost center and we're just gonna put this 1234, for example, and then we run once again the data
+
+[00:04:00] form plan, then we should see that this message here will disappear, right? We know we see that there is one to change. We don't see the warning anymore. So if we run a dataform apply dash auto approve here, then we should be able to see the the successful execution here and then no additional warnings.
+
+[00:04:20] That's perfect. So we have managed to use checks to validate whether our instance has some of the recommended Ts. Once again, if this is a required tag, it would probably put inside a post condition because you want to fail the execution. Another use case for a check block is something I could think of in terms of deploying subnets across different availability zones.
+
+[00:04:42] This is a good practice in terms of high availability. So let's see if we can simulate this here. The first thing we would like to do is to deploy more than one subnet. So we're gonna say count is equal to two. And the moment we do that we need to change here, the reference, right? So in our compute, we're gonna say that we're gonna just take the zeroth reference here.
+
+[00:05:02] Let's not make this complicated. So we're gonna take the first one and then here the other thing we need to change is actually the Cidr block, right? Because we are creating two AWS subnets and they would have the same Cidr block. That means this would be overlapping, which is not allowed by AWS. So what we're gonna do is we're gonna add simply 100 and 28 plus count dot index
+
+[00:05:24] for the first one, that's gonna be 128.0. For the second one, it will be 100 and 29.0. And now here, let's say that we want to set our availability zone. And what we're gonna do here will simply say eu West one A
+
+[00:05:40] right? So now here we are creating two subnets within the same availability zone. That means if this availability zone goes down for whatever reason, then all our subnets simply become unreachable. So we can add a check here because this is even though this works, this is not best practice in terms of high
+
+[00:06:00] availability. So I wanna make sure that whoever is working with this dataform configuration is informed in case they do this by any chance. So here, let's just add a new check block. We're gonna say here, high availability check and then we're gonna add an assertion here, right? So assert condition
+
+[00:06:20] and error message. So the condition here that we need to do is actually we actually need to iterate over all the subnets. And this is a list of subnets, right? So you can see here that it's a list by how we are referencing it here. This is a list of subnets and then for each of them, we would like the availability zone. Let's do this first here. So we're gonna say four
+
+[00:06:41] subnet in AWS underscore subnet dot this, let's remove the duplicated Aws here. And then please give me just the subnet dot availability zone availability underscore zone, right? So this is going to map from the Subnet to the availability zone.
+
+[00:07:01] Then we would like to take the unique values here. So one way for us to do that is to just transform this from a tuple into a set. Once we have the unique values, what we would like to do is to check that their length is actually greater than one, right? So if it is one here, then this is not what we would like to see.
+
+[00:07:20] We would like to see at least two values. And then here we will say you are deploying all acs or all subnets within the same AZ please consider right? So please consider distributing them, distributing them across azs for higher availability,
+
+[00:07:44] right? So very simple error message here. Let's add as a multi line. So I'm just gonna say eot and in case you are curious about what this minus does it actually just removes the indentation here so that we don't need to worry about it.
+
+[00:08:00] Otherwise we will also get these white spaces here printed in the console. So it just removes these white spaces and then here we can add an eot as well. And let's just add this here in the, in in a new line with our current configuration. We should see a warning message for this check, right? So we have two
+
+[00:08:20] A two AWS subnets, but we are deploying both of them in the EU West one, a availability zone. Let's run a data format just to make our code better. And let's run a terraform plan and see what comes in the console. Perfect. As you can see here, we get this warning and it simply says you are deploying all the
+
+[00:08:40] subnets within the same AZ please consider distributing them across azs for higher availability. If you wanna be a little bit more precise, you could also check here that the length of the Aws subnet dot This is also greater than one because if it is equal to one, then this will also be equal to one, right? Maybe here you could have a different check that says, hey,
+
+[00:09:00] you are deploying only one subnet, please consider deploying more. But anyway, I leave this to your creativity for us to fix this issue here, we could actually just simply copy this and we're gonna paste it here and now we're gonna access here just the index. So basically the name is an array, right? So this is a list or a
+
+[00:09:21] double which contains three values. So here what we can do is we can just say that we want to access the element at count dot index. And then here we wanna get the module by the length of this same. So by the length of the same
+
+[00:09:40] object or of the same list here, right? So let's say that we have three here and we have four, then we will get 012 and then zero, once again, this will ensure that we don't run out of indexes here. Let's give one example. So let's say that we remove this part. We're just gonna comment it out like this. Let's put a four here and this is not gonna
+
+[00:10:00] work because Eu West one has only three availability zones. So you see here that this doesn't work because the count of index is too large. How do we do that? We already saw earlier also in the course that we can just use the module operator by the length of this very same list here and also make sure that we do a nice round robin. So once we do that, then we should see that everything will go through. Perfect.
+
+[00:10:23] That's great. We're gonna add three new resources here and the check that we had before will actually not show on the screen. And that's because once again, we have many different availability zones here. It's very interesting, isn't it? So I would recommend that we use checks whenever we want to perform
+
+[00:10:40] this kind of validation that could improve our architecture or our infrastructure. However, they are not strictly necessary for the infrastructure to work. If there are checks, which are strictly necessary for the infrastructure work, then use pre or post conditions. That's it for this lecture. But before we wrap up, let's just destroy our resources because I believe we have
+
+[00:11:03] one e two instance running. If we do a terraform, destroy once again, just as a refresher, we're gonna look at the state file and terraform will destroy everything that is in that state file because our subnets are not yet in the state file because we didn't apply these changes. They will not be shown here in the destroy command.
+
+[00:11:23] Wonderful. Congratulations on completing the course so far. I'm sure you are enjoying this course very much and making very good progress with data form. Let's then take a short break and come back in the next lecture.

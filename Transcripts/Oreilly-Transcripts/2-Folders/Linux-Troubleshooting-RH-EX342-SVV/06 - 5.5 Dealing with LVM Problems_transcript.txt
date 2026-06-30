@@ -1,0 +1,49 @@
+[00:00:06] - In this lesson we are going to deal with LVM problems. So, in order to understand LVM problems, you need to know a little bit about finding LVM. So what is happening? Well, when your system boots, Linux scans for LVM devices,
+
+[00:00:23] and it is doing that by looking at the metadata of each and every single device. So, if there's LVM on the device it will automatically find it. If Linux finds devices that you don't want to be found, you can specify a filter. You do that in /etc/lvm/lvm.conf,
+
+[00:00:43] and basically you would use a filter to exclude devices from being scanned. In the lvm.conf, you should always make sure that the archive option is set to one, because this archive option makes sure that you make automatic backups, which may be very convenient for troubleshooting LVM.
+
+[00:01:01] The archive files can be found in the directory etc/lvm/archive. Alternatively, you can use vgcfgrestore -l on the specific volume group to list the archive file. Let me show you a little bit about the LVM configuration before we are starting a lab.
+
+[00:01:23] So on this system, let's use LVS to figure out the current LVM configuration. And we can see it's just the default LVM configuration. Let me create something apart from that. So I'm using gpart on /dev/sdc to create some new partitions.
+
+[00:01:42] So I'm using gdisk on /dev/sdc to create a new LVM partition. So, N for new, partition number four, first sector, that's okay, last sector, plus 500M, current type Linux filesystem, no I don't want that.
+
+[00:02:02] So, let's look up the code that we need, we need 8e00, so now we can use T to set the partition ID for partition number four to 8e00.
+
+[00:02:20] Lets use P to verify, and now we can see that partition number four is 8e00. So I'm using W, and yes we want to continue, and operation was successful. So, at this point I can use vgcreate, lets call it vgdata and put /dev/sdc4 in there.
+
+[00:02:43] And now we can use lvcreate, of a volume with the name lvdata and a size of 400M in vgdata.
+
+[00:03:00] And lets use mkfs.ext4 on /dev/vgdata/lvdata, so that at least we have something to mount. Now lets do vim on /etc/fstab, and in etc/fstab, lets put /dev/vgdata/lvdata
+
+[00:03:20] and mount it on /data as ext4, defaults and zero, zero. Now we need mkdir /data, our file already exists, that's okay with me, we are just going to use it again. You have just seen that etc/fstab is quite clean anyway.
+
+[00:03:42] Now, we need to go to /etc/lvm/lvm.conf, because we need to talk a little bit about filters. So, if you look for the text filter, scroll down a little bit, then here you can see
+
+[00:04:02] a lot of explanation and some examples of filters. So, in the examples we don't see anything that doesn't have hashes in front of it, so that means that it's going to use a default value, and we need something that is doing something else.
+
+[00:04:22] So, I'm going to use filter just below the CD-ROM example. The filter is, and then between square brackets, R for remove, a pipe, a /dev/ and an sdc. And in case you are wondering, hey, isn't that weird,
+
+[00:04:41] you have just created an LVM logical volume on SDC, and now you are going to exclude it? Yes, that's correct. I want to show you how filters in LVM are working. So, let's save this, and let's reboot, and figure out if the filter is working correctly.
+
+[00:05:07] So, let me give you a quick overview of what you can do with LVM filters, and also with the volume group configuration that you can restore. First the filters.
+
+[00:05:20] Filters I set in /etc/lvm/lvm.conf. And by default, no filters apply. I have created some filters, this is a very simple filter, where we are adding /dev/sda, and where we are removing /dev/sdc. You should notice that these filters,
+
+[00:05:40] in the ideal situation are configured before you do anything in your LVM, because otherwise you might get messages of information that has been used before. So, the cleanest solution is if you are connecting a system to a SAN for example, and you want your system to scan
+
+[00:06:01] your local hard disk for LVM only and not your SAN, or anything else, you start by creating a filter, and then you continue. But, if you are putting a filter on an LVM configuration that previously has been created, then you might get into trouble, and that's not too nice.
+
+[00:06:20] Now the results is something that I can show you as well. If I type PVS, then I am getting a device for PV, not found or rejected by a filter. It's exactly what I wanted to do but the problem is that previously the physical volume was already defined
+
+[00:06:41] and that is why we are getting these conflicts. And also, could not find all devices for lv/vgdata/lvdata while checking use and assumed devices. That's also because of the filter but here we have proof that the filter is indeed operational. The device SDC forward as I've used previously
+
+[00:07:01] is no longer visible from a PVS perspective. That's what you need to know about filters. The next command that I want to show you about is vgcfgrestore. That's about the volume group configuration and as you can see, it has a lot of options. Only a couple of options do matter.
+
+[00:07:22] The first option you need to know about is -l. Dash l will list and if you do vgcfgrestore -l on vgdata, then you can see the different restore points that have been created. So, every restore point is written to the archive directory
+
+[00:07:42] and here, for example, you can see created before executing vgcreate vgdata /dev/sdc4 before executing lvcreate and so on. In this situation, of course, everything is pretty okay and the furthest we can go back is until the moment
+
+[00:08:01] that the volume was created. That's not really something that you want to revert to but if later in the procedure, you want to revert to the original situation, vgcfgrestore is an amazing, useful utility. You'll find out in the lab.

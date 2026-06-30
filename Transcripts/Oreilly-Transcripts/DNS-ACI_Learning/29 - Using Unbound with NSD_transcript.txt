@@ -1,0 +1,197 @@
+[00:00:00] Welcome to ITProTV. I'm your host, Don Pezet [CROSSTALK] [MUSIC] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome to another great episode here at ITProTV I'm your host, Wes Bryan. And in today's episode, we are continuing through our DNS tech skills. We got a great episode for you today.
+
+[00:00:20] And joining us in the studios is none other than Mr. Don Pezet. Don, how you doing, sir? &gt;&gt; I'm doing just swell, Wes. Ready to dive right back into the world of DNS. And in this episode, we're gonna be taking a look at what I call the new hotness in DNS, which is using unbound and nsd together to provide name lookup services in your environment.
+
+[00:00:40] I've mentioned it in several of the other DNS episodes that we've done and this is kind of becoming the got to solution for companies that are out there. And there's several of the root hint servers that are already doing this. So it's all the way up at that level, where we're starting to see it trickle out the rest of the way. Now, just to recap real quick why the heck I would do this in the first place, right? Remember that unbound is a recursive and
+
+[00:01:04] caching authentication verifying type DNS server. It scales very well. It's written in modern programming language that runs very fast. It's very stable. It's very small. It's not very resource intensive. And is really, really good at what it does.
+
+[00:01:22] But the thing it doesn't do, or at least the thing it doesn't do well, are authoritative lookups. You can actually get it to do authoritative lookups, I covered that back in the unbound show. But it doesn't do a good job with it. Meanwhile, we got this other product, NSD. And NSD, it is an authoritative name server. That's what it does specifically.
+
+[00:01:40] And it's written in a modern programming language, and it scales really well. It's very fast, very stable. But it only does authoritative lookups. It doesn't do forwarders. It doesn't do cacheing and recursive lookups. It only answers questions about the domains that it actually hosts, which is part of why it's so fast and stable, right?
+
+[00:02:00] So neither one is a drop-in replacement for Bind. Bind has been the go-to, standby DNS server used for 30 years now. It's been around a long time. But if we take unbound and we take NSD and we put them together, now we have a solution that's a fireball. Now it is stable, scalable, fast, reliable, all the things that we want.
+
+[00:02:24] All in an open source platform. So it really is the direction that people are going. And it sounds complex to have to use two solutions. And it doesn't have to be. So in a previous episode, we saw how to use Unbound with Bind. And I used two completely separate servers. One server ran Bind, and one server ran Unbound.
+
+[00:02:42] And I mentioned how you could run them on the same box. Well, in this video, I'm gonna show you how to run Unbound and NSD. And instead of running them on two different boxes, I'm gonna run them on the same box, on the same machine. And I know what you're thinking. Aren't you gonna take a performance hit from that? Not really, cuz it is two separate databases that are optimized
+
+[00:03:00] different ways. If I were in a massive environment, if I were a root hint server, yes, I would have separate boxes, and I'd have many of them, right? But if you're deploying this for your company, even a large enterprise, the load on the server's not gonna be that significant. And so you could deploy two servers, one running unbound on NSD, and another running unbound on NSD, and replicating your zones between them.
+
+[00:03:22] And now you've got an amazing DNS lookup solution that all runs cn that small of a package. All right, well, enough rambling on about it. Let's go and take a look at this. Now, the biggest obstacle we're gonna bump into this challenge, if we were running these on the two separate boxes. I wouldn't even film this episode. I'd say just go back and watch the installing NSD episode.
+
+[00:03:41] And go and watch the installing Unbound episode. And do it on two different servers, and you're done, right? But the challenge here is gonna be when I run two services, two DNS services, on the same machine, they're both gonna try to bond to port 53, right? DNS uses TCP, and UDP port 53 by default. Unbound does, Bind does, NSD does, heck, even DNS Mask and
+
+[00:04:04] some of the other utilities that people run will bind to those ports. So how do you run them both at the same time? And the answer is, carefully. So, [LAUGH] we just have to do a little planning and kinda get it put in place. Now, the key thing to think about here is who is going to answer on Port 53, right?
+
+[00:04:20] When a client asks a question, who's gonna answer? We don't want it to be NSD. Because if NSD answers, it can only answer questions about the zones that it has. It can't answer any other zones, just the authoritative ones. &gt;&gt; So if you want recursion, it's gonna have to be unbound that's gonna be running on Port 53?
+
+[00:04:40] &gt;&gt; Right, and I like the way you said that. It has to be. Cuz the other ways just not gonna work, right? If you do the look up against a nonrecursive survey, if you do a look up against NSD, you can only find those domains. You'd have to basically create every domain right there inside of NSD. It's not possible, right? But if we do a lookup against Unbound, Unbound will do a recursive lookup cuz it'll reach out there on the Internet, it'll cache them and store them.
+
+[00:05:02] And then, what we can do is put a forwarder in Unbound that says whenever we do a lookup for one of our authoritative domains, instead of sending it out to the Internet, send it over to NSD. And if NSD's on a separate box, we just point it to that IP. But if it's on the same box, we've got to point it to NSD, and
+
+[00:05:22] we've got to point it at the port number that it's gonna be connecting, cuz it's gotta run on a different port, right? So that's where things start to get a little tricky. So that's what we're gonna take a look at right here in this episode, is getting that up and going and in place. Now, when we start manipulating port numbers and stuff, there's some challenges that we can bump into that we always need to be aware of.
+
+[00:05:42] If you're deploying this on Dbin or Ubuntu, it's really pretty simple, you churn right through it and you do it. If you're deploying this on Centas or RedHat, then you might have some firewall issues. Probably not. You might have some SE Linux issues. Probably so. SE Linux expects DNS to run on Port 53.
+
+[00:06:02] We might be running on a 53,000. So I covered that in another episode, how to get that setup. If you, actually, I think it was in the Unbound and Bind episode that I showed how to do that different port number stuff. Now for this example, I'm using CentOS, but I'm gonna keep it pretty much the way that will work on any system. The only real difference is gonna be the initial install. So I need to get NSD on my system, and I'll need to get unbound on it, too.
+
+[00:06:24] I'll just start with NSD. And NSD on Debian or Ubuntu, we can easily just say apt-get install NSD, and it drops right in. But on a RedHat based one, we have to do a yum install, actually, I need to get epel loaded on here. So I need to add the extended packages repository,
+
+[00:06:42] because that's where RedHat has chosen to put NSD. And then I can install it by just punching in yum install nsd. And I'll need to enable repo epel. There we go, all right. So I'm gonna get that one installed. And once it's installed, it's kinda got a default
+
+[00:07:02] configuration on it that's pretty suitable for most people. But not gonna be suitable for me, because by default it's not gonna be suitable for me. Because by default is gonna try and listen on Port 53. Now, on a RedHat based system, it installs, but it doesn't start. So that's not a problem. But if you're on Dbin or Ubuntu system, they start the service immediately after install.
+
+[00:07:20] So you basically you need to jump in there and stop the service as soon as you can, all right? So you would do a service stop NSD if you're on an older system. Or if you're on a newer one, you'd do a system ctl stop nsd.service, right? And so, you'd stop it and then cut it out. In my case, it's not running anyways, so that's not gonna do anything.
+
+[00:07:41] But we stop it so that we can go and edit the configuration and change that port number. So I'm gonna edit /etc/nsd.nsd.com. And you do need to be in admin to do this stuff, right? And so I went ahead and elevated my privileges before the show using su to get to root level. You can use sudu on all these commands if you want, but I'm gonna issue a lot of
+
+[00:08:00] commands, and I'm trying to save a little time, so it'll all fit in one episode. So you won't see me use sudu on these. But I'm gonna go ahead and edit that file, and the default file on Red Hat base symptoms, is well documented. On Debian and Ubunto it's actually empty. So you kinda have to [LAUGH] yourself, but there's always so many that we need the server command right here when you open the server sections.
+
+[00:08:22] That's gonna have the bulk of what we want. I need to specify the IP addresses that him listening on. And here's where it gets tricky. Notice that he said the default up here, actually does it say it? It doesn't say it. Hm, here we go. The default of the wildcard interface is 0000 and ::0.
+
+[00:08:41] Now, that means that it's gonna mount to all of the IP addresses in the system. Well, with NSD, I don't necessarily need all of the IP addresses on the system to respond. Because I don't need my end users coming and talking to it. So I could really just open this up for Ip-address: 177.0.0.1.
+
+[00:09:04] I just wanna list it on that one address, and so now it's only local host. Because I'm gonna have unbound running on this host, and it can do the lookup against it right here, and it'll do it via that address. But if I wanna access it over the network, I would do ip-address, and
+
+[00:09:20] then whatever my actual network address happens to be. So I'll just punch that in, and so now I've got that address entered in a few other things we need to double check for is as you scroll down, you'll find do IPv4. The default is that it's on, but I'll uncomment it just so I know for a fact that it's running. And then I get down to port: 53, and this is the important one.
+
+[00:09:40] I need to change it here. You probably noticed that I could have put the port number up when I did the IP addresses, under the IP Address commands. If you don't do that for every single IP that you've got, then it's still possible that one of them might grab 53. And that'll cause unbound to not start up later on.
+
+[00:10:01] So, I'm gonna go ahead and override here globally. And instead of 53, I'm gonna use 53000. Now, remember, you can pick any number from 1 to 65,535, 1 through 1,024 are reserved. 1,025 through 49,000, do you remember Wes? &gt;&gt; 151. &gt;&gt; 151. 49151, those are considered registered, and so if you pick a port,
+
+[00:10:20] you're supposed to pick something higher than 49151. Plenty of people don't, but 53000's pretty safe. All right, then after that we start to get into some logging, we can tailor that if we want to. Our zones directory, these are all defaults for me so I'm not gonna map those out cuz I don't really need to. If I wanted to override it, I could.
+
+[00:10:40] You know, I didn't see, no, actually, I think I got everything I need there. IP address being the key thing and the port number, those are the main things that I need to watch out for. The other thing I need to do is I need to create my zone. NSD is gonna be my authoritative server. And so, I'm gonna come here and go all the way to the bottom of this file.
+
+[00:11:02] And you'll see like have an example zone. And I'm just gonna add on to the end of this file so that I'll have my own little zone right here. So I'm gonna create a zone and I'll give it a name. The name is gonna be itprotvdemo.org, right. So that's the zone that I'm gonna be creating. And the zone file is gonna be itprotvdemo.org .dns, all right?
+
+[00:11:24] I'll need to create that in a minute. But NSD is authoritative and it's only gonna answer for the zones it has which means it's only gonna answer for this one zone and it's not gonna answer for anybody else, just that one. So let me go ahead and save that. And then in typical Don style, I probably messed it up somewhere, so let's do a quick nsd-checkconf.
+
+[00:11:44] And we can just run a quick look. And looks like I'm good, no errors, right? You forget a semicolon or something, and you'll start to get errors. All right, the next thing I need to do is I need to create the zone for that, right? So I'm gonna go ahead and edit /etc/nsd/itprotvdemo.org
+
+[00:12:01] .dns that's the zone filename that I specified. And in there, I'm gonna create a zone file which we've covered numerous times now in the different episodes. So I've got one, I'm just gonna cut and paste in here real quick. But what you'll see is I've got itprotv.org is what I'm creating.
+
+[00:12:20] And I just created three records, dns1, dns2, and www, just a couple of entries in here so I have something I can do lookups against, right? So that's what I've got in place, straightforward, very simple zone file. All right, now that that's done, NSD is done. It's configured, it's doing everything I need it to do,
+
+[00:12:40] I just need to start it up, so I'll do a systemctl start nsd.service, right. And if I wanted to start a booth time, I need to do a systemctl enable also but in my case, I just need to restart it for now. All right, it's a good idea to test nsd before we move on, right? You don't wanna start configuring unbound, and if doesn't work,
+
+[00:13:00] you don't know where the problem resides. So I'm gonna start testing from right here. Now when I do the test, I approve two different IPs because I didn't necessarily know if I was gonna do unbound from this machine or from a second machine, or maybe both, right, maybe I wanna run unbound on two different machines. So I can use the dig command to test out whether my server is working, right.
+
+[00:13:20] It's neat cuz you can kinda point to different servers and stuff. So for example, if I were to dig and do @8.8.8.8. I'm doing a lookup against Google's servers and I could look something up like www.cnn.com. And I expect to get a response. And here it is, it's a CNAME for turner.map.fastley.net and it points to that IP, right?
+
+[00:13:41] Tha's what I expect to see. If I do that same lookup against NSD I expect to get a failure, right? Because NSD is not doing, A recursive lookup and I'm not hosting the CNN domain. So if I change this to point to 127.0.0.1 I can do that lookup,
+
+[00:14:04] except it's gonna default to port 53, right. So, I need to override that and do a -p 53000 so that it connects on the right port. And so now I'm gonna ask NSD if it's working, what CNN is.
+
+[00:14:20] And on this one, I should get a failure. And I got a cnn.com IN A with no response, right? And it says here WARNING, recursion requested but not available, right? So that's working. If it wasn't working, if the server wasn't responding, I would have got a message up here saying something like server fail and I didn't get that. So, but we can test one to sure work, right?
+
+[00:14:42] If I do a look up against Google for www.itprotvdemo.org, right? I do a lookup, and I get 64.98.145.30. Well, when I pasted that zone file in a minute ago, let me pull that up real quick. Let me see, that was itprotvdemo and I look at www.
+
+[00:15:05] That's not the IP. So that's the IP that's out there publicly. But I have a different IP inside of NSD. So if I redo that lookup, and I look it up against my server. www.itprotvdemo.org.
+
+[00:15:23] I get 50.16.169.34. So NSD is working, it is only doing authoritative responses, and it's returning the value right there in port 53,000. So I know that's working and I tested it on port 127.0.0.1.
+
+[00:15:40] If I was testing where I was gonna do two separate machines, I would need to make sure I use the actual IP on the network, right. So I would need to change this into 10.0.222.103. And if that doesn't work, it worked for me, but if it didn't work. That would be where I'd need to look at my firewall, or SE Linux, and find out why I'm not able to connect and function.
+
+[00:16:00] But in this case, it did work, nsd is done, right? And nsd is running on a different port. So now we should be able to install Unbound, and Unbound should be easy. Cuz it could jump on port 53, and what do we have to do there? Not much, right? We just have to get it configured and up and running. So, let's go in and deal with that. I'll come in to a yum install nsd.
+
+[00:16:22] And again, on Debian, or Ubuntu, you'd say app-get install nsd, same basic thing. Well, it's telling me that it is already installed. I guess I installed it. I'm backwards, aren't I? We've already finished NSD, if I can keep my mind straight. I need to be installing Unbound, so that's why NSD is already there.
+
+[00:16:41] So I need to install Unbound, there we go, and it's gonna find it, and we'll get that one installed, right? On an Ubuntu system, I would worry that the service is going to start and I need to stop it and I need to sort things out. Again, I'm on a Red Hat system, but even on a Debian system, I don't really care if it starts now.
+
+[00:17:00] Because port 53 is available, I'm not gonna have a conflict so I'm okay, right. So unbound is in place, now I just need to get it configured and it's gonna be a lot like what we just saw. So I'm gonna go into /etc/unbound/unbound.conf, and we just need to tweak a few things in here to get this server set up the way that we need it.
+
+[00:17:20] And Unbound and NSD were made by the same people, they were made by NLnet Labs. And so the nice part of this is their config files are very, very similar. There are some differences that are a little annoying. But for the most part, it's the same. So see how I've got a server section? And then in there I've got verbosity and logging and all the things that we see on other systems as far as NSD is concerned, you see right here in Unbound.
+
+[00:17:43] So as I scroll down though, one of the big differences is in nsd, I did ip-address and listed the addresses I wanted them out to, here, I have to do interface and then the address. I don't know why they use different terminology on this, but they did so just be aware that it is a little bit different. But what I could do is I could come in and say interface zero zero zero zero and that
+
+[00:18:03] would enable the whole thing by default it's only listing on the loop back, right. So, if I leave it alone, it's on loop back, that would be great. If this was NSD, if this was the one that I was running just for doing those look ups but because I need network host to use this,
+
+[00:18:21] I need to add a little more, so I am going to come down here and just add 2 new lines and I'll say interface and I'm gonna do 127.0.0.1. And I'll do interface 10.0.222.103, so it's gonna mount to the loop act so I can still use that and the IP. If I were to pull on these 2 different boxes, I would only do this address.
+
+[00:18:43] I wouldn't bother with the loop act But if I'm running on the same box, when I do a lookup and I point to the loopback it stays entirely in software. And it never touches the hardware. If I put the physical address or well the layer three address there it's actually gonna go to the TCP/IP stack,
+
+[00:19:01] it's gonna go down to even close to the hardware, all the way down to layer two. And then come right back up again. It's a little more work. So I'll get some better performance out of this if I approve the loop back and use that in my forwarder here in a minute. All right, so we've got that and if I keep scrolling down, I'll see some other things, like where I can change the port number.
+
+[00:19:20] I don't need to change my port number, because I want this one on port 53. I want the clients to see unbound. I didn't want them to see NSD. So that's why I moved it off to 53,000. All right so I've got my IP, my port number is good, I do need to add some access control. And I don't think there's any access control by default. So I'm just gonna add it in right after the port number,
+
+[00:19:42] to dictate who's allowed to access this system. Cuz by default it's only answering to itself. I need to add a little more. So I'm gonna say, access-control and then from here you're gonna specify who's allowed to use the server. If you don't care who can access it, you can just to 0.0.0.0/0 allow, right?
+
+[00:20:01] But if this is Internet-facing, anyone in the entire planet can now start using you as their DNS server. And you could start handling a lot of traffic you don't want. There's people, like Google, who do want that. They want you do use their servers. But if this is your private server, you don't want that. You wanna keep it just to your own. So instead of going super wide like that, you could come in and say, access-control, and just put your own network.
+
+[00:20:22] Now on my network, I've got the 10.0.0.0 network. That's what we use here in the studio. So now I'm allowing everybody in the studio, right? I could also do access-control and as soon as you add one entry, you've overwritten the default, so I've disabled the loop act. So if I want to do testing on the loop act, I'd need to add that one too, and I
+
+[00:20:43] can add the individual address if I want, or I can do the whole loop act range. You know, you punch that one in, and just whatever IPs you think are going to be doing lookup sequences that you want to allow. All right. And just to be positive, I'm gonna uncomment port 53. That's the default, but that's gonna make sure that we are always running on port 53
+
+[00:21:01] as long as I don't override it on any crazy IPs. All right, the only other gotcha I've got is there's a little setting that is hidden away in here and I can never find it when I look for it. So I always have to do a search. There's an entry in here about whether or not we're allowed to query the local host, okay.
+
+[00:21:21] Here it is, do not query local host and see how it's turned on, set to yes by default. By default, on bound will not allow you to query itself. It's trying to stop a loop, right? It doesn't want you getting in this recursive loop over and over and over again, where you're querying yourself, right? So it's got that turned off.
+
+[00:21:40] The problem here is, I want to run Unbound and NSD on the same box. If I was running on two different boxes, I wouldn't care about this setting. But if I wanna run them on the same machine, I need unbound to do a lookup against itself, against the same server on a different port, but it's still on the same server. This isn't saying anything about do not query the same port.
+
+[00:22:02] It's saying do not query the same host. An Unbound and an NSD are on the same host. So I actually need to change that option and I'm gonna set it to, do-not-query-localhost. No, and that's gonna allow us to push the query, the authoritative queries from unbound right over the NST right here in the same box.
+
+[00:22:22] Really important settings, if you miss that one this whole thing doesn't work unless you're on two boxes. All right then I'm gonna add my zone. I just jump all the way to the bottom of this file, I got the zone section is down here. And so I am going to just come in here and add a forward zone
+
+[00:22:42] and I'll set the name to itprotv demo dot org, I'll set the forward address, forward addr and so I am going to say if I get any lookups for itprotvdemo.org I can't answer them.
+
+[00:23:01] I am going to forward them to someone else, instead of doing a recursive lookup I am going to forward them to somebody else. And I am going to forward them to 127.0.0.1 and forward it to myself. Exactly what that last command said we couldn't do right. I'm gonna do that. And I'm using the loop back so this will go super fast. [INAUDIBLE] happen really quick.
+
+[00:23:21] But I need to tell it I'm on a different port number. And you can see an example right above of how to do that. And so it's just stick an at symbol followed by the port number. So any lookup that I get for ITProTVDemo.org, I'm a recursive server, I can send it wherever I want. I'll send it to myself on port 53,000,
+
+[00:23:43] and now I'll get NSD and NSD can answer me for that zone. If I get a question for any other zone, I won't even talk to NSD. So NSD can sit there and just answer questions about that one domain. And it's perfectly fine. And NSD doesn't have a cache.
+
+[00:24:00] But I don't care because unbound does. Unbound will cache the lookups. So when I look something up against NSD, it goes in my cache. And as long as the TTL is valid, I won't bother NSD anymore. So NSD can sit there and idle most of the day, while unbound is doing the heavy lifting. And that's exactly what happens. In real life land, you could have millions of people querying a particular address,
+
+[00:24:23] and unbound will only be going to NSD when the TTL expires. And that's it. And so, NSD is only seeing lookups from one host, just from unbound. And only at the TTL intervals, which can be five minutes. They can be an hour, they can be 24 hours, right? It's whatever we choose to set them at.
+
+[00:24:40] That means NSD idles out a lot, and unbound does the work. And that's why it's okay to put these two together on the same box like this. I don't worry about the performance of it, unless we're on a massive scale, right? If NSD is only hosting a few hundred records, they're all gonna get cached. It's not a big deal. But if NSD is hosting hundreds of zones and
+
+[00:25:00] millions of records, well, that's a lot. And it may not all get cached, and so there are gonna be more frequent lookups and that's when we need to split them off into separate box cuz that comes down to performance. But, I've got that defined now, so we should be good. I'm gonna get out of my config. And you'll notice, I didn't configure any other folders. And that's because by default unbound, will use the root hint servers or
+
+[00:25:22] the DNS server to find for your host. Whatever's [INAUDIBLE] any network adapters. To be able to reach out and do the forwards for you. It's set up as a caching server out of the box [INAUDIBLE] that. All I had to do was override the lookup for itprotvdemo.org, right? So now that I've got that in place, I can check my config, right, so I'm gonna do an unbound-checkconf.
+
+[00:25:43] And I got an error, okay? Now, it's not my fault this time, right? When you install unbound, if you install it on Debian or Ubuntu remember how it starts automatically? When it starts automatically, it creates the server identity keys, the authorization keys.
+
+[00:26:00] On RedHat, Centas, Fedora, they don't start it automatically, so the keys haven't been created. So it's giving me a warning about that. If I look in /etc/unbound, there's no key file, actually, there are key files in there. Well, there's a root key file for the root hit servers but there's not one for this server, right? So my server is missing its keys.
+
+[00:26:20] There's two ways to create it, I could just start the service and that would create it. But if I'm worried about checking for errors, you can do unbound-control-setup. And when you run that, it'll find the missing keys and create them, right? Well, it doesn't find the missing keys. It finds that the keys are missing and creates them. And now, if I go back and look in that folder,
+
+[00:26:42] I've got my unbound control keys and my unbound server keys, right? So now, when I rerun that check, no errors are found, right? And I don't have a zone file in unbound because it's forwarding to NSD. So I don't have to check a zone, so I can start it up. So I will start unbound.
+
+[00:27:02] And now, I'm running unbound and NSD at the same time. I didn't get any errors. Because my ports aren't overlapping. One's on port 53, one's on port 53,000. I already tested the one on port 53,000. Let's test the one on port 53. Okay, now I know that when I did a dig against Google servers
+
+[00:27:25] for www.itprotvdemo.org, that when I did that lookup it came back with 64.98.whatever. But when I did the lookup against our own server, when I did a lookup against NSD, 127.0.0.1- P53000,
+
+[00:27:45] that it came back, whoops, I lost my I forgot to go p, there we go. So now that I've got it, instead of seeing the 64 address up here, I see the 50 address. That's how I know that NSD is working, right?
+
+[00:28:01] If I do a lookup against unbound, the reason I'm harping on this, is unbound is gonna have to forward to somebody to get this answer. I need to know who is forwarding to. If Google have the same IP as NSD, when I go and do this lookup, how do I know which one it went to? I don't. So, it's a good idea to create a test record and pumped it out there to be able to test with, to make sure it's different.
+
+[00:28:20] In my case, I'm lucky that they're already is different, right? So I know if I get the 64 address, that it was forwarding to Google. But if it gets the 50 address, then it forwarded to NSD just like it was supposed to, right? So I can do a dig, and I can point it at my own server, right? I don't have to do a port.
+
+[00:28:40] But I'm gonna do it on purpose just to know for an absolute fact that I'm doing a lookup against port 53 and not 53,000, right? And we wanna be certain we're testing the right thing. And I'm gonna ask it to tell me. Well, we'll start with somebody else. Let's start with cnn.com, right? This is gonna test whether on bound is forwarding at all, right?
+
+[00:29:01] Is it able to forward out to the internet and get root hints and get answers? And, I do get a response, okay. So it is working properly. Now, I ask for itprotvdemo.org. And instead of forwarding out to the internet, it should reach over to NSD and get the answer from there, right?
+
+[00:29:21] And so when I run that, I get 50.16.169.34. That came right out of NSD, okay? So I know NSD is working properly now. And I can take this server and I can point all my clients to it. And on the clients, you just put an IP in, right? So this system Is 10.0.222.103.
+
+[00:29:43] So I can now go around the building here and set every computer to use 10.0.222.103, to do DNS lookups. And when they do, they're gonna hit this box, and they're gonna hit unbound. And unbound is gonna recourse them up to the internet. And it's gonna cache all the values that they query. And it's gonna start running and operating like a local DNS server should.
+
+[00:30:02] But the moment somebody does a look for itprotvdemo.org, they're gonna hit the unbound server, and its going to recourse over to NSD, get the answer, bring it back and cash it for the next person, and return the value to the client. The client has no idea they talked to NSD, cuz they never did. And they don't know about port 5300 cuz they never connected to it.
+
+[00:30:22] They only know about unbound, on port 53. And then in the background, unbound did the rest. And since it was all right here on one box, I didn't even take a hit for network performance. It's not a 100 megabit network or a gigabit network, it's running in software, right? On the general purpose CPU. So throughput becomes no problem there.
+
+[00:30:40] I do just need to monitor load on the server to make sure it's not getting burdened. You'll usually see like running out of RAM cuz of the cache and stuff like that. But otherwise, we've now built up a system that's got unbound and NSD, both serving up lookups. And I've got a full replacement for bind here that's more stable, faster and
+
+[00:31:01] written with modern code. It's where you wanna be. &gt;&gt; Another great example Don of taking two software components, marrying them together and getting a complete solution. Now, it does look like we're coming to the end of another episode, but before we do Don, do you have any additional words that you might and maybe even warnings or cautions about running these two pieces of software together? &gt;&gt; Do be careful with,
+
+[00:31:21] unbound is generally well accepted across all the platforms. So it's part of the default packages but you saw with NSD that I had to go and pull the extra packages from Red Hat. That means that Red Hat is not officially supporting yet and it's because NSD is developing fast. So they went from three, which is very stable, to four, which was a beta. And they switch that beta to stable, and
+
+[00:31:41] Red Hat doesn't have time to evaluate it yet. So, definitely make sure that it's supported by your vendors, before you start deploying it. But I'll tell you right now, NSD is completely stable and completely safe. It's being run by some of the root hint servers, so the people who have the biggest stake in the game are running it. And now NetLabs designed is specifically for doing this.
+
+[00:32:02] If I had to deploy Linux or Unix based DNS servers today, this is the solution I'd use right here. So, just keep an eye on performance to see if you need to go to multiple boxes but every time I've done it, a single box has been able to perform it. You'll probably wanna couple this with replication also. So I would now go and stand up a second box and put NSD and unbound on it.
+
+[00:32:23] And, on unbound we don't need to replicate, it's just a cache. But I could set the NSD servers to replicate, so that one's a primary and a secondary, or master and slave. And that way, NSD has the zones stored on the back end that it needs to and off you go. It's a great environment. &gt;&gt; Well Don more great examples.
+
+[00:32:41] We appreciate you stopping by the studio and we appreciate you the viewers watching out there. We're gonna go out head and sign out here for ITPro TV, I'm been your host Wes Bryan. &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC] Thankyou for watching ITproTV.

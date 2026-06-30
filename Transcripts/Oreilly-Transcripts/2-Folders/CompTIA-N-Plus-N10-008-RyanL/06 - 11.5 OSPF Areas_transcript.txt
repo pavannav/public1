@@ -1,0 +1,111 @@
+[00:00:06] - Let's dive a little bit deeper into OSPF. Remember that in OSPF you actually create a neighbor adjacency with the routers around you. And when we talk about the fact that OSPF is a link-state, please realize that when we talk about link-state,
+
+[00:00:21] it's simply, and I don't want to oversimplify it, but it's the state of the link. What is a link? Well, it's your network interface. Is it up? Is it down? What's the speed of it? These are things that OSPF neighbors are gonna discuss with one another. Once you learn about an advertisement of a link, this is called an LSA, or link-state advertisement, type of messages that OSPF passes. When you receive an LSA from other devices,
+
+[00:00:42] we can install it inside of our local, it's called Link-State Database or LSDB. It's a, factually, just a container of all the link-states that we've heard. We put them all into this big jar or big container you could think of it as, and then once they've all been collected, we know about everything that's out there. We go, "Okay, based on these paths,
+
+[00:01:02] what's the best way to get to each destination that I've heard of?" This is a lot different from what we saw with RIP. RIP, you hear information from other devices, you put it in your own routing table, and you take that table and you just basically shouted out the window on a predefined interval. So with OSPF, it's a little bit smarter than that.
+
+[00:01:21] We're advertising the state of the links. Each device is doing unique calculations coming up with the best decisions. And of course, should a link change at stage, they go from up to down, that LSA has to be propagated throughout the area and all of the devices in the area recalculate the routing tables. So it could take a bit. It could be disruptive.
+
+[00:01:41] It might cause a little bit of a spike in your CPU utilization. One of the things that we see in networks is sometimes there'll be an area that's suffering flapping link. So link goes up and down, up and down. And as that occurs, it can cause a lot of unnecessary calculations of adding routes, removing routes, adding them, removing them,
+
+[00:02:00] and just running that Dijkstra's algorithm again and again. So here we'll talk about some of the things that we can do to reduce the likelihood of that occurring and basically control the impact of a network change. So, as I mentioned, these link-state advertisements, or LSAs, are propagated throughout the area. They're generated whenever a link changes state. So if it's state goes up or down,
+
+[00:02:21] we go ahead and push those out. And then when you receive a change state, you're gonna perform that recalculation that I mentioned. The goal is that the best routes are always gonna be available on the routing table, and we're just trying to keep an up-to-date list of what's the best way to get everywhere. The problem with this is that, again, it can lead to high utilization.
+
+[00:02:42] So I was working with the company that was pretty big and they had warehouses, and the warehouses had very simple IT needs, and then they had equipment that was hosted or colocated in a data center, and this had very, very fast switches. These had no problems doing calculations.
+
+[00:03:00] Then they had their headquarters and branch offices where they had a lot of employees working. Some of the branch offices were neglected on the technology side, but it was mainly the warehouses. As this organization got larger and larger and added more sites, they were discovering that when a... How can I show it?
+
+[00:03:21] Let's go ahead and start making some routers here. Say, we've got some routers here in the data center, we've got some routers off to the side that are located in warehouses, we've got things in branches, and then we've got maybe headquarters down here. And imagine that these kind of nine over here to the right are just branch offices.
+
+[00:03:41] If there were a link between these two branch offices, and let's say that there's a lightning storm over here, every time the lightning goes off, the power's cycling, we put UPSs in place to keep the power up, but for some reason, the circuit drops. Something to deal with the service provider. Maybe the lines that are in the ground could be wet. We're not sure what the case is, but there's just flapping links many times in a minute.
+
+[00:04:01] And it just happens between, let's call them site A and site B. These are in the same geographic region, but our routers are just deployed all over the place. Now, what happens is when these links are flapping between A and B, everyone else has to recalculate, and some of the routers and the layer 3 switches in our warehouses are several years old.
+
+[00:04:21] They're neglected. They're running low in memory. They're high use CPU. And what we're getting complaints from users of is whenever there's... Again, there's these thunderstorms that we think are causing it. But certain times intermittently throughout the month, we've noticed that the warehouses have had lot of problems with the network, just slow transactions, sometimes phone calls are dropped,
+
+[00:04:40] sometimes web pages fail to load, so they've asked us to look at it. Problem with intermittent issues is that the network could be running fine now. We run every test that we can think of and things come back swimmingly. It looks like it's great. One of the ways to get a kind of a historical view into what's been happening on our network is through the collection of logs. So using CIS log, we could know when links are flapping,
+
+[00:05:02] when did things go up and down. We could also set notifications sort of a specific threshold is set. Too much memory is used or too much CPU is utilized, we can send off notifications, keeping an eye on what's going on with his warehouse devices. So we've got CIS log right on the warehouses and we noticed that their CPU utilization keeps spiking,
+
+[00:05:21] their memory utilization is going up, and it's our theory that the problems are due to what's happening there between routers A and B. Now, this is where areas come in. If we created an area here just for branch routers, let's say we call this area 3 'cause it'll need a unique number. Anytime there's a topology change within those branches,
+
+[00:05:42] all the other branches find out about it. They all have to recalculate, but it won't affect anybody in my warehouse. I could come over here and I could call my warehouses area number 2. Additionally, I've got my headquarters down here and we'll make this area 0. You'll see why in a second.
+
+[00:06:00] And I've got my data center here and we'll set this up as area number 1. If everything connects to headquarters and it might make just as much sense to have everything connect to data center just depends on your environment. But in this scenario, we've got kind of a central area that things are connecting through, let's say that it's headquarters. We're gonna make the center area 0. Area 0 always wants to be the center of the network.
+
+[00:06:21] And then what we can do between the areas is summarization and we can perform filtering. What's significant about that is those LSAs, those link-state advertisements, that are propagated between the routers, they're gonna be controlled towards the edges. And between these areas, let me just kind of highlight this,
+
+[00:06:40] you see these links here. These links, these connections between the areas, which are typically just a router with two interfaces in different areas. But realize that when we do this segmentation of our network and we've basically divide it up that we have the ability to perform, and I use this word earlier, summarization. That's important because in this network
+
+[00:07:01] I might have many /24s. I might have 100 of them. And if all of my addressing is hierarchical, if I'm just laying these out one after number 10111 10112 10113 10114, I'm just going crazy. I can say, "Hey, if you want 10.1. anything 00/16,
+
+[00:07:21] come in this direction." This is summarization. I'm sending a single statement with a mask that includes more hosts so that the downstream device in this course headquarters only has one single entry. And should the link flap, and should you lose access to one specific /24,
+
+[00:07:40] let's say 10199 if that was the network, if we lost that one network, do we need to tell the whole rest of the planet, all of the rest of our global corporation? Not really. Everything 1011 is still located up here. That's where we go to get to it. But if the network is down, we're just gonna leave it down for now. What this is gonna do by suppressing that detailed information
+
+[00:08:01] that not everybody needs by giving them just that summary, it's gonna ensure that when links flap, when things move around, or change, that other areas are not gonna be impacted by this. Pretty sweet. What's that gonna do in our scenario? Well, we noticed that the warehouses were having problems with their network. What was going on?
+
+[00:08:20] Well, when Dijkstra was being calculated again and again, it was pushing up CPU utilization. If your CPU maxes out of it, it starts getting to the 90% or above. I would expect that you'll start dropping packets. Depending on how tolerant your applications are for packet loss, you may see applications failing. You'll see the quality of phone calls degrading.
+
+[00:08:40] You're gonna see network performance, file transfers and things slowing down. The slower your file transfers go, the longer they take. The longer they take, well, now there's a chance that more users are gonna start more file transfers, which just bogs things down more, and that just starts to snowball. Any chance we have to optimize things to clean up or mitigate the impact
+
+[00:09:00] of broad sweeping changes or recalculations tends to be pretty good. Through the use of areas in OSPF, we can isolate these changes that come about. We also have the ability to do things like bring in external routing processes. So there's a good chance that your company could merge with another company. When you get involved with that other company,
+
+[00:09:20] maybe one is running EIGRP or RIP, the other one's running OSPF. Through the use of areas, we can pull in those external routes and we can take EIGRP or RIP routes and inject them into OSPF. And we can do the same thing, take OSPF routes and inject them into RIP or EIGRP.
+
+[00:09:40] That's called mutual redistribution. You're receiving information from an external autonomous system or external routing process, and what we're doing is taking our information and pushing it out to that. It's cool because it gives us compatibility, but it also gives us an opportunity to perform summarization and filtering. The cool thing about summarization is that you're gonna shrink the size
+
+[00:10:01] of your link-state database. Let me talk about that for just a second. Come over here. And again, we'll just run through these advantages of multi-area and we'll talk about it just a little bit more detail. So multi-area OSPF gives us summarization, the ability to describe lots of routes as only a few.
+
+[00:10:20] So let's say I had hundreds of /24s, maybe 200 of them, and that's all been summarized to a single /16. So if we looked at the size of your link-state database, it's effectively a database just like any database. As databases grow, they take up more memory.
+
+[00:10:41] They take up more RAM. And if we run an operation against that database at CPU intensive, something like Dijkstra, that's gonna take more CPU. It's gonna take more time. So summarization assists us with isolation of topology changes. Like I said, if the branch offices have flapping links, maybe we don't need to hear about that
+
+[00:11:00] in all of our warehouse locations. That's nice. Summarization also reduces complexity. The routing tables are cleaner and easier to look at. It improves stability, because when links flap, not everybody has to recalculate. This is where I think it gets a little bit more interesting, which is hardware requirements. A lot of times we'll take a look at a network problem and our solution is, immediately, let's go buy new hardware.
+
+[00:11:22] I like new hardware. I think new hardware is exciting. It's faster. It's typically running a better operating system. It's got more features. But of course it costs money. If you don't have an unlimited tech budget, it's really, really nice, I think, to be able to go into existing hardware and tweak and tune it to get some more life out of it.
+
+[00:11:40] And that's what you can do through summarization. Remember that when we summarize, what we're doing is we're taking this big link-state database and we're gonna shrink it. How do we shrink it? Well, through summarization, we take lots of little routes and we say, "Why don't we just put one big general route there?" And that includes all these little routes that we were talking about before.
+
+[00:12:01] What does that do? Two things, it gives us fewer entries in our link-state database and ultimately the routing table, which makes it smaller, but it also isolates as topology changes. In other words, we're gonna go from a large database. Let's take this as our before. We had a large database
+
+[00:12:20] that could be impacted by topology changes. Which means on a regular basis, we're gonna come back to this big database and we're gonna calculate it again. That sounds like a lot of work. We go, "Here's the alternative. Here's the after." We're gonna go with the much smaller database. We moved hundreds of 24s to a single /16, meaning it's a small amount of data to process,
+
+[00:12:42] which is nice, but we also process it less often. So it's not a big deal to recalculate because the database is small, but also the second factor that summarization is an improved stability. We're not gonna hear about a flapping link, so we're not recalculating a giant database, 16 times a minute.
+
+[00:13:00] We're doing a little tiny database once or twice a day. Not a big deal. So the whole goal of the summarization, like I said here, improves the isolation topology changes, reduces complexity, improves stability, reduces hardware requirements because we got a smaller database so we're calculating less often. This is where I get excited. You know, maybe I have a proposal
+
+[00:13:21] where we rip out and replace all the equipment in all those warehouses, and voila, it's just gonna go faster. We've got newer technology. We've got a big budget. That's a great scenario. If you work at a place like that, stay there. (chuckles) Because a lot of people are just gonna tell you to do less with more, which is okay. In that situation, we're gonna know how to. We can go to our older layer 3 switches or older routers,
+
+[00:13:42] and through the use of summarization, we can reduce the impact of OSPF. Remember there's lots of other services running; CIS log, there could be web pages, or it could be SNMP. You could be doing all sorts of things. But if we understand what's gonna have a big hardware impact on the device, and you can learn this through logging,
+
+[00:14:00] we can sometimes go through and we can improve that function or process to reduce the load on the box, ultimately giving us several more years of life out of that hardware, which allows us to take our budget and put it towards other things that we couldn't extend the life of. So learning the details of multi-area OSPF, I think is pretty exciting. Why?
+
+[00:14:20] Because it's a tool in your tool bag to come in and perform basically performance tuning of network environments. So when we look at OSPF, you know, we've got these different areas. In the areas, you've got different router types. So a regular router that lives in an area is an internal router.
+
+[00:14:40] Now the areas have significance. You see if you're in area 0, area 0 is the backbone area. And let's say that you have two other areas, area 1 and area 2. You've got all these routers in here. What goes between two areas is called an area border router or ABR. And an ABR connects,
+
+[00:15:00] in this case, like area 2 to area 0 or area 1 to area 0. It has one interface that connects to other routers in different areas. That's why we call it an area border router. The ABR or area border router is where we actually do the summarization and filtering. All the internal routers are left alone.
+
+[00:15:20] Now, if you're an internal router within area 0, this is called a backbone router. And the reason for that is the area 0 is considered to be the backbone of an OSPF network. All other areas like area 1 to 2 are supposed to connect through area 0. They're not supposed to directly connect. That enforces a hierarchy where area 0 is the center
+
+[00:15:42] and everything else connects around it. Now, sometimes we have mergers, and if we merge with another company and let's say that they're using EIGRP or they're using, I almost say OSPF, if they're using RIP, RIP routes are hop counts, right? We can't take hops and immediately convert it to cost.
+
+[00:16:02] But if we have some RIP over here, maybe on some older equipment, we can take that environment and we can connect it to OSPF, and the router responsible for that is actually running two routing protocols. It runs OSPF on one interface and it runs RIP on the other, and the job is to perform redistribution between the two.
+
+[00:16:22] Tell RIP about the OSPF routes. Tell OSPF about the RIP routes. Guess that's about all I have to say about it for now. There are some rules about the way that we do this, but I don't want to get too much into the details. Just realize for now that when we set up OSPF you can take hundreds of routers throw everything into the exact same area
+
+[00:16:40] and it's up and running, it works. Your users can get where they want to go. The problem you may encounter is if the network is destabilized, all the switches and routers, firewalls, servers, OSPF runs on everything, load balancers, LAN controllers, all of those devices are performing recalculations as often as necessary. If one of the links or one of the devices is causing everyone else a lot of grief, we can isolate it.
+
+[00:17:03] And by isolating it, that can become really handy. Additionally, it's just good practice that if we do have lots of networks, lots of equipment with similar addressing, that we group it together and we summarize where we can. What will this do? It will shrink the size of the link-state database,
+
+[00:17:20] making it smaller and faster to run against, and anytime we do have to perform this calculations... It's gonna be a lot less often because we're not hearing about little routes disappear. But when we do have to perform recalculations are so much easier because that database that we're working with has been pruned. It's been cleaned up through the use of summarization.
+
+[00:17:40] So really pretty handy. Here's a nice diagram that shows us multi-area OSPF. You see areas one and two on the left and right. Notice the area 0 is gonna be in the middle. So area border routers or routers that have an interface in two different areas. You can see that those are the light blue routers. You've got some internal routers in area 1 and 2.
+
+[00:18:02] And in this example, what we're doing is we're actually bringing in EIGRP to this particular router. It would make that router an autonomous system boundary router or an ASBR. Why? Because we're talking to another routing system, we're talking to EIGRP.
+
+[00:18:20] So we bring in EIGRP routes. Once we have those, we push those into our environment as external links that we've learned about, and all the other routers are gonna hear about it. So EIGRP comes into this one router. It gets pushed out as OSPF into area 2. Our ABRs propagate that to area 0. Area 0 would propagate it to area 1.

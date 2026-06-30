@@ -1,0 +1,41 @@
+[00:00:06] - All right, let's talk about setting up remote core dump locations. So you can setup remote core dumps using NFS or ssh. The advantage of ssh is that it's a process that's running on all servers,
+
+[00:00:20] but if you are running NFS already then that's okay as well. In this demo I will show you how to setup ssh. To start it on the target server you need a core dump directory. Doesn't really matter how directory is called as long as you are consistent in using the right name, and then on the dump server, that is the server that generates the dump
+
+[00:00:41] and needs to send it over to the remote server, you are going to edit kdump.conf with the following settings. In ssh you need to specify where you want to ssh into. Then there is sshkey, which is the name of the key that you want to use in order to connect
+
+[00:01:00] to the remote server. I would advise you to use a unique key name here. Then we need core_collector scp to tell the core dump program that it should use scp to go to the remote house, and path /var/kdump will go to the other machine and connect to that,
+
+[00:01:22] and then you can use kdumpctl propagate. Kdumpctl propagate will setup the entire environment to have you automatically connect to the remote machine. I will show you shortly, but first there are a couple of more things that we need to talk about, and one of them is core collection.
+
+[00:01:40] In order to make the dump the makedumpfile utility is used, and this utility is automatically called from the kdump.conf file, and it can work with different parameters like compression algorithm, the message levels to show progress when the dump is happening, and the dump levels, which allows you to specify
+
+[00:02:00] which pages of memory are dumped if a core dump is happening. Use zero for all pages. Use one to exclude zero pages because they just eat up disk space, and use 31 to exclude zero pages, cached pages, user data pages, and free pages as well. For an efficient core dump,
+
+[00:02:21] probably this option 31 is the most reasonable to use. Let me move over to the demo environment so that I can show you how to set this up. So let's get to the destination server
+
+[00:02:42] and make sure that we have a directory to store the core dumps, /var/core for example. Obviously you need to check that you have sufficient disk space. So this system has 14 gigabytes of available disk space, which is okay because the server that's going to generate the core dump
+
+[00:03:00] has just two gigabytes of RAM, but if you have a server that has 256 gigabytes of disk space, and you use the core collection option zero to dump everything, well, you run out of disk space pretty fast. So please consider that.
+
+[00:03:20] Next we need to continue on the server where you are going to configure the core dump. So /etc/kdump.conf is where you need to go, and you can see that I already put them in. You need ssh root@192.168.4.210, username or an IP address
+
+[00:03:40] depending on the you have setup name resolution. Then we need an sshkey. Let's use dump_id_rsa. A core dump collector set to scp, and the path, which is set to /var/core. Make sure that the path matches what you have created on the remote server.
+
+[00:04:03] So after editing the kdump.conf with the ssh parameters you are going to use kdumpctl propagate. That will copy the keys automatically to the remote server.
+
+[00:04:22] So I need to enter the password, and, well, basically kdumpctl propagate is using a ssh copy ID to make sure that the key is available on the remote server. So that should be all right, and as it is. At this point we can use systemctl restart kdump
+
+[00:04:44] because after all the kdump service has been reconfigured, and we need to make sure that it considers the changes, and, oh no. We are getting an error message. So let's have a look, systemctl status -l on kdump,
+
+[00:05:02] and what do we see? We see that it is rebuilding the initramfs. So this is a special initramfs that loads the kdump drivers, and we also see the specified dump target needs makedumpfile -F option.
+
+[00:05:21] Now that is something that we haven't done. If you go back to /etc/kdump.conf, then you can see that the core collector right here is set as makedumpfile, and in here you need to specify the option -F which will create the dump file in a format
+
+[00:05:41] that is suitable for transport through ssh. So let's restart kdump again and hope it works well now. So it didn't complain this time. So let's use systemctl status -l on kdump
+
+[00:06:00] knowing that we can ignore anything that was generated at 1600, and you can see it's okay. It has created a new initramfs, and the core dump setup should now be working. Before we start testing it, which will be in the next lesson, let's talk about kdumpctl some more
+
+[00:06:21] because this is a useful command. So you can see it works like a good old service script, and it does have a couple of parameters that may be helpful. We have seen propagate already. Showmem is cool as well. This is a minimal system, so we just have 161 megabytes, but on a big system you may use a lot more memory
+
+[00:06:43] for the core dump functionality, and if you want to verify that the service is up and running, oops, then you can use kdumpctl status. Kdump is operational, so let's move on to the next section where we are going to test all this.

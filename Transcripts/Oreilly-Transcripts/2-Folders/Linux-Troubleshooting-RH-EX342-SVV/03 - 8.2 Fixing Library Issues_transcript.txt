@@ -1,0 +1,57 @@
+[00:00:06] - Let's talk about library issues. So most applications are using dynamic libraries, but you can also use static libraries. When an application is built, it is linked dynamically against the libraries it has to use.
+
+[00:00:21] This allows applications to be smaller, the libraries can be used by multiple programs, and bug fixing easier, because it's easier to isolate code. The nice thing about libraries, is everybody is taken care of its own chunk of code. There are some library requirements. Executables can be queried
+
+[00:00:40] to find information about required libraries. You can do that using ldd, for example. The DT_SONAME field may be available in the library to identify name and version of the shared library. So how does that work? Well, you can use object dump to find out if this field is included.
+
+[00:01:00] Just use object dump -p or your library grep SONAME and it'll tell you. The shared library has a symbolic link that matches its DT SONAME field. You can find it using ls -l in the library that you are investigating. Let me show you how this works. So object dump -p /lib64,
+
+[00:01:23] which is the location where you'll find most libraries, and let's do it on libungif. That sounds kind of cool.
+
+[00:01:40] So that is providing all the information about what is in the library. And if there is this DT SONAME, you'll be able to find it. So here you can see that the SONAME is set to libungif.so.4
+
+[00:02:01] and that is what the application will be looking at. And if you do an ls -l lib64 libungif, you can see that there are two results. There is one result, which is a symbolic link that corresponds to the SONAME,
+
+[00:02:23] and there is the actual library itself, which is the specific version you are using. Let's have a look at the slide some more. When a program starts, the runtime linker identifies shared libraries and maps them into the program's memory. By default, the linker name is ld-linux
+
+[00:02:43] and it's provided by the glibc package. It's a pretty important part of the Linux operating system. Delete it and nothing else will work anymore. Next, the linker uses the DT SONAME in the application to find which version of the library to use, and looks for them in the following order.
+
+[00:03:00] And that is very specific about libraries, libraries are not just accessed through their absolute path but the linker will try to find them first in the LD LIBRARY PATH. So if the library was not found, the next location is the etc ld.so.cache file. This is a file you can generate using ldconfig.
+
+[00:03:22] You can see what's inside using ldconfig -p. Shouldn't be necessary to manually generate it but in some cases you may have to if libraries cannot be found. And last, the directories in the default library paths are scanned. And these are included in the linker itself.
+
+[00:03:41] So if you wanna find out which directories these are, strings is the command you can use. Strings is getting readable text out of binary (mumbles) and if you grep anything starting with slash then you should find it. Let me show you. First let's have a look at the library path.
+
+[00:04:03] (mumbles) So this one doesn't have a ld library path. So that means that by default the etc ld.so.cache file will be used. Ldconfig -p shows the contents of this cache file. And as I mentioned, if you have any problems,
+
+[00:04:20] have a look at ldconfig because you can run ldconfig to update the cache file, which may be necessary in some cases. And finally there is the linker itself. So you can use strings on lib64 ld linux dot whatever,
+
+[00:04:45] which is giving a lot of information. And all the hard coded directories will be shown when you grep on anything starting with slash. So here we go, this is where the linker will have a look.
+
+[00:05:01] Not all of them are library paths but you can see lib64 and use lib64 so that is where it'll be looking at. Let's go back to the slides for a while. So now that we know how searching libraries works from the linker perspective, let's have a look at the application as well. So you can use ldd on any binary
+
+[00:05:22] to find which shared libraries are required by a binary. It displays the DT_SONAME, which is followed by the path name of the library, as well as the memory address mapping by default. Libraries that don't have a DT SONAME only show an absolute path to the library.
+
+[00:05:40] And if for some reason the library could not be found, then you will find it as well. Obviously, with libraries you may run into trouble as well. So for troubleshooting, first thing is to avoid the problems. You can avoid library problems by using yum because yum takes care of dependencies.
+
+[00:06:01] Problems may occur if programs are installed using --force or --nodeps. At any time, if you want to avoid problems with yum do not force installation by ignoring dependencies. Dependencies are there for a reason. If you are using Red Hat packages
+
+[00:06:21] or other packages that come from the repository, you should not have any problems at all. But if you use third party packages, you may have problems. Problems like messages as cannot open shared object file. If that happens, I would advise you to use ldd on an application because ldd will show you a list of libraries
+
+[00:06:41] that were not found and it'll give you an error message on the specific libraries, which will help you in troubleshooting. Once you have found the library that is missing, you can find out the package requirements using rpm -q --requires by grep package. And to find which RPM contains a specific library,
+
+[00:07:01] use yum whatprovides. After installing or removing libraries, run the ldconfig command to update the runtime linker cache. That should happen automatically if you install software through yum. But in troubleshooting, you may have to do that manually. Now that we know about libraries
+
+[00:07:20] and problems that may occur and how to fix it, let's go to the lab. In this lab you are trying to scan the network using nmap -sn on your local network, but it fails. Fix it. Alright, let's install the lab. We can do that using the lab82 sh script and the problem appears to be in nmap.
+
+[00:07:42] So nmap -sn 192 168 4.0. Oh no, error while loading shared libraries. Libpcap.so cannot open shared object file. So we have a library problem. How are we going to fix it? Well, good idea probably to just use ldd on nmap.
+
+[00:08:05] Ldd needs the exact name of the binary you want to analyze, so I'm using which nmap and here we can see all the libraries that are dynamically loaded including the memory mapping and the file name. And we can see libpcap.so.1 is not found.
+
+[00:08:23] So how are we're gonna fix that problem? Well, you provides */libpcap.so.1 might not be a bad idea.
+
+[00:08:41] And there we can see that the name of the library is in fact libpcap. So let's do yum install of libpcap. Oh, and it's complaining that it's already installed in the latest version. So how about yum reinstall libpcap?
+
+[00:09:03] That is what happens when only a part of the package is damaged but the package is still in the RPM database. So now we have reinstalled it and we can try and run the nmap command again. And, as you can see, it's now working. Let's also repeat the ldd command.
+
+[00:09:21] And we can see that ldd can find the library again. So this problem was easy and is fixed.

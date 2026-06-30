@@ -1,0 +1,61 @@
+[00:00:00] One operation that we cannot easily achieve by using strategic merge patches here is to actually remove an element or remove a certain part of our configuration. So let's suppose here that we actually would like to completely remove the resources field inside of our container here.
+
+[00:00:22] In this case, we would use then what's called a json patch, right? So Json 6902 is the standard for this kind of patching resources. And let's just copy and paste this here. So I'm gonna remove, let me just expand this a little bit to see here what we actually want to remove.
+
+[00:00:40] Let's just remove our update resources dot patch file because we will actually remove these resources. And now let's create here. So use late Stack will actually be remove resources dot patch dot yamo. So this can be defined in either YAML or JSON. Let's start with the YO version here.
+
+[00:01:02] And now, instead of providing a partial declaration of the resource here, what we actually do is provide a list of operations we want to perform on a given resource. So in this remove resources dot patch dot YAML, we will just specify the operations and the paths we wanna operate on.
+
+[00:01:21] We do need to pass here in the patches, also the identity of the resource. So let's start by passing the path here, remove dash resources dot patch dot YAML. And now here we will specify the target and this target object here will contain all the information that we need
+
+[00:01:42] to identify the resource. So let's start here with the group and the group, the API group that we want to target is apps. Then we have to specify the version here and the version is V one. So effectively, this will target apps
+
+[00:02:00] forward slash V one objects here. And now we will specify the kind and the kind will be deployment. And then we'll also specify the name and the name here. Let's start with our deployment name. So that's going to be engine X like. So let's copy and paste it here in our customization file. And let's see if this will be enough.
+
+[00:02:22] So let's save this here. And now under our remove resources, what we actually would like to do here, the operation that we want to execute. So operation we're gonna say remove and you can see here it's already identifying this JSON patch file here. So the operation is remove.
+
+[00:02:40] Now, the path that we wish to remove here, we need to be very specific about the path. And this is one of the drawbacks of this solution here is that we do need to know the entire path. So the path here will be spec dot template spec and this, since it's a path, it will be using forward slashes here.
+
+[00:03:01] So let's start with the top level. We can also see here if we scroll down a little bit. We can also see at the top here that our ide is providing some functionality here regarding where exactly we are inside of this whole object and list emo file. So as you can see here, that is going to be some of the resources here.
+
+[00:03:20] That's going to be the spec forward slash template, forward slash spec forward slash containers. And here we're going to have, we're going to get the first container and then forward slash resources. So let's try to add it here. So spec forward slash and here since we have as the spec here as the top level,
+
+[00:03:40] it also needs to have a forward slash at the beginning since this is the first entry point here. So let's come back to our deployment. So spec forward slash template forward slash spec forward slash containers. So spec template spec containers and then we are looking here at the zero of container and then resources,
+
+[00:04:00] right? So this is the path that we actually want to completely remove from our file. Let's then save this here. Let's come back to our customization, not YAML. Let's also make sure that we save this here and let's now try to apply this in our terminal. And if we scroll up a little bit, we should eventually see that perfect.
+
+[00:04:22] Our resources path here has been entirely removed from our engine X container. As you might imagine. This is yes, indeed, fairly brittle, right? Because if we were to add a new container here, let's say, oh someone comes here and they are all good here. Let's now just add a new container that's going to be our busybox container busy
+
+[00:04:42] box like so and the image here s not without a colon. So the image is the one that needs colon. So bus box, colon 1.36 0.1. And this might just very well impact whatever order of our containers we are relying on. So this can be something that's fairly brittle.
+
+[00:05:01] But nonetheless, sometimes it's the only tool we have at hand I mentioned that we can specify YAML and JSON files. So here, YAML and JSON, they will look exactly the same except for the syntax, right? So if we were to now have a patch here dot Json remove resource, now this is not valid
+
+[00:05:21] JSON syntax. So we would just let's just translate here. We're going to start with an array, we then have objects. The operation now needs to be between double codes, remove also between double codes. And then we have path between double codes and then we copy, paste the path here, right? So let's just copy, paste the path here
+
+[00:05:41] and the moment we do that we have a valid JSON object that we can just use here. So if we were to just run it like so and then come back to the ide and reexecute this, then we should see that our resources section of our engine image is also removed. We can also apply these patches to groups of resources but not to all resources.
+
+[00:06:03] So let's say that now we would like to apply to only the deployments. We would like to remove the resources from only the deployments. So let's have a look here at our reverse proxy. We also have a resource here. Let's now migrate this just to a pod definition, right?
+
+[00:06:21] So let's just add a pod definition here. The kind will be so the API version V one kind will be pod metadata, just reverse proxy pod. Then we have spec here and then we're gonna have meta date. So let's remove this. We then have our containers like so and then we're good to go.
+
+[00:06:41] So let's just see if we have any labels that we would like to add. Let's just add your app colon, reverse proxy, standalone, for example. And let's now finish or clean up our configuration. So now here if we are applying a patch, we would like to dispatch here as we are informing,
+
+[00:07:00] let's say that we would like to apply to all of the deployments so we can remove the name here and this will effectively apply this patch only to the deployment. So I'm going to apply this to pods, right? But this is slightly more general than if we are applying to just a single deployment, we can actually apply to all of the deployments.
+
+[00:07:20] So let's say that we are removing resources here from all of our containers. And let's have a look at the deployment here. It should have this removed and the reverse proxy deployment also has resources to be removed, but the pod will not be touched. So let's save this. Let's clear the screen. Let's run our customization once again
+
+[00:07:40] and then we can confirm here. So let's have a look. This is the reverse proxy deployment and the resources here are gone in our container. That's correct. Then we also have our GX deployment and the resources are also gone. But if we scroll up here until we actually find our pod, so let's just have a look.
+
+[00:08:00] And I actually think I didn't add the pod, right. So I need to add the pod to the customization here. Let's just add it here. Always forget this step. The pod is here. That's looking better. Let's now rerun this. So we can confirm yes, the reverse proxy pod. And now this is the pod here. So the reverse proxy pod, the reverse proxy standalone still has the resources section.
+
+[00:08:21] But now if we have a look here, the resources are gone from our reverse proxy and they are also gone from our GX app, right? So this might also be interesting for us here to know that we can target broader groups of resources and also not only based on group version and kind,
+
+[00:08:41] but we can also use label selectors. So we can add a label selector like so and then we can pass a key here of, so let's say that that would be our key and then the value of the label, right? So if you have resources that you would like to apply the same modification and that this modification is compatible with all of them, right?
+
+[00:09:01] So this is another thing we need to keep in mind if we were removing resources from a service that just doesn't make sense because there is no resources specification here. So the resources need to all be actually compatible with the changes. But then we can select multiple of them by using either label selector or annotation selector,
+
+[00:09:22] right? So these are the main aspects of working with patches. Once again, as you might already imagine this feature here is very powerful and it allows to have very good, very fine grain control over the changes, the configuration and the customization that we do on top of our base and other services managed by our overlay.
+
+[00:09:43] So hopefully, this introduction helped you understand the patterns here that are good to keep in mind. And you can then extend this to working with your own resources. I just want to revert this here to using the group API version and the kind here so that it stays at a working state and that's it for this lecture.
+
+[00:10:02] Congratulations on completing this great and very productive discussion around customize. Hopefully, it gives you a lot of tools that you can use for your own projects. Let's then take a short break and I'll see you in the next lecture.

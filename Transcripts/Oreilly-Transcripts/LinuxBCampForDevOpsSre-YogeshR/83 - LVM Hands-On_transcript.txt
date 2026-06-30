@@ -1,0 +1,133 @@
+[00:00:00] Hello and welcome to this demonstration. In this demonstration, we will set up the logical volume manager or LVM on our EC two instance to efficiently manage storage. To begin, we will log in as root user initially executing commands like FDISK
+
+[00:00:23] hyphen L and LSBLK will show that no new disks are present in the AWS management console. We will create 3, 10 GB disks named think 12 and three,
+
+[00:00:40] ensure these disks are in the same availability zone as your instance. After creation, we will attach them to our EC two instance, assigning device names
+
+[00:01:01] slash DEV slash slash DEV slash STG and slash DEV slash STP respectively. It's important to note that while we specify these device names, the operating system may recognize them differently such as
+
+[00:01:21] slash DEV slash XVF slash DEV slash XVG and slash DEV slash XV. DH. This discrepancy arises because the block device driver for the instance, assigns the actual volume name when mounting the volume
+
+[00:01:40] which can differ from the name specified during attachment. We have already discussed this in the previous section. After attaching the disks, let's execute the F disk hyphen L and LSP commands again to confirm their presence
+
+[00:02:02] at this point. Running PVS, VGS and LVS will show no output indicating no physical volumes, volume groups or logical volumes have been created. Executing PV scan will return the message,
+
+[00:02:21] no matching physical volumes formed. This occurs because the disks have not yet been initialized. As PVS for LVM. To prepare these disks for LVM management, you will need to initialize them using the PV create command.
+
+[00:02:42] Let's execute PV, create slash DEV slash X PDF to initialize the first disk repeat this process for the remaining disks as well. After initializing your disks as PVS using the PV create command,
+
+[00:03:03] you can verify their status with the pvs command. Again, this time, the command provides a concise overview of all pvs on your system, displaying details such as the device name, volume group, association and size. In
+
+[00:03:23] this case, PVS will list each of your 10 G pvs indicating that the entire space is available. Since the pvs are not attached to any VGS, the VG field will be empty.
+
+[00:03:40] Similarly running the PV scan command will scan all supported LVM block devices in the system for physical volumes. The output will confirm the presence of your three pvs noting that none of them are currently in use or assigned to any
+
+[00:04:00] VG. This is expected behavior as the PV S have been initialized but not yet grouped into wages, right? The PV display command provides detailed information about a specified PV. When you run
+
+[00:04:20] pvdisplay slash DEV slash XPDF. You will see a comprehensive overview of that physical volumes attributes initially. Since the physical volume hasn't been added to any volume group, the VG name field will indicate that it's not assigned
+
+[00:04:40] and all physical extents will be free. After incorporating this physical volume into a volume group and creating logical volumes running PV display again will show updates in these fields reflecting the allocation of space within the physical volume.
+
+[00:05:01] We will see this in a short while now we will create two vs one named app VG and the other data VG. This is done using the VG create command V, create app VG slash DEV slash
+
+[00:05:21] XV DF VG, create data VG slash DEV slash XV. Th these commands will create the volume groups, app VG and data using the existing physical volumes
+
+[00:05:40] XDF and slash DEV slash XBD respectively. We will not use slash DEV slash X PDG for now, but we will use it sometime soon after creating the volume groups, app VG and data, you can verify their status and details using these commands
+
+[00:06:04] to display a summary of all volume groups, including the number of pvs and LVS. We use VGS here PV indicates the number of physical volumes, which is one in our case.
+
+[00:06:22] LV indicates the number of logical volumes as we haven't created any, it is showing as zero for us. Then V size shows the total size of the volume group. And lastly V three shows available size
+
+[00:06:40] to view detailed information about a specific volume group such as APP VG, we can use vgdisplay app VG. This command provides comprehensive details about the volume group including its size physical volumes and logical volumes.
+
+[00:07:03] If a volume group is not recognized or you suspect it hasn't been detected, you can scan all disks for volume groups and rebuild the LVM cache using VG scan. This command scans all physical volumes and updates the LVM
+
+[00:07:23] cache ensuring that all volume groups are detected. Now, let's display information about physical volumes including their associated volume groups. By again running pvs.
+
+[00:07:41] This time, the VG field shows the corresponding volume group name associated with each physical volume in the attributes column. The A indicates that the physical volume is actively allocated to a volume group.
+
+[00:08:01] Let's run pvdisplay slash DEV slash XVBF. Notice that VG name which was earlier blank is now a VG. Similarly pvdisplay, devd will now show VG name as data
+
+[00:08:20] VG. You will also notice a field labeled P size. This represents the size of each physical extent by default LVM uses a P size of four MB. This means each P is four MB in size
+
+[00:08:40] to calculate the total size of A PV multiply the P size by the total number of PS. For example, if PV display shows a total of 2559 PS and each P is four MP, the total size would be 2559 PS multiplied by four MP.
+
+[00:09:03] That would be 10,236 MB or approximately 10 GB. The allocatable field indicates whether the PV has free space available for allocation. If it says yes, the PV has free space. If no, then it doesn't.
+
+[00:09:23] In our case, it says yes. Next, let's create nine GB logical volume named APPVOL one in the APPV volume group. Execute the command. L
+
+[00:09:40] we create hyphen L hyphen N APPVOL one app in this command, hyphen L nine G specifies the size of the logical volume as nine gigabytes. Hyphen N APPVOL one sets the name of the logical volume to APPVOL one
+
+[00:10:05] A VG is the name of the volume group where the logical volume will recite. After creating the logical volume, you can verify its creation using the LVS command.
+
+[00:10:21] This command lists all logical volumes showing details such as their names, sizes and associated volume groups. You should see APPVOL one listed with the size of nine gigabytes under the APP VG volume group.
+
+[00:10:41] To view detailed information about APPVOL one logical volume use the LV display command LVDISPLAY slash DEV slash APPV slash APPVOL. One remember it's essential to provide the full path to the logical volume.
+
+[00:11:02] This command provides comprehensive details about the logical volume including LV name, which is the name of the logical volume, which is APPVOL. One in our case VG name is the name of the volume group which is App V.
+
+[00:11:21] The LV size is the size of the logical volume which is nine gigabytes. LVU UID is a unique identifier for the logical volume. Now let's walk through the process of creating mounting and configuring a logical volume to mount.
+
+[00:11:43] This is similar to what we did in the previous section. First for my thelog volume app wall one with the XFS file system, MKFS dot XFS slash DEV slash app VG slash appvol
+
+[00:12:01] one, this command initializes the logical volume with the XFS file system, preparing it for data storage. Next, create a directory to serve as the mountpoint mkdir slash appdata.
+
+[00:12:20] This directory will be used to access the contents of the logical volume mount, the logical volume to the newly created directory mount slash DEV slash APPV slash APPVOL one then space slash app data
+
+[00:12:42] to verify the amount use BF hyphen H this command displays disk, space usage showing that slash appdata is mounted. Note that the reported size may be slightly less than the total size due to reserve space for in nodes and file system metadata.
+
+[00:13:05] To ensure the file system mounts automatically at boot, we will perform these steps unor file system. You mount app data, obtain the UID of the logical volume
+
+[00:13:22] ID APPV one, open the slash etc slash FT file in a text editor. Add the line with UUID obtained earlier than file system name followed by
+
+[00:13:41] XFS file system. We will keep rest same as the previous section that is defaults zero and two. This entry instructs the system to mount the logical volume at slash appdata using the XFS file system with default options during input.
+
+[00:14:05] Now let's reload the system D demon system CD L demon Hyphen, reload this command reloads the system team manager configuration. Ensuring it recognizes the changes,
+
+[00:14:22] mount all file systems mount hyphen A this mounts all file systems specified in slash etc slash FSTAB including the new entry. Verify the amount by using DF hyphen edge confirm that
+
+[00:14:41] a data is mounted with the expected size. Now we have already created the volume group data. Let's proceed with logical volume creation for this. We will allocate 100% of the free space in data to a logical volume named datavol
+
+[00:15:02] one using L we create hyphen L 100% free hyphen N datavol one VG at this point running VGS will confirm that the free space is now zero.
+
+[00:15:22] Indicating that all available space has been allocated to inspect the newly created logical volume use LVDISPLAY slash DEV slash data slash datavol. One observe the logical existence count.
+
+[00:15:43] Next check the physical volume allocation. This will confirm that the total physical extents or P count matches the logical extent or L and the allocatable status will indicate that the physical volume is fully allocated.
+
+[00:16:04] Now, we format data wall one with the XFS file system, MKFS dot XFS slash DEV slash data VG slash datavol one, create the mountpoint mkdir
+
+[00:16:20] slash data, check the id of the newly formatted volume using blkid copy. The UUID corresponding to slash DEV slash data slash 11 edit the slash etc slash FS tab file
+
+[00:16:40] at the entry. This time, the mount point is slash data, reload the daemon and mount the volume validate the amount you should now see data wall, one mounted on slash data with the total size of 10 GB.
+
+[00:17:03] No, our application currently occupies nine GB. But let's say there is a new requirement which demands 15 GB of storage. Since the APP VG volume group doesn't have enough free space.
+
+[00:17:21] We will first add a new disk to extend the volume group before proceeding, confirm the current state of the physical volumes and volume group. This will show that APP VG has limited free space. Remember that we have not located slash DEV slash
+
+[00:17:41] XDG, we will now add this disk to APPV, use the command to add DEVD to APPV, which is VG XTEND APPV, DEVD.
+
+[00:18:01] After a successful extension check the updated storage details. Now PVS will show slash DEV slash XVG allocated to a VG and VGS will confirm that 10.99 GB is now free
+
+[00:18:22] check the mounted file system. This will still show the nine GB allocation since we haven't resized the logical volume yet. First confirm the current logical volume size since it's still nine GB, we need to increase it by six GB to reach 15 GB.
+
+[00:18:45] So we will use LV, XTEND hyphen L plus six G slash DEV slash APPV slash appvol one, once this completes run LPS
+
+[00:19:01] again to confirm that the logical volume is now 15 GB at this stage. DF hyphen edge will still show nine GB because the file system hasn't been expanded yet since we are using XFS. We need to resize it with
+
+[00:19:23] XFCE grow F slash APP data. It's important to note that if you're using EXT four, you should be using resize two FS instead check the file system again.
+
+[00:19:42] Now you should see the storage has been increased to 15 GB confirming that the expansion was successful. Now, let's say we want to decommission to do so. First, we will unload the file system
+
+[00:20:04] um verify that they are no longer mounted by using DF hyphen. Delete the logical volumes. LV, remove slash slash APPV slash
+
+[00:20:20] appvol one L we remove slash DEV slash data slash datavol one, confirm removal with LVS. Now remove the volume groups, VG VG VG, remove
+
+[00:20:40] data, check that they are deleted by using VGS. Delete the physical volumes from LVM P DEVD DEVD,
+
+[00:21:01] DEVD, verify by using PBS. Now detach from EC two instance, log into the AWS console and go to the EC two dashboard, go to elastic block store, select the volumes,
+
+[00:21:24] click on all the three volumes, go to actions and detach volume, refresh, select the three volumes again and go to actions and then delete volumes inside the instance, verify removal by using
+
+[00:21:44] Fdisk hyphen L and LSP K that concludes the demonstration. We have covered the complete life cycle of LVM management on AWSEC. Two instance,
+
+[00:22:02] we hope this was helpful. Thank you.

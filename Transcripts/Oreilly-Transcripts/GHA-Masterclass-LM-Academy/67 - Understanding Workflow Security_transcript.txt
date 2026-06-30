@@ -1,0 +1,95 @@
+[00:00:00] Hello and welcome to a very important section of the course on workflow security. Of course, whenever we are developing workflows, we want them to be as secure as possible so that we prevent any kind of breaches any kind of malicious code execution. And we make sure that our repositories, our infrastructure and our applications are secure, right?
+
+[00:00:22] So workflow security has a couple of dimensions to it and we will explore several of them over the next slides. The first one is about best practices for managing and for using secrets in workflows. First one is do not use complex data types for storing secrets, right?
+
+[00:00:40] So the complex data type would be a for example, a JSON data type where we have two individual pieces of information here. Best practice is for us to actually break this down into two separate values. One of the reasons for that is that github actions does an exact match when looking for secrets. So if we register a secret
+
+[00:01:01] and then we for example, print it later on to the logs, then github actions we do an exact match. And if it has this exact match, then it's going to mask the secret in output so that it's not visible when we use complex datatypes. It might be the case for example, that we print just one of these values here.
+
+[00:01:21] And then there is no exact match in github actions and then secrets can be printed without being masked to the output or to other logs. So not the best practice to use complex data types. The second thing is we should register any generated sensitive values within actions. One example is if we were to generate a JWT,
+
+[00:01:42] just for example here, this is an illustration, then we can use this set secret helper functionality here, the core package to register this as a secret and then make sure that it's masked later on if we ever print it to the lock. And then if we were to do that from the shell, we would use this workflow command here,
+
+[00:02:02] add mask and then pass here whatever we have generated a few more tips here. First one is make sure that any third parties or external actions that your workflow depends on do not expose this sensitive sensitive values in logs or to any other external services,
+
+[00:02:21] right? This is basically just make sure that whatever third party or external action you use is trustworthy and doesn't do anything funny with your secrets. This can be done by auditing the source code of these actions because the actions they have there, they are public repositories or the private ones, if they are within your organization,
+
+[00:02:41] you can always have a look at the source code and then the source code is basically the source of truth, right? If the source code here doesn't do anything funny with your code, at least at that specific point in time that you have audited the code, then you can say that, ok, at least I'm not exposing sensitive information, also regularly rotate secrets.
+
+[00:03:00] And here just on the on the previous topic, if you do this auditing, then you should also do it regularly as time progresses, right? So, so third party software, external actions, they do evolve over time, they are published or new features are published, code changes. So we do need to have a look at the code regularly.
+
+[00:03:20] We should also delete unused secrets to not let them hang in because they might, for example, give access to a certain piece of infrastructure or to a certain piece of software that we don't really want to, to, to give access anymore. And we basically have to also delete that secret. An additional point is to limit those with access to create and update secrets.
+
+[00:03:43] We don't really wanna be giving this kind of access to everyone because we then have to have a very complex monitoring of these secrets and always use credentials with as few permissions as necessary. So if you need access to a single github repository for read purposes,
+
+[00:04:01] do not give access to all the repositories with write permissions, right? So just use the credentials and create the credentials with as few permissions as necessary. Let's now discuss handling tokens and the first piece of advice which you will find pretty much everywhere in the github actions documentation is that you should never
+
+[00:04:21] use a classic personal access token to grant a workflow access to code from another repository. We have already seen in previous lectures that whenever we want our workflow to access the code from another private repository, we need to create either a github app. This is the the first and foremost recommendation and
+
+[00:04:42] then we should use its short term credentials or in the second case here, if needed, we should use a fine grained personal access token and give as few permissions as necessary for the workflow to do its job. If we are using a fine grain personal access token and then make sure to rotate it regularly,
+
+[00:05:01] maybe every three months, every two months, every six months, it depends also if it's a read only access for a single private repository, then it's not that bad. But anyway, it's always best practice to rotate it regularly and better to rotate it more often than less often
+
+[00:05:20] when using a finegrained personal access token. Remember that it's also bound to a specific user, right? So if it was John who created and then John leaves the organization and it is removed from github actions, then that personal access token is not going to be valid anymore. And then you have to go and recreate this with another user. This is another problem
+
+[00:05:41] that is that is fixed, that is addressed by using github app, right? So the github app is not bound to any user. And then it's independent if, if the user who created the app leaves the organization, for example, the app belongs to the organization and the credentials are coming from the short term credentials of the app itself.
+
+[00:06:01] Also, when we are using this automatic authentication via the github token, and you need to extend the permissions, right? So the the default permissions, they are read permissions and they are fairly restrictive and I I support that, I think that this should be the default setup. And if you need to extend it, for example, to create pull requests or for ID tokens,
+
+[00:06:22] then we should only use the minimum set of permissions required by the workflow. Last but not least relates to what we discussed in the previous slide. Do not pass workflows token stored in the github token environment variable to untrusted third party software, right? If we do not trust the sources of some custom actions that we are using,
+
+[00:06:44] then better not to provide. There are some cases where we have to pass an access token. For example, as we saw, if we want to check out the code from another private repository, we need to provide an access token that has access to that repository and there is no way around it, right. So some in some cases,
+
+[00:07:02] we do need to provide a, a an access token to a third party custom action, just make sure that it's trusted, it's widely used and, and the code is reliable and it comes from a trusted source, all script Injection. We're gonna explore this a little bit more in, in a bit more details in the practical exercise.
+
+[00:07:21] And it's basically just avoiding malicious code execution in workflows. And this happens when Attackers have the possibility to provide some information to our workflow and then they can provide some malicious code in order or hoping that this will be executed within our workflow.
+
+[00:07:40] For example, if we provide the possibility of passing the title of A P or the body of APR or an email or a head reference here or a name even so anything that the user can provide that will then be accessed from within a context. And then for example, interpolated in a shell script in our in our
+
+[00:08:01] github workflow. This is a surface for attack, right? So how to avoid script Injection? The first one and perhaps best practice here is to create a custom action instead of executing in line shell scripts. Now creating a composite custom action that executes in line shell scripts doesn't, doesn't really solve the issue.
+
+[00:08:20] But if we were to for example, create a custom javascript action where we get that input, we validate the input or we get that input and, and we put it inside of an if condition it's not a shell script anymore, then we also reduce the surface for a text. We can also use intermediate intermediary environment variables. And to reduce as much as possible,
+
+[00:08:42] the dependency of custom actions on input from several or from external users. So instead of asking the user to provide the body of our pull request, for example, we would create the body ourselves based on the information from the workflow. And last but not least set up code scanning.
+
+[00:09:00] There are quite a few tools here called QL is one that is available github actions, even though it's quite restricted in terms of who can use that. But there are tools for code scanning that will tell you whether there is some chance of of attack or if there are any bad practices in the implementation of your github actions,
+
+[00:09:20] they are not fail safe. So they are not a guarantee but they are a good support, right? So it's always good to have that and run as an automated workflow, maybe as a cron job once a day or depending on the frequency varies here. But that we scan our code whenever whenever we consider this is relevant. The last topic we will discuss around workflow security is open
+
+[00:09:42] ID connect. And this is actually a very good way for us to authenticate into external services without having to actually store long term access credentials from these services, right? So for providers and services that support open ID connect, it's possible to set up authentication
+
+[00:10:02] so that we can obtain short term credentials from cloud providers. For example, instead of having to store long term access credentials. Now, you know that if you have worked with any cloud provider, you know that one way to authenticate is to actually generate a certain keypair that is bound to a user, right?
+
+[00:10:21] And then you have, you have the key ID and the key secret. And then these are long term credentials, they basically don't expire anytime soon, which means you would have to store them in secrets and github actions and then rotate them regularly. And if anyone gets access to them, then they might have a lot of power actually
+
+[00:10:41] over your cloud infrastructure. So instead of creating this long term credentials, then we would create this open ID connect authentication and get some short term credentials. So there are some downsides of long term credentials, right? They are hard coded in the secrets used by the workflow. That means their validity extends beyond the current workflow being executed.
+
+[00:11:05] And this is not the case for short term credentials obtained via this open ID connect, they are bound, they are scoped only to the running workflow. They also need to be rotated regularly. They are valid beyond the execution of the workflow as I already said
+
+[00:11:20] an eny step can expose these credentials which normally have many permissions since they allow managing cloud resources, right? So it's a fairly straightforward process. If we think of it, I just wanna go through it at the at least the high level steps here because they are very similar between the different cloud providers. The implementation itself is slightly different.
+
+[00:11:42] Um And, and that is very good documentation around it. I'm not gonna show the specific steps to any cloud provider, but you can easily find the documentation. So the first step here which happens at the cloud provider is to create a role to be used by workflows. And the role should contain the minimum set of permissions for the workflows to accomplish their tasks.
+
+[00:12:02] If this is a deployment workflow and infrastructure management workflow that uses infrastructure as code, then you will probably have a lot of permissions because normally you need to touch a lot of different services and, and you need to be able to create and delete these services as well from cloud providers. But anyway, it's always best practice
+
+[00:12:23] to provide the minimum set of permissions for the workflows to accomplish their tasks if their tasks require lots of permissions. Well, then we give lots of permissions. The second step is then to create an all I DC trust in the cloud provider. And this is just gonna tell the cloud provider
+
+[00:12:41] that which repositories are allowed to obtain tokens as well as any additional information necessary to increase security, right? So we are just gonna tell within the cloud provider, we create an O I DC trust and say, hey, the github identity provider whenever coming with this and this and this repositories is allowed to obtain
+
+[00:13:02] this token, right? So then we can exchange the github O I DC token for credentials. And there are several actions from trusted providers that implement this exchange process, we can simply use them. So one example is AWS, there is an action that we just need to provide, which role we want to assume.
+
+[00:13:21] And then this will already exchange our O I DC token from github for an access or short term access token to aws. And then we will magically quote unquote, not really magically, but we will then obtain access to Aws with the role that we have specified in the custom action last,
+
+[00:13:41] but not least we can then use this short lived credentials to manage resources, the short lived credentials, they are valid for a single job. And the after that. So if we have, for example, job A and then job B, which depends on job A, we would have to authenticate again in job B. This is not a problem because it's simply just adding another step
+
+[00:14:02] with the custom action that authenticates into the cloud provider. It's really no effort at all. And it enforces a more secure approach. Exactly. That's what I say here that we can just reuse this third party actions to obtain new short lived credentials.
+
+[00:14:21] Another very good use case here is if we have multiple roles, right? So we might have a role that is targeting the infrastructure management, but we might also have another role, which is targeting just log management, which with access to cloudwatch, for example, and then we can have two different roles and authenticate with
+
+[00:14:41] two different roles at two different points of our workflow. And we can restrict the permissions and prevent any errors, any missteps that we could incur if we were using this long term credentials. Because if we were using, for example, five long term credentials, we would have five different pairs of key IDS and keys
+
+[00:15:02] secrets that we would have to manage in our secrets. And as you can see, this really doesn't scale well. So all the way with open ID connect and short lived credentials and just to reinforce here, the first two steps they need to be done and the cloud provider and the second or or the last two steps, the third and the fourth, they are done in the github
+
+[00:15:21] workflow. Perfect. We have discussed a lot of aspects related to workflow security. This is a very broad topic and it's becoming very important because we are relying more and more on tools github actions is one of the widely adopted tools. So it's very important that we are aware
+
+[00:15:40] of all the aspects or at least of the most important aspects related to workflow security. So let's take a short break and come back in the next lecture.

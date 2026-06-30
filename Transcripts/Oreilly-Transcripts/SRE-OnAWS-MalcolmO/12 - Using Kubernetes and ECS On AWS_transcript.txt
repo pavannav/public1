@@ -1,0 +1,85 @@
+[00:00:01] Welcome course takers to video using Cinetis and ecs on Aws. So in this video, we'll have a quick recap of the differences between Cinetis and ecs. And then we'll look at some of the mechanisms and techniques used in both platforms to provide reliable services for containers. So if you're ready, let's get started.
+
+[00:00:20] So Kubenet is very much the flavor of the month. A lot of people are using it. A lot of developers are using it. It's an open source community project, it's effectively a container orchestration system. And on Amazon, you pay for both your EKS Cluster and the resources it use. So your EC two and EBS,
+
+[00:00:41] it does have the advantage that it integrates with a variety of clouds and providers. You can run it on premise, you can run it in Azure, you can run it in Google, you can run it on your Macbook with Minicube and you have for the control plane, the API tier, you have 99.95 availability slas and for the data tier which is
+
+[00:01:02] C two, then you have 99.99 availability ECs. On the other hand, is AWS technology. So it's been around on AWS a lot longer than coup es. You don't really pay for the ECs layer. You're only really paying for your resources. So it can be a bit cheaper. It integrates fully into Amazon technology.
+
+[00:01:21] It's written by Amazon, it's maintained by Amazon. And because it's kind of a variant of EC2, you're getting four nines availability same you would with EC2. So let's look in more detail around CS. So S it does have the option of using Filegate. We're not going to discuss that in this course. But with
+
+[00:01:40] two, basically, you deploy a number of C two instances in or out of an autoscaling group using a container optimized OS. And each one of them runs an ECs agent that connects back to your ECs service. You then describe your containers and workloads using tasks, which is roughly analogous to a pod in Kubernetes,
+
+[00:02:02] you deploy it and scale it using a service and then if you're scaling your EC two resources, you can use a capacity provider. So because it's an Amazon service and it leverages a lot of Amazon services underneath C two auto scaling groups, the API itself. EBS low balancers,
+
+[00:02:22] all of these things. When you build a resilient service, it's no real different than building a resilient service in C two. And all the things we've already discussed with C two apply here with CS. Of course, there are nuances and you have to configure your task and your service slightly differently but effectively providing resilience for ECs is very
+
+[00:02:41] similar to providing resilience for C two. And we're not going to focus too much on ecs. In this course, Amazon's technology and with dominance of Kubernetes, you do wonder how long they'll continue to support ECs. However, I have used it in production and it is a good technology. So it's worth considering it's just very proprietary.
+
+[00:03:01] So for the rest of this video, we're gonna focus on Kubernetes. So Kubernetes is very similar to ECs. You have a control plane, you have a data plane, control plane is normally made up of two API servers and three ETCD servers. So ETCD is just the distributed data store that's used to manage the cluster,
+
+[00:03:23] the API cluster and then within the API server, you have a number of controller here. We're showing to a scheduler and a cluster auto scaler, but Kubernetes is extensible. So you can actually add your own controller resource definitions inside of that. And that what's one of the things that makes it so interesting to developers
+
+[00:03:42] and to system providers is that you can build a new scheduler and implement it in Kubernetes, you can build a new access control service and implement it in Kubernetes as well. So the API tier, the top box is managed and maintained for you by Amazon in their VPC and you can access it privately through a private address
+
+[00:04:03] in your VPC through a public address using. And you can also use whitelisting to restrict that. You can also connect your API server to your worker nodes where the actual workloads run using the internet or using a private link or a combination of both in the data layer. You have a cluster, they all the agents are EC2 agents as well. At
+
+[00:04:25] the bottom layer, you have a cluster. All the worker knows are EC2 instances running QTS and Q proxy talking back to the cube API service are very similar to CS Kubernetes is often thought of being complex and it is complex.
+
+[00:04:41] However, once you get to grips with the basic concepts, it can be quite simple and easy to use. So we're not gonna focus too much on the API there because that's managed by Amazon and you have your SL A and there's not a lot more you can do with it. So if we start thinking about the components that we can manage, so we have a cluster
+
+[00:05:00] and inside the cluster, we have a X number of worker nodes, two instances in an auto scaling group that we can grow and shrink. Like any autoscaling group within the cluster, we begin to talk to the Kubernetes API objects. So the first one is a name space, name space just allows you to segment your workloads into different logical clusters within the main virtual cluster.
+
+[00:05:24] And you can give different permissions, you can provide different pod policies, scaling policies within the name space. Ultimately, within each name space, you want to deploy a set of containers, those containers are described as pods. So often a pod is just a single container.
+
+[00:05:41] Although there are use cases where you have multiple containers, but a pod is very analogous to a task in ecs and vice versa. When you describe a pod, you're basically describing the container image and a set of environment controls around that in that container. And as I said, it can a pod can contain one or more containers,
+
+[00:06:01] you group together a pod into a replica set. Replica set just describes how many replicas of that particular pod you want. And Kubenettes is responsible for enforcing that replica set. And then you deploy update, roll back these replica sets using a deployment deployment allows you to deploy
+
+[00:06:20] multiple replica sets, multiple pods and you expose those to the outside world through a service. So by default, when a replica set, a service gets deployed by default, when pods get deployed, they're only addressable inside the cluster, a service is required to actually access those from outside the cluster. And we'll go into some of these concepts in more detail in the following slide.
+
+[00:06:42] So if you're interested about all the other objects, there are a lot of objects within cinetis, we're only discussing the main ones here that have to do with reliability. Then please go to that link at the bottom of the page. OK? So let's look at replica sets and how they work in a little more detail. So replica sets are simply a way of maintaining a
+
+[00:07:02] certain number of pods across your cluster. So in this example, we have our kind, our replica set, this is our object that we're creating the Kubernetes, we're giving it a label, what we're going to look for. So in this case, we're looking for tier frontend and we're going to have three replicas and this is how we match it based on front.
+
+[00:07:22] So what that will do when I submit that to the Kubernetes API I, it's gonna create three pods across the worker nodes and maintain those. So if a worker node goes down, it's gonna recreate a pod. If a pod fails or is deleted, it will recreate a pod and it manages that in the background. So as an application owner, you don't have to worry anymore,
+
+[00:07:40] your service will always have three replicas. There's a couple of additional sets that you may consider. So stateful sets, that's something we'll talk about in the next video where we talk about state. But basically, it gives you a guarantee of ordering for your pods and how they start up along with some persistent storage. And then the demon set basically creates a pod on every worker node.
+
+[00:08:01] So this is useful for more operational systems like log filters and security containers that you want to have on every single worker node So a demon set will create a pod when a worker node is added or deleted. Now, replica sets are useful, but it's unusual these days that you actually use them in isolation.
+
+[00:08:21] So mostly when you're deploying applications, you'll use a deployment and a deployment will basically create your replica sets and your pods within those replica sets for you. So on the initial deployment, it will simply create the replica set in the pod. So in essence, it's no different from a replica set in that way. And we have a similar sort of template. So here we have the deployment,
+
+[00:08:43] it's the kind of deployment, we have the number of replicas we match that. But then we have this template section and in deployment template sections are very important because anything that changes in here will force a new deployment. So if I update the image, then it will force a new deployment and the way deployments work
+
+[00:09:01] are quite clever and that's why a lot of people use them. So down here, we have our existing application, our old replica set was deployed at 1.0 So here is our version. So as we deploy 1.1 what the deployment will do and what Kubernetes will do is they'll begin to drain this old replica set and they'll create
+
+[00:09:20] new objects in this new replica set. So here we have two, as we begin to work through it, we'll slowly lose the pods from the old replica set, they'll appear in a new replica set and then the old replica set will be delete deleted. So it'll give you a nice gradual way of introducing a new service. Now, as you can see here, we've got a number of replicas.
+
+[00:09:41] So when I create my deployment, I'm going to create three replicas across my worker nodes. I can also use horizontal pod, auto scalar or HPA. So here's the HP A command here. I'm doing the old replica set. I'm going to say it has a minimum of two maximum five and my threshold is 80% CPU.
+
+[00:10:02] So the HP A will scale my pods in line with that. So as it increases, as each pod CPU increases, it will then add additional pods. So it's effectively an auto scaling group for Kubernetes. The challenge you often have is if you set replicas in your deployment, when you
+
+[00:10:20] create or update a deployment, it's going to adjust your service to suit those number of pods. So if I say three, it's gonna create three pods. Now, if I was running HP A as well and it was running at five pods because it was a certain amount of workload, it's going to scale back down and then it's going to scale back up.
+
+[00:10:40] And then when CPU drops below a certain point, it's going to scale back down again. So you'll have conflict sometime between deployments and HP. Now, depending on what kind of service you're doing often it might make more sense to put the replica statements in your auto scalr or not use autoscaling and just use
+
+[00:11:00] deployments. And that's a choice between how much load and how many replicas you want to deploy. Now, load balancing uses Amazon's NLB and AB. So as we've discussed, we can create a pod, we can deploy it using a deployment and we have replica sets that maintain its
+
+[00:11:21] reliability. But we need to expose those to the outside world typically. So we use a service to do that. Now, service can expose pods in a number of ways. So you have a cluster IP which is available to other pods within a particular cluster. Then you have a node port or a load balancer
+
+[00:11:41] nodeport simply exposes a port on every server which allows you to get to that service. A load balancer can just use something like an engine X load balancer. But with a specific annotation, you can begin to use either the network load balancer, classic load balancer or the application load balancer.
+
+[00:12:01] So if we look at the first case where we want to use a service to expose a network load balancer. And in this case, an internal network balancer, here's my definition of service. I've got my selector with my app for my app. And then also I'm putting there is a couple of annotations where I'm going to say it's gonna be a type
+
+[00:12:21] of NLB and then it wants to be an internal load balancer. And this is one of the extensibility. Parts of Kubernetes annotations become very important as you begin to add more custom resource definitions to your cluster here. What will happen is when that gets deployed, it will actually talk to the Amazon API and create a network load balancer and tie it up to this service.
+
+[00:12:43] Now, network low balances as we've discussed previously are quite simple creatures. They simply expose ports and expect a different type of traffic. So when I'm doing web services, I might want to expose my service using a path. So here I can use a different type of resource.
+
+[00:13:00] Here, I'm using an ingress and I've got my service and I'm using a service port. So it's probably exposed as a node port. But now I'm actually using a particular path so I can create an ingress here, I can give it another annotation. So here I'm going to use an ingress class of a lb. I give it a host domain and a particular path for the back end
+
+[00:13:22] pointing to my service. Now, ingresses are much more powerful objects and low balancers. So in this case, it's still using an AB but because an application load balancer has awareness of paths within HTTP or HTP SI can begin to now use this in my microservice to provide a single ingress point for my applications.
+
+[00:13:43] But I can actually point it to different services underneath. And here I begin to look at the Microservices pattern. Ok. So I hope that was interesting. It was a bit of a whistle stop tour of technology within Amazon. So please join me for the next section, accepting failure in multitier applications.
+
+[00:14:00] Thanks very much.

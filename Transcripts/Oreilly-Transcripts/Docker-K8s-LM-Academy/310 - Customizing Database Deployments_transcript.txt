@@ -1,0 +1,87 @@
+[00:00:00] Let's now update our project here in the project GKE folder to use this newer image of our color API in our DEV environment. So the base image that we are using here is the color A P 2.0 0.0. Let's then under DEV here, create a new patch file and that's just gonna be use DEV
+
+[00:00:22] image dot emo like so and then we can add this to our customization dot Yamo file. So let's say patches the path here will be use DEV image dot Yamo. Let's save this. Let's now come here to the color API definition. Let's just copy the whole thing here and let's paste this here.
+
+[00:00:43] We can now start trimming down everything that's not important. So the selector can go away, the template metadata can go away specification container and then we have the name and the image here and everything that comes afterwards can also go away. Once again, this is a partial definition of our resource that will be
+
+[00:01:02] merged into the existing caller API deployment coming from our base. So let's now change the image here to B 2.1 0.0 DEV. We could also specify this directly here. So we could also say images here and then use this option to configure the image,
+
+[00:01:22] maybe this is slightly less verbose, so slightly more user friendly and it's still applicable in our case. But nonetheless, I do find the concept of patches here and revealing the intent of the change with the file names also to be very helpful. So let's save this patch here.
+
+[00:01:41] Let's also create another patch in our prod environment here. Let's just create a new file and that's going to be increase replica count dot YAML. And then let's paste once again from our deployment. Let's paste this here. And now we can actually remove everything under spec
+
+[00:02:00] and just set the replicas count to three. Let's now add this here also as a patch. So patches path increase replica count dot emo like. So, so now we have customized both our DEV and PROD environments here. Let's now also customize our prod database.
+
+[00:02:21] We have not created the database yet, but let's just come here and within the DEV, we're just gonna leave as it is. But for proud, I would actually like to use here a premium read, write one's volume claim template. So under prod, let's create a new file here that is going to be use
+
+[00:02:41] premium storage dot Yoli. So and let's copy our stateful set here and let's paste it here. Now, with most of the things we would actually be able to just let's remove everything that is here, let's remove everything. Perfect. So with most of the changes, we would think that, OK,
+
+[00:03:02] maybe I just need to specify the metadata name here and then change the only the field that I wish to change here to point to our premium read, write one storage class, right? And this is maybe the intended way for us to to work or how we would actually transfer the knowledge from deployments,
+
+[00:03:23] how we have been customizing deployments. However, if we take this for a short test, so coming to the terminal and then running cube cut, customize and passing here our overlay that's gonna be color db forward slash broad. Then you will see that this will actually oops
+
+[00:03:41] and I think I forgot to include the file. So let's just come here to the customization patches path and then that's going to be here, use dash premium dash storage dot YAML. Let's save this. Let's now come back here and run this once again, you will see that this will actually override everything that
+
+[00:04:00] is coming from the volume claim templates from our base. So unfortunately, volume claim templates are not merged very well by the Cnis strategic merge patches. So for that, we actually need to specify here. This is one case where we need to specify the whole configuration. Once again, just for the volume claim templates doesn't need to be the whole object,
+
+[00:04:23] but just for the volume claim templates and then here the storage class name will be premium read, write once, right? So now here this is everything that we should have to do. Let's come back to the terminal, let's try this once again. And as you can see, we get the results here back.
+
+[00:04:42] One issue is that the common labels that are now applied here in our base. So these common labels here, they're actually not applied to the patch, right? So if you have a look here at the patch, then it will be missing the common labels under the metadata section. So one option for us would really be to either add
+
+[00:05:02] common labels here and duplicate them. And that's maybe not the best option, but this will do the job here, right? So it will add the labels here once again or another option that we could try is to instead of actually using a strategic merge patch here, we can actually use a JSON patch because the only thing
+
+[00:05:23] that we want to change is the storage class name. So this would be something like this operation here will be replaced. The path that we want to change will be. And then we're gonna start here forward slash spec forward slash volume claim templates,
+
+[00:05:41] forward slash zero. That's the first one here. And then we are entering into the spec of this volume claim template. So spec coming from here forward slash volume claim templates, we are then working on the first element of the list with an index of zero, we then enter into the spec section
+
+[00:06:02] and then we are interested in setting the value for storage class name here. And then finally, we specify the value that we want to have. And the value is just premium read write only. So let's copy this, let's paste it here and let's remove this here, which is not valid anymore. Let's then save this here.
+
+[00:06:23] Let's now come to our customization. And we do need to also specify a target here, right? So remember the target is composed of multiple fields. So gonna specify with version or gonna start with version V one here. The group is
+
+[00:06:40] apps. We then have our kind, the kind will be stateful set and we could actually leave this as it is here. So this would actually look at all the stateful sets and it would change all the first volume claim templates to use premium read, write
+
+[00:07:00] one. This is maybe not such a bad decision, right? Because now we can actually update all the state for sets that are being deployed in our broad environment to use premium storage. So let's save this here and let's now run once again the cube cut customized with our prod overlay. And as you can see here, the storage class name is correctly replaced.
+
+[00:07:24] So maybe this is one use case where Jason patches really come to the rescue where the the merging of resources by using strategic merge patches is not really there yet. It's not available and it's not working as expected
+
+[00:07:40] so that we can refer to a much cleaner syntax here and easier to maintain as well. One drawback here is that if we add more volume claim templates to our stateful set here, then this would not be immediately included or directly included in our replace operation. But this is just something we need to be aware of that.
+
+[00:08:01] There are trade offs to both solutions or to both methods here. And I'm just gonna stick with this one here because it, it just seems for me a little bit cleaner, right? So now we're just looking at all the stateful sets and then replacing the first volume claim template here with the premium read, write one storage class. So let's save this here as well.
+
+[00:08:23] Let's now come back to the terminal. Let's clear the screen and let's apply. Let's begin by applying our color DB. So color DB prod like. So this will create once again another persistent volume claim, it will create another pod. So let's just have a look at our pods in the name space pod.
+
+[00:08:45] And as you can see the pod is in a pending state, let's then describe the pod here. So let's describe pod Mongo SS zero like so in the name spade name space pod. And as you can see, this is the error that I was actually
+
+[00:09:00] getting earlier So this cluster autoscaler event here, it is informing that the Google compute engine is out of resources. It's looking at the zone Europe West four A here and it's just not able to find resources. So in this case, we would actually need to now just wait until
+
+[00:09:21] the cluster autoscaler figures out where to find resources. Or we can also come back to our caller DB here in the base and decrease the number of resources that we are requesting for our database. That being said, I do believe that it makes sense that we wait a little bit here just to see how this
+
+[00:09:41] will behave alltogether. Let's then have a look at the describe once again, let's have a look at whether there were any updates and perfect there you have it. The pod has actually been initialized, right. So here, as you can see, it has also triggered another autoscaling event here. And this is then showing that the cluster autoscaler
+
+[00:10:02] was actually able to figure things out by itself. So remember the region that did not have resources was the West four A. Let's now get our nodes here. And you can see that there is a new node. This is the newest node here. Let's now copy this node and let's describe this node here. So keep car
+
+[00:10:22] describe nodes or describe node here. And let's have a look at which zone the node is deployed in. If we scroll up a little bit more until we find the labels, then we should eventually come across the information here bingo. So as you can see the cluster
+
+[00:10:40] auto scalar was very smart, was smart enough to recognize. OK. There are no, there are not enough resources in the West for a zone. So I'm going to try to create the node in the west for B zone. And this is only possible because we have specified here in our affinity criteria that we allow for multiple zones where our nodes can run in.
+
+[00:11:04] So this there are many, many moving pieces here that are coming together, right? So the GK A autopilot is taking care of creating nodes whenever necessary. Whenever a new pod that requires more resources needs to be scheduled,
+
+[00:11:20] that's gonna trigger an auto scalar event, then the cluster autoscaler is coming into the picture here and it's trying to create a node in a specific zone. So it's gonna start, I'm not gonna put any guarantees here where it starts how it chooses a specific zone, but it's gonna try to create a node in that specific zone.
+
+[00:11:41] We then got the error and Google cloud or the Google compute engine told the auto scalar is like OK, I don't have enough compute here. I cannot accommodate this node. Please figure out another zone, go try somewhere else and then the auto scalr is looking into this configuration and it's like OK, maybe I'm gonna try with another zone maybe I'm gonna try with the B zone here.
+
+[00:12:03] It tried to create the cluster, it tried to create the node sorry in the Bison and it was successful, right. So here the Bison had enough compute resources for the cluster auto scalar to create a new node there. So that being said or once that is done,
+
+[00:12:21] we can then schedule our pod or coins is then able to schedule the pod in a node that is in a ready state. So this kind of automatic node management, this is something that is all taken care of behind the scenes by Gke autopilot. If we were using the standard mode, we would have to be more involved in defining all these nodes and
+
+[00:12:43] all the criteria and all the configuration that we want to apply. So autopilot abstract a lot of this for us and that's also why one of the reasons I chose to go with it for this project. Perfect. So our database here is running, we can also get our persistent volume claim in the name space
+
+[00:13:01] prod and we will see that it is using the premium read, write one storage class. Let's now come here to Google Cloud. Once again, let's come to compute engine and let's come to disks and we should see that there is a new disk here. Perfect. I believe it's this one since this is blue. And if we click here, then you will see that we have a different type.
+
+[00:13:22] This one is SSD persistent disk. And if we have a look at the one we had before here, it's actually showing here. So the type of this first one is SSD persistent disk and the type of the second one is balanced persistent disk. So we have successfully created a other disk here in our compute engine
+
+[00:13:42] product with a different type just by using a different storage class. Once again, these storage classes, they are provided by GKE. So we didn't have to create any custom storage class. This is all available for us here. So Cuga storage class, this is all available and provided by
+
+[00:14:02] GKE out of the box and this is then backed by different provisioners here. So, persistent disk file storage and so on. All right, that's great. I think that it was, it was a very productive discussion. This was the kind of error that I was getting when I was doing the test runs. And then I didn't get the error when I deployed the first DEV Mongodb.
+
+[00:14:22] But now we got it and I was able to actually discuss these things that I wanted to discuss with you. So before we proceed any further, let's take a short break, let the information sink in. Very useful, very good information. So let's take a short rest and I'll see you in the next lecture.

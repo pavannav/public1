@@ -1,0 +1,97 @@
+[00:00:06] - Let's do a lab. In this lab we are going to fix virtualization problems. So, here's the scenario. Importing a virtual machine fails, it does work in VMware Workstation. Let's have a look at it.
+
+[00:00:22] Alright, so the lab assignment is about a virtual machine that doesn't import very well in KVM. And it has been verified to work in VMware. The virtual machine image file is right here. It's the labipa-3.1.0.qcow2. So, let's see what's happening when we try to import it.
+
+[00:00:46] Creating a virtual machine based on an image file happens from virt-manager. So, here we can see that this virt-manager has been used before. I am clicking Create a New Virtual Machine,
+
+[00:01:02] and then we can see connection QEMU. Look at that, "Warning, KVM is not available. This may mean the KVM package is not installed." That's kind of odd, because this machine has done KVM before. So, let's do a quick check and see why KVM is not available.
+
+[00:01:21] So, lsmod | grep kvm, would be a decent first thing to try. And we can see that the kvm module is there, but kvm_intel is not there. Kvm_intel is a supporting module for the Intel platform, and it should be loaded. So, what happens if you try to modprobe it?
+
+[00:01:45] Uh oh, could not insert kvm_intel; operation not supported. If kvm_intel is giving an operation not supported, then really it can only be one thing. And that is that the platform
+
+[00:02:00] doesn't support virtualization options. So, as this is Intel, let's do grep vmx on /proc/cpuinfo. And that's kind of interesting. We do see that the vmx flag is available, but still we get an operation not supported. So, let's think about the methodology here.
+
+[00:02:23] We have already done step one, define the issue. The issue is that we don't seem to have support for KVM. Gather information, the vmx flag is available, but yet I'm getting a not supported. Hypothesis, I think we should check BIOS.
+
+[00:02:42] In BIOS, maybe, the virtualization extension may have been switched off for some reason. That may happen. If you have just updated, your computer BIOS settings may have gone away, so let's reboot and let's have a look at the system BIOS.
+
+[00:03:01] So, on every system the BIOS menu is accessed in a different way. And on MSI systems, the Delete key is what you need to press. So, I'm looking for the Advanced features. And look at, Intel Virtualization Technology is disabled.
+
+[00:03:20] And if virtualization is disabled, then you are never going to be able to use KVM. So, we need to switch that to Enabled. So basically, this should be enough if this was the real reason. And now we can test the hypothesis.
+
+[00:03:42] So, let's save and exit. Save Changes and Reset, and start this computer again.
+
+[00:04:01] So, we are back on the running system, so I'm starting virt-manager again. So, let me click Create a New Virtual Machine. And now you can see that the message has gone away. So, now we have KVM support. I'm using Import Existing Disk Image, and Forward.
+
+[00:04:20] And provide the existing storage path. So, what are we going to do? We are going to Browse Local. And in the local storage paths, this is the machine, oops, this is the machine that we are going to import. Qcow2, vmdk's a VMware format,
+
+[00:04:41] and the VMware format has been converted to qcow2, which is the native format for KVM virtual machines. So, choose an operating system type and version. Well, that'll be Linux. And version, Red Hat Enterprise Linux 7.4. Well, that's good enough.
+
+[00:05:01] It's closer to 7.4 than CentOS 7.0, so let's go for that. And let's click Forward. Memory and CPUs, well, we can use defaults, and defaults, and there we go, virtual machine is being created. So, here is the boot prompt.
+
+[00:05:23] And here it is trying to get access to the disk. As this is taking a little bit long, I've pressed the Enter key, and we can see Reached Target Basic System.
+
+[00:05:44] And then it stalls. So, here we can see that the system basically stops. And when a system basically stops like that in systemd, you should note that systemd is working with timeouts.
+
+[00:06:00] And if it's trying to do something, every service is one minute 30 seconds timeout. So, the wise thing to do is go get yourself a cup of coffee and if after getting the coffee it's still in this state, then start troubleshooting. So, we are now somewhat later and it's still in this state. So, we need to start troubleshooting.
+
+[00:06:21] So, what is going on? Well, this is kind of difficult. Oh, look at that, it's continuing. It is giving us a message, dracut-initqueue timeout starting timeout scripts. So, this is dracut, and dracut
+
+[00:06:41] is initramfs. So, we need to understand what's happening. I'm afraid it's going to look forever here. This looks like a system that has successfully loaded the kernel, and successfully loaded the initramfs, and from there doesn't know what to do anymore. So, what is going wrong?
+
+[00:07:01] Well, apparently this system is not capable of accessing its hard disk. That's the hypothesis. That's the issue. This system doesn't seem to be able to access its hard disk. But in order to know for sure, we need to test it again. So, I'm going to close this guy, there we go.
+
+[00:07:25] And we are going to run it again. So, from the virtual machine manager, I'm shutting down, I'm using Force Reset. Yes, we are sure.
+
+[00:07:45] I've just reset the virtual machine, and in the virtual machine I need to pass a troubleshooting option. We are working from an image, so this is not an insulation program, and that means that in the image we can do whatever we want.
+
+[00:08:03] So, I'm pressing E for the GRUB boot menu. Let me scale this window up a little bit. And in the GRUB boot menu, I need to look the line that starts linux16.
+
+[00:08:24] And first I'm going to remove rhgb and quiet. And as I think that this is related to the issue that after the initramfs you cannot access the regular hard drive, I'm going to pass the
+
+[00:08:41] rd.break option. Because rd.break stops right after loading the initramfs. So, here we can see the kernel. We can see the initramfs. And we can see it stalls.
+
+[00:09:02] Which is kind of interesting, because rd.break is a pretty basic environment. And in this pretty basic environment, well, it should be able to do whatever it needs to do. So, what do we see? We see Reached Target Basic System.
+
+[00:09:20] From the messages that we see here, we cannot see very much. Unfortunately. Shift + Page Up, however, in the boot screen does help you to browse up and to see if there are any messages. So, what do we see here? We see Creating Static Devices, and other devices,
+
+[00:09:44] but nothing that seems really relevant. Some USB related information. So, here we have more information about device nodes.
+
+[00:10:00] Creating Static Devices. Still nothing relevant. And I'm using Shift + Page Up to go further up. And well, still quite a disappointing result. I don't see anything about things that don't work.
+
+[00:10:21] Systemd uninitialized urandom read. Urandom is interesting but not really what we want. Reached Target Local File System, Starting Local File System. Okay. And here we are, all the way back in the beginning
+
+[00:10:41] where it has detected the virtualization KVM. Now, this is kind of interesting because yet again it stalls at the end. And here we go again to the dracut-initqueue warning dracut-initqueue timeout, and that is where it's going to loop forever.
+
+[00:11:01] So, here we are in a situation where we cannot really progress anymore, where KVM is not capable of booting the system normally. But as I've mentioned, VMware is capable of booting the system normally.
+
+[00:11:20] Now, look at this. After about three minutes it is throwing us a root shell. And in this root shell we have very nice messages. Warning /dev/centos/root does not exist, /centos/swap does not exist. Nothing seems to be existing. Let's go, because at least it's giving us something.
+
+[00:11:42] And it is still supporting the statement that we have a problem accessing the hard disk. If I'm typing mount then we can see in-memory systems only. And if I type cat /proc/partitions...
+
+[00:12:03] Let's do that again on /proc/partitions, then we can see that /proc/partitions is empty. So, we have a problem accessing hardware, definitely. Now, why can that be the case? Well, if you cannot find your hardware,
+
+[00:12:21] then obviously the kernel has a hard time in accessing your specific driver for the hardware. Might be a driver related issue. So, if you think it's a driver related issue, then you should look at lsmod. Ah, we don't have lsmod, of course. This is a dracut system, this is a minimal system.
+
+[00:12:41] So, it's hard to investigate, as we cannot get to the hard disk, we cannot get to the normal toolset. So, you know what? I am going to start from a new hypothesis. And the new hypothesis is that we are using the wrong driver to access this system.
+
+[00:13:00] Combine that with the known fact that the system works in VMware. If it works in VMware, then there should be a normal SCSI driver that is available. Now, you remember how we imported this system. We imported this system specifying that it is Linux Red Hat Enterprise Linux 7.4.
+
+[00:13:22] If you import a Red Hat Enterprise Linux 7.4 virtual machine then definitely KVM is going to try to access the virtIO driver. And the virtIO driver cannot access SCSI disks. So, you know what? My hypothesis is we have used the wrong driver
+
+[00:13:41] by using the wrong import option. So, I am closing this and I am shutting down the virtual machine. And I'm removing it because this one is useless. Better use Force Off, there we go. And Delete.
+
+[00:14:03] And here we can see supporting proof for what is going wrong. So, it is telling us about the storage path, which is this qcow2. It's asking if you want to delete the associated storage files. No, I don't wanna do that.
+
+[00:14:23] I just want to delete the virtual machine. So, do we still have the qcow2 file? We still do have the qcow2 file, so now with can try it again and start the import again. So, Import Existing Disk Image, and we provide the path to the image.
+
+[00:14:47] Using Browse Local and selecting the qcow2, and I am opening it. And this time I'm using OS type Generic, version Generic, so that KVM is not going to try to be smart
+
+[00:15:00] on what it finds within this machine. And generic, let's call it aaa so that it ends up on top of the list in my Virtual Machine Manager. And as we just had problems, I'm going into GRUB. And in GRUB, I want to remove the rhgb and quiet
+
+[00:15:23] so that we can actually see what's happening. Control + X, there we go. So, here we have a kernel, and here we have a system that really looks like a booting system. So, problem fixed.
+
+[00:15:41] Almost there, but it should give us access to a login shell pretty soon. Let's wait for that, even if we have sufficient proof to know that the virtual machine is currently booting the way it should be booting.
+
+[00:16:07] So, here we go, we have a login prompt, so problem fixed.

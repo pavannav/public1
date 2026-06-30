@@ -1,0 +1,53 @@
+[00:00:07] - To troubleshoot storage, it helps to understand how storage on Linux is organized. This diagram is giving an overview. On top there are the applications, and the applications basically are using sys calls
+
+[00:00:20] to communicate to the VFS. VFS is the virtual file system, and it was created to implement common system goals, such as create, open, read, write, and nmap, which allows applications to access files in a uniform way, no matter which file system is used.
+
+[00:00:40] Within the VFS, there's the page cache that plays an important role. Page cache is where files will be copied to to serve them to the applications, and when applications are writing files, it will end up in the page cache as well. The file systems are the specific file systems, such as XFS, Ext4, BTRFS,
+
+[00:01:01] or whichever file system you want to use. From the file system layer, we need to go to the block layer. That can happen directly, it can happen indirectly. The indirect layer is implemented through device mapper. Device mapper, for example, is where LVM sits,
+
+[00:01:20] but also LUKS encrypted volume and other abstractions of storage can happen in there. Once we are in the block layer, there two important parts that play a role, the block-mq, which is the message queue as well as the I/O scheduler that determines priorities of read and write requests. From there, we can go towards the hardware.
+
+[00:01:42] There are three different paths. This is the virtualization path, where the virtio driver is used, and you will get a dev/vda within a virtual machine. As you can see, virtio driver is a uniform driver that sits directly on top of the hardware. Then we have the multipath.
+
+[00:02:01] Multipath is what you can use in a sand environment, which communicates to the mid level and the low level SCSI drivers. Or you can use the block layer directly on the mid level SCSI drivers going towards the low layer SCSI drivers. If there is anything in storage that is causing trouble, you need to analyze this entire stack.
+
+[00:02:22] Let's talk about some more details that relates to what we see in this stack. First of them, there's the VFS cache, which is the cache layer of the virtual file system. This cache is used for different purposes. There is the inode cache, which caches inode entries.
+
+[00:02:40] As you know, an inode contains the administration of a file. Then there's the dentry cache, which contains directory entries. Directory entries is the list of files and directories that you'll find within a directory, which needs to be cached as well. There's the buffer cache. Since kernel 2.4, this is only used for file metadata
+
+[00:03:00] and raw block I/O. Before that, it was used to cache rights, but nowadays, that's not needed anymore. Then there's the page cache, which is for caching files that either have been read or written. Linux makes sure that these files stay in memory a little bit longer, which is good for performance of your Linux system.
+
+[00:03:20] If you want to see more information about the use of these caches, you can have a look at the /proc/slabinfo file or use the slabtop utility. Also, you can consult the /proc/meminfo file for more generic information about memory usage. Then there are the file systems. File systems provide logical circuits
+
+[00:03:41] that determine how file data and metadata is organized and stored. POSIX defines the common features, and all Unix file systems, including Linux file systems, have to comply with the POSIX standard for interoperability. File systems can be backed by different storage solutions,
+
+[00:04:01] block storage, such as XFS or Ext4 file system or network storage such as NFS and CIFS, or nothing at all, which is the case for pseudo file systems like procfs and sysfs. They can be backed by memory, as is the case for tmpfs.
+
+[00:04:20] Next, there is the device mapper. The device mapper is an abstraction layer between LUKS, LVM, and some other device types and physical storage devices. These device mapper devices are created dynamically when these volumes are added. It is possible to manually address specific physical locations and create a device mapper device.
+
+[00:04:42] Next, there is the block layer. The block layer receives read/write requests from the file systems. It organizes these requests in a queue and passes them to the device driver. It maximizes performance while doing so, using different I/O schedulers. We'll talk about it in Lesson 11,
+
+[00:05:00] which is about performance troubleshooting. Next, we get lower in the stack into the SCSI mid and low layers. The SCSI mid layer is the connection between the high level SCSI drivers, which are represented by core device files such as /dev/sda and so on, and the low level drivers that operate on the individual host bus.
+
+[00:05:22] The mid layer is implemented by the sd, sr, st, and sg drivers. The low level drivers can be SCSI drivers for specific devices, like, for instance, the qla Qlogic drivers or SATA libata, or USB, which is ahci.
+
+[00:05:40] Let me show you some of these from the command line. First, I want to show you slabtop. Slabtop is providing information about what is happening in kernel memory. Here, for example, you see information about the inode cache, you can see the directory entry cache,
+
+[00:06:00] you can see the XFS file system cache. If you want more details about what exactly is happening, cache wise, slabtop is a nice command. The slabtop command interfaces the /proc/slabinfo file.
+
+[00:06:20] As you can see, this /proc/slabinfo file is also reasonably readable, for a fellow in proc, that is. You can see all the different meanings of the columns that are represented right on top. The useful part about this is that it groups in a very nice way everything that relates to NFS or XFS,
+
+[00:06:43] and so on, where slabtop is only giving you the top memory users. /Proc/meminfo is interesting, but that's more about memory, so we'll talk about that later. Next thing that matters in storage is the device mapper.
+
+[00:07:02] Device mapper, as I've just mentioned, is the abstraction layer between LVM and physical storage devices. If you type a command like lvs, you can see the logical volumes that exist on this system, and if you type ls -l on /dev/mapper/vgdata-lvdata,
+
+[00:07:22] for instance, you can see it's a symbolic link. The symbolic link points to the dm-2 device. If you want to analyze the LVM setup, you can, of course, use the obvious utilities like LVS and VGS and BVS, but you can also use dmsetup.
+
+[00:07:40] Dmsetup ls is an interesting command, it will show you the devices from the device mapper perspective. If you want to go into more detail, dmsetup table on a specific device will show you exactly what the device is doing.
+
+[00:08:01] Here we can see that it is a device that consists of the major 8, minor 17, which corresponds to partition sdb1 and major 8, minor 18, which is sdb2. Here we can also see the physical alignment of the device mapper device.
+
+[00:08:20] You might be interested in dmsetup --help, which provides a really advanced interface that allows you to do anything on devices, you can even build your own devices if you want to. Another useful command is dmsetup info. You can use it on an LVM logical volume to figure out properties of an LVM device
+
+[00:08:41] from the device mapper perspective.

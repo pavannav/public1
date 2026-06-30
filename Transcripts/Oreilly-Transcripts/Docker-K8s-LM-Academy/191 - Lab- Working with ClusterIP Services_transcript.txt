@@ -1,0 +1,77 @@
+[00:00:00] Let's now create our cluster IP address here in our services folder. So I'm in the ID under the services folder. Let's just create your call API clusterip P dot YAML. And so this is going to be a service of type cluster IP and remember services of type cluster IP,
+
+[00:00:20] expose a stable internal IP address that can be used for communication inside of the cluster. The API version for services is V one and the kind here will be of type service, right? So kind service that's gonna give us already a bit of fields here
+
+[00:00:40] or it's gonna help us with writing the definition file, the name, the metadata here for the service only requires a name. We can also use labels without any problem here. So labels, let's say app, it's going to be the color API. And for the name here, I'm just going to use color A P
+
+[00:01:00] cluster IP. This is just to differentiate from the other different types of services we will create for the color API. And here we could also it's also convention. Sometimes you'll find the SVC for service that's also the shorthand that the cube cut enables us to use. So once again, we need to specify here to which parts this service will redirect the traffic.
+
+[00:01:26] And we do that in the selector section. So the pod here it has a label app, call API. So this is what we need to provide here, right? So let's copy this in the cluster IP file. Let's then paste it here.
+
+[00:01:41] And let's also specify the ports. So we can set both of these values here to the same port. The application is listening on port 80. So we're just going to set the port 80 here. And if we do not specify a type, the service will fall back to the cluster IP type.
+
+[00:02:01] But we can also specify it explicitly here by saying that this is of type cluster IP I do find it always easier or clearer whenever we specify the type explicitly here because then anyone reading the file can immediately see what type of service. This is, that's great. That's basically everything we need to set.
+
+[00:02:21] We might also want to set the protocol here if you wish to do so to protocol TCP, but this is not a required property. So this is all we need to do to define the service. Let's then save this, let's come back to the terminal and let's apply this as well as the deployment with cube,
+
+[00:02:41] apply in the terminal. Just going to leave it split into two because we will eventually start following the logs of our traffic generator. And now we can once again just apply the color a cluster file and that's going to create the service. We can confirm that our pods are up and running. The deployment is also up and running
+
+[00:03:01] and you should do so if it's still not created or if you have deleted it at the end of last lecture, you can also get the services with QOL get SVC. And this will also provide you with the stable IP address of our cluster IP service. So let's start with the address, right? So we can copy this here.
+
+[00:03:24] Let's now come back to our ide. Let's open the traffic generator file and let's replace the internal pod IP address with the cluster IP stable address that was provided or that is provided by our service. Let's then save this,
+
+[00:03:40] come back to the terminal and we can just apply the traffic generator file once again. So keep apply traffic generator like so and then we can follow the logs once again. And as you can see, we already start seeing something different, which is very interesting here. So there is some basic load balancing happening behind the scenes by our service.
+
+[00:04:05] As you can see the hostname that we get back is different. So it's not always hitting the same pod. The service is actually distributing the load across the different pods that it's managing. So I believe that up to this point here,
+
+[00:04:20] we have already managed to actually get a response from each of the five different pods. Right? If we scroll down here, we just keep seeing that this is also the case. Let's pick a pod here at random. Let's just take this pod. Let's scroll down here. And now what we will do is we'll just delete the spot, right? So we're just going to delete this pod here. DVW
+
+[00:04:41] TV. Let's delete the pod. And the moment we do that you can see the service here is actually still up and running just continues heating. It's fine. It's sending the traffic back to the healthy pods here. So there is some interval here where we have no new or the old pod is not reachable.
+
+[00:05:01] And then eventually we start seeing a new hash here or a new random ID. That's not the hash, that's the random string here for the pod name. And this is the new pod that was created after the old one was deleted. So there was no interruption of service whatsoever. And the only case here where this would completely stop stop
+
+[00:05:23] working is if we were to actually delete the deployment itself. So the caller API deployment, if we were to delete this deployment, yeah, then we get sure everything will stop working because there are no pods serving the request anymore. But we can then apply this once again. And I'm not sure whether this will get our logs here up and running again,
+
+[00:05:44] because the traffic generator is a very straightforward, very simple one, but we can then delete. So let's delete here with the file, the traffic generator. And I believe we can also pass a force flag here. Yeah, that's good. So we can pass a force flag and now we can apply this once again,
+
+[00:06:03] cube, apply and then we can follow the logs of our traffic generator and we can confirm that the service is actually up and running, everything is up and running again. As you can also notice, we don't really need to delete and recreate the service even after we delete the deployment.
+
+[00:06:23] So these two things are decoupled from each other. The service is only interested in looking at the pods and it's using the labels that we have specified here. It's using these labels to find target pods. So if there are pods running, which match this criteria,
+
+[00:06:41] they will receive traffic from the service, how they are created. It doesn't matter. It can be a deployment can be a replica set, can be a single pod. It doesn't really matter as long as they match this criteria. Great. Let's go back to the terminal and in the terminal here, I would like to quickly once again delete this, this traffic generator here.
+
+[00:07:01] So I'm going to delete the traffic generator with a force so that we don't need to wait. And now I would like to once again describe. So let's describe our service color API cluster IP like so and we will get here quite a bit of information, right? So we get the name of the service, we get the labels,
+
+[00:07:22] we get the IP that we can reach the service and we also get some endpoints here. This is interesting because it's really the end points are private IP addresses of the pods. If we were to, let's give it a try to delete once again our deployment and let's recreate it here on the top.
+
+[00:07:40] So cu cut apply and let's use this once again the color A P deployment. And if we were to describe this here, you will see that the end points are now different. So everything that's happening here is very quick, right? So there is virtually no delay. But as you can see the end points, they have changed. So instead of
+
+[00:08:01] 1718, 19 and so on, we get 23 24 25 and so on and so forth. What I also want to try is to actually get the name of the service. I'm going to copy this here and I'm going to use in my traffic generator. So in the opening the traffic generator, I'm just going to paste the name of the service here.
+
+[00:08:23] Let's save this. Let's come back to the terminal and let's now apply. Once again our traffic generator that's going to create it here. Let's now have a look at the logs and as you can see things are working just as expected, right? So I'm just going to clear it here. Let's expand this a little bit.
+
+[00:08:42] And we can see that the traffic is being correctly generated based on the name of the service. This is a DNS feature that is enabled in our cluster. By default, if we use minicube to create the cluster, and we can have a look at what is actually managing this by having a look at the pods in the name space cube system.
+
+[00:09:04] Whenever we list the pods here, and we scroll up a little bit, we will see that we have this core DNS pod here. And this is actually the one that is responsible for providing this DNS functionality or DNS resolution functionality within the cluster.
+
+[00:09:22] We can always the same way that we are working with pods in our default name space, we can work with pods in the cube system, namespace. It's just a different name space so we can get the logs here in the name space cube system can get the logs of our cos. And as you can see here, we're going to get a bunch of logs here.
+
+[00:09:41] We can also see the color API here. And if we to follow these logs, let's have a look at what's going to happen. And as you can see with every request that is coming here on the top, we are getting a similar log entry here for the DNS resolution. All right. I'm going a lot into the networking part, but nonetheless, it's good to know,
+
+[00:10:01] it's good to be aware of it. Even if you're not going to work with it directly at all times, it's good to know that this is there, which component is taking care of it and how you can leverage it to improve the communication within the cluster. Let's stop following the logs here at the bottom. We can continue following the logs at the top here or actually maybe let's stop this.
+
+[00:10:22] And the last thing that we can actually conclude here is that the name of the service is actually and potentially more stable than the cluster IP address that we get. So let's just delete here. First of all, the traffic generator because I don't want it to enter into an error state.
+
+[00:10:41] Let's just describe or let's get our services. So the first service is our cluster IP, which has this address. Let's now try here at the bottom just so that we can then compare the two results at the top. Let's now here, delete our service. So delete with the file
+
+[00:11:00] color API, call API cluster IP, we have deleted the service and let's now apply this service once again. And let's have a look at whether the cluster IP is the same. So as you can see here, when we recreate the service,
+
+[00:11:20] the cluster IP is different. So even though the cluster IP is stable across pods and it provides a single entry point that we can use to distribute the traffic across the pods. If it so happens, that the service itself gets deleted and recreated, then the cluster IP will change
+
+[00:11:41] what will not change except if we go there and manually change the name. Yes, then the name will change. But what will not change between deletion and recreation of services is the service name. And that's why it's even more stable. It's even better if we can use the name of the
+
+[00:12:00] service to communicate with the pods here with the underlying pods. Because then we know that this is very, very stable. We have to go there and change the name of the service ourselves. So that there is a change in the name, the cluster IP will change between recreation. So I would recommend whenever it's possible for you,
+
+[00:12:20] which I think it's maybe 99.9% of the time except if you don't have DNS in the cluster, which is very unlikely for you to use the name of the service. Awesome. So that's it for cluster. I hopefully it's clear what it's doing now. Very important here. This is not accessible from outside of the cluster cluster
+
+[00:12:41] IP services are intended to be used for internal communication. Awesome. So let's take a short break and let's come back in the next lecture to continue exploring services.

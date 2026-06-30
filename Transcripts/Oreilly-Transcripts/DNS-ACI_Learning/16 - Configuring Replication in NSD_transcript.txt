@@ -1,0 +1,243 @@
+[00:00:00] Welcome to ITProTV, I'm your host Don Pezet. &gt;&gt; [CROSSTALK] &gt;&gt; You're watching ITProTV. [SOUND] &gt;&gt; Welcome to another great episode here at ITProTV. I'm your host Wes Bryan, and in today's episode, we're coming back at you with more DNS tech skills and joining us back in the studios yet again is Mr. Don Pezet.
+
+[00:00:23] Don, how are you doing, sir? &gt;&gt; I'm doing great, Wes, ready to dive right back into the world of NSD. In the last couple episodes, if you've watched them, then we saw how to install NSD, and we saw how to create some forward lookup zones in NSD. So it's actually working, yay! [LAUGH] We had an NSD server working, and that's exciting.
+
+[00:00:40] But if you wanna keep it working, well that's where things get a little difficult. Or not difficult, just we have to do more work, right? So ideally, you won't just have one NSD server, you'll have 2, or even 3 or 4, or 5,000. Right, so however many it is that you need. But you'll have more than one. That way you can do two things, in one redundancy, if one fails,
+
+[00:01:02] you jump to another, great. And two, load balancing. You can distribute the load of all your traffic across multiple NSD servers and you really get some help out of it. Now, I know I've mentioned this, I'm kind of really trying to drum this idea in, that we typically don't deploy NSD by itself. There's normally NSD combined with Unbound. And so when we talk about performance, we're normally worried about Unbound.
+
+[00:01:21] So we might have five or ten Unbound servers. On NSD, it's only getting lookups from the unbound servers. And the unbound servers are caching on top of that. So, really it doesn't get that many lookups, even in a massive environment. So, on the NSD side, we normally just need two or three servers for redundancy, not for performance. But it's pretty easy to set that up. And that's what we're gonna take a look at right here in this episode is,
+
+[00:01:43] replicating our zones from one NSD server to another. And I'm just gonna do one other server here. But basically you rinse and repeat for as many servers as you need, and you can get that replication set up. It's a pretty slick system they've got put in place. Now, in the last episode when we created zones, we used what were kind of standard BIND zone files.
+
+[00:02:01] And so you kinda get the idea of we just follow BIND. But the way replication works in NSD is actually a good bit different and so, getting it set up is more challenging because NSD is designed to scale much larger than what BIND was. So, it's got some really flexible commands that take a little while to get used to if you're coming from BIND. If you're not coming from BIND,
+
+[00:02:20] you've never dealt with it before then it's actually not that bad. And you learn it, you jump in and you get where you're going with it. So, it's a pretty good system. &gt;&gt; Now with the architecture here, is it like buying, you said we're gonna have a primary, we're gonna have a master DNS server, and then we're gonna have a couple that are waiting on the master of the slaves here? &gt;&gt; Yeah, so you'll have a Master Server, the one who's in charge of the zone, and then you'll have one or more Slave Servers.
+
+[00:02:42] And you can actually have multiple tiers of Slave Servers, so you could have a Slave Server that's a slave to another Slave Server, which is then underneath the master. So you can really go tiered and when we talk about root hint servers, right, the A through F, or no it's more than that. &gt;&gt; M. &gt;&gt; Right, it's M. &gt;&gt; Yeah. &gt;&gt; A through M, the A through M servers,
+
+[00:03:00] that's not one server for each, right? There's actually 10, 100, 1,000 servers sometimes behind those letters, right? And there will only be one master for a zone behind that. And then underneath that, there may be hundreds of slaves, and they might even be tiered to distribute that load out to make things replicate faster and more stably. So be aware that you can do that.
+
+[00:03:21] But for most of us, if you're deploying this in your own enterprise, you're not gonna have that mass of a deployment. So you're normally gonna have one master and then a single tier of slaves beneath it and then you might have 1, 10, 20 slaves that are all kind of mirroring that zone. All right, so let's see how this works. Now, as in any replication environment, we have to set this up on two sides.
+
+[00:03:41] We have to set it up on the master and then we gotta turn around and set it up on the slave. So I'm gonna start on the master. And I'm gonna use the same server that we set up in the earlier NSD episodes. So if you watched my installing NSD episode, and configuring zones in NSD, this is the same exact server. So you've seen every step along the way from when I installed NSD.
+
+[00:04:00] And I'm gonna start by editing the /etc/nsd/nsd.com file, right? We're gonna jump into our NSD configuration. And in the configuration, I'm just gonna go ahead and jump. Woops, I'm gonna try and jump all the way to the bottom of this file. And when you add a zone, you normally add the zone, well you can kinda add it almost anywhere in the file, but usually at the bottom.
+
+[00:04:23] And we put the name of the zone, the domain name, and then the file that stores its values, right? That's what we normally specify when we define the zone. When we define replication, what I want is I wanna replicate this zone to another server. And so I've gotta add on to this to tell it that I want to allow it to be
+
+[00:04:41] able to replicate, all right. And the way we do that is by adding a server. Now, in other systems, you could actually add slave entries or whatever here. But NSD is designed to scale really big. And so instead of having us tied on to an individual zone, imagine if I had 1,000 zones.
+
+[00:05:00] I'd have to go into a ton of entries. So instead, what NSD uses is it uses what are called patterns. And patterns allow you to setup almost like a wild card. And you can dictate different patterns to say who replicates what. If I have ten different zones here, I could create a pattern that grab every zone on my system.
+
+[00:05:21] That just said grab all the zones and allow them to be replicated to this one host. Or these five hosts or whatever, right? And if I do a wild card and I add a zone in the future, it's automatically gonna be added to the replication. And it will magically appear on the other side and I didn't even have to do anything. I just created the zone and that was it, right? That's what patterns allow us to do. It's much more powerful than what we had in other systems like in BIND.
+
+[00:05:42] It also lets me exclude zones. Maybe I only want to replicate my forward lookups and not my reverse lookups. Or I only wanna replicate this one particular forward lookup zone and not another. I can use patterns to dictate all of that, right? So I'm gonna create a pattern. And think of a pattern as a filter.
+
+[00:06:00] I'm filtering who sees what zones, all right? So when I create the pattern, I need to give it a name because the pattern is used like an ACL and with an ACL, we call the ACL by its name, we call the pattern by its name. So it needs a name. You can call it whatever you want. You can call it Fred, do all the Scooby Doo characters if you want. I normally name it based on the servers I'm replicating to.
+
+[00:06:21] This is server DNS3. I'm gonna replicate it to DNS4. So I'm gonna create a pattern called dns4. And so anytime I call this pattern, I know it'll be something that's allowed to go to DNS4. All right. Then, I need to specify how I contact DNS4, and there's two ways that I'm gonna contact DNS4.
+
+[00:06:42] The most important way is I wanna allow DNS4 to ask me for a copy of the zone. DNS4 needs to be allowed to do a zone transfer, right? So I'm gonna say provide-xfr. I'm providing zone transfers. So I'm gonna allow zone transfers and
+
+[00:07:02] then I need to do the ip address of the other server. Which is that right there, all right. So that's going to allow them to connect. Now, NSD was designed with security in mind, right, security and scalability. And one of the things about zone transfers is that on a normal DNS server
+
+[00:07:20] like on a traditional BIND server, zone transfers are done in plain text. So anybody could intercept it. Well we're not worried about interceptions because DNS records aren't private, anyway. Anybody can look up the records, that doesn't matter. But what we're worried about are man in the middle attacks, where somebody intercepts, modifies, and retransmits. And we wanna make sure that can't happen.
+
+[00:07:40] And so the way that NSD provides that is it actually has a key based authentication system. All right. Now, I'm not gonna use that key based system just yet, so I'm gonna put no key. Woops. There we go. No key on the end of this, right? I'm gonna come back and add the keys later. What I like to do is configure it with no keys first, just to make sure it works, right?
+
+[00:08:00] It's easier to troubleshoot when you don't have the keys attached. So you get everything working and then we can always come back and add those in. &gt;&gt; And are these the same keys, Don, that you generated in a couple prior episodes when you first started out? Same keys here? &gt;&gt; No, they're actually different. So the keys that Wes is talking about, in /etc/nsd there were several keys created as part of installing NSD.
+
+[00:08:20] We're gonna use those when we do DNS SEC. This is simply key authentication for the individual zone transfer and replications for these slave connections. If you don't have any slave connections, these won't get used. And I can actually generate different keys for every single slave if I want. And in that way, if one of them gets compromised, I can cut its key off and
+
+[00:08:40] it doesn't mess with the others. So you can really get specific on this. But for right now I'm just gonna leave them off. We will come back and visit that. If I don't get to it by the end of this episode, we'll do a part two and stick it in there. We'll have to see how this episode goes. The other thing is in addition to providing transfers NSD supports notifications. If a change happens here, I can notify the other side, hey, a change has happened,
+
+[00:09:02] why don't you come and get it? And it can initiate a transfer. Notifies make it where changes replicate far, far faster. Otherwise the other side's gonna wait for its refresh interval to expire and that can take a long time. So I'm gonna add a notify. And I'm gonna set the same IP and I'll do that no key again.
+
+[00:09:23] So my pattern for DNS 4 is saying I can allow transfers going into that IP and I can send notifications when there's changes. But what the pattern isn't dictating is what zones do I get? Well, from there, I go to my zones, and I add the patterns to the zones.
+
+[00:09:44] And a zone can have more than one pattern attached to it, so it can be tied to several different servers or even groups of servers. When I created this entry down here, I did a provide transfer for one IP. I can do provide transfers for more. I can add, maybe I have five different servers that are gonna be slave servers.
+
+[00:10:01] So I can just come in and add another provide-zfr: 10.0.222.105 and then it's key which can be a completely different key. I can do each one and you can add them all in here so that these zones all go to the same place or you can be really specific like I'm doing. And saying this pattern is just for dns4.
+
+[00:10:23] It's up to you in how you wanna configure that. And then, in the zone file, I'm gonna come back and edit the zone, and I'm gonna say include-pattern: "dns4". And I can include more than one pattern, and I can attach those and get them in here, but I'm including dns4. So this zone will be allowed to replicate DNS 4 and
+
+[00:10:45] anytime I add a new zone, all I have to do is add include pattern DNS 4 to that new zone and now it will automatically be set to replicate over to the other side. &gt;&gt; Now, maybe Don, somebody's just starting out and using this episode to get this configured. In that file that you're creating like under zone and under pattern, is there
+
+[00:11:03] a specific order that those have to go in or is that just the way you're doing it? Like, so for instance, under pattern they way you got name, and the other two entries in there or does it have to follow a specific pattern? &gt;&gt; It doesn't have to. Most people do it according to the way it is in the man file and the manual documentation, which I think I've actually broken that a little bit.
+
+[00:11:23] In the official documentation I think notify comes before provide transfer, the thought process there is how DNS works. I notify the other side, and then it initiates the transfer. So the notifications technically happens first, but you don't have to have notifications. I might not even have that line in there at all. And then, the provide transfer what happened first.
+
+[00:11:42] So the order doesn't actually matter. People do have a preference, I'm gonna leave mine in the wrong order, but I shouldn't even call it the wrong order cuz it does get processed. As long as it's nested under that pattern like it's supposed to, then it'll work fine. So it's really just kind of personal preference on that one. So I've got my zone set up, I've got my pattern set up.
+
+[00:12:02] Again, I can define more patterns, I could add more patterns to my existing zone. I could add other zones, and add them with the additionally included patterns. And this is me setting up the master side of things. The rest of the work is gonna be done on my slave system. The master's done. It's just waiting for people to connect from that particular IP.
+
+[00:12:23] And that IP will be allowed to do his own transfer for lab.ITProTV. So I'm gonna jump over to my other server. This is DNS4. Now, DNS4 is a brand new server. I whipped it up this morning and the only thing I've run on it is a Yum update. So it's up to date, so it's got that. But I haven't actually installed NSD on this one.
+
+[00:12:42] So I'm gonna do a real quick yum install apel-release so that I can get the extended packages. And then, I'll do a yum install we do a -y to speed this up a little bit nsd and so we're gonna get nsd installed I probably at the sign off on this signature
+
+[00:13:00] though, nope, I guess it got over that there we go. So now I've got NSD in place. So we've got NSD up and running on the system. I do need to edit some basic configuration settings inside of it. So I'm gonna go into /etc/nsd/nsd.conf. And inside of this file we gotta remember the basic things we need for
+
+[00:13:22] NSD to get up and running. So the basic things are I need to tell it what IP addresses to listen in on. So I'm gonna come in and tell it, ip_address: 10.0.222.14 is its address. I'm not overriding the port number. I am doing IPv4 which is the default.
+
+[00:13:40] I can uncomment that if I just want to kind of remember I'm not doing IPv6, I could turn that off. I'll leave it be. Default port of 53. Again, we can uncomment it if we want but it's showing me what the default is so I should leave it commented. It's fine. I am gonna turn on the log file though, which is in here somewhere. Here it is.
+
+[00:14:01] I am gonna turn on the log file because when you setup a slave If there's a failure, some reason why it doesn't connect and update, we're gonna need these log files to troubleshoot. It's gonna log to syslog by default, but it can be hard to find things sometimes. Here, I need to go to an individual file and I'll see just NSD's log. But remember, when you set up a synchronization like this there's a lot of
+
+[00:14:22] things that can go wrong. And so, you'll see what I'm doing here is kinda planning for those things to go wrong. I'm not doing the keys yet cuz I know I can easily turn those on later after I know everything works. And I'm leaving my logs turned on so I can troubleshoot. If I don't need them I can always turn them off later. &gt;&gt; And when you installed the first server, SELinux came in to play.
+
+[00:14:42] Does SELinux come in to play on this one as well? &gt;&gt; So I've already updated this server so on my other server if you watched there is a first episode installing NSD. There was a bug that I had to patch before I could do my install. On this system I've already done my updates so it's already patch it. That kinda is a lesson that everybody should know is hey update your systems and
+
+[00:15:01] you don't have to worry about this stuff. But that bug was a real bug up until two weeks ago so definitely a problem people bump into. So I'm looking good there. I should be patched, I should be up to date. Let's see what else do I need to do on this one, that's basically it for getting this part going so let me get out of that.
+
+[00:15:20] I'm going to open up my firewall so that I allow that connection. I need to get DNS moving through my firewall and I need to do --permanence on that so I'm doing firewall-cmd--add-service equals DNS. I'm adding DNS. And I'm making it permanent so it'll be there when my system reboots.
+
+[00:15:41] So this server is now up and running. Actually it's not running, I haven't actually started it yet. I could start it, I'm going to hold off on starting it cuz I still need to modify the configuration a little bit. But if I wanted to, technically I could start the NSD service, it would run, but without any zones, what's it gonna do?
+
+[00:16:00] Absolutely nothing. And I guess it doesn't hurt to go ahead and start it. One problem I'm gonna have on this, Wes, you mentioned the keys earlier, right? So if I look inside a /etc/nsd, my keys are missing, right? So I can run nsd-control-setup and it'll create those keys. Or if I just try and start the service it'll see those keys are missing and
+
+[00:16:22] create them. But there we go, so I'm gonna create that. And now when I look, there's those keys. But those aren't the keys that we're using for our application. Those we'll use for DNSing. All right, if I want to go ahead and start it just to make sure that it starts. I've got the nsd-checkconf that I haven't run yet to see if my config file is intact.
+
+[00:16:42] And these are all things we've done in other episodes. That's why I'm kind of moving through them quickly cuz I got to make sure I gotta get through this in time. But, I'm gonna do a systemctl start nsd.service, and we started, right? And we can do a status on it just to make sure that there weren't any errors.
+
+[00:17:00] There shouldn't be cuz we've got the world's most simple configuration on this one so it's kind of hard to botch this one up. So it looks good, everything is running, we're now a valid NSD server, right. Now I need to tell this guy, hey, you need to reach out to this other server and get a copy of lab.itpro.tv. We need to set you up as a slave system so you can reach out and grab that and
+
+[00:17:22] have a copy of that zone. So now we actually get in to configure that part. So to do it I need to go back into my config file. So I'm gonna jump back into /etc/nsd/nsd.conf. And I'm just gonna go all the way to the bottom of this thing,
+
+[00:17:40] way down to the bottom. And remember, down at the bottom of the file is where I like to add in my zones. And so normally, we'd jump right in here, we'd create a zone file. Well what I need to do here is kinda the opposite of what I did on the master side. I need to create a pattern and a zone. I'm gonna create a pattern for the master server, right?
+
+[00:18:00] And because I might reuse that master pattern in other places. So I'm gonna create a pattern. And I'm gonna call it dns3, that's my other server. The master server is called dns3. And these names, I'm just putting what I want in there. So you could put a server ID or whatever it is that you wanted, an IP address, whatever you want that name to be. I'm just calling mine dns3, all right?
+
+[00:18:21] This server is dns4, it's gonna be the slave, dns3 is the master. All right, so let's just jump into nsd.conf again. I'm gonna edit that file and we normally create the zones all the way down at the bottom, right? So I'm just gonna jump all the way down to the bottom of this file. And if I were the master server, this would be where I go in and I start to create my zones. And they'd point to files that were on the hard drive.
+
+[00:18:41] Now, I don't have files on my hard drive, cuz I need to get them from the master. I'm just the slave server so I'm gonna have copies of that data. So when I come in here I need to create a pattern for the master server, right? Remember on the master we created a pattern for the slave, here we're creating a pattern for the master. Cuz we might have more than one master or masters for different domains or
+
+[00:19:03] different zones that we're bringing in. So I'm gonna create a pattern that's gonna identify that. And this one gets a little weird because when you give it a name, I'm gonna call mine dns3. This server is dns4, right, it's going to be the slave, dns3 is the master. So, on the other side I was putting in data for dns4, here I'm putting in dns3.
+
+[00:19:22] The name can be whatever you want, though, I just like to name it whatever server I'm talking to. If you're talking to more than one server that name doesn't quite work out, though. So you've got to kind of figure what works in your environment. Then on the master, remember how I set up notify and allowed transfer, right?
+
+[00:19:40] Notify said that the master was gonna notify this one. So on this one, I need to say allow-notify. I'm allowing the master to notify me. Otherwise, when I receive a notification, I just throw it out. That's a security precaution. Don't trust a notification that you weren't expecting. So here, it will allow a notify.
+
+[00:20:00] And I'll say, from the master, which is 103, right? And I'm gonna stick with that NOKEY for right now. We'll add the security keys later just to make sure everything's working, right? So I'm gonna allow-notify and on the other side I put that I would allow the transfers, right? So on the master we did the transfer system so that we would allow the command.
+
+[00:20:21] Actually do I still have the pulled up over here? Let me get that pulled back up, so on the master over here I said provide transfer, right? So I'm providing a transfer if they ask for it. On the slave side, instead of providing a transfer, I'm gonna say, request transfer.
+
+[00:20:40] So I'm asking the other person, so these are the opposite commands of what you have on the master, right? So this is just the kind of the reflexive values, I think, is the right word for that. So I'm gonna punch that in and we'll stick with old NOKEY. All right, do be aware that if we changed our port numbers on any of this stuff I
+
+[00:21:00] would actually need to punch that in here. So say @53 or whatever so that we know what port number to reach out. If everything's on the default port though we don't have to mess with that so just remember that little naming convention. That happens sometimes when you're running NSD on the same servers unbound, that we change its port numbers, so just be aware.
+
+[00:21:20] All right, so now I've got a pattern for the master. I need to tell it what zones to expect. And so I'm gonna create a zone and I'll say name, and this is gonna be lab.itpro.tv. And for the zone, I'm gonna say zoneFile, and what I want the file to be. And on the zoneFile name, there's actually a number of different wildcards and
+
+[00:21:41] things that you can use in here to structure that name. But I'm just gonna give it the same name that I gave it on the server. But that zone file name doesn't exist, right? I haven't made that file, it's gotta come from the master. And so that's where we say, include-pattern: "dns3," right?
+
+[00:22:00] That's gonna tell it, hey, this file doesn't exist, we're gonna include-pattern: "dns3". And if you look, here we've got request transfer. That's how we know that we're going to be a slave system. Notice the word slave never actually gets used here at all. In fact in most modern software, they shy away from that terminology for obvious reasons. So you normally have primary and secondary or whatever.
+
+[00:22:22] Well in this case, we really just have one server that provides the transfer and one that requests the transfer, right? But it is in the official DNS standard. It's the master slave model, so basically that's what's gonna identify this one as being a slave. Is that it has a pattern attached to the zone. And the pattern points to somewhere that we're going to request a transfer.
+
+[00:22:44] If it provided a transfer, we'd be the master. Now, we could be both. We request the transfer from a master. And then we provide the transfer to a downstream slave. That'll tell us that we're a slave also. Right? But that we're just in the middle tier of a three tier model or
+
+[00:23:02] however many more tiers. All right, so we've got that pattern in place, that should really be about it. Now that that's in place, we should be able to reach out to the other side, get the zone, and replicate it on down, right? I'm gonna get out and save that file. And when I look, let me get into /etc/nsd.
+
+[00:23:23] When I look in here, I do not have a lab.itpro.tv.dns file, right? It's not created. It doesn't exist. I haven't reached out to the other server to get a copy of it. It's not there and mostly that's because nsd doesn't know about it yet. So I need to run nsd-control.reconfig, right?
+
+[00:23:44] I need it to read the conf file again, I probably should have checked it for errors first before doing that. But since this is a new server, what do I care if it gets an error? If this was an established server, though, and people were using it, I'd always wanna make sure that I did a nsd-control checkconf. And pointed it to that file To spot errors before I do the reconfig.
+
+[00:24:03] And oops, nsd control it's actually nsd-checkconf. That would probably work. So in my case I lucked out that I didn't have any typos so I didn't cause any outages or anything. But it loaded it up and now when it loads it it should say look new zone, very exciting.
+
+[00:24:21] The file doesn't exist. But there's a pattern. Pattern points to a master, master has got the zone I want. Let me reach out and talk to him, okay? Now, here's where things can either go good or go bad, right? Either, I'm gonna get the zone, it's gonna load up and it's gonna work or we're gonna get a failure. I don't see anything on my screen either way, right?
+
+[00:24:41] Nothing's gonna pop up here because standard errors actually being directed to the service and the service runs in the backgrounds. So even though standard errors mean showing on your screen, it's showing it on a screen that you can't see, so it doesn't matter, right? So we're left to the log file. So let me do a tail /bar/log/nsd.log and see what we get, okay?
+
+[00:25:01] And, what I get is nsd started, transfer zone lab.itpro.tv receieved error code REFUSED. I've been rejected, I'm insulted. And as I look down the list here, I mean just refuse, refuse, refuse. It tried over and over and over again, I'm getting refused. So while I've been getting errors on screen I didn't actually get my zone,
+
+[00:25:23] it didn't come over. I'm not getting any details as to why though, so I'm going to have to sort that out. But it certainly didn't work, right, so I need to find out what happened there. &gt;&gt; And at this point is that when you'd have to kind of bite the bullet there per se and go into sys log to get more information, or does this have more robosity?
+
+[00:25:42] &gt;&gt; And then, there's some more information you get but I don't probably don't need it right? Because what this tells me is that I'm more than likely configured right here on my side, okay, I'm being refused. So I'm actively reaching out to the other server and the other server is refusing these. So the problem is more than likely over there, could be a firewall,
+
+[00:26:00] could be all sorts of things that are rejecting me. But I don't know that, right, so this was just looking in nsd's log file. I could tail /var/log/messages, and look there. And, well, I've had other things come up since then, so I'm not really seeing much as far as nsd is concerned.
+
+[00:26:25] I guess we could, I don't know, we could hunt for nsd messages in there by grepping it, if we really wanted to. Yeah, yeah, that was helpful. So not pulling a lot of information there. &gt;&gt; Sure. &gt;&gt; We can always pull up journalctl.
+
+[00:26:43] And if I do like a, Let's see, if I spell journalctl, right, we can look and see if anything pops up in there. But even there, I mean there's just other things going on on the system so I'm not necessarily gonna see what's happening. The best place, it's why I like to turn on the NSD log file, cuz it was easy for
+
+[00:27:02] me to spot the problem right there and not have to deal with this other stuff. So I can see it there. I can also do nsd-control checkzone, right. With the checkzone command, we can tell it to look in there and tell me the status of a zone. Or actually zone status would probably help, wouldn't it?
+
+[00:27:23] Let's do lab.itpro.tv. And there we go, I can see my state is stuck in refreshing. Served-serial and committed serial are both none. I've never synced, I've never gained any data. So likely I've got an error on the other side, so I'm gonna jump over to the other side, onto my Master. And on the master, we can take a look at
+
+[00:27:42] /var/log/nsd.log and we can see what we got there. Actually, I don't have any errors here. So, if I don't have any errors here at all, and the other sides getting refused. What does that mean? Well a lot of times, it means it's going to be a firewall issue. That the firewall is blocking the communication between the two.
+
+[00:28:02] So I'm gonna do a quick firewall-cmd --list-all, and on this one, I can see that I'm allowing dns through the firewall, so this one seems okay. And on this one, let me do a firewall-cmd--list-all. And, I got dns approved here too.
+
+[00:28:21] So that looks good. I could test some reachability 10.0.222.103 is the master, and I can ping it. And I can take NSD out of the picture for a minute, and just try and do his own transfer manually, right? You can use nslookup. Or actually, let's do dig.
+
+[00:28:42] If I do dig, and I dig against 10.0.222.103. So I'm on the slave. And I'm running dig against the master. I can ask for lab.itpro.tv, and I can set the type to AXFR, which is a zone transfer.
+
+[00:29:03] Now when we run that query, oop, apparently I got my syntax wrong. Is it not --type? [SOUND] You know what? Apparently, we just don't even need that, we can just type axfr, there we go. And we reach out and I get a transfer failed. So my zone transfer is not being allowed, right?
+
+[00:29:21] When I reached out to that server, I connected and transfer failed, that's all it's telling me. So I did talk to the server, though, so I know I've got connectivity. I just wasn't able to transfer. &gt;&gt; And I know you're not setting this up this way in this episode Don, but if you did could the keys come into play here and cause problems too at any point? &gt;&gt; Yeah, they certainly could, I should probably check and
+
+[00:29:42] make sure I didn't fat finger that no key part, right? But if I messed up a key on one part or left a key off, it would look exactly like this. You'd try the transfer and transfer would be blocked because we don't have the key, right? Which is the whole reason I was trying to leave the keys off because I didn't wanna end up in that situation. But here it just looks like that transfer is being blocked.
+
+[00:30:00] So I need to verify my config files. So I'm gonna look in this /etc/nsd/nsd.com? And I'm taking a look at the Master? Because the master is the one that's rejecting us, right? And so when I look at that zone for lab.itpro.tv, I can see that include pattern of DNS 4. There's DNS 4 and I've got 10.0.222.104 listed with the right IP,
+
+[00:30:24] so that all looks good. And I've got no key And NOKEY and that is spelled correctly, [LAUGH] as far as I can tell. Let me make sure I spelled it the same on the other side. And, I should have just tailed it, that would have been faster.
+
+[00:30:42] NOKEY yeah, if I had spelled one of those wrong, that would have done the done the damage right there, but no, IP's look good. Allow notify request transfer. Everything looks good there, so we are going to have to do a little bit more digging. We do have some verbosity options that we can tweak with the logs. You might have noticed those in /etc/nsd/nds.conf.
+
+[00:31:01] That if you look, you've got this verbosity level, and the default is zero. And so you can bump that number up to get even more detailed information in logs and start to try and isolate where that problem is coming from. All right, now I'm not gonna mess with my verbosity right now, because you really start getting into some deep details in there, and I have to have a problem that's truly stumped me to do that.
+
+[00:31:21] There's one more place that I need to go. My problem is really over on the master. I know that I'm able to reach out and talk to it, the master's the one that's having the problem. So, let me show you a little trick, if you don't mind restarting your service, right? Taking it offline for a brief moment, we can find some information over on the master that'll help us out. So, what I'm gonna do is just, I don't even have to do this really.
+
+[00:31:42] If I wanted to dig through sys.log and find the NSD data I could. But what I like to do is real quick to a system CTL restart of NSD. So, I'm gonna restart the NSD service, which is gonna cause a micro-outage. But, that's gonna let me tail. /var/log/messages.
+
+[00:32:03] My cis log, so that I can see if anything popped up. And all the last entries should be from NSD. And I can try and spot my error. And so here I see NSD starting up, and I've got an error. And right there it's telling me what my error is, okay? And it says, could not find pattern dns4.
+
+[00:32:22] Well, that's unusual, cuz I created a pattern called dns4, so it couldn't find it. Telling me on line 324 is the problem. I got one error in my config, and I think I actually said out loud, didn't I, that I really should have checked my config file, and I didn't? Let me do an nsd-control, or no, sorry,
+
+[00:32:41] nsd-checkconf /etc/nsd/nsd.conf. I might have been on the slave when I ran that check. Sure enough, had I bothered to run a check I would have found that I had an error right there. It's not giving me the greatest error, but it is telling me Line 324 could not find pattern dns4, same thing I got from my syslog. So I could have found that without restarting my service if I had bothered to
+
+[00:33:02] check my config file after writing it. So lesson to be learned there. So let me go and take a look at line 324. That's gonna be down at the bottom. So it's saying could not find pattern dns4, which is usually gonna be in, whoops, in the zone part where I defined it.
+
+[00:33:21] So if I jump down here, I see what my issue is. So I define my zone, and in my zone I included pattern dns4, right? And I don't know my line numbers right now but I'm pretty sure this one will be line number 324. There's a command in vem to be able to show your line number. I just can't remember, it's like set number or something crazy like that.
+
+[00:33:41] Let's see if that'll, there we go. Set number. And so line 324, there we go. I can see right there, that is the one that's causing my issue. And I'm including a pattern, I defined the pattern right here. I'll bet my problem is that I didn't do it in order, did I, right? I defined the pattern after the zone.
+
+[00:34:04] And so that's gonna be my issue is that I need to define the pattern first. On the slave I did that. I defined the pattern first and then the zone, so I need to fix that and get that squared away. So I'm gonna cheat and do a little copy and paste action. And then that way I can just come in here and paste that zone in.
+
+[00:34:23] And then I can come down here and I can delete these guys. There we go. All right, so now I'm defining the pattern first. And I can get out, I can check my config file like a good boy, like I'm supposed to. When I do this, looks good there and so now I can do an nsd-control reconfig.
+
+[00:34:41] And cannot connect to 127, connection refused. That's a good one. &gt;&gt; Well, Don, I think I might know this error here. If you'll go back to that config file, I think you accidentally deleted a line when you exited it. &gt;&gt; What? &gt;&gt; In your zone there. &gt;&gt; Why would I do that?
+
+[00:35:03] I do have my zone file and I don't have my allow transfer and all that other stuff. I guess I deleted two lines in all that. How did I do that? Well, we get heavy-handed with the deletes. So let me fix that and put that back in place so that we can get that working.
+
+[00:35:20] So I've got my zone file, I need to set up a notify, right, cuz we notify 10.0.222.103 which was a no key, or I'm sorry 104. Or wait, hang on. My notify and provider up there, that was right. I just lost, I lost my include pattern, there we go.
+
+[00:35:40] That's the line that I lost, include-pattern, and it was dns4. Yeah, that'll cause a problem right there. All right, so I'm going to fix that and let me recheck that config. And actually still getting a connection refused.
+
+[00:36:02] That's interesting, let me restart the service. See what I've broken. Working now, all right. So we should be good to go, right, everything should be up.
+
+[00:36:20] On the other side, let me go and trigger that, right. So I'm gonna switch back over to my slave, and I'm just gonna do a systemctl restart nsd.service. All right, so it should be reaching out to the other side and getting that zone and bringing it over. Okay, now how do I know if that worked? Well, we can look in /var/log/nsd.log.
+
+[00:36:43] And I was getting errors before, here's all my errors. But now we can see signal received, shutting down, so that's me restarting the service. I can see the service starting, and then right here, zone lab.itpro.tv serial 0, which means I have no serial number.
+
+[00:37:00] I don't have the zone. And then it says it's updated to 1. I just got the serial number from the other side. I know I'm talking to the other side. And on the other side, now I sound like that Crossing Over with John Edward J, we're talking to the other side. So now over here, I should be able to do a look into the log files on this one. So if I go into /var/log/nsd.log.
+
+[00:37:23] And I look at the end, no errors, right? Just starting up, that's it. No crazy errors to be found in here. On the other side, if I jump back over to that guest, I can do an nsd-control zonestatus lab.itpro.tv. Now earlier when I ran this, the status was refreshing and
+
+[00:37:42] then the other numbers were empty cuz I never got a copy of the zone. Now the state is okay, and I've got a serial number. Here's the serial number that I got and how long I've had it. I've got a valid zone. And I should be able to do a dig against this server.
+
+[00:38:00] So this is my dns4, so .104, and I should be able to look up something like www.lab.itpro.tv. And there's the records, okay? Now the neatest part about all this is that if I look, I don't actually have a lab.itpro.tv.dns file. The zone doesn't actually exist here.
+
+[00:38:21] I'm copying it from the master and I'm running it in my database. It actually does get tucked away in a temporary folder somewhere but it's just temporary. If I restart the service it's gonna go and retransfer it and get it over here again right. It's all coming down from the master. Those are temporary zones. There's a handful of commands in nsd-control. I know I'm way out of time here. Where you can do add zones and delete zones, and
+
+[00:38:41] those are all for temporary zones, ones that aren't stored in your hard drive, things like replication that we're setting up here. But most of them aren't terribly effective because these are really new commands that are still being incorporated. So the way that I've done it is kinda the traditional way of doing it. Things like force transfer, well, I was forcing a transfer just by restarting this service.
+
+[00:39:01] If it's in production, obviously you wanna minimize that. So you can force transfer different things, and other activities right from here. But as far as I'm concerned, I'm now up and running, I've got my zone. I'm a valid slave. It's gonna keep running, and that's it, we're done. So now we've got a replica, and we can setup continual more replicas, however we need, and we'll be in business.
+
+[00:39:24] &gt;&gt; All right, Don, a lot of great information getting that NSD server online. You've already mentioned it, we're way out of time here, but we've always got some time for some additional words or maybe considerations that you might want to tell our viewers. &gt;&gt; The main thing is I never did get around to setting security keys.
+
+[00:39:40] I was hoping to do that here in this episode but remember what I said, I just wanted to get it working first, and then we'd apply the security keys. So that's what I'm going to do next, and we're gonna do a part two on this. It might not be the longest episode in the world but all we need to do is get in there and apply secure keys to these so that somebody can't come and perform a man in the middle attack. Intercept the zone transfer, modify some records, chuck them in there, all of the sudden I've got poisoned DNS.
+
+[00:40:01] It's surprisingly easy to pull off that type of attack, so we need to try and prevent it. Keys on zone transfers is the way that we're gonna fix that. So stay tuned for part two. We're gonna jump in and get a chance to see that. And after that you'll have a nice stable and secure master slave environment inside of NSD. All right, Don. Well, thank you for all that knowledge and thank you to the viewer watching.
+
+[00:40:22] Remember, stick around. We do have a part two coming. Signing off for ITProTV, I've been your host, Wes Bryan. &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC] &gt;&gt; Thank you for watching ITProTV.

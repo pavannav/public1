@@ -1,0 +1,35 @@
+[00:00:06] - Now that we have discussed some things about the auditing system and monitoring of resources on your system, let's do a lab. In this lab, we are going to talk about monitoring of critical resources. So, the assignment is to set up monitoring
+
+[00:00:21] to log all changes to files in the /etc directory. Which system are you going to use? So, you want to monitor what's happening in the /etc directory. There are three different systems to consider. AIDE, RPM-VA, and Auditing. Of these three, Auditing is the best solution.
+
+[00:00:42] Why? Well, RPM-VA is about RPM packages. RPM packages come in a default configuration, and their contents will change. So, that may give you too many files that have changed, and for that reason, it's not very useful. Now, we have AIDE.
+
+[00:01:00] AIDE can be useful but it generates a database all by itself and you need to set it up. In order to set it up you need to run it again. So that's a lot of work. And for that reason, I think that auditing is the best solution. Auditing, by any means, is the most flexible solution. And in order to setup this assignment using auditing
+
+[00:01:23] you would use auditctl -w on /etc - p wa -k Let's call it etc-change.
+
+[00:01:41] Small typo. So that is how you setup a line in auditctl. Now if you are going to change something in /etc let's do echo 1.2.3.4 dummy to /etc/hosts
+
+[00:02:03] And now we should be able to figure out if anything has changed using ausearch -i -k etc-change And here we can see exactly what has been logged
+
+[00:02:23] with this specific label. So what exactly do we see? Well, it starts with the CONFIG_CHANGE. That is where we have edit the rule. Then we can see the PROCTITLE is bash. That's no so very interesting. The PATH is interesting
+
+[00:02:40] where we can see that something has happened in the name /etc/hosts. But while changing /etc/hosts a change has been applied to /etc as well. And the funny thing is that after that, it has logged the change working directory to /root.
+
+[00:03:00] Then we can see information about the system call, as well. So, the system call is open and this open system call has been logged, as well. You can also see that all of these events are flagged as audit ID 266. So you might want to use ausearch -i -a 266
+
+[00:03:24] to find out, more specifically, what has happened. Now when you work with all auditctl from the command line you should always be careful for conflicting rules. Auditctl -l is showing you all the lines
+
+[00:03:40] that you currently have. As it appears, the lines are in perfect order. Why are they in perfect order? Well, we start with a very specific file then we have an /etc/sysconfig which is a directory which is a little bit less specific. Then we have the /etc which is even less specific.
+
+[00:04:02] So the interesting thing is, what would happen if we add something to /etc/passwd? Well, given the order of processing by the audit system the /etc/passwd change would be flagged as a config-change and not as an etc-change.
+
+[00:04:20] If the order of lines would be the other way around, then you would run into trouble because etc-change would come before the /etc/passwd and you would never have anything logged about the etc/passwd, specifically. That is, not more specifically, then the etc-change keywords label
+
+[00:04:42] is going to do for you. Now if you are happy with you audit lines then you need to put them in the audit rules fail. Let's have a look and see if the /audit/rules.d/audit.rules fail exists already. And we can see
+
+[00:05:00] it barely exists. Now if we want to fill this file with the current configuration, then just use auditctl -l and redirect to /etc/audit/rules.d/audit.rules Don't forget to use the double redirect
+
+[00:05:22] to append instead of override. And that is how you can setup a simple auditing system for yourself. I would recommend everybody who takes their Linux system seriously to think about auditing, to think about what you want to measure, and to set it up, once and for all, so that you can get the required information
+
+[00:05:41] any time you need it.

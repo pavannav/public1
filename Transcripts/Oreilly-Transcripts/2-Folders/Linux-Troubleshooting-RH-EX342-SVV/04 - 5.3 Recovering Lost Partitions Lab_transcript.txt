@@ -1,0 +1,49 @@
+[00:00:06] - So, now that you know a little bit about recovering of lost partitions, let's do a lab. It seems that the partition table on your disk has disappeared. Recover it. In order to install this lab, you can use script lab52.sh.
+
+[00:00:21] Good luck. So, let's install the lab script. Lab52.sh. There we go, oops, it's rebooting. So, after installing the lab, this is what happens. It's giving an error, no such partition and it's entering the grub rescue mode, grub rescue.
+
+[00:00:42] No such partition, that means that something is wrong with the partition table. And if I get a no such partition, it doesn't even make sense to do anything from the grub recuse prompt. We need a rescue disk. So, let's reboot this virtual machine from a rescue disk.
+
+[00:01:06] All right, from the Boot Menu, I'm going to select CD-ROM Drive. And troubleshooting. And then there is rescue is sent to a system.
+
+[00:01:23] So, it needs to wait for a little bit for a rescue system to load. And obviously I'm going to use Continue. And there we go, you don't have any Linux partitions. The system will reboot automatically when you exit from the shell.
+
+[00:01:41] Please press return to get a shell. So, we don't have any Linux partitions. Right. If I'm typing mount, then we can see the partitions in the rescue environment but no real partitions on disk. So, let's analyze to figure out what's happening.
+
+[00:02:00] /Proc/partitions is giving me SDA which is empty. And SDB does exist, so where do we go from here? Well, if this happens, a partition is just a marker of the start and of the end of what is inside the partition. It helps if you know a little bit about the partitioning of your disk.
+
+[00:02:22] If it's completely random, then it's gonna be a little bit more difficult but as the partition is just a begin marker and an end marker, you can try to recreate partitions, so I'm going to use fdisk on /dev/sda
+
+[00:02:40] and I'm using N to create a new partition. Assuming that I don't know anything at all, I'm going to create a primary partition, partition number one and if start at the beginning and I let go all the way up to the end of the disk. So, that creates a 20 gigabytes Linux partition.
+
+[00:03:00] I'm typing W and now I'm going to mount /dev/sda1 on /mnt. That was successful. That's good news. Now we can use df -h and df -h is showing us that we have a 1,040 megabyte partition with 160 megabyte used
+
+[00:03:21] and available of 854 megabytes on /mnt. That looks like a boot partition, doesn't it? Now, if we do have a look at the boot partition, then what do we see? Well, we see the contents of the boot partition. Let's use an ls -l for some more detail
+
+[00:03:42] and then we can see that we have a kernel and we have everything. The only thing that we don't have is a boot log. That's too unfortunate. Some operating systems make a copy of the MBR to the /boot directory. That makes it a lot easier. Not a case for this system.
+
+[00:04:02] So, we need to reconstruct the rest of what is on disk. Now, as this is a typical CentOS system, on a typical CentOS system, you know that in the beginning you have sda1. sda1 is a boot partition and after sda1, there is sda2 and sda2 is the logical volume
+
+[00:04:24] that contains the root file system. Now, the easiest thing is to cheat and go to another machine to figure out what it looks like on the other machine. So, this is the other machine where I've also done a next, next, finish installation
+
+[00:04:43] and on this other machine, I'm using fdisk -l on /dev/sda to learn that the end of the partition is 2099199. So 2099199. Okay, that's what we need. With this information, I'm going back
+
+[00:05:00] to the other machine. So, on the other machine, I'm going back into fdisk and I am going to delete partition number one and I create a new partition number one, primary partition, partition number still partition number one, starting at 2048 up to 2099199.
+
+[00:05:27] And now we have a partition with a size of one gigabyte. I'm writing, now I'm getting an error about partition table busy and so on and I know that part probe utilities like this
+
+[00:05:41] don't deal well with the modification that I just made, so I'm going to exit the shell, so that we can reboot and get to the rescue disk again. So, here is the Boot Menu again, I'm selecting the CD-ROM Drive. And again, the troubleshooting mode.
+
+[00:06:04] So, this is where I can press Continue. And we'll figure out if it finds anything to mount. Oh no, you don't have any Linux partitions. The system will reboot automatically. Okay, back to the shell. Let's have a look at /proc/partitions
+
+[00:06:21] and what we have inside /proc/partitions? There's the sda1. Let's have a look at mount. And it doesn't appear as if sda1 is mounted. Can we mount it manually? /Dev/sda1 on /mnt. Apparently that works. And as that works, we do have proof
+
+[00:06:42] that sda1 is operational. Now, what comes after sda1 on a typical installation of Red Hat or CentOS? Well, that's a partition type 8e that contains logical volumes. So, the next step would be to use fdisk again on /dev/sda
+
+[00:07:01] and we are going to use N once more to create a primary partition. Number two, starting at the default going all the way to the end of the disk. And now we need to set the type because this is an LVM partition. We set the type to 8e.
+
+[00:07:21] Oops, I first need to specify the partition number, of course. There the hex code, 8e. Now I'm going to write and it's complaining but I don't care too much, I'm just going to reboot and we will see what happens at the reboot.
+
+[00:07:40] And as you can see, this looks like a Linux system that is booting which means that we have successfully recovered the partitions. So, what have we just done? Well, based on the fact that the partition is just a marker of the beginning and of the end and nothing more than that, after deleting it, you just need to recreate the partitions using the exact same specifications.
+
+[00:08:02] Deleting a partition with fdisk does not delete the file system or anything else that's in the partitions. And that has saved us in this case of deleted MBR partitions.

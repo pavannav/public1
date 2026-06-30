@@ -1,0 +1,131 @@
+[00:00:00] Welcome to ITPro.TV. I'm your host, Don. [CROSSTALK] [MUSIC] &gt;&gt; You're watching ITPro.TV. &gt;&gt; Welcome to another exciting episode here at ITProTV. I'm your host, Wes Bryan. And in today's episode we are moving through our series within DNS.
+
+[00:00:20] And joining us back in the studio's for this endeavor is none other than Mr. Don Pezet. Don, how are you doing, sir? &gt;&gt; I'm doing swell, Wes. Thanks for having me back on the show, and we're ready to dive back into the world of, well, just DNS in general today. Cuz we're not gonna just hold ourselves to unbound, we're gonna take a look at a few different pieces of this puzzle and have some real fun. Now, if you've been watching all of our episodes in order, you've heard me say various things about bind, and various things about unbound,
+
+[00:00:43] the Microsoft DNS, and all the other ones that are out there. And each one seems to be strong in certain areas and weak in other areas. And so what I wanna talk about in this episode is taking more than one DNS product and combining them, wonder twin powers unite, and creating the ultimate DNS infrastructure, right?
+
+[00:01:03] The most common scenario of this uses unbound in conjunction with bind. Now, I talked about bind back in the bind episodes, and how it did great as an authoritative name server. It can host as many zones as you wanted. You can put all these different zone records in there. It did a great job. Bind was the reference DNS server that everybody designs on.
+
+[00:01:24] It does a great job. But I also said that it's ancient, and it's a little on the slow side, it doesn't cache very well. And if the caching database grows too big, it crashes, right? That's what bind does. So, almost like it does it on purpose. Then we talked about unbound.
+
+[00:01:41] And I said how unbound did great at verifying domains and doing look ups, and cacheing. That it could have caches that were massive in size. And it could look up at them very fast, and very quick and do a great job of it. It just does an amazing job. But on the zone side of things, Unbound is pretty weak.
+
+[00:02:04] Simple records like a C name break unbound. Unbound doesn't know hey, when somebody asks for a C name don't just give them the name. Go and resolve the actual IP name that it points to. Unbound doesn't do that. So unbound is worthless for C names. So I can sort of put zones into unbound, but it just doesn't do a great job.
+
+[00:02:21] Great at cacheing, bad at zones. Bind, great at zones, bad at cacheing. Wouldn't it be nice if we could put the chocolate and the peanut butter together and get unbound handling my cache and bind handling my DNS? Now I'd have the best of both worlds. And you can absolutely do that.
+
+[00:02:40] You can do it, it's actually not even that hard to do it to get it put in place. And that's the most common deployment scenario when somebody's out there running Unbound, is that they'll deploy one or more unbound servers, and then maybe just one bind or two bind servers. Two bind systems for redundancy. They'll store their zones on the bind servers and
+
+[00:03:01] all their clients will be configured to look at the Unbound severs. Now by doing that, the clients go to unbound. Unbound looks up against the Internet and does all the cacheing. But we need to teach unbound hey, when you're asking about a zone, don't look in your own data, look over here, look at this other server over on
+
+[00:03:20] the other side and reach out to them and get the information from there. And we can do that, we can use forwarders and stub zones inside of unbound to point to other DNS servers out there, and it works really, really well. Now when I thought about this episode originally, I thought hey, why don't I go ahead and bring up a bind server and do all that. But we've kind of all ready done that in other shows, so I'm just gonna recycle.
+
+[00:03:41] I'm being very environmental today. And I'm gonna recycle a BIND server that I've all ready got laying around. So here's DNS 1. If you go back and watch the installing BIND episode and the configuring and creating zones episode for BIND, this is the server that I set up in there. And when I set it up I configured it as a DNS server and I gave it one zone.
+
+[00:04:01] And that zone is lab.itpro.tv.dns. So that's the zone that it's carrying, and if I look at that zone file, it's just got zone records, right? Zone records including things like a CNAME, which we know don't work very well inside of unbound, right? So it's set up, it's got the zone, it's got everything that we want.
+
+[00:04:22] Well, later on I created an unbound server. This guy right here. And this server's up and it's running unbound, so that's good. And I couldn't create a zone on it cuz unbound doesn't have zones. So instead, on this one, I included a file that had a series of host names defined in it.
+
+[00:04:42] And so if I look inside of /etc/unbound, we'll find that file that I made, lab.itpro.tv.dns. And if we look at that file, you'll see where I used the local data commands to map these, right? Not actually creating a zone, but kind of faking it, right?
+
+[00:05:02] I dont have a start of authority. I don't have name server records. I just have A records, right? And I didn't even bother with a CNAME for www because I knew it wouldn't work, right? And if it's not gonna work, then why even bother having it in the first place? If we wanna see that, here let me edit that file. And I'm gonna add in that CNAME in here.
+
+[00:05:22] So I'll say like local-data. And then I'll map www.lab.tpro.tv. And it would be an Internet class CNAME pointing to webserver01.lab.itpro.tv. I got a little word wrap action going on there.
+
+[00:05:42] But otherwise, I can put that CNAME in there. That'll work, it'll let me put it in there. But it doesn't work, right? CNAME exists, but the client is gonna be responsible to doing two lookups, which unbound is gonna fail to do. We talked about that in another episode. So, now that I've got it though, unbound is kind of answering for
+
+[00:06:00] that zone, but it certainly would be better if we let BIND do it. And so, I can go into unbound and change it, and say, look, when somebody does a query for lab.itpro.tv, don't try and resolve it locally. Instead, reach over to this other DNS server. Now, I know what you're thinking. If BIND is slow and doesn't handle giant caches and stuff, and
+
+[00:06:22] I'm forwarding over to it, why not just skip unbound and go right to BIND? Well, here's the advantage. When I hit the unbound server, yes, it's gonna have to do a recursive query and look up against the BIND server. But it's gonna cache the results. And for everybody else coming along, they're gonna get served right of unbound's cache, which is fast and stable.
+
+[00:06:43] So now I'm getting the speed and stability of unbound with the record flexibility of BIND. I'm getting the best of both worlds, right? And that's what this is all about, peering these up together. You can have unbound front end for any DNS server. The back end DNS server could be NDS, Power DNS, Microsoft DNS.
+
+[00:07:01] It can be whatever you want. BINDis the most common. So that's what I'm gonna do right here, okay? Now before I set that part up, let me mention one other thing. I'm gonna set this up where I've got one BIND server and one unbound server. Two physical servers. And that's pretty common. I could actually do this on the same machine if I wanted, all right?
+
+[00:07:22] I'm not gonna do it here cuz it's not very realistic. But in your lab, you might choose to do it. So just so you know, you can run BIND and unbound on the same system. So for example, this system is running unbound. I could do a yum install bind and bind utils, right?
+
+[00:07:41] And I could get in here and install it. And if I try and start it, I'm gonna get an error, it's gonna fail. Because BIND is gonna try and connect to port 53, and unbound is already on port 53. I'll have a port conflict. You can't have two different services listening on the same port. So if you're gonna run them in the same box,
+
+[00:08:00] it's important that you change bind's port number. So, just to show you how to do that real quick, I know most of you aren't gonna do this from your life but just for the few of you that do. If you edit/etc/named.com, right at the very beginning you've got that listen-on port line. And so, I'm gonna change that line.
+
+[00:08:21] I'm gonna move it to another port. And just what I usually end up doing is 53000, cuz I know it's not in use. I used to use 5353 but there's actually some services that run on 5353, oddly enough. So, I'll jump up to 53000. And then I'll punch in my IP which this is 10.0.222.103.
+
+[00:08:40] Like that and don't forget IPv6 which also has a port number. Even though I'm not using it, it'll still cause a conflict when I boot up. So I either need to disable IPv6 or move it to port 2. All right, so now it's on a different port. Be aware that BIND on Red Hat is being controlled by SELinux, it's got that security sub-layer. And that's gonna stop BIND from accessing non-standard ports including 53000.
+
+[00:09:04] So if I do this, I do need to open it up in SELinux. So I'm gonna do an semanage. And I'll have to do this twice cuz I've gotta add a port for the DNS context. So I'm gonna do a -t dns_port_t.
+
+[00:09:20] And then, I have to specify the port. I'm gonna do tcp 53000. And then, I'll need to run the same thing for udp 53000, right? Otherwise, this isn't gonna work. You also have to open it up on the firewall, unless you're doing all your lookups with 127.0.0.1, which you can, right? So then, you wouldn't have to open it up on the firewall, that's all local. But if you're doing it on the firewall, you'll need to open that too.
+
+[00:09:41] I won't go into that. You guys have seen firewall configurations. So the point here though, is that BIND will now be allowed to start on port 53000. And it's not gonna start on port 53, it's running separate. So when I configure unbound to forward to BIND, I can tell it to use port 53000 and that'll solve that little problem, right?
+
+[00:10:01] So easy enough to do and now I should be able to do a systemctl start named.service. And, shoot, I haven't actually configured the allowed queries yet. So it's gonna give me an error, it's not gonna start.
+
+[00:10:20] But either way, the point is I wanted to show you guys that you can change that port number. So that it'll be able to start and get up and get running and be happy, which is what we want to be able to get up and run. All right now, on the unbound side, it doesn't really care. If you're running on the same server, if you're running on a different server, it doesn't matter, you can point to either one. We just have to put the pointer in place.
+
+[00:10:41] By default, unbound looks at its own cache first. And if it doesn't find a result in the database, then it goes to its forwarders. It looks out to root hint servers if you haven't configured any forwarders or the service that you forward to. I'm gonna configure a forwarder. A forwarder for lab.itpro.tv that says, hey, don't resolve this domain locally, reach out to these other guys to get it, right?
+
+[00:11:03] So I'm gonna come in here and I'm gonna edit the unbound.conf file. And as you look through here, I mean, there's just a ton of stuff from what your listing on and what you're talking to and so on. And if we get to the override section, which is not too much further down.
+
+[00:11:23] I probably should have just done a search to find it. Did I skip it? See here's my local data segments, it should be right around in here where I did my include. This is the hardest part, is finding where I did my include, there we go. Here's where I did my include for lab.itpro.tv.dns, right?
+
+[00:11:43] I referenced that file. Well, I don't wanna do that anymore. I don't want to include that file cuz I'm gonna override. So I'm gonna comment that out, right? I'll leave my ad blocking one in there, that's fine. Or if you're not gonna ad block you can turn that off. But, I'm not gonna include this one anymore. Because instead of trying to create the zone myself that only half works,
+
+[00:12:03] I'm gonna point to the zone somewhere else, okay? So, now that I've got that, I do need to skip down a little bit further in this file. And, what we're gonna find down towards the bottom is a little section where it's got several notes on forwarders. So if I keep scrolling down, here we go. We'll find stubzones and forward zones.
+
+[00:12:22] Now, stub zones and forward zones actually work very similar, in that we say hey, if I get a lookup for a domain instead of looking up myself, send it to this other guy, right? Well, the difference is, a stub zone expects a dead end. I do a lookup against this next server. The next server's gonna be authoritative for
+
+[00:12:40] the zone I'm looking for, they'll have the answer and give it back to me. A forward zone though, might be recursive. I might forward to this other guy and they might have to go and talk to other people too, right? Other than that, that's really it for the difference on them. So if I know it's a dead end, I can set it up as a stub zone. If I don't know if it's a dead end, then I can set it up as a forward zone, all right? But either way, they're defined the same way,
+
+[00:13:03] the only difference is whether you say, stub or forward. After that, the syntax is pretty much the same, right? I'm gonna do mine as a forward zone. And it's only gonna forward for this one domain. So in real life land, I almost always do forward zones. I don't really care if they recurse on the other side, the point is, I need to get this zone. I don't really care where it comes from, as long as it's not from unbound,
+
+[00:13:22] cuz unbound's not gonna do a good job with it. So I'm gonna go down here towards the bottom and I'm just gonna add a little block here so I can type and I'm gonna add a new entry. And I'm gonna say, forward-zone. And then name, this one is going to be lab.itpro.tv, all right?
+
+[00:13:43] So that's who I'm forwarding for. And then I'm gonna say, forward-addr and who this is gonna answer, all right? Now, I have BIND running on a separate server, so I can just put 10.0.222.101, that's the other server. And now, anytime I get a lookup for lab.itpro.tv, I'll check my cache first.
+
+[00:14:05] We always check our cache. And if it's not in the cache, I'll then hit this forwarder. And the forwarder will send, not the client, but unbound to reach out to this server to get the answer. If it's a CNAME or whatever it'll be properly exploded and then we can return it to the end user and they get the data they want from BIND.
+
+[00:14:24] They never talk to BIND but it happens, okay? We could say, if it was a local server, 127.0.0.1. But remember, if you specified a different port number, you'll need to add at and then that port number. So if I overrode the port number, if it was running on the same box,
+
+[00:14:42] I'd put it in like this, 127.0.0.1 at and then whatever that port is. Or, you can reference the IP also, some people like to do that. Some people like to put in the DNS name, you can do that too. But I always hate to put a DNS name in when I'm working with DNS because, I mean, that should make sense right? If one breaks down, the whole thing breaks down.
+
+[00:15:01] So, usually we'll do an IP address like this and then that port number, right? But if I'm pointing to an actual server, it defaults to port 53, 101's the server that I wanna hit. So now, whenever I do lookups for a lab.itpro.tv, it'll pull from the other server and it'll cache it right here. The cache uses the time to live values. And if I've got five minute or ten minute time to lives,
+
+[00:15:21] that's really gonna shrink the amount of lookups that BIND is gonna handle. So now, BIND is not getting that many queries anymore. And BIND isn't maintaining a cache for the whole Internet. BIND is only maintaining a cache for what we look up here, which doesn't even go in a cache cuz it's in a zone. So BIND's weak cache handling is no longer an issue.
+
+[00:15:42] We've removed that, we're using unbound's cache. And unbound's weak zone handling, we've removed that because it's using BIND. Now I'm getting the best of both worlds all right from here. &gt;&gt; Now, with using unbound and BIND on the same single server, Don, and mentioning the cache here and how the cache On bind,
+
+[00:16:02] if it grows far enough, it's gonna crash the server. Do you have to worry about that? I mean, I know it's probably different memory spaces, but do you have to worry about hosting them on the same server, that those caches are gonna become a problem? &gt;&gt; No, and it would be a problem if we were just using bind. But because I'm doing a forwarder to bind,
+
+[00:16:20] nobody's actually looking up directly against bind any more, right? So if they're not looking directly at it, the only queries I'm sending to it are ones for Lab.ITPro.TV. And if that's a local zone inside a bind, it caches the whole zone, right? And that's all that's gonna be in its cache. The cache isn't even gonna grow, because there's nothing to grow.
+
+[00:16:40] It's gonna have just what's in that zone. The bigger the zone gets, the bigger the cache is gonna get. But if you can't handle a couple of megs worth of zone files, then your server's garbage anyway, you got different problems to have. But in this case it binds cache, you ignore. It just doesn't even exist anymore as far as you're concerned. Unbound, on the other hand, you do have to worry.
+
+[00:17:00] And it properly sizes itself, it does a great job, we don't have to worry about that there. And then the back end doesn't have to be bind either. The back end could be PowerDNS or NDS, Microsoft's DNS, it could be whatever. It's on a different server, it could be anything and that helps to alleviate that too. But at this point, those are going to get forwarded and now everything should work smooth.
+
+[00:17:21] I said should, because in IT we know what happens. Let me get out of my config, I'm gonna check that configuration. And I'll just do a checkconf really quick to make sure I didn't screw it up, I got no errors. I will do a systemctl restart unbound, we'll get that one restarted. And then we can test it out right?
+
+[00:17:40] If I do a look up against, I guess I'll do my local server. So I'm doing a look up against my unbound server. And I'm gonna look for, let's just start easy, I'll do webserver01.lab.itpro.tv. And when I do a look up for that, it's gonna reach out to unbound and it's gonna get an answer.
+
+[00:18:02] Now, in unbound, I disabled the include that included my local data. So how did it get this information here? It forwarded to the other server and it got it, right? And if I try and pull up that CNAME, and
+
+[00:18:20] I reach out to it, it gets it. It exploded the CNAME, and I get the CNAME entry right there followed by the actual IPs of the machines I need to contact to. Unbound can't normally do that. Normally, if I ran this, I would see www.lab.itpro.tv IN, and that's it, and it would stop right there.
+
+[00:18:41] It wouldn't even tell me it's a CNAME, it just kinda freezes, and that's it. So by putting it in this way, I now get where things function the way that I expect them to be. And I never talked to bind, did I? I talked to unbound and unbound talked to bind for me. All bind saw was a very simple query, hey, give me www.lab.itpro.tv.
+
+[00:19:01] And it didn't have to do forwards, it didn't have to do lookups, it didn't have to go to root hints, it just went right to its zone and answered me. So bind only sees one customer now, the unbound server. And then unbound is handling everything else, caching it, and moving on. Really straight forward, this is just really not hard to set up, right?
+
+[00:19:20] All I had to really do is add that forwarder. Once you' have the folder in place, the rest of it is done. That's it, it's over. So very simple, very easy way to go about it. I've seen a lot of people use this for different methods where, for example, they might have unbound setup as their local caching DNS server. And then they use forwards that point out to in that host for the zones that they care about.
+
+[00:19:40] And then that way they are able to maintain things out there on the Internet. Maybe if I registered something through Hover.com, and so I might point right to Hover.com for Lab.ITPro.TV. And now everything else I cache locally, but then I forward to them for that one zone. Those are all different ways that you can use this, but the point is by using forwarders in unbound, you can create a super fast,
+
+[00:20:02] super stable best of both worlds type of deployment where you get great caching, and great zone support, and that's really the best way to go about it. &gt;&gt; That's a really cool setup, using two pieces of software like that to make your infrastructure a little better. Now Don, I know that we're coming to the end of this episode, but before we do, do you have any additional advice you would like to give somebody if
+
+[00:20:21] they are gonna use unbound and bind, and maybe even on a single server? &gt;&gt; Sure, two things to worry about. One, test it out. Always test it out, make sure it works. Make sure that you put everything in place and that it actually does work, cuz there's all sorts of little things that can cause a problem on this, right? Firewall, SELinux, the services being started, all of that.
+
+[00:20:41] The other thing is remember that now I don't just need one DNA server, I need two. If one of them fails, I'm gonna have a problem. If unbound fails, it doesn't matter that bind is up and running, nobody's looking to it, right? So I don't get redundancy there. And if bind fails, unbound is up and now we can't look up Lab.ItPro.TV and so my zone is offline.
+
+[00:21:00] So both servers become important. They might be virtual machines, so we don't worry about physical hardware. But still in software, a problem in one will lead to a problem that affects the end users, it doesn't matter that you have two. So this is not a solution for redundancy. I would wanna continue on and set up multiple unbound servers, and then at least one more bind server that has a replica, right?
+
+[00:21:24] It has a copy of that zone on it, so that we can set up a backup. So that when we have that forwarder in place we can get to others, and get that redundancy there. So keep that in mind, what I just showed you is great for functionality and performance, not great for redundancy. You still need to take extra steps there.
+
+[00:21:41] &gt;&gt; Words of wisdom. Don, we appreciate you stopping by the studio here, and we appreciate you, the viewer out there watching. Signing out for ITPRO.TV, I've been your host Wes Bryan. &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC] &gt;&gt; Thank you for watching ITPRO.TV.

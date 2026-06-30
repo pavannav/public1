@@ -1,0 +1,41 @@
+[00:00:00] Welcome back. Let's now discuss concurrency in workflow execution is also an important topic, especially when we have workflows such as deployments, which if run together at the same time or simultaneously, they can actually lead to some weird results. So um the the concurrency management allows us to actually fine tune the execution behavior of concurrent workflows.
+
+[00:00:23] And without concurrency, we already know that workflows execute in parallel, right? So there is nothing here that would stop the same workflow from executing at the same time for different runs. We could think of it as a deployment workflow here. So let's say that the version 1.0 0.0 is the one currently deployed.
+
+[00:00:43] And then there are a series of very quick and success successive commits here which trigger basically six parallel executions of this workflow. Now, there is nothing guaranteeing us that the version 2.0 0.0 for example, is going to complete first, there is some variations and variants on the time of execution here.
+
+[00:01:03] And it might be the case that we end up deploying version 2.0 0.0 and the odd runs here, they they just keep going right. So in the end here, we could actually then have the version 1.1 0.0 being deployed after the version 2.0 0.0 which doesn't make sense at all. So we need to have a way to control here
+
+[00:01:23] how the execution order of these workflows happen to prevent us from reaching this scenario here where the version 1.1 0.0 for example is the last one being deployed. And even here when we have simultaneous runs at the same time touching infrastructure, this can actually be very nasty and that lead to some very serious problems.
+
+[00:01:44] So there is a way for us to activate concurrency in github, which simply means that here, I already took a couple of further steps here. What happens is that we have the version 1.0 0.1 running, right? So this is running and then another commit, triggers the 1.1 0.0
+
+[00:02:02] and then another commit triggers the 1.1 0.1. However, because we have concurrency enabled, then the version 1.1 0.0 is going to be canceled, it's not going to be executed insult timeously. And then as new comments here, trigger further runs or
+
+[00:02:21] as new comments here, they trigger further releases. Then only the last one is going to be pending. It's gonna basically, it's not gonna execute in parallel to the one that's running. Anything that comes afterwards will be pending and then there is a possibility for us to also then cancel all pending deployments or all pending workflows if newer ones become available.
+
+[00:02:44] So here, basically we have one, this would be pending and then with the next one, the pending one here got canceled and then this one got canceled and this one got canceled. And in the end here, we have just version 2.0 0.1 waiting to be executed. So because we have concurrency enabled here,
+
+[00:03:02] the deployment of version 2.0 0.1 is not going to be run until the deployment of version 1.0 0.1 is completed. And that's what we see here on the right side. Once version 1.0 0.1 is completed only then the deployment of version 2.0 0.1 starts
+
+[00:03:20] now there is the the the concern here or there is the result that this intermediate versions here, they are never deployed, actually deployed to production. But I'm assuming that this is an incremental so that this is an incremental release. So basically the 2.0 0.1 has all the features and
+
+[00:03:40] bug fixes and everything from the previous versions, right? That would make sense. It wouldn't make sense for us to actually have partial features here being deployed here and then here and then here and so on and so forth. So this is just incremental, which means that by deploying the version 2.0 0.1 we are deploying everything that we have implemented so far. This is one of our use cases, right?
+
+[00:04:02] So we would like to then cancel all the workflows with pending deployments once a newer version of the application is ready to be deployed. So we don't really want to deploy these old versions here. We just wanna cancel them, but we don't wanna do that manually so we can leverage concurrency. Now, a very important aspect here is that we have to
+
+[00:04:21] make sure that the concurrency group is unique across workloads, right? So this is not scope, it's not guaranteed that a single workflow here is going to be affected by concurrency. If we have concurrency enabled in multiple workflows and we use very general names, then it might be the case that we will cancel unrelated workflows here
+
+[00:04:42] and this is not what we want, right? So we need to be specific regarding the concurrency group that we defined because this concurrency group is what is used behind the scenes by github actions to determine which workflows to cancel. Now, we also should turn the canceling progress flag off whenever we
+
+[00:05:01] have deployments or any operations which are destructive in nature. And so deployments here, they, they touch infrastructure, they touch versions of the software and we have this cancel in progress flag which allows us to cancel a certain execution, a certain run that is in progress if a newer run starts.
+
+[00:05:24] So this is once again a fairly dangerous thing to do because if we have some, some infrastructure being modified and we cancel that in the middle of this modification. That's horrible. Right. It will lead to an inconsistent state and it's to actually of that. So we should always turn this off here for any operations that
+
+[00:05:44] can lead to changes which are very, very hard to handle if they are, if they are stopped in the middle and one safe use case here would be for automated tests. So let's say for example, that we have some automated tests too, which takes like five minutes to run, for example.
+
+[00:06:00] And then we just push another commit and then the previous one is still running and we have some concurrency enabled here, which would mean that the newer ones are gonna wait until the old one is fixed or is completed. However, it doesn't really impact as there is no bad thing if we just cancel an automated test suit.
+
+[00:06:20] So we could just cancel the one that is in progress and that would make things faster for us just so you know, right, this option exists that we can cancel currently running work flows are currently executing runs of workflows. If newer ones become available within the same concurrency group, I don't encourage using that. Just keep the use cases in mind and make sure that you are careful
+
+[00:06:42] when turning this canceling progress flag on or off. Perfect. That's it for this theoretical discussion. Let's take a short break and come back with a practical exercise.

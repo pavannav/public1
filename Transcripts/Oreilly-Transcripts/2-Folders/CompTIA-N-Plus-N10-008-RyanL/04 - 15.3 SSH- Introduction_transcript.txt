@@ -1,0 +1,91 @@
+[00:00:06] - [Presenter] All right, so this isn't the first time, and this probably won't be the last time in the course that you're gonna hear me tell you to use secure shell as your alternative to Telnet. Telnet is what we've used historically over the years. The problem with it of course, is that it's clear text. So secure shell includes encryption,
+
+[00:00:22] encryption is what provides confidentiality. So again, just to keep all these straight, confidentiality is privacy. People can't see what it is that you're doing. So to provide confidentiality, we apply encryption to the communications. Additionally, just because everything was encrypted, if you look at encryption algorithms, they're pretty tricky sometimes,
+
+[00:00:40] a lot of fancy math happening, and we go, this is important data, am I absolutely certain that every single one and zero came out of this encrypted stream exactly as it went in? I'm not sure. That's where integrity checks come in. We perform hashing algorithms on the way in, before we encrypt and on the way out after we decrypt.
+
+[00:01:02] And if one single bit is off, the entire check sum is gonna be different. They call that an avalanche effect in hashing. But the main thing is that we're doing checks on all the data, on all the mathematics to make sure that as soon as the encryption process is complete and the decryption process is complete, everything is as it should be. If it's not, we'll throw the packet away.
+
+[00:01:22] Finally, you have authentication. Now, when we authenticate to an SSH server, there's a couple of different ways to do it. Traditionally, we use username and password, but we can also use something called SSH authorized keys. And I'll give you a little whiteboard and talk a little bit more about that as we go through this.
+
+[00:01:40] So looking at SSH authentication, effectively, we connect to the remote service in TCP port 22 is the default port. Now a lot of administrators will move a service off of a default port. Maybe they'll put it on port 2222, just to make sure that when an unauthorized user comes along and looking for SSH, doing what we call a service sweep in Nmap.
+
+[00:02:02] Nmap is a network scanner. Sometimes we scan a particular target, like one IP address, and we go through all the common port numbers to see if any of those services are listening. That's one common use. Now a separate one is called a service sweep. I'll tell you how that works. If I'm focused on SSH and that's all that I'm interested in,
+
+[00:02:22] I'll connect to port 22 on lots of different systems. I'll just go one IP address after another, after another, checking to see if port 22 is open. I'm not interested in anything else. See when someone does a service sweep. If you move a service such as SSH to a non-standard port number, you'll miss anyone who's looking for that particular port.
+
+[00:02:41] So if they've got a vulnerability that they're trying to exploit, you won't get hit by that. Now this is slick because a lot of people use automated tools to just sweep one sub-net after another automatically breaking into things. And by just getting off of the default port, we're not gonna be hit by any type of automated tool. It just makes things a bit sneakier.
+
+[00:03:01] Can it still be discovered? Yes, but it takes more time. And that's all that this is about. Again, there's no perfect silver bullet to computer security, but we just do layer on top of layer on top of layer of difficulty or hurdle after hurdle, just to make it more difficult for the attacker. So again, just kind of walking through this,
+
+[00:03:20] we connect to port 22, we do our three-way handshake and then what's basically gonna happen is the server side, remember we call it an SSH Daemon, the switch in this example is gonna give us it's SSH public key. Now you may have seen this happen before a message box pops up and it says, do you want to accept this public key? Let's be clear on what this is.
+
+[00:03:41] This is authentication. Remember I said, it's mutual. This switch is authenticating to us going, Hey, remember me? Like we hung out that one time. You came over, it was great. We built RSA keys. And what's basically happening is it's going, here is my public key. Don't you remember when we built this?
+
+[00:04:00] Well, you can go through your notes and you can go, oh, you know what? Here's the fingerprint. Here's the public key. That's correct. See, when you built this and you set it up the first time you got to see the public key, go by. So you've seen this before. You know what it is. So later when you log in and it's presented to you, you should verify this.
+
+[00:04:21] To be clear, what you should not do is see a box that says, Hey, is this the key that you want? And you go, yeah, whatever accept and save. And you just continue because someone can do an SSH man in the middle attack where they give you their own bogus key. And if you accept that, you're gonna accept and store it. And they're gonna be in the middle of all your communications forever.
+
+[00:04:40] Is that unlikely? Sure. Somebody would have to actively be targeting you and doing the attack for you to fall for it. But let's talk about you getting hacked. Why did you get hacked? Or why did you not get hacked? And you can say, I didn't get hacked, okay that's great. Why not? And you say, cause nobody hacked me. That's not a good reason. And if you say I didn't get hacked and I go, why not?
+
+[00:05:00] And you go well, because I jotted down and recorded all my public keys. I've got good documentation here. And later when I went to check into that device, it gave me a key that I recognized. Now we talked a little bit about public key infrastructure. Public infrastructure was the use of, remember this number X.509V3,
+
+[00:05:21] which is a digital certificate. That was taking the public key, the identity, information about the CA server information about the cert and putting it all in this document. That's what TLS uses. That's what SSL uses. This has nothing to do with SSH. SSH doesn't use that.
+
+[00:05:40] It's just using the public key, which is a bit more raw. So a bit more unrefined. It's a bit geekier. You've got to kind of get in here and verify it yourself. Now at that point, if you verify it and go, yes, I trust it. That's half of the authentication. The switch has authenticated to you. And this isn't a whole lot different, like, let me just bring up Firefox real quick
+
+[00:06:00] and show you an example. If I was to go to ebay.com and I hit enter. Look at that. E-bay just authenticated to me. I haven't authenticated to eBay. I'd have to come over here and I'd have to log in. Here's a sign-in. But if we look up here in the log, it says verified by digicert, this connection is secure.
+
+[00:06:22] You're currently connected to this site. More information, and we bring this down. I'm talking to ebay.com verified by digit cert. This is when their certificate expired. Have I visited the site? Yes, 410 times. All right. A lot of shopping, but this site has authenticated to me.
+
+[00:06:43] Why is that important? Because now when I click sign in and I'm gonna send my credentials to eBay, I know I'm talking to a trusted third party. Says so right here. Cool. So that's kind of, what's happened with SSH when that public key comes over and we accepted, it's authenticated to us.
+
+[00:07:01] Does that mean it's gonna accept commands? Not yet. We have to authenticate to it. And we have two ways. The first, which is most familiar to people is a username and password. Those credentials could be installed on the switch. We call that local authentication, the username and password exists in the configure, the switch.
+
+[00:07:21] Alternatively, what's more scalable? I don't want to have to create usernames and passwords on 50 switches, so what do I do? If you said set up a RADIUS or TACACS+ server, you're right. By setting up a centralized database, when I send that username and password, the switch will pass those credentials to a RADIUS server,
+
+[00:07:42] which will then tell the switch if those credentials are correct. This means I can create a user account in one location and then share it across all the devices in an enterprise. How many? However many you purchase. Much more scalable, much faster for handling hires and fires. Now that was option one,
+
+[00:08:00] username and password is nothing new. Let me tell you about option two. Option two is SSH public key. How does that happen? Well, on this device, we're gonna generate a public key and a private key. If you use PuTTY, which is a free utility for doing SSH, there's a utility for PuTTY called PuTTYgen.
+
+[00:08:20] It'll allow you to build these keys. You can use OpenSSL. You can use RSA. You can use DSA. It's really up to you. The important part is you're gonna build a key pair, which remember is one part private, one part public. Whatever's encrypted by the private can be decrypted by the public.
+
+[00:08:40] Whatever's encrypted by the public can be decrypted by the private, that's how that works. So who knows the public key? Everybody and anybody, that can be shared with the world. So what we do is we install that public key on the switch. And then whenever I come back and I want to authenticate, a handshake occurs using my public key,
+
+[00:09:00] which is said to be more secure than using a username and password, it's more difficult to break. So these are two different methods for authentication that you should be aware of. So when we take a look at asymmetric encryption, we're typically talking about RSA, sometimes we're talking about DSA, but these are two very common examples
+
+[00:09:20] of asymmetric encryption algorithm. Another one that's very common is Diffie-Hellman and it's quite a bit different. See Diffie-Hellman is actually used for key generation. If we want to do encryption across an untrusted link, like the internet, great, we're gonna use AES. We're gonna use symmetric encryption. It's fast. It's solid. The problem is we have to have the key to do encryption
+
+[00:09:43] and it has to be communicated across an insecure medium, such as the internet. In other words, you and I wanna start sending crypto back and forth. I'm in China. I don't trust anything in China. How do I get my communications to you, right? Maybe I've got something and here's an easy example.
+
+[00:10:02] If you've ever used the 7-Zip before, it's free utility to compress files. I can use 7-Zip and I can zip a bunch of documents and I can use AES 256 to protect it. Great. I did that locally on my computer. I'm in Hong Kong. I'm a little bit worried about anything monitoring my communications that I'm sending to you.
+
+[00:10:21] So I send you this encrypted document, but here's the problem. I've got to get the key to you. How do I do it? Do I call you on the phone? Can't trust it. Do I text message you? Can't trust it. So what do I do to securely get that message out of an insecure country or a hostile area? It's quite the dilemma.
+
+[00:10:40] It's been a problem that's plagued us for over 5,000 years. Over 5,000 years, we've had symmetric encryption, symmetric encryption uses the same key on both sides. So whatever you encrypt with you decrypt with, it's the way that things have always been done. Asymmetric encryption wasn't really available until about the 70s. So where I'm going with this is that Diffie-Hellman,
+
+[00:11:02] you should think of as a utility. When I wanted to construct a tunnel to do secure communications across an insecure medium, we go, we don't trust this wire, but we need to do crypto. So I need to get the key to both sides. What Diffie-Hellman does is it's an asymmetric means
+
+[00:11:20] to symmetric encryption. What that means is that we're gonna use asymmetric encryption to generate keys and exchange them. It's for key generation. But once Diffie-Hellman complete successfully, we're gonna move from using asymmetric encryption to symmetric encryption.
+
+[00:11:41] Why is that? Well, if we look at asymmetric encryption, it's 2048 bits. This is arguably not as secure as 128-bit encryption. I've read books on cryptography. They say it's about 3000 bits strength, but there's a lot of factors where it could depend.
+
+[00:12:00] The important thing to understand is that this is exponential. When we say it's 128-bit. Well, we're saying it's two to the 128th power. That's our key space. So when you look at 2048-bit encryption, it's two to the 2048 power. Remember if we wanted to double our encryption strength, we'd go from two to the 129th bit.
+
+[00:12:21] That would literally double the key space. So if somebody was trying to brute force us, they'd have to go through twice as many keys. If I wanted to make it twice as strong as that, I go two to the a 130th, we don't see 130-bit encryption. They jump you to things like 256, realize that that is not twice as secure.
+
+[00:12:42] What we're doing is we're doubling the encryption strength. Head-over-heels 128 times. 128 Times, you're going, how many keys is it? And you go 340 undecillion. I go, how about now? And you go 680 undecillion. Just 'cause we went from 128 to 129.
+
+[00:13:00] You do that again and again and again. So symmetric encryption is using a smaller key space than asymmetric encryption. Here's the thing though, asymmetric encryption has got those two keys, private and public. The world can see your public key. So they have a clue to how to break this.
+
+[00:13:20] So we've got to use much larger key space to make them equivalently-ish secure. Again, that's where I was saying, you've got to use like 3000-bit asymmetric to get the same as 128-bit symmetric. It is a lot more work. It's a lot more overhead to use asymmetric encryption. So I was taking so many classes.
+
+[00:13:42] I was setting up so many networks and none of my mentors ever really explained it to me. None of the books told me, Hey Ryan, you know what? You're never gonna use asymmetric encryption to move a bunch of data back and forth. You'll use it to authenticate. You use it to exchange keys. But once we get the same keys on either side
+
+[00:14:02] and keys, aren't big. We can do asymmetric encryption, which is really hard with small amounts of data. And that's pretty easy. The small amount of data that we move is a key so that we can get rid of asymmetric encryption for our process, move over to symmetric encryption, which is faster. How much faster?
+
+[00:14:20] How much less overhead? It varies by a lot of different factors, but I've read multiple times about 1500 times easier to do symmetric encryption than asymmetric encryption. I want you to just think this is way, way, way, way easier for the firewall to do. What's that mean?
+
+[00:14:40] Well, it means we can handle more sessions with less overhead. So asymmetric and symmetric encryption, it's not like you're gonna be at a point in your job where you go, Hmm, what should I use RSA or AES? You'll probably use both. You'll use RSA to create digital certificates, to authenticate. You use Diffie-Hellman for key generation, but once that's done, you will use symmetric encryption
+
+[00:15:02] for all your data transmission. Why? Because it's so much more efficient than trying to use asymmetric encryption.

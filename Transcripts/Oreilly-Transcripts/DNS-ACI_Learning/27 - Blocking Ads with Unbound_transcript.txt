@@ -1,0 +1,161 @@
+[00:00:00] Welcome to ITPRO.TV, I'm your host Don Pezet. &gt;&gt; [CROSSTALK] &gt;&gt; You're watching ITPRO.TV. &gt;&gt; Welcome back to another great episode here at ITPRO.TV. I'm your host, Wes Bryan. And in today's episode, we're continuing through our series within DNS tech skills.
+
+[00:00:20] And joining me back in the studios today for this very endeavor is none other than Mr. Don Pezet. Don, how you doing, sir? &gt;&gt; I'm doing great, Wes, ready to dive into something a little more exciting today. We've been messing with Unbound the last few episodes. We got a server set up, we created some kinda fake zones in there. But in this episode we're gonna basically take Unbound and set it up to block advertising and malware websites.
+
+[00:00:41] One of the cool things about Unbound is it's not the greatest DNS zone server, which I know is funny for a DNS server it seems like what a primary purpose would be. But its primary purpose really is to focus on caching. And validation of look ups and validations of domains and it does it very, very fast. And it can do it at a very, very large scale so it can handle tens of thousands,
+
+[00:01:02] hundreds of thousands of clients sitting behind it and it does it really well. It is a very modern, very streamlined code. So we can use that for all sorts of ways that it wasn't necessarily intended. &gt;&gt; You know, right before we started, Don, I was talking about, I've seen software in the past that's done this by modifying the local host file. And you made a good point. Now, why won't we just use a software like that that's gonna modify just a computer's
+
+[00:01:22] host file. &gt;&gt; All right, yeah, so that's one great way to deal with malware, well inot just malware but spyware, advertisements. Whatever it is, you take the host file on your own computer and you put all these entries in there that say, here's a bad server. And I'm just gonna point it to, well normally point it to yourself, 127.0.0.1.
+
+[00:01:40] And you can do that, and it works out really well, right. The problem is, if you have a thousand computers, maintaining a thousand different host files becomes really, really challenging. And on top of that, you've got operating system vendors like Microsoft, where Windows is no longer looking at the host file by default, just skipping right past it. And so that's not a reliable way to do it. It used to be great because it was super fast and
+
+[00:02:01] you had complete control over it but it's not so terribly effective anymore. And the other challenge is, you've got users that have iPhones and Android phones and all these other devices that you can't control the host file on without, well, like with the iPhone, you'd have to jailbreak it. You don't wanna jailbreak your corporate phones! It's not an option. So how can we protect them from malicious hosts
+
+[00:02:21] if we don't have that access available? And the answer is to use DNS. Now we can do it through Bind, but with Bind it would be really challenging cuz you'd have to maintain a zone file for every single one of these domains. And it's just a nightmare, and Bind collapses under it pretty fast. So it's really not even possible there. But on Unbound, on Unbound I can do DNS name spoofing, and
+
+[00:02:41] I can name spoof every single malware advertising host or whatever, and I could point it wherever I want. I could point it at 12700 if I want. And now when somebody has an iPhone, Android, Mac, Windows, Linux, whatever. They use DACP to get an address, they get my DNS server, and
+
+[00:03:01] it's all being filtered right there. Okay what are the challenges of making this happen? Challenge number one, I need an unbound server which we already have from the last episode, so that's challenge one solved. Challenge number two, I need a way to basically poison these DNS names, right. Well we can do that through any simple mechanism.
+
+[00:03:20] If you do dns spoofing we can take a name and we can map it to an ip. We can override what's actually out there in dns, and we can do that right through local lookups and unbounds. So challenge number two, that one's already solved in unbound. Challenge number three, I need a list. I need a list of all this junk. And this is the first one that we're gonna hit a road bump on.
+
+[00:03:40] Because I don't have a list, I don't know all the bad servers that are out there in the world, and most people don't. But there's a couple of people out there in the Internet, in the tubes, that take the time to accumulate these lists. Lists of bad hosts, hosts that serve up advertisements, or malware, spyware, and they put it all out there and they publish it.
+
+[00:04:00] One of the most well known, let me bring this up here. One of the most well known is, the website is somonewhocares.org. I'm trying to remember the guy's name. Let's just go there. Someonewhocares.org. Apparently the challenge is spelling it.
+
+[00:04:21] And if I go to this website, someonewhocares.org. Dan Pollock that's his name, sorry guys, sorry Dan if you're watching I couldn't remember your name. So Dan Pollock, this guy, [INAUDIBLE] Internet. Over the last 10 or 15 years he's been putting together this massive list. Of advertising and malware hosts, and he gets some missions from other people.
+
+[00:04:42] I imagine he's not sitting around every day clicking on every site he can find, but he has assembled it into a nice big list which you can go and view at someonewhocares.org/host. Now this is the HTML view of it, and when you look at it, how to make the Internet not suck as much. So what he's done is he's put together a list.
+
+[00:05:04] And it's in the host file format. And in the host file format, you've got an IP mapped to a name. And so what you're gonna see are a lot of, I'll just apologize now, there's a lot of bad sites in here. But you'll see a lot of sites in here and it will map 127.0.0.1,
+
+[00:05:21] the loop back into whatever the site is that's being blocked. And so if you can think of, just about any ad service, you'll find that ad service in here, including really well known ones like Google ads, and the Google Adsense network. Facebook, Twitter, those guys.
+
+[00:05:40] They've all got ad servers, and they'll all be entered in here. I did try and find one block that didn't have bad stuff in it. [LAUGH] It get kind of freeze on the camera. But each one of these is a, this one is statistics, right? So it's probably some kind of telemetry gathering service that is recording your IP address, and what site you're on, and how long you spend on it, and all this stuff that we might not wanna share.
+
+[00:06:01] And by mapping it back to you, to 127.0.0.1, it makes your computer immediately do the lookup. And then when It try's to reach out the ad server, it reach out to itself, and when it reaches out to itself, we're not a web server and so it just fail, it immediately fails. That's important because we don't wanna slow down the end user, if you redirect it to a real web site now it's gotta go to the real website,
+
+[00:06:22] gather that data and it slows things down, that's why it redirects to itself. So this is great list right here, and it even goes one step further if I change that URL and I'm gonna add hosts to the end of that. So now it's someonewhocares.org/host/hosts. Now it's just the straight up text version, right.
+
+[00:06:41] No HTML prettying this one up. And when we look at it here, it's the same thing, same exact list, right, but in a format that we can actually use to our advantage, okay. I can take this and I can put it into unbound and I can block all this. Now we do have a challenge here too,
+
+[00:07:00] our challenge here is going to be it's the wrong format. That inside of unbound our config is a little bit different, right? If I take a look at the unbound.conf file that we worked on when we set this server up. We can browse around in here and get to the point where I overroad some host names right?
+
+[00:07:20] Let me see if I can find that in here. Buried away in here somewhere. We overroad some of those things by doing some local addresses right? And, you know what, actually I gotta remember what we did at the end of that episode. We put it in a different file so let me get into that. And we'll get a chance to see it in there.
+
+[00:07:40] Actually, we overwrote it. It's been so long. I have to remember where we put those files. There we go lab.itpro.tv. Here we go. These are the records that we expect when we override. In Unbound, you can override anybody by saying, local data. The host name defining it as an A record and pointing it to an IP, right.
+
+[00:08:00] So I could come in and I could take one of these guys back here like let's say, track.msadcenter.afgz.com or track.mdrctr.com. Right, so I take one of these guys. And if I wanted to redirect them back here, I would say local-data and then track.mdctr.com,
+
+[00:08:22] IN, A, 127.0.0.1, right? So I just need to kinda flip the records around a little bit and add a little text in the middle and kinda mess with it a bit. Well, if this were just one or two records, that's not a big deal. I could do it, right? But Dan's put together literally thousands,
+
+[00:08:40] probably tens of thousands at this point, of ad hosts. I mean there are so many in here, there's no way you could do that by hand, all right. So we're gonna rely on someone else to help us out here, there's another gentleman out there that has written a script that does it for us. And so if you were to go to and he's got in on GitHub.
+
+[00:09:00] So if you go to GitHub, let's see, GitHub.com and it's J-O, drell, is the guy who wrote the script. Gavin Brown I don't know why his username is jodrell. But Gavin Brown, he wrote this unbound block host script. And it's a really cool script because what it does Is it takes Dan list and
+
+[00:09:23] converts it right into the format that unbound expects us to follow, right. So it can do it for us. And even better, if you save the script, you can call it periodically to update it. So maybe once a day, I run the script. We grab the latest ad list, we convert it into unbound's format, and
+
+[00:09:43] we load it in Unbound, and now we're nice and updated. And as Dan adds more stuff to his list, we run Gavin's script, it gets the information, and then we're in business. All these URLs will be in the show notes by the way, so if you wanna go in and get this stuff on your own, you'll just be able to pull it right from the show notes. But what we're gonna do is we're gonna use these two resources to be able to do that.
+
+[00:10:00] So let's get this set up. Well first off, I wanna be able to compare whether this works or not, right? So right now, my computer is configured to use a standard DNS server. And so I'm gonna use cnn.com as my guinea pig. And when I browse to CNN.com let me make the page nice and big.
+
+[00:10:21] You'll see right off the bat I've defiantly got some advertisements, okay. Looks like Telts which I don't even wanna know what that does. As we scroll down we'll see some other advertisements here more of this Telts stuff. If we get down, the part that kills me is somewhere in here we'll find a section, right here. Paid Partner Content, all of this is one big giant fat advertisement.
+
+[00:10:45] It looks like news, looks exactly like this stuff up here, but it's all one big advertisement. So, I can see all of that going on when I browse. I think I'm using Google's DNS servers right now. So, browsing out there. So that's what I'm gonna compare to see whether or not this is working, okay. And we'll do an apples to apples comparison and see what happens.
+
+[00:11:02] All right, but let's get back to the server cuz that's the fun part. So on the server, the first thing I need to do is I need to get that script. So I'm gonna download that script right out of GitHub. And you can do it via web browser. But if you're on a server with no GUI that's gonna be a little hard. So I'm gonna use wget to just download it right from GitHub.
+
+[00:11:21] So I'm gonna pull that down and I need to point it at the raw file itself. So I'm gonna do raw.githubusercontent.com/jodrell/unbound- -block-hosts and then /master/unbound-block-hosts.
+
+[00:11:43] All right, that's gonna reach out to his project and download his file, right? And if you take a look at it, I've got that file sitting right here. And if we kind of look through it, you'll see it's a script. And what it does, is it reaches right out to Dan's website to go and
+
+[00:12:00] download that file. So it's going to pull it down, and see how it's looking at /host, /host. So it gets the text version of the file and then, it's gonna start doing the conversions, right? Flipping things around. Now, there's different sections inside of Dan's site, inside of Dan's list, and so you can choose to turn them on and off. Maybe you don't want to block ads.
+
+[00:12:21] You just want to block malware and spyware. So you can do that by turning these options to one, and then turning all these other ones to zero or deleting them. And then that'll stop them from updating. And so you can come through and do that. His script has them all turned on, with the exception of shock-sites, and maybe spy, these are ones that haven't been confirmed to be spyware.
+
+[00:12:42] And shock-sites are ones that are just tasteless, not ads or malware, but just ones that sensible people would normally go to. So you can certainly tweak that entailer, but you can see the whole script right there. All it's doing is reaching out, downloading the file, and changing it into the order that we want.
+
+[00:13:00] And so when you run it, you don't even really have to provide any options. You do need to be an administrator to run it though, because it's going to create this file and it's gonna store it in /etc/unbound. And a regular user can't write to /etc/unbound. If you're gonna run it as a regular user, you'll need to override the output file. Which you can do,
+
+[00:13:20] it's got command line syntax where you can override the output file. All right so I've got it, it doesn't have execute permissions on it because of the way I downloaded it. So I need to fix that real quick, I'm gonna do a chmod and I'll change it to 755. That's gonna to give me read, write and execute and then it's gonna give everybody else read and execute on it so that they'll be able to run the script.
+
+[00:13:42] I say I am gonna give everyone else read and execute. They still can't run it because it's gonna try to output to a file normally people don't have access to, but as an admin I can run it. And so I'm gonna run that script. And in the background it's gonna reach out and well I say it's going to. But it's supposed to reach out and download it and get it loaded.
+
+[00:14:00] Now, I forgot something important, it's written in Perl and depending on how you installed Linux you may or may not have Perl in place. I apparently don't. So I do need to install that real quick. So let me do that, I'll do a yum install, there's two libraries I need, there's perl itself, and the odds are, I probably do have, and then, libwww-perl.
+
+[00:14:22] That's important, because in the PERL script, it's calling web pages, doing a HTTP connection, so that's why I need the libwww. Let me go those installed and oops something is holding that up. So let me kill whatever is doing that. And then we'll try that again, there we go. All right so we're going to get that installed and
+
+[00:14:40] then we'll run the script again. Always a good idea to check dependencies on a script, which I did not. [LAUGH] So all right so once we get through that, now I can try and run that script. And, all right and I'm gonna get a little bit of an error cuz I forgot a step. So depending on how you installed your server, you may or
+
+[00:15:00] may not have Perl installed. And this one's telling me that it can't locate LWP.pm, which is the libwww for Perl. Inside of this script I'm calling a website to be able to download the hosts file, right? So I need to be able to access an HTTP resource and I need libwww to do that. So I don't have it or I do have it and it's just not in my path.
+
+[00:15:20] That could be the problem, too. So if you don't have it, you can install it pretty easy. If we do yum install, odds are I've got perl, almost every system does. But you can also do perl-libwww-perl to be able to get that one in there. On some systems, it is just libwww-perl.
+
+[00:15:42] So you might have to experiment around a bit to find the right name. But I'm gonna go ahead and run that. And that's gonna install those two packages. There's another way to do that, also. Holy moly, [LAUGH] apparently I'm missing a lot of Perl instructions here. So I did have Perl installed already, just not all the other add-ons to it. So let me go and say yes sort that thing around, now the other way that I could
+
+[00:16:02] have done it, is I could have installed it right from inside of perl itself. perl maintains these little software bumbles and so you can add them there, that doesn't help you if perl wasn't installed in the first place, but if it was I could have just run perl dash. And then, MCPAN, which is gonna let us add an additional module.
+
+[00:16:21] And we're sending a command into perl, and you can tell it install bundle, which you have to spell right, colon colon, LWP. And that's gonna tell perl to reach out and get the lib w bundles, and get them installed. Mine's gonna fail just because it's already got it.
+
+[00:16:40] Or actually it says it can't locate CPAN, so apparently I'm not set up for command line access anyway. So, that's not gonna work for me but either way I've installed my libraries now, so I should be good. It does update the path, and bash doesn't update the path unless you log out and log back in, so let me just re-authenticate real quick. And at this point we should be able to run our script.
+
+[00:17:02] And there we go, all right. So instead of an immediate error, which is what I was getting, now it's reaching out or it should be. Reaching out to Dan Pollack's website, grabbing the hosts file, and then Gavin's script is gonna take it and rearrange it to match what unbound is expecting. And when it's done it should have written it to /etc/unbound.
+
+[00:17:24] And if I look in there. What I'm looking for is local-blocking-data.com. That's the file that it made, okay? Now, it's not activated by default. It just makes the file. And that way, we can check it. Make sure it's okay before we activate it. And if I take a look at that file.
+
+[00:17:43] And pull it up, what we should see is that it's the exact data from Dan's list with the sections turned on or off that we chose to enable, but in the right format. So it says local data colon and then a quote. And then the host name, they skip the IN, cuz it assumes IN by default.
+
+[00:18:03] And then an A for an A record and then the IP address or AAAA for an IPv6 entry. And then ::1 for the loop back there. So each one is being blocked, and I'm 0% of the way through this file to give you an idea of how big it is. This is a massive file, in fact let's do a LS -LAH.
+
+[00:18:23] And we can see that it is 1.1 megs of pure text. That's a lot, that's more text than the entire Encyclopedia Britannica, if you were to write it out in text, true story. [LAUGH] Sometimes I throw out random facts in there that are somewhat debatable, this one's actually true. So that's massive, it's mountains and mountains of data.
+
+[00:18:41] Bind would not do well with that. Unbound has no problem with it whatsoever, it'll cache all of that in RAM, it was only a meg after all. And whenever you do look ups we're not overriding everyone of those. We don't need a zone for each one, we can overwrite it. Now I keep saying now, now it's not happening at home now it's not doing anything I need to enable this file I need to include this file like we included
+
+[00:19:04] our other phone, so I'm going to edit / TTC slash Unbound /unbound.conf. And I'll just got down to where I did my last include, where we added in the IT Pro TV zone, down here towards the bottom somewhere if I remember right, apparently not.
+
+[00:19:21] So here's some stub and forward zones, which I don't really wanna mess with. I was trying to find where I did, I like to keep mine all together. There it is, that was I only have to go one place for where I've overriding hosts. And so I'm gonna do an include/etc/unbound/local-blocking-data.c- onf.
+
+[00:19:45] Right, that's going to incorporate that block file and to unbound. Now I do need to be a little careful because unbound is only gonna load that file when it starts. So it's not actually working yet. I need to do a systemctl restart unbound.service.
+
+[00:20:05] And now it's gonna load that zone in the memory. And now it's blocking or it should be blocking. &gt;&gt; Don we had a good question come in from the chat room, it says, once you load this file up in ram you know it's not that big, well, it's one meg it's a lot of text.
+
+[00:20:20] How does it affect performance of the server? &gt;&gt; Well you lost a meg of ram so there's that, right? But hopefully you've got at least a gig of ram so it shouldn't be a big deal, that's a drop in the bucket. Unbound is designed to do a hierarchical look up against the DNS cache and RAM and so the way that it works actually doesn't really get affected by the amount of records of the past because it is Facebook building a fake
+
+[00:20:43] Roots over inside of itself and saying okay you're looking for a, just let me go to the country and that you're looking for Microsoft and so let me go to the ends and look up inside of those. And so it happens very quickly, and it's doing those kind of look ups already anyway, to see if it's got an override in the first place. Here the difference is, it finds the override and gives us a number versus not
+
+[00:21:02] finding the override and then forwarding, to the forwarding server, after that. So, you'll find that it typically doesn't effect performance much at all, aside from the little RAM loss, the rest of it's pretty much the same. Okay so once that's in place how do we know if it's working? Well let's take my laptop, my laptops gonna be the guinea pig.
+
+[00:21:20] I'm gonna go into my system preferences and Im gonna go into my network adapter. And right now I'm set to use DNS Server 8.8.8.8, which is Google, right? And I'm gonna fire up Chrome and I'm gonna pull out the latest copy of CNN. Right? So, this is gonna be cnn.com.
+
+[00:21:44] And I'll just kinda park that over here on the side. Apparently, the Russians aren't our friends anymore. Not quite sure how that happened. But I did and so now we've got it. And we've got our little advertisements, right? So, I'm gonna hold that to the side, and now that's loaded I'm gonna go back into my preferences and I'm gonna change my DNS servers, okay?
+
+[00:22:02] So I'm just gonna yank Google's out and I'm gonna add in my server 10.0.222.103, okay. And not sure why I have all these search domains over here, let me just get those outta here. All right, and I will apply that. So now I've got an all new DNS server, all right?
+
+[00:22:21] So now that I've got the new DNS server fired up, I can fire up another copy of CNN. And this time I'm doing my DNS lookups through my new name server. And I'm gonna take this, I'm gonna park it over here on the other side. And shoot, Chrome's gonna get me. Chrome does this caching and
+
+[00:22:40] when it caches it will actually skip your DNS server, and so some of my ads loaded. Not all of them. Notice this one broke. And here's an advertisement. That one broke. But it cached the Teltz ad, or potentially the Teltz ad is being served from the CNN servers or whatever. Let's see how the rest of this panned out. Let's see if we got that giant ad block, that's the one that I really care about.
+
+[00:23:01] Yeah, I got the giant ad block, all right. Let me switch browsers, cuz I need to keep this one open so that we have something to reference. And then I’ll use Safari for my next one, since Safari doesn’t share a cache with Chrome. All that matters is that I’m using a different browser, I’ll go to cnn.com and
+
+[00:23:20] now my lookups are gonna bounce to that other server, and looks like they wanna send me notifications, I'll pass on that. Okay, now I've got an apples to apples comparison between the two though that I can look at. And my head's gonna cover up part of this, so let's go full screen on this one so we can see. Right off the bat, you'll notice that Teltz advertisement is gone, right. Even CNN's own advertisement for
+
+[00:23:42] a total lack of information in the Jon Bonet Ramsey case that never stops reporting on it shows up in Chrome but it's gone in Safari. And as I keep looking down, you'll notice more and more omissions like that. Things that are gone that aren't there. I do have that paid partner content showing up.
+
+[00:24:00] But the advertisement that was there is now missing. And as I keep scrolling down we'll find more and more stuff. Most of this is legitimate news junk. And what we expect, but sometimes there's ads intermixed with the things. And then when we start getting down a little further this big paid partner content block. Well that one's still turning up isn't it.
+
+[00:24:20] I was hoping that would get blocked. But well, that's one big paid advertisement right there. If they're serving it up from their own domain name there's not much that you can do about it. But the rest of it is pretty straight forward. It's gonna catch it and block it and get it out of there, so I know it's working. Now advertising is one thing. Ads don't normally cause you much trouble. It's the malware and the spyware,
+
+[00:24:40] those things, that we care about and this list is now applying it all. When I rendered the page it rendered in the same amount of time. It probably rendered faster cuz I was reaching out to less servers. If I were to do a netstat-an or something like that to see everybody that I built a connection to Chrome would have built 100 connections to generate this page. Versus Safari probably would've generated ten or 12 because everything was coming
+
+[00:25:02] from CNN servers and not from all these blocked ads that usually pop up. So does make a big difference between the two, but now I can see it's working. Your end user, they don't see any difference. They're just going to your unbound server like normal and getting a much cleaner web experience as a result. &gt;&gt; And that's a lot easier than modifying a thousand host files, man. I'm glad I took your advice.
+
+[00:25:21] If I'm an hourly employee, I guess it doesn't really matter. But, it does look like we're coming to the end of another episode. But, before we do Don, do you have any additional words you'd like to put in this episode? &gt;&gt; Yeah, there's other ways to test too. If you don't want to bring up somebody like CNN or a naughty site. You don't want to bring one of those up, cuz if it doesn't work then you got stuff on your computer you don't want there.
+
+[00:25:40] So, there are other places. There's a ads blocker website that actually has a little test you can run. Let me show you guys that real quick. If I just browse to ads-blocker.com/testing. So, that's ads-blocker.com/testing. They've got a little page that will render and show you whether or
+
+[00:26:01] not your blocking is working. And so, what you should see is this empty yellow block here where you'd normally have Google AdSense. Or some of these other things that wouldn't render and you should get a fairly clean page that comes up. If you weren't blocking you'd actually see some ads they've injected in here that would pop up. So you can always use their site if you want as opposed to using some commercial
+
+[00:26:22] or actually malicious websites. &gt;&gt; Well Don, that's a great place to wrap this one up. Thank you for joining us in the studios. And we appreciate you the viewer watching. Signing out for IT Pro TV. I've been your host, Wes Bryan. &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC]
+
+[00:26:42] &gt;&gt; Thank you for watching IT Pro TV.

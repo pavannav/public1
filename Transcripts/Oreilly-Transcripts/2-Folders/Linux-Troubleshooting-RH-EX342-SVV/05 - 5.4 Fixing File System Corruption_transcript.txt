@@ -1,0 +1,65 @@
+[00:00:06] - Another type of problem that you may encounter on storage is file system corruption. Let's talk about how to fix it. So to figure if you have file system corruption. You may find hardware errors in the log
+
+[00:00:21] like disk exit errors. If the corruption is caused by bad hardware, then the very first thing that you should do is to start by cloning the file system to a new device. Don't initiate too much activity on a corrupt device because it will only get worse. Before you start a repair, you should check the file
+
+[00:00:41] system and never run repair actions on mounted file systems. Most utilities will prevent you from doing so anyway. So if you want to repair file systems, it really depends on what file system type you are using. If its one of the file systems in the Ext family then you should know that after a power loss,
+
+[00:01:01] e2fsck runs automatically. Manual check is possible as well. In order to do so, you should unmount the file system and run e2fsck-n on your device to make sure that nothing will be repaired automatically and you will only check the -n option is used
+
+[00:01:20] for this command, that will answer no to all questions asked. If you are using Ext, a corrupt superblock may occur. The superblock is what is used for mounting the file system and on an Ext file system, it is created on different locations. You can a dumpe2fs commands to find the locations
+
+[00:01:42] of the super block and if you have found back up super block, you can restore the back up super block using e2fsck-n/dev/sdb1 to b 32768 for example. Super blocks are always written to a location that's
+
+[00:02:01] a multiple of 8192 and 32768 is very common for the first back up super block. If you run e2fsck without options, you will start a repair. If many questions are asked, which sometimes does happen, you may consider using the -y option to automatically
+
+[00:02:21] answer yes to all questions. If the problem occurs on XFS, you need a different set of utilities. XFS is not automatically checked after a power outage. To repair the xfs repair utility. You can use this utility to check as well as to repair.
+
+[00:02:40] Use xfs_repair-n for check only. And the xfs_repair will fail if the journal log is unclean. If that happens, you will get a clear message about it and you can fix it by mounting and unmounting the file system. If that also doesn't work and you are still getting problems about the journal log,
+
+[00:03:01] you can remove it using xfs_repair-l. Before we get to the lab, let me demonstrate a couple of these utilities. So let's start by troubleshooting Ext4. In order to do so, we need some ext4 file systems.
+
+[00:03:21] So Sdc3 is an ext4 file system. I'm using dumpe2fs on dev sdc3. That's relatively safe to do on a mounted file system. Because it only dumps meta data. So what does it do?
+
+[00:03:40] Well we can see the different properties. We can see the block size. We can see the blocks per group. On Ext4 file systems, ext4 works in block groups and every every block groups is well, what is says it is, a group of blocks and every block group has its own
+
+[00:04:02] super block and here we can see our own information about the different block groups. We can also see the primary super block. And that's the information I was looking at. Primary super block at zero. And if you get back and have a look at block group one, then we can see the back up super block at 32768.
+
+[00:04:25] Next we can see that block group two has no back up super block but there should be more back up super blocks like here, not every block group has a super block but many of them do and you can use this utility to
+
+[00:04:40] figure out where they are and once you have figured out where they are, you can use e2fsck on dev sdc3 -b 32768 for example. Oh no, what is happening?
+
+[00:05:01] Well sdc3 is mounted like I told you, cannot do this on mounted file systems. So let's umount it, let's try it again. And here we can see that it's trying to access using the back up super block but sdc3 was not clearly unmounted, check first.
+
+[00:05:21] And we can see that it is reporting errors. So fix, yes and oh no, fix, well that's two errors. That is doable at this point, the file systems should be fixed and the back up super block should be used as the primary super block.
+
+[00:05:41] That's probably the most important thing you want to know about ext file systems, okay. Let's verify if we have an efs file system that's clean to try. Sdc2, should be xfs. So we type mount and we can see it is xfs, that's good.
+
+[00:06:03] So if we want to do something on it, first we need to umount and then there is xfs dab dab. This is the entire set of xfs utilities and you can use xfs info for example, if you want to find out some more information
+
+[00:06:22] and that needs to be on a mounted file system. So do it on sca one, you get administrative data about the file system. At some point, we want, we want xfs_repair on dev sdc2 and there you can see it's going through
+
+[00:06:46] the different phases of repair. What's really nice about xfs repair, it's telling you exactly what it's doing. Seven phases in total so it finds and verifies the super block, xfs is a super block as well
+
+[00:07:00] which is now needed to access the file system. Then it is cleaning the internal log to make sure that there is no trace from previous sessions. Next it is going through some more phases of which the phase four is interesting, check for duplicate blocks
+
+[00:07:20] and phase six is interesting as well which is the inode connectivity which repairs the consistency of the inode and if it applies, it moves disconnected inode to lost plus found. On an xfs file system, you don't see lost plus found by default, it will only give you a lost plus found if something has been found that needs to be corrected.
+
+[00:07:43] And that is how you can use the utilities for repairing and checking xfs as well as exd file systems. Let's do a lab of this, alright. Following a lab, you have problems mounting in Ext4 file system, analyze and fix it.
+
+[00:08:01] There is a script you can run to install the lab. It's the Lab 53 script. So to install the lab, we are going to run Lab 53 script. I need you to press Enter to indicate that you are okay. That this script will corrupt your SDB device.
+
+[00:08:21] And at the end of the script, it will reboot for you to make sure that the script is installed properly. So now that we are back at the system, let's start by analyzing what is happening.
+
+[00:08:43] Fsck.ext4 is just an alternative to e2fsck. They're all the same, -n because we don't want any fixes on dev sdb1, it's a good start. So what do we see? We see bad matching number in the super block,
+
+[00:09:01] super block invalid and not clearly unmounted. We can also see, by the way, I just skipped it, trying backup super blocks. And it has an error on a couple of inodes and as I have used -n it has not fixed them automatically. The first run, you just wanna get an impression of what is happening.
+
+[00:09:24] Dumpe2fs might be a nice next step on dev sdb1. Probably to less and oh, we can see matching numbers, super block while trying to open dev sdb1, couldn't find valid file system super block.
+
+[00:09:40] That's not very useful now, is it? So if we do not have any option to review the super block, we can do it in two ways. We can either make an educated guess of the location of the super block or we can try using fsck.ext4
+
+[00:10:01] without the -n, we have seen right here that it was trying to use back up super block. So let's use this command again without a -n and see if it fixes anything. Alright, now it's going to ask for all these inodes with a problem that was only a couple of questions.
+
+[00:10:22] So that's kind of okay. Now we can check with the -n and see if it has repaired anything. Now what do we see? Fsck, also very smart utility and the utility apparently has automatically fixed
+
+[00:10:40] the superblock issue as well. So mount of dev sdb1 on slash mnt was now successful. So this file system issue has been fixed. Was almost too easy.

@@ -1,0 +1,71 @@
+[00:00:06] - Let's take a little bit more of a look at spanning tree. I want to discuss for a little bit, the election process, the process of creating a root and then having the foresight to say, "Okay, well what happens when we do a software update
+
+[00:00:21] on that root?" It's gonna go down. There's going to be a reboot process. It could last several minutes. What does the network look like during that outage? And what we can do is we can actually create, through the use of manually defining our priority values, we can kind of rig the race so that we know who the first place winner is gonna be.
+
+[00:00:40] And then we can create a second place winner, so that when the first place device goes away for any reason, there's a second device. Let's say that we've got two core switches. Core 1 is our primary. Should it ever fail, Core 2 becomes the primary. Really pretty easy. It's a good thing to know about, so let's go ahead and take a quick look. So we know that Spanning Tree has to elect a root bridge.
+
+[00:01:02] It's the entire reason to have Spanning Tree. The root bridge is based on the bridge ID. The bridge ID is based on the priority as well as the Mac address. Those are the two pieces that makes it. The lowest priority wins. If there's a tie, it goes to the lowest Mac address. Default priority is 32768.
+
+[00:01:20] All of that is a review but I think it helps to hear it multiple times. These are good things that they could quiz you on, on a lot of tests that are coming up. So, make sure those are all very comfortable concepts. Realize that Spanning Tree is there for loop prevention. Why? Because frames don't have a TTL, they'll live forever. Packets have a TTL.
+
+[00:01:41] So Spanning Tree, it's on by default. A lot of people don't think about it but it's something that can be tuned. I talked about that in a little bit of detail in the last lesson. We're just going to take a look now at how you'd actually perform that tuning. So once again, taking a closer look at the bridge ID, it's made up of those two components, priority and the Mac address.
+
+[00:02:00] The priority can be adjusted, so we can lower this all the way down to zero and then we bring it up at 42768, there's increments. So in this environment, which switch becomes root? Again, you always look at the priority, compare Mac addresses
+
+[00:02:22] and should go to the lowest Mac address. So to do the tuning, remember by default, the lowest Mac is going to become your root bridge. What device is that? It could be the oldest switch in your entire organization. So let's make sure that doesn't happen. What we can do is modify that priority value to rig the election and get a different root switch.
+
+[00:02:42] Again, remember the increments are going to be 4096 and which switch in this scenario should be root. And typically we figure out, it's going to be the switch that's the most central, the most upstream and that it has the fastest links to all the other switches. You may have a mixed environment
+
+[00:03:00] where some switches are only 10 gig ports, and then you'll have other switches that are one gigs with the 10 gig up-link. Well, we'd look for the fastest switch to be the most central. I think that kind of goes without saying, but if you hadn't really thought about it before, that would kind of be the goal. So notice what's happened here is that the priority has been changed from the default.
+
+[00:03:21] So in this example on switch 1, by lowering that priority value, when the BPD's are exchanged between switch 1 and the other switches, they'll see that superior BPDU come in and they'll say, "Oh, that's the device. It should be the root." So remember, this comes into play when we create Per-VLAN Spanning Tree.
+
+[00:03:43] Everything up until this point was a bit of a review. Remember that with PVST, this is Cisco's implementation, that you're going to have multiple Spanning Tree processes. How many? Depends how many VLANs do you have. If you've got 50 VLANs, you've got 50 spanning tree processes. Who's the root for each of these?
+
+[00:04:00] Well, if you didn't touch anything, if you left them all default, whatever switch won for VLAN 1 is going to win for the rest. However, if you want to architect it, you could pick any switch in the environment to be the root for any of the VLANs. So this goes from almost no level of configuration to, it's not infinite,
+
+[00:04:20] but it is one Per-VLAN which is, I think about as detailed as I would ever want to get. So if you've got a particular VLAN and, you know, maybe users are geographically grouped in a particular location, it might be ideal to make a switch near those users, the root. And then you may not even carry their VLAN much further than that. There's these neat things that we can do to actually prune how far VLANs go within the organization.
+
+[00:04:44] So, when we start looking at this, you go, "Okay, I can kind of get involved with this process. I can manipulate who's going to be the primary and who's going to be the secondary." This comes back to that concept of planning for what happens when the primary goes down. Why would it go down?
+
+[00:05:01] Most common scenario that I see is just doing software updates. Remember your network infrastructure needs an update just like anything else does, just like your phone, just like your desktop. There's patches, there's upgrades for all these devices pretty regularly. So when we look at Spanning Tree, you know, when you saw the title to the slide show, it said Performance Tuning,
+
+[00:05:21] I get excited about that. What are we doing? High horsepower? What's happening? Well, first, we think about performance. You want speed, right? Did Spanning Tree sound very fast so far? No, it was like 50 seconds. It takes a while to get going. What happens when you add one of these devices? Let's say you got a new laptop.
+
+[00:05:40] Let's say that it has an NVMe 2 drive, and it boots Windows or it boots Linux up maybe four or five seconds. So when the OS loads, it's doing a DHCP request. It says, "Hey, where's the DHCP server?" And it's a fast computer. He's checking his watch. He's waiting. He beacons again, he's like,
+
+[00:06:00] "What's going on with the addressing in this place? It seems to be broken." Well, what's happening is the computer booted faster than the switch port. If the switch port's doing traditional 802.1D, it's going through blocking, listening, learning, forwarding, it's taking 50 seconds to come up. Your employees might think something is wrong. They think the internet's down if they can't get there in 50 seconds.
+
+[00:06:21] So this concept of Portfast, this is one of the first things I kind of want to introduce to you for performance tuning. We talked in the last section about the idea of creating two separate topologies so that we can get good utilization of our up-links. That's great. Beyond managing our up-links, we can look at these ports that go out to the users
+
+[00:06:40] and we can turn on a feature called Portfast, which basically says, "Hey switch, I want to go ahead and take this port and move it into the forwarding state right away. Don't do blocking, listening, learning that takes too long." And it's like Spanning Tree looks back at you and says, "Hey. You know, we were doing all that for your safety. We want to make sure that there's not a loop and things don't go down."
+
+[00:07:00] And you're basically saying, "I promise there's no loop. I won't mess it up..." "Maybe." (laughs) Sometimes users will surprise you. You give a user Portfast so things go quickly and they bring a switch they bought at a garage sale or off of eBay into the office. They hook up a couple extra ports and you could find yourself in trouble. If somebody brings in an unauthorized switch,
+
+[00:07:21] that switch could have had the priority set lower by a previous administrator, it could have a lower Mac address because it's an older device. Guess who's got a new root in their environment? You do. Trouble, right? So we can stop that. We can use a feature called BPDU guard and it says, "Hey, switch. We're going to go ahead and do Portfast here
+
+[00:07:41] to make the users go quickly." But this is going to a cubicle. If I get a BPDU, a bridge protocol data unit, these are the messages Spanning Tree sends, if I get that to come in on this link, it's no good. And what we can do is we can either shut down the port altogether, there's different violation modes that you can manipulate,
+
+[00:08:00] or we can just ignore those BPDU's. There's a capability called BPDU filtering as well. BPDU filtering can just ignore it, where BPDU guard can do protection mechanisms. So we can actually shut down the port. Now root guard is pretty neat. This takes BPDU guard and it becomes a little bit more specific. It says, "Okay. Well, we're going to allow BPDU's in,
+
+[00:08:23] but if you ever see a superior BPDU..." Can you remember what a superior BPDU means? "It's gonna compromise the stability of our environment." It means some new switch is coming along and it says, "I've got this better bridge ID," which is the lower priority, lower Mac address,
+
+[00:08:40] "and for some reason, I should come in and take over." When that happens, all the switches need to figure out how to get to that new root bridge. It could be disruptive, it could be suboptimal. it could be an attack. So what we can do from our switches is we can look at the ports and we could we could start by saying, "BPDU filtering, you know what? Just ignore BPDU's." BPDU guard says, "You know what? I should never see BPDU's.
+
+[00:09:03] If I see one, shut the port down. Put it in an air-disabled state, send a notification to the administrator, let them know what's happening right now." And then we have root guard. Again, what root guard does is it says, "Well, BPDU's are okay, but if I see a BPDU that's going to change the environment,
+
+[00:09:20] I'm going to go ahead and drop it, just to make sure that the environment is stable." So by leveraging Root guard, you can prevent an attacker from coming into the organization and hijacking Spanning Tree. How hard would that be? Pretty easy. If I come in here and I've got a laptop, I've got a built-in ethernet neck, and then I've got a USB adapter
+
+[00:09:41] that gives me another ethernet neck. If I can take that second neck and put a long cable on it and get to the right wall jack that goes into a separate switch, I've got to worry about running these cables as far away as I can so that I can get in two different switches in that company. And when I do, I start creating BPDU's just like a normal switch would.
+
+[00:10:04] And my BPDU's have a superior bridge ID because I want to become the root. And what would happen is this would block, this would block and all traffic would flow through me as the attacker. So, there's utilities out there for hackers to use, to spoof BPDU's and perform On-path attacks,
+
+[00:10:23] or what used to be called Man-in-the-middle attacks, in between various devices. Well, the attackers can do this, but we can also stop them by leveraging these capabilities. So Portfast was about making things fast, get them going quickly. What was the damage there? That if we just go taking ports
+
+[00:10:41] and sling them into a forting state right away, that we could introduce a loop. And you go, "Why would it be a loop? It's just going to an end user." Well, end users don't always behave. Sometimes they plug stuff in. If an end user plugs something in and network goes down, who do you think is in trouble? Maybe both of us, but I don't want to be in trouble. So by leveraging these protection mechanisms,
+
+[00:11:01] is that going to make it faster? I don't know, it makes it more stable. So if it's up, it's faster than when it's down. So you can think of these as performance tuning. I really just think of them as, as enforcing resiliency and stability into the environment. So if you know where your roots are, you can force Root guard on the links
+
+[00:11:22] that go away from those root bridges, so that BPDU's will be inspected. That one's pretty handy. And remember that you've got BPDU filtering, which just ignores BPDU's, where BPDU guard is actually defensive, it can shut that port down. Loop guard is one more feature that's kind of handy. It just sends out kind of a funny message
+
+[00:11:41] that's unique to the switch, and should that funny message ever make its way back, we can detect that there's a loop on the particular link. So again, very similar to Spanning Tree, just a loop detection capability.

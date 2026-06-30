@@ -1,0 +1,57 @@
+[00:00:06] - Amongst the most difficult problems that you may encounter in Linux are the driver issues. Let's investigate what's happening. So, to understand driver issues, you need to understand driver loading. We've already talked about it a little bit.
+
+[00:00:21] The Linux Kernel observes hardware events and based on that systemd-udevd probes hardware properties and informs the Linux kernel. Next, based on the discovered hardware properties, the Linux kernel can load the appropriate drivers, if they are available. The Linux kernel currently has many drivers in open-source,
+
+[00:00:40] but not all of them. And loaded drivers will show as kernel modules. So, in general, it's fair to say that the availability of drivers in community Linux is good. But, the availability of drivers in Enterprise Linux can be limited. So what does that mean? Well, that means that if you are to use
+
+[00:01:00] the latest and greatest laptop, and you try to install CentOS on top of it, it may fail recognize the hardware that you are using. For the simple reason that hardware developments are going fast. In the open-source community doesn't always get cooperation from the hardware vendors. So, it may take time before the open-source community has a decent driver that matches all the Enterprise
+
+[00:01:24] great testing procedures that allows the driver to be incorporated in Enterprise Linux. If open-source drivers are not available, then your provided drivers can be used. The problem with vendor-provided drivers,
+
+[00:01:40] is that they are closed-source. Drivers can interact at a hardware level with the Linux kernel, and that is why Linux doesn't like the closed-source drivers. Fortunately, you will see a decreasing amount of closed-source drivers, but in some case, you can not do without it. If you want to find out how drivers
+
+[00:02:02] currently are used on your system, the best approach is to have a look at the PCI bus. Because most hardware devices are connected to the PCI bus. We have already seen the "LSPCI -K" command. Which will give you kernel driver information, and will tell you if a matching driver
+
+[00:02:20] has been found for the specific PCI device that you are looking at. You can also use LSMOD to list all kernel modules. Drivers and modules, in all cases. Now, let's talk about a scenario that I have encountered. I've called it a lab, but this is a not a lab that you can easily install and reproduce.
+
+[00:02:43] But it happened to me in real-life, and if you are going to work with Linux on recent hardware it will happen to you as well at some point in time. So the issue was that after obtaining the Fedora installation on a laptop it did not show a graphical display anymore.
+
+[00:03:00] So what are you going to do in a case like this? Well, first, you are going to think about the methodology. In the lab solution, I am showing you how I have used the troubleshooting methodology to get to a solution. So, first, after an upgrade of the system with
+
+[00:03:22] an Nvidia driver, no graphical display was shown. So, that brings us easily to the issue, and the hypothesis, we have a driver problem. Obviously, it could be a hardware problem as well, but as it still worked before the upgrade, and not anymore after the upgrade,
+
+[00:03:41] it's pretty obvious that it's a driver problem. If you define a hypothesis like that, it is a good idea to test the hypothesis. As you can see, I'm jumping some of the steps because in some cases it doesn't really make sense to gather information, or to go through
+
+[00:04:01] all the steps, in the defined order. As long as you are aware of the different steps, and you have a reason to skip specific steps, then that's okay. So, to test the hypothesis, I've booted the system in multi-user mode to figure out if that worked. Now, that appears to be working.
+
+[00:04:20] In multi-user mode there is no graphical interface, and without graphical interface, we get a prompt but that's created a new issue. That's interesting, in troubleshooting: by analyzing a problem, by fixing a problem, by applying one solution you may find yourself having new issues.
+
+[00:04:41] And the new issue was, that after reboot the LSPCI dash K command got stalled with the message, "kernel watchdog bug soft lockup CPU stuck for 22 seconds." Or, whatever amount of seconds. And after some time a core dump followed on the nouveau driver.
+
+[00:05:01] That easily defines the new issue. The new nouveau driver in this version of CentOS is corrupt and we cannot use it. So, in a specific situation like that, the thing is to gather information. And for gathering information, Google, or other search engines, can be very valuable.
+
+[00:05:22] So, the Google suggestion, which is the hypothesis that I use next, is to start the kernel with ACPI is off. Now, ACPI is off, is of course not a real solution. Because all advanced hardware management features, are shut off, and at the end, I ended
+
+[00:05:42] in a system that had one CPU only. Which is not very convenient, but for troubleshooting it can lead to an acceptable solution. So, I tested the hypothesis, and the result gave one CPU only and that is not acceptable.
+
+[00:06:01] Because this was a very powerful computer, 32 gigabits of RAM, four CPU cores. So, you want to have four CPU cores in total. So, this solution was rejected and we started again. That's also something that you may find at the end of your troubleshooting methodology that the fix
+
+[00:06:21] that you have applied, and you can see the no ACPI option is a fix in this case. That fix is not acceptable. If that happens, you need to go back. Maybe you need to define the issue again, but at least, you should gather some more information. The information in this case was, LSPCI dash K,
+
+[00:06:41] to figure out which driver was used. And I figured out that nouveau driver was used. I also figured out, well I already knew that, a proprietary driver is available. As a generic rule of thumb, I start from the idea that you should always use the open-source driver
+
+[00:07:00] unless the open-source driver is creating problems. But now, the open-source driver was creating problems, so that led to a new hypothesis, we need another driver. Now in order to install the other driver, I figured out that the Nvidia driver is not in the default repositories. Which is common because proprietary drivers
+
+[00:07:23] do not integrate very well with the repositories that are provided by Linux distributions. Because the Linux distribution does not have access to the code within the driver. So, to fix this specific issue, the RPMfusion repository was added.
+
+[00:07:41] Followed by the "DNF install "XORG-X11-DRV-Nvidia Akmod-Nvidia" command. So that command installed all the drivers, but that led to a new issue. So, we needed to start again, and find the new issue. And the new issue was that, after installation
+
+[00:08:02] of the new driver, there was a package version mismatch. And installation package requires version XXX, but version YYY was found, and that, of course, is not something that you want to do. So then, we got a new issue, and the new issue
+
+[00:08:21] was a version mismatch with the message, "installing package requires version XXX, "but version YYY was found." So, we needed to start the troubleshooting sequence again by gathering information. So, some more Google. If you get a very specific error message, Google really is the best source
+
+[00:08:40] of information that you can use. Google led to a new hypothesis, suggested by the documentation. The documentation suggested to use, "DNF install XORG-X11-DRV-Nvidia Akmod-Nvidia" with the option, "--allowrasing" And we applied the new hypothesis,
+
+[00:09:02] and that actually fixed the problem. After a reboot, the graphical environment was working, and everything was working smoothly. So, I hope you are not too disappointed that I haven't been able to show you this problem in real-life, but atleast
+
+[00:09:20] by talking through the procedure I hope you have learned how you can apply the scientific methodology for troubleshooting to get to a result. As long as you are always aware of what you are doing, and working in one problem at a time, normally if there is a solution, you will find it.

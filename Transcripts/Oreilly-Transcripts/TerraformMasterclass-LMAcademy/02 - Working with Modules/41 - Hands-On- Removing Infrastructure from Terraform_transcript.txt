@@ -1,0 +1,55 @@
+[00:00:00] In the previous lecture, we saw how we can import infrastructure that is already existing into our Dataform project. However, what happens when we want to stop tracking or to stop managing a certain piece of infrastructure and remove it from our Dataform project. Let's have a look here. Let's suppose that we would like to remove
+
+[00:00:20] this S3 bucket or remote state from our data farm project as well as our NWS S3 bucket, the public access block. If we were to just comment this out and we were to run a terraform plan here, we will see that Terraformer actually wants to destroy it. We plan to remove these objects because it cannot find the object in the configuration anymore.
+
+[00:00:42] However, there are use cases that when we might want to forget these objects, maybe we are handing them over to another team or we want manage them through some other means and we don't want to destroy them in reality. So we don't wanna destroy them in AWS. We just want to stop tracking them,
+
+[00:01:00] stop managing them from our current Dataform configuration. The way for us to do that is to remove these objects from terraform state. However, we don't need to do that manually. Dataform offers certain utilities that will help us with that. Let's uncomment this just because I wanna keep it for reference here. So let's add a new file and we're gonna call
+
+[00:01:20] this removed dot TF or let's say remove dot TF. And let's create an S3 bucket here. So AWS S3 bucket and we're just gonna call this my bucket, right. So now here we will also have a bucket name. Let's just come up with something random name and then we can just come up with a random string here of,
+
+[00:01:41] of numbers and letters that should be unique enough. Now here because we have uncommented this, then terraform will not want to destroy this. So let's run a terraform apply here and it should just target creating this bucket. Once we do that, we can see that there is one resource to add. And if we scroll up a little bit, then that is our random name. Let's type.
+
+[00:02:01] Yes and wait for the operation to complete once this is done. And we come to our S3 page, we should be able to see our new bucket here. That's great. So let's come back to the IDE. And now let's say that I want to remove this from our configuration. Once again, let's comment this out. And if we were to run a terraform apply,
+
+[00:02:20] you already know terraform. We want to destroy this bucket. However, the best way for us to actually unlink this bucket from our project is to use either the CLI command or a removed block. So there are two ways for us to remove state. I'm gonna add it here. The two ways, the first one is similar to the import.
+
+[00:02:40] So I'm just gonna copy and paste this here. Let's copy paste. And we're gonna say here, remove via the CLI and this is remove via the removed block. The removed block is something that is very recent in dataform CLI believe it's only from version 1.7 upwards. So if you're in an earlier earlier version, you will not have access to this removed block.
+
+[00:03:02] Let's have a look first at the CLI and the command here is Dataform state RM. And here we can have a dry run option and then we simply pass the, the, the reference of the object. So that's aws S3 bucket dot my bucket, right? So if we were to run something like this,
+
+[00:03:21] then the form will inform us OK? We will remove this aws S3 bucket, my bucket from the state. So let's do that without the dry run here. And as you can see now, this has been removed from our state. So if we were to come here and simply delete this and run a terraform apply,
+
+[00:03:40] right? We'll run a terraform apply here and we will see that there are no changes to the infrastructure. And even though we do not have any S3 bucket, my bucket here. If we come back to the console and we refresh our buckets, the bucket still exists. So all we did behind the scenes was just remove
+
+[00:04:00] the tracking of this resource from our Terraform project. Let's come back here to dataform to the CLI. Let's import this once again. So we're gonna say a resource here AWS S3 bucket and we're gonna say my bucket, my underscore bucket. And this can be anything here. It could also be my new bucket, for example. So it doesn't need to be exactly the same as before.
+
+[00:04:22] The label here is really up to you. And the bucket name is just gonna be the string we copied. So now we're gonna say here, Terraform import AWS S3 bucket and we say dot my new bucket and then what we want to import is the random name
+
+[00:04:40] and then whatever string we have here. So the import was successful. And now here, if we were to remove this once again, then you will see that if we were to run a dataform apply, then this would want to remove the bucket from S3 or from AWS actually. And there is another option that we can use here to remove it is to add a removed block and the removed block takes a couple of arguments.
+
+[00:05:04] The first one is the from and this is a required argument and this is just the reference here. AWS S3 bucket dot my new bucket. And you can see here that it's still missing something. And what is missing here is the life cycle block. So the life cycle block is a little bit different in the removed block.
+
+[00:05:22] And here we need to pass an option, destroy and the destroy option is required. If we add true here, then this will delete this resource behind the scene. So let's add this here. Let's comment this out so that we see still how the resource looks like. But for tele form, this is invisible, right? Because we are using a comment here.
+
+[00:05:41] Let's now run a Terraform plan command and let's see what's the output. And as you can see here, Terraform is still planning to destroy the resource. So if we scroll up, then this resource here will be destroyed and it will be removed from Terraform because it's basically destroyed. If we just have a force here on the destroy
+
+[00:06:01] and we run a terraform plan, then you will see that all the terraform wants to do here is actually just forget this object. So the so the object will no longer be managed by terraform. It will still exist. As you can see here, you need to import them into terraform to manage them again. And here it's important, but it will not delete them, right?
+
+[00:06:21] So Terraform will discard its tracking information for the following objects, but it will not delete them if you want the object to, to remain existing. So basically, if you want to have the object still alive and importing it somewhere else, then you should set the destroy to false here. You could add the destroy to true
+
+[00:06:41] if you want to remove this resource completely. Now, why would you do that instead of just removing the block here? One of the reasons I can think of is for documentation purposes because when we remove stuff here and we just delete the blocks, they disappear, right? They are still in the version control. But we would have to go looking at the history of different files to
+
+[00:07:02] actually build again how the infrastructure looked before we actually delete that block. So it's much harder to keep track of things that were removed from Terraform because we have to remove them from the code base otherwise or another option would be to use comments. But as you can imagine, this can very quickly become very hard to navigate in terms of code.
+
+[00:07:23] So the remove the block allows us not only to forget things here by setting the default false, but also to act as a form of documentation of which resources existed and were removed here intentionally from Terraform. Now, this doesn't really hold the detailed information
+
+[00:07:41] of how the resource was configured. However, it does hold a reference to how it was called. These are the two ways then that we can remove things from our Terraform project. I personally like the removed block much more, but it's very recent. So it didn't exist until versions earlier than 1.7. So it's very recent.
+
+[00:08:00] And if you are working on any code base that is older than this, then there are lots of things that were removed, but we will not find the removed block, right. So here, let's run a terraform apply. And once we do that, then we will see, actually let's type no here because I forgot, I don't want to destroy this. Let's type false.
+
+[00:08:21] Let's save this. Let's run a terraform apply. And then let's type. Yes here. So that terraform forgets the bucket. You can see that there were no resources modified here, nothing was added, nothing was changed, nothing was destroyed. And if we come back to the Aws console and we refresh this, we can still see our bucket,
+
+[00:08:40] we can delete this bucket manually, right? So we can also come here and then delete the bucket manually. So let's copy this. Since we don't want this bucket for any purposes, let's just delete this. But as you can see now, if we were to come back to the to the Terraform project and we were to run a terraform apply. Once again, terraform will of course not try to recreate
+
+[00:09:00] it because it's not part of the infrastructure. That's great. So this is what I wanted to discuss in this lecture. Let's take a short break and come back in the next one.

@@ -1,0 +1,55 @@
+[00:00:00] Hello and welcome back. I just left the error message here just for us to situate ourselves on this lecture. Remember we are starting, we are exploring multi stage builds and we try to use a distroless image for node Js 22. But we ran into an issue when trying to install the dependencies. That means we need to use another base image to
+
+[00:00:21] install the dependencies. But we would still want to use the distro image to run our application in this lecture. We will explore how we can use multistage builds for us to install the dependencies by using one base image and then copying the installed dependencies to another base image,
+
+[00:00:41] which is our distroless one. So let's start by having two from instructions. The first from instruction will define using the node colon 22 alpine. And then this is the keyword here you can see in my ide the moment I press the space here we get this documentation.
+
+[00:01:02] We can set a name for this base image so that we can reference it later on in other stages of our Docker file. So this is the big difference here. We are now naming this from image here at a certain stage. So we'll say just as built here
+
+[00:01:20] and now we can actually write all the commands as we did before. We're gonna say here, let's just keep them a little bit more closer. So work directory is gonna be the app directory. We are now interested interested in copying the package and the package lock, do JSON files into the current directory and then we want to run npm CI
+
+[00:01:43] and that's it. This is gonna build or this is gonna install the dependencies of our application. And then what we can now do is we can start another stage by passing another from instruction. We can once again set the work directory. We do not need to copy the package dot
+
+[00:02:02] JSON and the package lock dot JSON files anymore. And we do not need to run the NP C command anymore. However, we do need to get a hold of the node modules folder that was installed as a result of this first stage. And as you might expect, we do leverage the copy instruction for that.
+
+[00:02:23] So we're going to say here, copy and now instead of just passing the files, you will see here that we actually have a from option and this dash dash from option enables us to actually specify the previous stage by this build name here.
+
+[00:02:40] So we're just gonna say copy from and the stage is gonna be the build stage and then we will say please copy the node modules folder. So that's the forward slash app, forward slash node underscore modules and please copy that folder into our node modules folder. This will basically copy the dependencies that were installed by this first stage
+
+[00:03:04] and it will make them available to the second stage. Remember we need this dependencies because we are using express in our application and express is not something that comes by default with node. We will then once again copy the source folder here from our local directory from our build context into this container here.
+
+[00:03:24] And now the command of a distroless image is slightly different. We're just gonna pass here the name of or the file name. And that's because node is already set by default as the entry point of these images. So we just need to pass the file that we want to execute.
+
+[00:03:44] That's perfect. So I believe for this first version of a Docker multistage build. This should work. Let's save this. I'm not sure about this copy here for the dependencies. Maybe we need to adjust the target directory here. But let's go to the terminal and let's give it a try.
+
+[00:04:00] We are here back at the terminal, we got our error here. So let's clear the console and let's try to run the Docker build T. And now instead of this, let's just say multistage like so perfect the process the build process here went through successfully as you can see we have this build here
+
+[00:04:20] and you can see that the BUILD one Ford from Docker Library node 22 alpine. This is the first image that we got. And then you will see here that we have stage one and Docker is just naming this because we did not pass any name. So this is the second stage, right?
+
+[00:04:40] And Docker is identifying that this is node JS 22 latest here. And then for the first the build one, you can see the instructions here, work the app copy package Jason run npm CI. And then for the stage here, you can see the instructions here as well as here.
+
+[00:05:00] And so this one is cached because it remains the same. And then the copy instructions here are then executed. We are copying from BUILD and we are copying from this or we are copying this folder into this folder. Perfect. So we have our build process completed. Let's now have a look at our images and we can just simply say Docker
+
+[00:05:21] run once again. Let's copy this here with RM dash D dash P. Let's map the part 3000. The name will be expressed 3000. And the image that we will use is express multistage. And the moment we do that we can confirm that there were no errors by running or maybe we can inspect maybe there were errors,
+
+[00:05:42] but let's just run the logs here and there are no problems. That's great. So our server is listening on port 3000. And if we were to simply run here, Docker or not run the Docker, but the C command to part 3000, then we can confirm that we are running our application. Remember what I mentioned that there are, there is no shell in a distroless,
+
+[00:06:04] in a distroless image, right? So if we were to say here, Docker ps let's get our name. That's the express 3000 here that we are running. I believe we did not change the. So we changed only the image. So let's try to create a shell here in our container by running Docker exec
+
+[00:06:23] it this one and the shell. And the moment we do that we just get that there is no shell. We could also try forward slash bin forward slash bash. For example, there is no bash. And so this gives us a much more secure environment because any attacker that could actually try to get a
+
+[00:06:41] shell in our running container to maybe explore once I file system or try to execute some crow commands from within that container, that attacker will not have a shell. The drawbacks of this roleless images is that once again, they are a little bit harder to debug because we cannot just enter and create a shell and poke around for example.
+
+[00:07:00] And also that we cannot use them to install dependences. We need to install dependences in a previous step in our Docker file. Amazing. Congratulations on writing your first multistage build. Let's just take a minute or two to go through what's happening here. Once again, we are defining a first stage and we are saying we are naming this stage as build
+
+[00:07:24] that gives us the possibility of referencing this stage later on in other stages in our Docker file by, for example, passing the dash dash from flag here to the copy command and then specifying this this here is actually oops this
+
+[00:07:40] here is actually matching this name and it has to and then we can copy files from this stage here into another stage. We could also have a third stage here at the bottom, for example. And this third stage could potentially copy files from the second stage and from the first stage. So you can imagine how we can execute multiple sets of instructions
+
+[00:08:04] all based on different base images and these different base images here, they're really limitless. You can use node here, I'm using node, but maybe you wanna use Python or maybe you wanna use something of a little different and that's totally fine, right? In the end here, you're just gonna look at the, our Docker is gonna look at the last stage
+
+[00:08:21] and it's gonna execute this CMD instruction whenever you start the container, but coming back to this multi stage build. So once the first stage is completed, we start with the second stage or actually we start with the second stage in parallel, right? But the moment we need to copy this from the first stage,
+
+[00:08:41] we need to wait for that stage to complete. So when Docker hits this instruction here, it waits for the first stage to complete so that it can copy the files and then it continues with the following instructions. That's the basics of multi stage builds. I hope you are enjoying this discussion so far. I surely am.
+
+[00:09:00] So let's take a short break and come back in the next lecture.

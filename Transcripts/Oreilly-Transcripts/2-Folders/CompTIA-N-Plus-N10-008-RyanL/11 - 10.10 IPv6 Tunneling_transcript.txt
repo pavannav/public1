@@ -1,0 +1,41 @@
+[00:00:06] - [Instructor] Well, if you've made it this far, you're doing pretty good. We've got the basics of IPv6. We should know how to handle DNS to make it easy on users. We should understand how to hand out addresses, which makes it nice and easy. We know that it'll automatically just be preferred and it'll come up.
+
+[00:00:20] The issue is with IPv4, remember we've got this concept of security because there's natting, people can't just come in by default. With IPv6, as soon as you hand IP addresses, everything flows. And to prevent that, you need to set some access control lists that can define what can go out and what can come in. If you're fired up about getting your network going,
+
+[00:00:40] trying out some IPv6, let's say that you've got IPv6 space allocated to you. Well, you're gonna need to hook to an IPv6 network. In this section, we'll talk about how you'll do that. So imagine that you and I are over here on the left. Here's you, here's me. We're excited to set up IPv6. We've talked to a tunnel broker. The one that I've used for years is he.net.
+
+[00:01:02] And they've allocated some IPv6 space for us. We're excited. We come to this interface to my router and I say IPv6 address. And I put the address on there. As soon as I hit enter and I apply the command, my router will start generating those ICNP route advertisements.
+
+[00:01:21] It says, 'Hello, everybody. Welcome to the slash 64 prefix.' As soon as they see that, they go, 'Woohoo! Party time.' They add 64-bit suffixes and they try to do IPv6 on everything. Now, what does that look like? To the user, nothing different. They type pearson.com. They do a DNS lookup. They get a quad A record.
+
+[00:01:40] They're gonna try to get there. The problem is how does your router get to the IPv6 internet. It's way over here, and your provider to your, to your office, like we've got frontier here in Tampa and we've got bright house. They don't give us IPv6 yet. So how would I get to the IPv6 internet? Well, the use of-
+
+[00:02:00] what we would do here is we'd create what's called a static tunnel. The tunnel is, we'll create a tunnel interface. This is a logical interface. Like maybe this on the left is gig zero. Maybe that on the outside is gig one. These are physical. You could put a wire into them. A tunnel interface is logical. We create it in software, but it gets an entry in the routing table.
+
+[00:02:20] So I say, 'Hey router, if you want to get to an IPv6 network, send all that traffic to the tunnel interface.' So, here's some IPv6 traffic that comes in, the router looks at the destination IP address and says, 'Oh, well, instead of going out to gig one, we're going to send this to tunnel one.' Tunnel one has a configuration that says
+
+[00:02:40] a source is possibly gig one to got this interface. The destination is the IPv4 address of the tunnel broker. So here's where you get to IPv6. It's kind of like a static route. So traffic comes in. We want to get to v6, and we go, 'Oh, send it to tunnel one.' What does tunnel one do? It encapsulates your traffic
+
+[00:03:01] into IP version four. It crosses the regular internet. When it gets to the tunnel broker, tunnel broker looks at that IPv4 header in the protocol field. It says 'I'm carrying IP version six.' So we peel this header off. We look at the v6 destination, or I guess they do, I shouldn't say that we do. It's the tunnel broker's router that's doing that lookup.
+
+[00:03:21] So PLC v4 header looks at the v6 destination, sends you to your target. Looking at our IP addressing, we've got 2001:AB:12:AB with the slash 64. That's our network prefix over there on the left. Dot one is our gateway.
+
+[00:03:40] What's gonna to happen here is your v6 traffic is being carried inside of a v4 envelope. Just think of having a piece of mail and putting one envelope inside of another, with a new label on it. Now, one of the things to think about, this isn't the most efficient thing in the universe because your MTU just decreased, a little bit. Your maximum transmission unit,
+
+[00:04:00] if you think about the pipe and diameter like a PVC pipe and plumbing, the pipe is only so big, it can only handle so much of a message. So when we take an envelope and then we put that in another envelope, those envelopes are taking away from the amount of payload that you can carry. It's an important concept just to be like, okay, well, there's gonna be some overhead from encapsulation.
+
+[00:04:21] This is true always. If you use GRE or IP sec tunneling, there's extra headers, which means the payload size gets a little bit smaller. You can't just send 1500 byte packets everywhere. Maybe they need to be 1480, maybe they need to be 1460. Little bit smaller to come, just leave room for these additional headers. What happens if you don't?
+
+[00:04:41] Well, if you've got 1500 byte packets and you send them out and then you need to add all these headers, you basically create a frame that's larger than 1500 bytes. If you're trying to cross a link that only allows 1500, it has to break it into multiple pieces, which is fragmentation. And this is where it gets weird. IPv6 doesn't support fragmentation.
+
+[00:05:00] So you get ICMP message that comes back that says, 'Hey, your packets too big. You need to adjust your MTU on a per destination basis.' It's weird right? Now, you've got to make sure those messages are allowed in. So the host receive them and everything can be calculated. MTU can be tricky with tunneling, and it's not something you need to master for network plus.
+
+[00:05:20] But I think the main point I'm trying to drive across is that not tunneling and being directly attached natively is more efficient than tunneling. Why do we tunnel? Because we didn't have an option to be directly attached. So, just things to think about. So, there's our IPv6 being encapsulated IPv4,
+
+[00:05:40] and that tunnel broker's responsible for all the v6 traffic. We reached the destination. And as the destination replies, 'Here comes v6.' That v6 is going to be encapsulated in v4. Source IP address is the tunnel broker. Destination is us, just like a NAT gateway. There's another type of tunnel called a Teredo tunnel.
+
+[00:06:01] These are supposed to be plug and play. It's established automatically. And this is we can reach IPv6 destinations, if IPv4 is the only thing that's available to us. And then you have a UDP port that's built to perform all of your tunneling over. So you have a Teredo interface in your operating system, just basically created as a logical interface.
+
+[00:06:21] And it tunnels everything for you. IPv6 gets assigned to your host. You'll actually see it when you look at your interfaces. And Windows Vista and higher will use this technology behind the scenes. So if you're, if you're wondering, 'Hey, can I get IPv6? Is things set?' Yes, with something called a Teredo tunnel. The downside to this is that it's poor performance,
+
+[00:06:40] but this is something that's out there as an option.

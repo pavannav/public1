@@ -1,0 +1,83 @@
+[00:00:00] Let's now explore how we can use config maps and pass some of the values some of the data inside config maps as environment variables to containers. We will start once again with an empty directory here and I'll just create a file and this file is gonna be red config YAML. And so this will just contain some small configuration for our color API
+
+[00:00:23] which now supports receiving environment variables to define the color to return. So let's start by creating this file here. The config map is also leveraging the API version V one and the kind here will be config map. So config
+
+[00:00:42] map like so and differently from the other traditional traditional objects like pods or services or deployments instead of having a spec what the config map has is a data section. So it also needs metadata here and we will specify the name of the config map.
+
+[00:01:01] We're just gonna call this color red or could also be red config like. So it doesn't need to match the name of the file. That's not why I'm using it. It's just because it represents what it's actually doing. So the data, the only thing we will have here is color and the color will be set to red. Once again, the config map, it can,
+
+[00:01:22] it really doesn't specify any restrictions around the shape. I mean there are some characters here that we cannot use when defining the keys, but we could also define color like. So all capital letters, you will often find this when the intention of this configuration of this value here, the key value pair
+
+[00:01:41] is to be used as environment variables. So you might also come across this kind of version here. We can also have multi line. So we could say let's say multiline here and to define a multiline bo of value here, we would use a vertical bar that is the OSNS
+
+[00:02:00] and then we simply say I am multi line for example. And so this would be would basically pass a multi line value here when we and and this is normally used when we want to mount this config map this specific data key here as a file in our containers. So that we could, for example, let's say multiline dot Js,
+
+[00:02:22] right? We could say something like this multiline dot JS and then we would say console dot log im and then console dot log multiline like so, so this is virtually a script that we can actually run and we can specify this to be mounted under this file.
+
+[00:02:41] We will explore how to work with files and volumes and config maps in the upcoming lectures for now, let's just focus on environment variables. So I'm gonna save this here. Let's come to the terminal and let's apply this. So we run cube apply. Let's simply pass the file name here. So red config dot yo
+
+[00:03:02] and we can confirm that the config map has been created if we now run cube cle get configmap like so we will receive both back here. So there is a default one that is managed by the compar system. This is not created by us. And then we have our red config map for us to
+
+[00:03:22] inspect or to get the value of any config map here. We can always run cube cut, get configmap red config and let's output as yo if we do that you see that we have here the data that is the data here that is important for us and the metadata annotations,
+
+[00:03:41] this is then created because we are using the apply command from Cuo and Kubernes also adds other fields here. But important for us is really the data. If we don't output as I am, then it will be formatted a little bit different or actually it will not be formatted at all because we would use the describe command here.
+
+[00:04:02] So when we describe, we can see now that there is this path data or under data, there is the path the key color and then this contains the red value. Maybe it's not that straightforward to see what is actually value and what is key here. And if this gets any confusing, then you can always output this as a demo.
+
+[00:04:22] And you will see this in a better formatted style. We can also have a look at what is in our cube root ca certificate here. So let's just do the same processcube cut, get config map and then we're going to paste it here and we will output as Y
+
+[00:04:40] and we can also have a look at the description here. And this is intended for internal communication to basically verify the authenticity, the identity of our cube API server. All right. So this, we're just gonna leave here. Let's clear the screen. Let's now come back to our ide and let's create a new file that's going to be the red color dot YAML
+
+[00:05:01] or let's add red color dash API like so dot YAML. And then we will simply create a pod here. So let's create a pod. Let's get some auto complete for us. And now here we will set the name to be red color API, the labels we will also set here name or actually we can use app as well.
+
+[00:05:23] It doesn't really matter. I keep changing between the two, but it doesn't really matter. So it can be app can be named as long as you are consistent whenever you are using other objects that identify resources by labels. So the name of the container will be red color or actually, we can just say color API.
+
+[00:05:41] And then the image here, we're gonna use LM Academy forward slash color dash API. And the version will be 1.3 0.0. We will also expose the containerport or advertise the container port 80 we can now read all our config map into our container.
+
+[00:06:01] Now, I want to show you two ways of doing that and I have a slight preference for one of them, but let's explore both of them. So one way for us to load all the values here from our configmap as environment variables is to use the M from option here. And then this receives a list of possible sources for our environment variables.
+
+[00:06:24] So simply pass the configmap reference here and then the name of this config map reference. So the name is red config this is one way for us to go about it and that would load all the configuration everything here from our config
+
+[00:06:40] map into our container as environment variables. Now, I am not a huge fan of this approach here because this means that we need to be careful about how we actually name things in the config map and they need to follow whatever convention or whatever names we are following inside of our containers.
+
+[00:07:00] And maybe we don't really have the access to the code or we would have to go and start changing our configuration, our config maps here to match exactly what our application expects. And if we change something in the application, then we need to also change something in the config map instead of just in the container configuration.
+
+[00:07:20] So for me an easier or actually a more explicit way here to reduce the coupling between our configmap and the application configuration is to actually load the environment variables that are necessary one by one from the config map. So we would say N and then we will provide a name for this environment variable. And the name that we have set in our container is default color.
+
+[00:07:43] So the color API expects a default color here that we can pass in order to override whatever or to set a default color via the environment variable. So the name is going to be what will be set as the environment variable and then we can load this value via value from
+
+[00:08:02] and then we can pass here. Configmap key ref like so and then the key of our config map is the key here that we want to load that's going to be color, right? So color is going to be the key that we retrieve from our config map. And the name here will receive the name of the
+
+[00:08:21] config map and that's going to be red config. Now this is a slightly more verbals and I do understand that if you have many configuration like many environment variables here, then you might actually prefer to just use the shorter version with the M from here and then you would pass a config map.
+
+[00:08:40] So that's a list once again, Configmap ref and the name with red config right. So this is much shorter, then actually this version here, if you have 10 environment variables, then yeah, maybe the cost of this coupling is OK like you are fine with it and you use the smaller one. But if you want to keep the configuration of the config map
+
+[00:09:02] completely independent from whatever you are expecting at the application level, then you would need to map these things manually like. So, so you can see here that the the the key that we're using as an environment variable is different than the key that we're passing in our config map.
+
+[00:09:20] And this might also be one use case here when you are using the config map for multiple places or multiple applications, multiple containers and they have different namings for the environment that they expect. Then it's not really that friendly for this approach here. But anyways, I'm just showing you both of them,
+
+[00:09:40] we can then remove this here. Let's save this. Let's now come back to our terminal and let's apply the pod file. So let's apply the red color API file like so the pod will be created, we can get our pod. We can also describe the pod here to have a look at its configuration. So red color API
+
+[00:10:02] and let's scroll up a little bit here and we can see that we have the environment and the default color. And then the value here is saying set to the key color of config map, red config, right? So this is good here. It is being passed to the container. Let's clear the console. Let's now run a quick cube cut
+
+[00:10:24] exo and then we're going to expose our pods. So red color API because I want to now run minicube service, red color API. And I wanna confirm that the color is working as expected. This should open a browser window. So if we come back here to the terminal, we'll see that we should leave this open here.
+
+[00:10:43] There has been a URL that we can use here to access our service in Cnis and this is Minicube specific stuff, but this window here should have opened to you. If not, then you can access this URL here in the terminal that is available to you and we can confirm that.
+
+[00:11:01] Now, our color is actually red and this is what we have said via the environment variable. Awesome. So this is how we can work with environment variables here. And if we were to want to use the shorter version, then let's just go with this here. Let's have a quick look at how we could change the config map.
+
+[00:11:20] So we're gonna change from color to default color like. So let's save this. Let's remove the ENV here let's save this and then let's come back to the terminal. Let's clear the console. Let's stop the running process here and we will now delete. So let's delete everything here from the current directory. And now let's create everything.
+
+[00:11:41] Let's apply first the config map. So the red dash config like so and if we were to now get the config map, red config, then we will the config map here red config and let's output as a YAML.
+
+[00:12:01] And we can confirm that we have default color and let's now clear the console. So let's just clear the console here and let's create our pod cube cut. Apply F and then that's going to be the red color API and now the pod will be created. Let's have a look if we still get the service here. So the service is still up and running and I do believe that this will work
+
+[00:12:23] as expected because we didn't delete the service and the pod has been created here. We can confirm whether there is any end point by running cube K describe service and then the red color API. And as you can see, it has already identified the new pod.
+
+[00:12:40] So that's good. We can now run minicube service, red color API and this will once again open our URL. So if we visit here, we can also confirm that. Now the default color is also being picked up. So here once again, just to iterate, we have tried with both approaches.
+
+[00:13:00] This one is a shorter one. It will load the entire config map into the the container as environment variables. But it does require the keys here to really match what the application is expecting. The other option is a little bit more verbose, but it gives you more flexibility and more decoupling between the config map and the application code.
+
+[00:13:20] It's really up to you to decide which one makes more sense based on the use case. So that's a great moment for us to take a short break. But before we do that, let's just stop the running process here. So let's have a look at what we have created. We have pods, that's OK. We can leave the pod up and running. So I believe the only thing I wanted to do was just to terminate this process here.
+
+[00:13:41] Let's then take a short break and I'll see you in the next lecture.

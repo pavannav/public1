@@ -1,0 +1,95 @@
+[00:00:00] Hello and welcome back. Let's continue our discussion around post conditions. But before we do, before we write our post condition, I want to clear this, I want to make sure that the variable has a valid value here. I want to format the code. So let's run a data form format and I want to run a data form plan. And this is essential for us to understand a few aspects of post conditions,
+
+[00:00:23] right? So we have here when you can see after we run the plan comment, we have a lot of information on the screen and some of this information is already known to terraform at the plan stage, right? So terraform already know it can fetch as the AMI ID because this is coming from a data source.
+
+[00:00:41] So this resource here already exists somewhere else. And terraform is just getting the information. Terraform is able to get the information at the plan phase. It also knows that the instance type is T two micro, right? So this means that dataform can already check such information at the plan phase.
+
+[00:01:00] However, dataform cannot check everything at the plan phase. For example, the instance state here is not available at the plan phase because the instance doesn't exist yet. Another piece of information that is not available is the Subnet ID, right. So if we were to have a look at the Subnet id, this is not available or if we were to have a look at the availability zone,
+
+[00:01:21] this is also not available. So some of these bits and pieces they are not available for terraform at the plan phase. That means that post condition blocks that depend on this information, which is not known to terraform. They will not be run at the plan phase, they will just be run after the apply phase.
+
+[00:01:42] There is a difference here, right? So let's have a look at a post condition. Let's write two post condition blocks. The first one is that we would like to move this here. Let's copy this or let's remove this precondition block and let's create a post condition block and the post condition block can actually reference the instance type from the resource itself.
+
+[00:02:03] So now instead of validating it from the instance type from the variable, we're gonna say self dot instance type. And this year, we will see that this check will run at the plan phase. So let's scroll down, let's run a dataform plan and we will see that there are no problems.
+
+[00:02:21] However, if now we change here instead of coming from the variable, let's put an invalid value here directly hard coded. So T two dot medium and then we're gonna save data form plan. And now we can see that dataform can actually run this post condition block during the plan phase because it already has the information available.
+
+[00:02:42] So I would recommend instead of doing a precondition and then using the variable here to use a post condition and then using the self dot instance type. The reason is for a very simple motive and it is that if we write a precondition linked to the variable, and then suddenly here we change this to hard code,
+
+[00:03:00] this instance type or to take it from some other source, then that precondition will still pass, right? So if we were to do the precondition like this, let's copy this here and let's paste it here. And the only thing will say var dot instance type and then we're gonna save this. So let's put v invalid instance type. And here we're gonna say self
+
+[00:03:21] invalid instance type, right? So now here we have the hard coded value. However, the variable still has a valid instance type. So let's save this. Let's run a terraform plan here and we'll see that we get only one error, the self invalid instance type. So this is still passing, right, which means that if we did not have this post condition here
+
+[00:03:43] and if we were to run a terraform plan once again, then the terraform plan is just gonna go through even though the value that we have here should be considered an invalid value. So whenever possible, I would say, OK, check this on the resource itself except if you
+
+[00:04:00] don't really need this information from the resource. So having this post condition here is a more strict guarantee that the resource itself is using a valid value. And not that just one of the possible external values that we are using here is actually valued, right? So because here we're just validating the variable. However, if this value here comes from somewhere else,
+
+[00:04:22] then we would have some problems. Let's remove this precondition here and let's just leave this post condition. And here we're just gonna mention the bar dot instance type. Let's now add another post condition block and we're gonna understand the difference between the plan and the apply phase. So let's say that this post condition here and we're gonna make a very bad error.
+
+[00:04:42] So that's on purpose, right? So self dot availability zone is equal to eu dash central dash one A. This is not possible. It will always because we are configured to the Eu West one. And if we do not specify any subnets here nor anything,
+
+[00:05:00] then this will be deployed in one of the default subnets which is within Eu West one. So this checker will always fail and we're just going to say here invalid a right? So invalid. A now let's save this and let's run a terraform plan and you will see that we will not get any errors. And that is by design, this is not a bug with
+
+[00:05:22] terraform. It just happens that Telecomm does not have enough information at the plan phase to evaluate this post condition. So this post condition is deferred until the apply phase. After the apply phase, we will then see that this post condition will fail. So let's try to do that. And actually,
+
+[00:05:41] since we are deploying on, on a random availability zone within our configuration, that's correct. That's fine. And then this post condition will just fail because this is not gonna be true. So let's clear this, let's run a terraform apply. Let's wait for the plan and let's type. Yes, and let's wait for the instance to be created.
+
+[00:06:01] And as you can see here, Terraform is actually creating this instance. And as you can see here, the creation was completed after 43 seconds. And then we get the postcondition error and then we get that this is an invalid A Z, where can this be useful? Well, if we had any other resources that depend on this
+
+[00:06:21] A W instance and referenced the AWS instance, the terraform would stop the execution here, it would exit and it would not proceed with not, would not continue with any downstream operations that depend on this resource. Let's try to do a little bit of Refactoring here and let's actually create a subnet. So let's put here networking
+
+[00:06:42] dot TF and we're gonna say here, resource AWS subnet and the name of the subnet is just gonna be invalid, right? So let's actually put just this, we don't need to put invalid here and we need to provide a V PCI D. So this V PCI D here is going to be
+
+[00:07:00] the, the default VPC, right? And how do we fetch the default VPC? Well, we already saw that we can use a data source and that's gonna be AWS VPC. And here we're gonna call this or actually default, maybe it's better and the name here of our VPC or actually not the name but actually the default boolean here that we can mark to true.
+
+[00:07:21] This is just gonna return our default VPC. So now we're just gonna say data dot AWS VPC dot default dot id and then we could move this precondition, this actually post condition not precondition. Let's move this post condition here into the, the AWS subnet that we are creating. And then here this has to be within a life cycle block. So let's just copy this
+
+[00:07:43] and I'm gonna write life cycle post condition and let's also pass here a Cidr block. Now, the Cidr block has to be slightly different than the one we've been using so far because this is within the default VPC. So let's just come to the console, let's type VPC. And then here in the console,
+
+[00:08:01] we'll see that we have one VPC in the region, we have this VPC and we see the Cidr block here. So we're just gonna use the same pattern and forward slash 24. I just wanna highlight that the IP that we're using has to be different. So here that would be 1 72.31 0.0 0.0 forward slash 24
+
+[00:08:20] right? So now here we are creating a subnet within the default VPC and we are having a post condition check here. Let's now try to reference this subnet within our aws instance. So we're gonna say Subnet ID will be equal to AWS subnet this dot id.
+
+[00:08:40] And now we will see that whenever we run, let's clear the console, let's run a Terraform plan and let's see the result of the Terraform plan. So the terraform plan goes through and it says, hey, we have two resources to add and one to destroy. We are going to replace this resource here. That's why we have one to destroy.
+
+[00:09:00] So we can see that the change of the subnet id will actually force the replacement. And as you can see here, Dataform will only know the subnet id after apply or the new subnet ID after apply here, it already knows the current subnet id. So we could actually use post conditions in the
+
+[00:09:20] plan phase to check for information related to this subnet ID. However, since we are having a new subnet id, we will be able to run this only after the only after the apply phase. But let's keep in mind that this post condition here will fail. So the only thing that will change is that we will add this subnet,
+
+[00:09:41] this post condition will fail. So the replacement will not take place. So how can we visualize that? First of all, let's run a data form, apply. And then here we will see that we will have two to add one to change zero to change and one to destroy. Let's type PS here. And then you will see the data form will start already destroying the instance, right? So remember
+
+[00:10:03] the default behavior for dataform is destroying before creating. So Terraform is already destroying the instance and then it will move on to creating the Subnet and then move on to creating the new instance. OK? So we actually got an error here that this side already conflicts with another subnet that's probably from with a default Subnet.
+
+[00:10:23] So let's add another Cider here. I just want to highlight that we don't have any instance running anymore. And this might be actually a problem, right? If there might be downtime here. So basically, let's say we started destroying the destruction was complete. However, when we try to apply this new configuration here, then we got an issue.
+
+[00:10:43] So now we don't have, have any instance running and our application is down. So that's where the create before destroy would actually be useful for us. Let's change this here. Let's visualize that just a little bit. Let's comment all this subnet out. Let's comment this Subnet
+
+[00:11:00] ID out and let's run a terraform apply and let's inspect the the resources here. Let's type. Yes, let's add our instance. So our instance will be created. And then here we will also say create before destroy is equal to true. Great. Our resource was created successfully if we switch to the
+
+[00:11:20] console and we come to the EC two console. So let's type here two. We should see our resource up and running. We should have one instance up and running. That's perfect. This is the one that we have just deployed. It's also just initializing, right? So here the instance is deployed. Now let's remove our comments. So this I want to uncomment and the networking, I also want to uncomment
+
+[00:11:43] and we're gonna try to create this invalid subnet. So we saw that this gives an error because there is a conflict here. However, because the compute has the flag create before destroy. The dataform should actually try to first create the Subnet, then create this resource here and then start destroying the old one.
+
+[00:12:00] Let's run a dataform apply. We should once again see the two resources to add and want to destroy. Let's type Yes, here. And the moment we do that we can see the data form actually starts creating the Subnet. It gives us the invalid subnet here. So let's fix this we're gonna say 128 here. Let's save this and let's run a data form, apply once again.
+
+[00:12:21] And let's see if that is good enough. Perfect. It's good enough. And as you can see here, the Aws subnet has been successfully created. Let's switch to the console here. Let's have a look. Let's go back to the VPC page and let's have a look at the Subnets. We will see that we have one additional subnet here and I don't know which one that's this one here. So the subnet
+
+[00:12:40] is available, it has been created. However, Telecomm did not proceed any further to the creation of any downstream resources because the post condition within our Aws subnet has failed. If we come back to the Aws console and we go to the E two page once again, we will see that our instance is still up and running.
+
+[00:13:00] So Terraform did not destroy this instance. We are theoretically not having any downtime except if there are some issues with the ods of net and then we have downtime. But for another reason, right, we don't have downtime because Terraform destroyed this before creating the new one. So now let's fix this here. We're gonna fix this to actually change the availability zone to be a valid value.
+
+[00:13:23] And we're just gonna use the data AWS underscore availability zones and this is just gonna be the state equals available. And then we're gonna just check that it is contained so that this contains our self dot availability zone.
+
+[00:13:40] So contains here, we're gonna say um self dot availability zone. This is the second argument of this function. And then for the first one, we are just gonna use the data dot availability zones dot available dot names, right? So now let's save this and let's once again, run our terraform apply. And now we will see that the form still has one resource to add and want to destroy.
+
+[00:14:04] And this is the replacement of the E two instance. Let's type. Yes here. And as you can see now the instance directly goes into the creating mode. So this life cycle post condition was successful, which means that the reform is proceeding with the creation of the
+
+[00:14:23] Aws instance. Once the creation is complete, it is now destroying the old AWS instance so that it's not deployed anymore. Perfect, everything completed successfully. We have added one resource and destroyed the old one. And as you can see here, now our post condition is successfully going through
+
+[00:14:41] so that thefor continues with the with the other operations that it did not manage to continue because of the failing post condition. So we can always think in a sense that the post condition make sure we can use that to guarantee certain values or to guarantee a certain state of our resources and data sources.
+
+[00:15:02] So that if these guarantees fail, the reform do not, does not continue with any other downstream operation. We also saw that it was important for us to add the create before destroy here. Otherwise thefor would start with the destruction and that it would start with the creation of the network or of the subnet,
+
+[00:15:21] it would fail on the post condition and it would not create the new E two instance. So we would be left in a state where there was no E two instance running. As you can see, it's quite important to understand how to combine the create before destroy with post condition checks of upstream resources. I believe we have done a lot for this lecture.
+
+[00:15:41] Let's run a terraform destroy here since we have a running instance. And I don't wanna leave this running for a long time. Let's just IPs that's gonna destroy the compute and the Subnet as well. And once the operation completes, we can wrap up this lecture perfect with both resources destroyed. I believe that's a good moment for us to take a break and come back in the next lecture.

@@ -1,0 +1,45 @@
+[00:00:06] - The last issue that relates to applications that's may cause you trouble is the memory leak. So, let's talk about memory leaks a little bit. In order to manage memory leaks, you need to understand what they are doing.
+
+[00:00:20] So, a memory leak occurs when a program is written the wrong way. It keeps on claiming memory without ever returning it for the entire lifetime of the program. Memory leaks do occur in certain programs, and sometimes they don't create any problems because if you have a command like LS, imagine that LS has a memory leak, who cares?
+
+[00:00:42] Because LS is a here and now program, then it shows the results and then it is gone. So, you don't care if LS is a memory leak but if a memory leak occurs on a daemon process, then in the end, you will run out of memory and then seriously you do have a problem.
+
+[00:01:02] So, it's not a problem with short-living programs. It is problematic with long-living programs. In order to find memory leaks, well, even before valgrind, there's another utility you wanna use and that's top. If you see that the available memory is decreasing over and over,
+
+[00:01:21] then a top will tell you that very easily. So, the very first proof of memory leak comes from the top utility and once you got the idea that the memory leak does occur, you can use valgrind to figure out what is happening. Valgrind is a utility that has different tools and the tool you wanna use is memcheck,
+
+[00:01:41] so you would use valgrind --tool is memcheck followed by the commands you wanna test. And if you suspect that there is a memory leak, then you can use --leak-check is full to get detailed information about which function is leaking memory. That is interesting if you are a developer. If you are a sys admin,
+
+[00:02:01] then you probably don't care about the functions too much because you cannot change anything in the program anyway but for the developer, this is good information that will help the developer in optimizing his application. So, processes request memory with different system calls such as malloc, for example
+
+[00:02:21] and initially this is virtual memory. Virtual memory is just an address pointer and if there's a memory leak in virtual memory, you totally don't care because Linux on 64-bit operating systems has 32 terabytes of available virtual memory.
+
+[00:02:40] You can monitor all of the allocated virtual memory looking for the Committed_AS parameter in /proc/meminfo. If you see that this parameter is increasing every time you watched it, that may also indicate a memory leak but again, if the memory leak is only in virtual memory, it's not as bad
+
+[00:03:00] but if it's a process creating that memory leak, eventually you will run out of virtual memory as well. Leaking resident memory is much more important. And as I've just mentioned, the very first indicator of a memory leak in resident memory would be the top utility.
+
+[00:03:20] Now, I have created a nice lab that allows you to practice your skills on analyzing memory leaks. So, this lab is lab 84 and you need to install it before you can run it. Good luck. So, to install this lab, you need to run lab84.sh
+
+[00:03:42] and you need to keep it running in a separate terminal or run it as a background process. So, I'm opening a new tab and in this new tab, we are going to analyze what is happening. So, here we go, top utility. If in top you press uppercase M,
+
+[00:04:00] then you can see what's happening and the parameter that we are looking at is the amount of free memory. And as you can see, it's steadily decreasing, so something bad is happening here. Now, how would you find out who is doing it? Well, I have used dash uppercase M in top to sort on memory usage
+
+[00:04:22] and here we can see this program with the obvious name memleak. Guess what it is doing? The parameter that you want to monitor in this application is the resident memory as well as the virtual memory and you will see that it's going up and up and up and up, so definitely we do have a memory leak here.
+
+[00:04:42] Now, in this case, it's pretty obvious that memleak is leaking memory. You can see it alone by its name. In some cases, you will have an ordinary daemon that is leaking memory and that is not so obvious that that daemon actually is leaking memory and there you would need the valgrind utility. So, the valgrind utility has different tools.
+
+[00:05:02] So, if you use valgrind --tool is memcheck ls, then it's telling us that we still need to install valgrind. Okay, that makes sense.
+
+[00:05:25] So, let's run the command again and here we can see what the results look like. So, what you would be looking at is Leak Summary and the Leak Summary is giving you an overview of the memory that is leaked.
+
+[00:05:41] Now, valgrind needs the command that you want to run as an argument and it will give you detailed information about that specific command to tell you whether or not it is leaking memory. Related to virtual memory leaks, there is the information in /proc/meminfo.
+
+[00:06:01] So, if we do a grep on Committ in /proc/meminfo, then we get information about the total amount of virtual memory that currently has been allocated, so that is three gigabytes.
+
+[00:06:20] Now, by itself, that doesn't mean too much but if you use watch, now you can see that it is showing the information every two seconds and you can clearly see that the amount of allocated virtual memory is increasing. So, if you think that something is wrong related to virtual memory,
+
+[00:06:41] then this is how you can monitor it. Now, obviously in this case, nothing serious is happening because we have a total of 32 terabytes of virtual memory and we have an increase of about two megabytes, well, one megabyte every second,
+
+[00:07:00] so it will take a while before you will run out of virtual memory completely but if that happens, you are in deep trouble and you definitely need to eliminate the application. As a system administrator, there's not that much that you can do about memory leaks. The only thing that you can do is check if there is an update of your program and if you know the programmer,
+
+[00:07:20] go talk to him because something definitely has gone wrong.

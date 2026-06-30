@@ -1,0 +1,61 @@
+[00:00:00] Welcome course taker to video number two multiregional support. So in this video, we're gonna look at all the stuff that we've done to provide a second region. So we'll look at the networking, we'll look at the data layer, so R DS and then we'll look at ECR ECs and all the bits that we need for the cluster as well. So if you're ready, let's get started.
+
+[00:00:22] So what are we building? Well, at the bottom, we've got our existing regions. So we've got our public subnets with our A LB on there. We've got our Fargate cluster and we've got R DS as our back end. So we really want to just replicate exactly the same configuration in a second region. So we'll need a second VPC.
+
+[00:00:41] We'll need all the networking subnets. We'll need to create a different A LB ecs clusters and cinetis clusters don't stretch across regions. So we have to create two independent clusters. And while we can replicate R DS postgre into a secondary region, remember it's only a read only. So we can't use that for rights.
+
+[00:01:01] The only thing we can do is in the case of a failure, we can promote that to a read write master of its own, right. So at the moment, we'll also need to deploy VPC peering and that will allow us to connect to our master database in region one from region two. We'll also need to create a secondary elastic container registry
+
+[00:01:23] and we'll connect that through a private link, which means we can then push images from region one to region two through the private link, which will be a bit more secure. So it's only using IP S our own B PCI TPS rather than going out to the internet and back in.
+
+[00:01:40] And it's slightly more cost effective in terms of re traffic. So I hope that makes sense. Let's look at the configuration. But before we do that, let's start with the code. So here we are back in our IAC C repository. Now, there's a couple of things I've had to do if we look at the R DS module.
+
+[00:02:00] Originally, I had a lot of local resources defined here. So these have all been moved out now into a variable file is all moved out. And I've got a standalone terraform TFRs for just provisioning to a single region. Now, the reason for doing that is we need to parameterize our code.
+
+[00:02:20] So our main now only references the variables for the various pieces I've also had to add in the second VPC. So 10.2 so that we can allow cross region communication at a database layer. And so how do I call that? Well, if we go into our multiregional folder and look at our R DS module,
+
+[00:02:42] I'm using a module now. So this is terraform specific. So I guess the point about this is you will need to make some changes to your I AC templates, whatever you're using cloud formation or terraform or whatever. So here, Amazon is orientated around regions. So at least in terraform,
+
+[00:03:01] we create two regions or two providers for two regions. One's called E US, one, one's called E US two. And then basically I call the R DS module twice, first time I give it the EU details. So all of this is E US specific subnets and the VPC.
+
+[00:03:21] And then in the second one, I provide the same details. I also provide this replica. A RN, which is the A RN from this module. So if we go back into our code, you can see in our actual R DS module, I've got a lot of conditional logic now. So this is
+
+[00:03:40] Terraform's conditional logic. If there is an A RN, then if it's null, then just use db user. If it isn't, then give it a null value. And that's because when we caught, we're creating replicas, we don't give it passwords. And the main difference with a replica is this replication db needs to be set
+
+[00:04:01] and that makes it a replica. Now, I've already run this Terraform and just restart that. So we just look at our console. I've got two consoles, one for London, one for Ireland, which is our second region. So if you look at the VPC S, uh we've got one VPC and then we've got a
+
+[00:04:21] whole set of two public and then a number of private subnets 1234 and five and six of the database. And if we look at our VPC again here, one VPC and again, a similar structure, the same structure. Um The difference here 10.2 is our is VPC.
+
+[00:04:41] 10.1 is our UK London VPC. Now go to R DS but one instance and you see it's a master. Uh It's called cars Postgre eu two A and then if I go to a similar one here, one instance, now this is a replica.
+
+[00:05:02] And if we go into detail here, we look at the replication here. It's Cars in London in E US two. So that's our back end created. Now, if I go into our regional ecs, we can see we've approached it the same way,
+
+[00:05:21] define two regions or two providers for different regions. And then we basically call the module twice providing different subnets and the different regions. So if I just go into I AC can we do multiregion
+
+[00:05:40] S if I just do terraform, apply, click in it first, this will copy the modules through. And then if I do terraform apply, I'm just gonna pause there. So if we open up a terminal and we go into our ECs multiregion,
+
+[00:06:00] if I just do a terraform flight, that's going to go off and create all of our resources that we had before. So we've got 12 resources and that's things like the security groups, um the actual clusters themselves. So we just hit, yes,
+
+[00:06:21] it takes two or three minutes to run through. So I'm just gonna pause the video here and here we are. So the A L BS take a little bit of time to create. But what we've now got here, 12 resources added and we've got the A L BS here. We have the names and we've got the security groups added,
+
+[00:06:41] we can now go back into our configurations. So in London, I go to C two, what I should have is high bouncer. And if I go into YZ two in Ireland, low bouncer here and then you will see security groups.
+
+[00:07:01] So we've got the security group, the tasks and for the A or B, the same thing will apply here, the tasks and the A or B and if we look at the target groups, there's nothing in there, right? So we're, we're listening, but in terms of targets, there's no IP addresses saying we'll be here for the target groups here.
+
+[00:07:22] And then if we go into ECs, we've got one cluster and if we do the same here, we should have the other cluster I've actually got two being deployed. And if we go into ucs here, got another cluster here.
+
+[00:07:41] OK. So we've, we've updated our templates. We've created a more parameter module, we then iterate over that module a couple of times for both R DS and for um ecs and all the associated apps. So which means now we've got our second region configured with our ecs clusters,
+
+[00:08:01] our R DS clusters and re replicas and our A L BS. Um If we look at the repositories, so we've got our pim repository. And if I go to here, I've also got a P simple repository. Now, we can't replicate data between
+
+[00:08:20] the two repositories. So what we're going to do in the future modules is actually use cloud, is use codebuild to actually create the same image in both repositories. Now, we could do that through the internet, but because we want to be more secure, what we've actually created as well is an endpoint
+
+[00:08:41] in Ireland, I will go to VPC. And if you look at the end points, we've got one end point and its for ECR Docker in Eu West one. So that's Docker API S are used for push and pull images, which is what we want to do.
+
+[00:09:03] The endpoint just attachs to our VPC here. Um And basically it gives you a couple of internal service names to use that you can use and we'll reference it. So it allow us to push from codebuild to these repositories, but do it internally through the VPC rather
+
+[00:09:20] than going out to Amazon's public addresses. OK. So we've got our infrastructure, we've got our endpoint that allows us to push images to E us. One. The last point to go through is look at the DNS stuff because that will be important. So as we've got two clusters and two A L BS, the best way is probably to have a DNS
+
+[00:09:43] entry that points to both and does round robin over the top of those. So if we look at route 53 I've got one hosted the domain in there internet widget.com. That's what we're going to do is host our API on at the moment, we haven't configured it. So there are no A L BS in there and we'll do that later on,
+
+[00:10:02] but we have the hosted domain ready to go and that will be the link, the glue between the two A L BS and the two regions. Ok. So I hope that was interesting. Please join me in the next video where we start thinking about our microservice and looking at A and the microservice design. Thanks very much.

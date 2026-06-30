@@ -1,0 +1,79 @@
+[00:00:06] - [Instructor] Now that we know a little bit about firewalling, let's talk about troubleshooting of firewalling. Firewalling can be firewalld or iptables. If it's firewalld, then troubleshooting
+
+[00:00:20] should start with firewall-cmd --list-all-zones. In firewalld you should be aware that it has a very strict separation between runtime and persistent. And that is known to cause trouble to some people. So, if you wanna make sure that you don't get into trouble, then I would recommend that you create all firewall rules in runtime.
+
+[00:00:41] And once you have confirmed that you are happy with the runtime rules, you can use firewall-cmd --runtime-to-permanent which will convert runtime into permanent rules so that they still are alive after a reboot. If you don't do that, you will get in trouble in one way or another.
+
+[00:01:00] So, there are people who just create in permanent without reloading the firewall. There's people who just create rules in runtime, which makes them disappear after restart. Don't let it happen to you. Troubleshooting iptables is something else. Iptables is using ordering. The most important thing to understand about iptables
+
+[00:01:22] is that when a packet comes in and it finds a matching rule, then it looks no further. So, the rules are applied in order, so ordering is very important. In case you think I don't use iptables, I'm using firewalld, that's not entirely true because firewalld creates iptables rules in the background as well.
+
+[00:01:42] So, you can use iptables -L -t filter -n to show current rules. Iptables can use different tables, and the default table has the name filter. So, strictly spoken, you don't have to include the -t filter but I wanted you to be aware of the fact that iptables works with different tables.
+
+[00:02:04] So, if your table is not filter, you do need to specify the name of the table. The mangle table, for example, is a pretty common table as well. In iptables troubleshooting, iptables -j LOG is very interesting.
+
+[00:02:20] This is what you can use to have iptables log messages when a packet hits a rule. And that allows you to know when packets are getting blocked or whatever is happening. Let me show you how to use the LOG target in iptables to do your iptables troubleshooting.
+
+[00:02:40] So, it's a good idea to start iptables with the iptables -L command, which lists what we currently have. As you can see, this firewall is, well, pretty strict and pretty closed, it doesn't allow very much. Incoming ssh, outgoing, and related traffic. So, an outgoing packet like ping
+
+[00:03:02] to whatever website should give you a problem. Name or service not known. And that's an excellent starting point to start our troubleshooting. But before we start out our troubleshooting, let's get some more insight in the rules that are used in iptables.
+
+[00:03:20] I'm using iptables -L -n and -v. Notice that iptables is one of the Linux commands where it's not allowed to put options together. Look, iptables -L -n -v works, but this, which is common in many Linux environments, doesn't work.
+
+[00:03:40] It complains that there is no chain/target/match by that name. The interesting addition that we can see here is that there's more detail. So, we can see exactly how many packets have been accepted by a specific rule. And what exactly the source and destination
+
+[00:04:02] is the incoming and outcoming ports, and that's very much more specific. And that can help you in your troubleshooting to figure out what's happening. Now let's get back to this example where I'm using ping to nu.nl.
+
+[00:04:20] If you use iptables -L -n -v again, then you can see that previously 364 packets were dropped. Now 370 packets are dropped. Now, I wanna know what is happening. And in order to figure out, I'm using iptables -A,
+
+[00:04:40] for append; I just want to put it at the end of the chain, OUTPUT -j LOG. So, what is that going to do? Well, very easy to understand. It is going to log everything that hits the end of the output chain. So, if I'm using iptables -L, again let's use the short alternative here,
+
+[00:05:01] then you can see LOG is the last line in the chain. And that means that everything that will be blocked by the default policy will be logged. And if we are going to use our ping again, then we can analyze what has been logged. Typically you will find the logs in /var/log/messages.
+
+[00:05:22] But that may be different depending on the syslog configuration in your system. So, these are the lines that it is all about. So, what do we see? We have an IN and an OUT. The outcoming is interesting here, it's ens33. The destination is some IP address.
+
+[00:05:40] The length is 76, that's not very important. The interesting stuff starts here. So, protocol is UDP, source port is 59914, and destination port is 123. That's interesting because 123 is time synchronization.
+
+[00:06:02] So, apparently time synchronization attempts have been blocked as well. That is not directly related to the ping that was blocked, it's related to the ping that was blocked at the destination port 53 that we see here. Now, what is destination port 53?
+
+[00:06:20] That is DNS. Now, based on this information you can write new rules. So, iptables, in this case I'm not going to use -a to append at the end, but I'm using -I, -I will just put it in the beginning of the output chain. So, -I OUTPUT.
+
+[00:06:43] And what do we want? Well, we want -p udp because we can see that the DNS traffic is all happening over UDP. - -dport 53, and we want that to be accepted.
+
+[00:07:00] Now, let's have a look at iptables -L -v -n again. And we can see that the udp line has been added. And now UDP traffic should be able to get out. So, let's do our ping packet again. And you can see something different is happening here.
+
+[00:07:21] We don't get the error message that relates to DNS, but still we don't get an answer. So, let's use tail -f on /var/log/messages again to find out what has happened right now. So, we can see that in the output chain,
+
+[00:07:41] well, basically nothing has been added. Because these lines were already here, this is what we've just talked about, so nothing has been added here. And that means that the troubleshooting should continue in the input chain. Because apparently the packets were allowed to get out but nothing was allowed to get in.
+
+[00:08:01] So, let's use iptables -A INPUT -j LOG just to make sure that everything that hits the policy in the input chain will be logged as well. And I'll repeat the ping command, there we go.
+
+[00:08:20] And now we can have a look at the /var/log/messages again to see if anything is added. And here we can see stuff has been added. So, from source, this is new, we haven't seen this before. But the timestamp, this is 15:54, so this is old. We should be looking at this one.
+
+[00:08:40] This seems to be directly related to what I've just done because this was just a minute ago. So, what has been happening? Well, we had an answer. Protocol is UDP, source port 53, destination port a random port address. And the answer came from 8.8.8.8. So, my packet has reached the DNS server,
+
+[00:09:00] but the DNS server was not allowed to send back anything. How is that going to help us? Well, it helps us by realizing that we should put more stuff in the input chain. And that would be a line that we have seen before, iptables -I, using -I to put it in the beginning,
+
+[00:09:20] because I want to have this as the very first line. INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT. We have seen this line before, it already exists in the output chain. And we should have it in the input chain as well
+
+[00:09:41] so that for everything that we allowed to go out that gets an answer, we want to be able to receive the answer. Now let's use the ping command again. And actually, we see something else is happening. So, DNS resolving is working alright,
+
+[00:10:00] but ping sendmsg operation not permitted. So, the ping traffic is getting blocked. And if you want to continue on that, well, it's basically the same story. Tail on /var/log/messages once more. And we are looking at the 57 timestamps basically.
+
+[00:10:20] So, what do we see in here? In fact, we might even have to start a little bit earlier, so let's just start at the beginning of the line, the 55:28. What is this? This is outgoing traffic,
+
+[00:10:40] outgoing traffic from this IP to server one. So, that's something else that is not related to my ping traffic. Then we have more outgoing traffic from this IP to somewhere on the Internet with a destination port of 123,
+
+[00:11:00] so that is time synchronization. Then we see a new packet, and that's interesting. This is protocol UDP, source port 53, that seems to be an old message that we have already considered. Then we have destination port 123 again.
+
+[00:11:20] And then here we have new traffic. So, what is this? This is incoming ens33, outgoing MAC address, so this is about MAC address. Source is 4.1, destination is 4.255. So, this is a broadcast address.
+
+[00:11:40] A broadcast packet that was generated to everybody from source port 17500 to destination port 17500. If you know what it is, you should determine if this is something that you want to allow. I'm not sure yet, that is yet to be investigated. But we can see that destination port in here,
+
+[00:12:02] and the source and destination port in here, is happening again and again and again. So, this might very well be related to what we are looking for. And if that is the case, well, we need to determine that and we need to write rules that will allow what we see here.
+
+[00:12:21] So, if it's source port 17500, destination port 17500, that might be what we need for our ping packets. And that will be the next step. I hope you get the idea now. This is how you do troubleshooting on an iptables firewall. And of course, I can talk about this
+
+[00:12:40] for another half an hour, but once you get the idea of putting the log lines at the appropriate location, and next finding out what you are going to allow and what you are not going to allow, and what is happening, what is blocked, and whether or not that's necessary, that is what firewall troubleshooting is all about.
+
+[00:13:01] Now, let's continue and let's do a lab about firewall troubleshooting.

@@ -1,0 +1,59 @@
+[00:00:06] - Amongst the nice things of the rpm database is that it keeps track of files. And if you know how to work the rpm command you can easily identify changed files which may help you in fixing trouble.
+
+[00:00:20] And we will learn in this lesson also learn about some utilities that are provided to automate a procedure for you. So how do we verify changed files? Well, the rpm database keeps a checksum of installed packages and that makes it easy to identify files that have changed. We've already talked about rpm dash Va which will verify all packages
+
+[00:00:41] and will show you if anything has changed. Rpm dash Va will take long time so you might be better off using rpm dash V on a specific package if you suspect something is wrong with a specific package. A very interesting option is rpm dash dash setperms on a package.
+
+[00:01:01] This will reset permissions on files that were installed from packages to their original state because the rpm database knows which permissions should be applied. In the rpm dash Va output you will get some different letters. So here is the different letters and their meaning.
+
+[00:01:21] S is for size, M is for permission mode or file type, 5 is for contents, that's basically the MD5 checksum. L is for changed symbolic links. U is for user owner, G is for group owner, and T is for modification time. Obviously the most interesting of these are M, U, and G
+
+[00:01:42] which indicates something has happened to permissions, user owner, or group owner which is not something that normally would happen. You can also use package verification with yum. In order to do so there is yum-plugin-verify. If you have that installed you can use yum verify
+
+[00:02:00] which shows more information than rpm dash V. Yum verify shows information about package differences but not the individual configuration file. Yum verify-rpm shows information about changed configuration files as well so you need to install the plugin to get a hold on all of that.
+
+[00:02:21] Now based on the information that you find you may want to undo file changes. The easiest way is to use yum reinstall. That will reinstall the package and it replaces files with the original files. Rpm has a few recovery options as well. You can use rpm dash dash setperms package.
+
+[00:02:40] We already have seen that to reset permissions to how they originally were. Or rpm dash dash setugids package to reset user and group ownership. Now based on this information, let's practice it on the lab. Bad things are happening on your server and you suspect something is wrong with permissions on files in the etc directory.
+
+[00:03:01] Find out which files have changed and re-apply the original settings. This lab comes with a script. You can install it using the lab 74 script. Alright, so if you suspect something bad has happened the etc directory is where you want to look.
+
+[00:03:21] Ls dash lrt, something that you should not forget. It's an easy check and it will give you a list of timestamps on the packages so that you can easily see when the last change was applied. Now this doesn't tell me very much so let's do it different way.
+
+[00:03:41] Alright, so ls dash lrt doesn't give us very much. So let's verify just all the packages. So rpm dash V, but yeah rpm dash V on what? Because etc doesn't have packages, etc has files.
+
+[00:04:00] So we first need to convert the files into the packages where they are coming from. We can use simple for loop to do so. So for i in star, we are just going to analyze all files. Do rpm dash qf,
+
+[00:04:20] dollar i. And let's write the results to a file with the name slash root slash rpms, done. The results should be a file with the name slash root rpms that contains the list of all rpms
+
+[00:04:41] that relate to files in etc. So if you look in root rpms then we can see a list of packages but we can also see file whatever is not owned by any packages occurring a couple of times. I want to automate this procedure
+
+[00:05:00] and I want to run rpm dash V in an automated way on the contents of this configuration file. So let's filter it out a little bit. Let's use sed dash i and every line that contains the text owned,
+
+[00:05:21] let's delete that. So here is sed in interactive mode looking for lines that contain the text owned and on these lines we execute the sed command d for delete and we apply that on root rpms. So if you look at root rpms again,
+
+[00:05:41] then it should be cleaner this time. And this looks like a list of packages. We can now see that there are doubles. Dracut is occurring twice, crontabs is even occurring more times. So let's filter out the doubles as well
+
+[00:06:00] using uniq on root rpms. And let's write the results to root urpms, unique rpms. Let's verify if this is giving us what we want.
+
+[00:06:20] And it looks as if the doubles have now gone, so that's probably a lot better starting point. And now we can run the verification option. And in order to do that, I'm using for i in and we are just going to read the entire file
+
+[00:06:42] we have just generated, so cat on slash root slash urpms do rpm dash V dollar i
+
+[00:07:00] and let's write the results to a file as well with the name root changed. So that we can easily watch what has happened later. In case you don't know the construction, this is simple cell scripting construction. We are doing command substitution cat root urpms
+
+[00:07:20] is processing line by line. This may take a little while because package verification does take a while. So it's done and let's have a look at slash root slash changed in which we can see, and that is interesting, a lot of files. Now look at that, etc shadow, etc passwd.
+
+[00:07:42] And we can see M, what was M again? M was permission, that's not good. So what we can do based on this information? Well, we can figure out where the files are coming from after reading it.
+
+[00:08:00] This is not something that we want to do in an automated way we want to watch the original permissions on every file that we suspect. Based on what we see here, I don't like the fact that etc passwd and etc shadow have permissions that have been changed. Maybe we should do grep M on slash root changed.
+
+[00:08:24] Pipe that to uniq. Pipe that to sort and then to uniq and then we can see that the only two files that have changed permissions are etc passwd and etc shadow. So let's use ls dash l on etc passwd
+
+[00:08:42] and oh no, it's seven seven seven. And how about etc shadow, also seven seven seven. That obviously is not good. So we need to figure out using rpm dash qf where these files are coming from. So it comes from setup.
+
+[00:09:00] How about shadow? It comes from setup as well. Now based on that information we now know that we can use rpm dash dash setperms on the setup package. Let's repeat the ls commands and etc shadow has no permissions
+
+[00:09:20] which is exactly what we expect and etc passwd has six four four as permissions which is also exactly what we expect and this is how you can use the rpm commands to analyze what has happened in your configuration files.
+
+[00:09:42] And reapply your original settings to the configuration files. I hope it was useful.

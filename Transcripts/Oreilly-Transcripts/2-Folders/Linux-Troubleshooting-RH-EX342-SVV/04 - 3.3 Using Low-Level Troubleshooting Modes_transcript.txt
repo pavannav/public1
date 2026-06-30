@@ -1,0 +1,71 @@
+[00:00:06] - So now that you know about different boot modes, let's have a look at all of them. First, the rescue disk. There's only one way to get into the rescue disk, and that is through the BIOS Boot Menu, that is, assuming that you are on a BIOS system.
+
+[00:00:22] If you are not on a BIOS system, the procedure will be different. We'll get to that later in this lesson, but for now, BIOS it is. So, on many computers it will be a key, like Escape or F9, F10, F12, F2 I've seen as well. It depends on your BIOS setup.
+
+[00:00:40] After pressing the magic key, you will get access to the BIOS Boot Menu. From the Boot Menu, if it's a rescue disk, as in a CD-ROM device, you select the CD-ROM Drive. But rescue disks can be provided as a boot image on a network, as well,
+
+[00:01:00] or as a USB thumb drive. So it really depends on how you want to rescue what you are going to select. In this setup, I'm using a CD-Rom Drive. So this is what you get. You don't want to test the media and install CentOS 7, you want to select Troubleshooting. And in Troubleshooting, you will start a kernel
+
+[00:01:21] with the default options. If there is anything that you want to specify as a specific boot option, then you can use the Tab key from this menu. But we are not going to do that now, we are just going to press Troubleshooting. So, here we can see the different options that are available.
+
+[00:01:40] We have "Install CentOS 7 in basic graphics mode," that is for installation, that's not what we need. We need "Rescue a CentOS system." So, that is what we are going to do. In some cases, you can also use "Boot from local drive." "Boot from local drive" can be convenient in case your bootloader has gotten damaged,
+
+[00:02:01] but in many cases, if you cannot boot normally anymore, "Rescue a CentOS system" is the best option to go for. Kind of scary, right? It's talking about starting installer. Well, it's not really the installer. It is the rescue system.
+
+[00:02:21] Now, let's read. It is telling us, "The rescue environment will now attempt to find your Linux installation and mount it under the directory : /mnt/sysimage." If that's okay, then you just press one. In most cases where you suspect the problem is
+
+[00:02:42] related to the boot logger but your root file system is still accessible, it makes sense using this option one. So, I'm selecting option number one. So, it is telling us that the system has been mounted in mnt/sysimage and "If you would like to make your system
+
+[00:03:01] the root environment, run the command: chroot /mnt/sysimage." That's often what you wanna do, but it really depends on what you've got. So, here, I have access to the rescue system, and this rescue system is a RAM file system. The root file system that is available in the rescue system is not on disk
+
+[00:03:21] and that is what we've just been informed. The root file system is in mnt/sysimage. So if you want to go on from here, and you want to access your root file system, now you would need chroot /mnt/sysimage. The root file system is a rewritable, so if you do a quick right dash
+
+[00:03:41] you can see that that works. And depending on what you want to do, you can continue troubleshooting your system from here. Now, this is one solution for troubleshooting. Let's reboot the system, and let's talk about another solution. Oh, you can see a reboot doesn't work.
+
+[00:04:01] Why not? Because we are in chroot. Chroot is a subshell, and you cannot reboot from a subshell. You can reboot from the parent shell. So, here we have the Grub Boot Menu, and in the Grub Boot Menu,
+
+[00:04:20] we can use these other options. In order to pass any option, you need to edit the Grub Boot Menu, so I'm using "E." And look for the line that reads, "linux16." If you still have "rhgb quiet" in this line, remove it, because you want to see what's happening.
+
+[00:04:40] So, the most basic way to boot your system is by using rd.break. Rd.break is using your current bootloader, your current kernel, your current initramfs, and then drops a root shell. From here, we use Control + X to continue booting.
+
+[00:05:00] And as you can see, it is dropping a root shell, which is switch_root. If we type, "mount"... Then we can see two things: The rootfs right here is on / type rootfs. This, again, is a root file system that comes
+
+[00:05:20] from the initramfs, so it's not the root file system that you've got on disk. And there, we have dev/mapper/centos-root which is my real root file system, which is mounted on /sysroot type xfs and read-only. So, from here, you are in a very basic system, and before you can continue,
+
+[00:05:41] at least you must make sure that you have something that is accessible. So, mount -o remount,rw /sysroot/ is what you need to make your root file system accessible. And if you really want to make your root file system your current working environment, then chroot /sysroot is going to be
+
+[00:06:02] the next step. From here, you are in the root file system, which I recognize, because at some point, earlier in time, I created a file with the name "bigfile." So, this is a situation where I can do troubleshooting, whatever I wanna do.
+
+[00:06:20] If we are using ps aux, then you can see, oh, we don't have access to ps aux. Why not? Because we don't have access to the proc file system. So mount -t proc proc /proc and now, if you do ps aux, then at least proc should be able to
+
+[00:06:41] get access to currently load its components. The reason I'm doing ps aux is because it is giving us insight in what exactly is happening. Look at the last column. Let me repeat this command: "ps aux pipe less" In the last column, we can see PID 1 is /init
+
+[00:07:02] and we can see a lot of things between square brackets, which are kernel threads. We can see the systemd-journald, systemd-udevd, and that is about everything that we've got. Now how about "systemctl"? Let's do "systemctl list-units" for example.
+
+[00:07:23] Systemctl list-units cannot do anything because of the chroot environment. So, it's confused, this is really a system that gets you access to the files on your root file system, but not really a system that has properly initialized systemd.
+
+[00:07:40] Also, "getenforce"... We don't have SuLinux yet, so we are in a very, very minimal system. In some cases, you need access to that, but not always. So, let's get out of here and let's reboot, so that we can explore the next possibility.
+
+[00:08:05] So, back in the Grub Boot Menu, the next thing that we can do is, again, we press Enter, we go to the linux16 line, and we add, "init=/bin/bash." Init=/bin/bash is a little bit more
+
+[00:08:21] than the rd.break solution. And I will show you why, but first, let's do Control + X. So, here we see the kernel that is loading, helped by the initramfs, and now, it drops a root shell. If we type "mount" from this environment,
+
+[00:08:41] you can see the main difference between rd.break and init=/bin/bash. Init=/bin/bash goes one step further, and the one step further is where you get an appropriate init that is loaded. So, we have left the initramfs, and we are now on the real root file system,
+
+[00:09:01] which you can see here: "/dev/mapper/centos-root on/" and we can also see that sysfs is mounted on /sys, proc is mounted on /proc, and everything else is mounted. So, the only thing that you need to do from here is make the root file system
+
+[00:09:21] rewritable again: mount -o remount,rw/ will do that for you. And if you type "mount" you can see that we are now on the rewritable root file system. How about "ps aux pipe less"? We can see on the very first line that the init process currently has been
+
+[00:09:41] replaced with /bin/bash. We can also see a lot of kernel threads, and apart from kernel threads, we don't see anything else. So where, in the previous environment, we have seen udevd, and we have seen the systemd-journald, now there is nothing systemd available
+
+[00:10:01] on the system at all. And a systemd is become such a leading solution in Linux, that is the reason why I would recommend you use rd.break instead of init=/bin/bash. It's kind of bringing you to a false environment. If you want to get out of here
+
+[00:10:21] and continue whatever you want to do, you can use exec. So, exec /sbin/init... This will remove the bash code and replace it with the init code, which basically, at this moment, will be systemd. So, you can see that now,
+
+[00:10:41] your system is going through a normal boot procedure. You can also see, and it's interesting, right here: "SELinux targeted policy relabel is required." This is what often happens when Selinux loads, and Selinux detects that you have been
+
+[00:11:01] in a mode where Selinux was not active. So Selinux has not been able to monitor whatever it has been that you've been doing on your system. So Selinux needs to relabel. It's doing that right now, then it will reboot again and will bring you back to a full operational environment.
+
+[00:11:26] So, now you can log in again and work with your system the way you did before. So, that brings us to the end of the troubleshooting modes where you bypass systemd and break into the system
+
+[00:11:41] before systemd even is loaded. In the next video, I will talk about the troubleshooting modes that do involve systemd.

@@ -1,0 +1,51 @@
+[00:00:06] - All right, let's talk about troubleshooting network services. A lot of times, when we look at solving a problem, somebody contacts us, puts in a ticket, what have you, we're looking at what's wrong within the network. As a network engineer, that's typically what we're responsible for.
+
+[00:00:21] A lot of times, when someone is looking for help, it could actually be a problem that's on the server, and if we wanted to help the server administrator figure out what's wrong, these are some of the steps that we may take. So, first off, if we are working with the server administrator, or maybe we're both a system and network administrator, we just wanna get on the server and make sure that the system has the process running
+
+[00:00:43] that we're trying to connect to. Again, this could be found in Task Manager, this could be found in PS, we can verify the socket with Netstat, but just make sure that it's listening. Additionally, if it is, we go, okay, it says it's working, is it really? Is it working like it should? Can I connect to it locally? If I can't connect to it locally,
+
+[00:01:01] there's a good chance that I definitely can't connect to it remotely. We can also check for various security controls that are applied locally to that system especially things like firewalls. If you were to use Sysinternals, if you haven't heard Sysinternals, these are tools for doing system and network administration on Windows boxes.
+
+[00:01:20] So lots and lots of fantastic utilities, all of them are free. If you haven't spent some time looking at it, or if you haven't looked at it recently, I'd encourage you to go check it out. In this scenario, we just see a free tool they have for you called Process Explorer. Process Explorer, lets us see the computer processes that are running on the box, we see how much CPU memory utilization that they have,
+
+[00:01:42] and you can see that stuff in Task Manager, but what's cool about this is you can dig into individual processes and from like a security perspective, we can say, okay, this process is running a memory, what DLLs is that attached to? What other components is it leveraging? And beyond looking at additional software components
+
+[00:02:01] where it ties into networking, is we can see what sockets that particular executable are bound to. So if I know something's listening on port 80, I can come into Process Explorer and see which process is actually tethered to that individual socket. So that's what we see here. We've got a service here,
+
+[00:02:20] that I believe this is for my Oculus headset. And you just see how many cycles it's had, you see the priority, you see how much memory it's utilizing, but there's actually a connection or a tab over there for TCP IP, so for network based applications, we can see how many bytes are transferred in and out. We can see who it's talking to really pretty handy.
+
+[00:02:40] Additionally, you can do a Netstat. We've talked about that a few times, this time we're doing one with ant, and we're doing a pipe find string, F-I-N-D-S-T-R. This is kind of like a grap or a filter for saying, hey netstat, and he's like, yep. I go run ant and now general dump a ton data. And I go well, just find me strings
+
+[00:03:02] that include the word listening. And this is gonna show me the ports that are listening on this particular host. Now, if I look at software firewall, this is just the Windows Defender firewall. You can see different processes, like here's Age of Empires, it's a fantastic game, a set of courses, a great racing simulator.
+
+[00:03:21] Blizzard's Battle.net app, Call of Duty, Borderlands, these are all different games that are installed on the system, and it's funny that the games actually need firewall rules, but to talk on the network, they have to. So as we're looking at individual processes that are having issues, we realize that there are inbound rules and outbound rules for that process.
+
+[00:03:42] When we look at intermediate security controls, everything might be right on the system, but is there an intermediate system, some appliance in the path that you maybe or maybe not seeing a trace route that's filtering or stopping our communication from occurring. Switches might implement ACLs between different departments
+
+[00:04:00] and these can be applied as VACLs or VLAN ACLs They can also be applied to switch virtual interfaces. So realize there's different places on a switch that the filtering may occur. So look through all the ACLs and see how they may apply to your traffic flow. Switches, not just switches, but any particular device that's running a service
+
+[00:04:20] switches, routers, firewalls, IoT cameras, your refrigerator, anytime you run a service, it attaches to a socket. And we say, HTTP is port 80, well, not always. Sometimes people can take a service and move it to a non-standard port. You won't know unless you scan all 65,000 ports on that system, you'd connect every single one of them
+
+[00:04:42] to see if something is there. So, sometimes for security reasons, administrators will move off of a well-known port to a non-standard port. And kind of the mindset there is if someone has an exploit and they're just sweeping all the IP address range, looking for that port and then if you see it, you go ahead and break into it, well, if your service, which is vulnerable,
+
+[00:05:01] is running on a non-standard port, it won't be discovered by the sweeping tools or at least it won't be as likely to be discovered. So, just security through obscurity. Dynamically negotiated channels require inspection. So like talking about FTP, for example, when FTP connects on port 21, the client tells the server,
+
+[00:05:21] why don't you connect back to me on some other port for the data channel? Remember FTP has got two channels. So that second channel that was being talked about, needed to be inspected, if it was gonna go through a firewall. This is the same for SIP. So any protocols that are gonna negotiate new port numbers or new streams,
+
+[00:05:40] have to be inspected to go through a firewall. We talked about web content categories potentially being blocked. If you've got any type of filtering going on that blocks by category, just make sure that the particular user is allowed to reach the site they're trying to get to. A lot of times we can test this by just going to a nefarious website, that's really boring,
+
+[00:06:01] and then trying to test the website that they're connected to. Even if the user you go, oh, that user there in this particular group, they should have access. Go back to your AAA server, look at your policies, and remember that policies are applied globally, then by group, then by user. That individual user could have something funny in their policies that causes their software to be evaluated
+
+[00:06:23] in such a way that we're applying very harsh or strict security controls and it's just not happening to other users, because the devices in which we create these policies and apply them, have complex policies that go in tiers, we can sometimes screw up that structure where we just apply a policy
+
+[00:06:40] that's too specific or too powerful at one point within the chain. So remember it's the global policies are the most general, but what takes precedence over all else is gonna be what's applied at the user level, user, then group, then world. Realize that remote IP addresses can be blocked due to reputation.
+
+[00:07:00] So if there were attacks coming from your source IP address, and you're trying to access a website, you might get denied. I was teaching a hacking class one time for a company up in New York and pretty big company, we were doing different Google queries, just showing how to find vulnerable systems and pull CISCO router configurations out of Google,
+
+[00:07:20] Google will find that stuff and tell you if you ask it right. So we're doing all these queries and then Google cut us off. They're like, y'all are up to no good. And it actually gave us a page that's like, there's been hostile activity detected from this IP address, no Google for you for like 24 hours. That affected the entire business because all say 4,000 employees,
+
+[00:07:40] were all going through the same gateway at the same IP address or a collection of IPS, so we broke Google, as a search engine for the whole company, just because they were blocking us as one attacker, so realize that stuff can happen. IP blocking may occur dynamically, you bet. (laughs) That's what happened to us because of our behavior,
+
+[00:08:00] it was saying you're gonna be blocked. The reputation, a lot of times, this comes from things like, if you're a mail relay, if you start spamming people, they're gonna get your IP address that winds up on a block list. If you've got botnets and your botnets are attacking people, it could affect your reputation and other people stop accepting traffic from you. So things that would be a little bit difficult
+
+[00:08:22] to troubleshoot, but you may wanna keep in the back of your mind.

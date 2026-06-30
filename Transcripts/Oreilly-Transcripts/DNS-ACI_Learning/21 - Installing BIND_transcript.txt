@@ -1,0 +1,177 @@
+[00:00:00] Welcome to ITProTV, I'm your host Don [CROSSTALK] &gt;&gt; Coming at you live from San Francisco, California [CROSSTALK] [MUSIC] &gt;&gt; You're watching ITProTV. Welcome to another great episode here of ITProTV. I'm your host, Wes Bryan and in today's episode we're continuing through our series within DNS. Probably one of the most important services out there in the internet.
+
+[00:00:22] And joining us back in the studios is none other than Mr Don Pezet. Don, how you doing, sir? &gt;&gt; Hey, thanks for having me back, Wes. Excited to jump back into the world of BIND. And in this episode we're gonna be taking a look at setting up replication in BIND. And the main reason is hey, what's better than one BIND server? Two BIND servers or three or four, let's go crazy.
+
+[00:00:40] We'll see how many we can create. It's a good idea to have at least two DNS servers on your network. I think everybody, pretty much, knows that. And there's different reasons for it but the main reason is simply, redundancy. You don't wanna have all your eggs in one basket, if one DNS server fails, now people can't do LOOKUPS. So ideally, we wanna have two. But we can also do load balancing and performance, and
+
+[00:01:01] other things, there's various reasons why we might wanna have multiple DNS servers. But either way, if you've reached that decision that you wanna have it for whatever reason, its not that hard to get set up. What we do is we take the zones that we've already created on our first server and we replicate those over to a second server or a third or a fourth or
+
+[00:01:21] as many as you want, I don't believe there's a limit. Eventually you tax the CPU on the main server, but it's really pretty negligible because DNS zones aren't very big. Now when we set this up, we- actually, you know what, let's back up. Let's take a look at the server that we've already set up. I'm just going to steal the server that we set up in the earlier episode, actually our very last episode where we created zones.
+
+[00:01:42] We created a zone for lab.itpro.tv and it exists on one server. Now that one server is called the master server although I didn't really mention that in the show because It was just one server, it doesn't really matter that it's the master of its domain. It would be like calling someone a manager when they have no employees
+
+[00:02:02] reporting to them. Like what do they manage, they manage themselves. Well, that's exactly what we're set up for. So, let me pull this up here. I've got DNS1, is the server I was working on in the last episode. And we built up a server, now I'm gonna elevate my privileges real quick so that I don't have to constantly sudu every command that I do.
+
+[00:02:20] And I'm gonna get into /var/named. And we can find the zone that I built in the last episode. So if I pull up lab.itpro.tv.dns here's the zone we made. I did a start of authority, which is this server, DNS1. I did some named servers, DNS1 and DNS2. Now, I added DNS2 in there just to give you guys an example of hey,
+
+[00:02:42] here's a second server. Well, that server doesn't actually have the zone. So I need to get a copy of the zone over to it. Now, I could just take the zone file and copy it to the other side, that does work. The challenge is, if I ever update this server, I have to go and do the same update on the other server, right?
+
+[00:03:00] And the more servers you have, the more likely it is that you're gonna forget to do that or fail to do that, and you're gonna end up with different responses coming from different servers. So the whole point of setting up replication is that we can have a master, which in my case is gonna be DNS1. And then we can have one or more slaves. And the slaves, which we'll start with DNS2 here, are gonna get a copy of the zone from DNS1.
+
+[00:03:24] So going forward, I just modify the master, and then all the slaves will get a copy from there. And they'll pull it down and they'll have that copy. Now, why the master-slave terminology? The main reason is, the master is the one who's actually in charge of the zone.
+
+[00:03:40] You can get in there and you can edit things, you can change it, you can do whatever you want, because that's the master of the zone. The other guys are considered slaves because they're not allowed to change the zone at all. All they can do is reach out and grab a copy, okay? And they pull that copy down, and that's it. If you change the record on a slave server, the changes just go away
+
+[00:04:01] because it goes and replicates with the master and pulls it down. It's one-way replication. You replicate from the master to all the slaves. So that's why they use the slave terminology. You also see some people use primary and secondary. Well, that's in third party DNS servers. In the official standard, it's the master slave terminology so that's what we have. &gt;&gt; So Don, in theory, this goes back to like maybe even the old IDE drives where
+
+[00:04:22] you had a master, you know, we'd call it primary drive, and a slave drive. The master was in charge of the whole channel. And then the slave just kinda waited on whatever the master was gonna update it with. &gt;&gt; That's exactly the same principle, except here it's just text files. It's far less complex, but it actually works the same way. Now when you look at my name server records here,
+
+[00:04:40] I don't denote whether one is a master or a slave or anything like and that's because as far as the end users are concerned, they don't know the difference. They don't know the difference between one and the other. So inside the DNS zone itself they're going to show up as the same. And then everything else that's in here, these are all just records. Records that I put in the populated the zone.
+
+[00:05:00] So I need to get all of these records over to my second server, over to DNS2. All right. Now, my server is already up and running with this so if I do like an nslookup, and I switch to my own server, right? I can start doing lookups for like mail1.lab.itpro.tv, and I get a response. Or I could do mail2, and so on and I'm pulling responses right out of that zone.
+
+[00:05:25] So I know its working, and everything is good. On the master, there is not really all that much we have to do to get ready to replicate. But, we do have to do something. What we have to enable are what are called zone transfers. The secondary server that the slaves, they're gonna reach in.
+
+[00:05:42] And they're gonna request a zone transfer, a copy of the zone in it's entirety, they want the whole thing. Give me that zone. Well, that's turned off by default, it's not allowed, it's blocked. And the reason it's blocked is because an attacker could come, connect to your DNS server and say "hey give me a whole copy of your zone". And then they get the whole zone and now they know every server mapped to every IP,
+
+[00:06:02] now that's not true security. By turning this off it's not hiding the server. It's still there. If the attacker knows the name, they can still use it, right? But it does make their job more difficult. It's called obfuscation. Where just kinda hiding the data a little bit and that is turned on by default. We are hiding that data. So on the master, I need to change its configuration.
+
+[00:06:22] I'm gonna edit /etc/named.conf and this is the file that we went into when we originally defined our zone. So if I come in here and find it, here's where I defined the zone. And I said, hey, lab.itpro.tv is a zone.
+
+[00:06:41] It exists. The file for it is lab.itpro.tv.dns, that's where you can get all the records, and then type master. I said that this one was the master, it's in charge, and that means hey, we're allowed to change it, and we can send changes to other people, other people cannot send changes to us.
+
+[00:07:00] There can be only one master, and this is it, right? So that's what type master is all about. I bet you can guess what we're gonna put on the other server, type slave. That'll let it know that, hey, we're not allowed to make changes. We're not allowed to send changes. We can only receive changes. That's how it knows what that zone is going to be. So that's kind of a key piece.
+
+[00:07:20] Now, what I also need to add in here, and it'll probably be faster for me to search to find it, but in here somewhere, there's a little section where it'll talk about the zone transfers. And the zone transfers are blocked by default. So I'm just gonna search for the word. Whoops. I'm gonna ruin my document, is what I'm gonna do. I'm gonna search for the word Transfer and it's not in here, okay.
+
+[00:07:44] So there's no entries in here right now designating whether I'm allowed to do transfers or not. So what I'm gonna do is I'm gonna look for the section called options. And in the options section that's where we do the listen-on port and all that other stuff. We set that up so that our server would listen. I'm gonna add an entry in here.
+
+[00:08:00] See, how I've got allow query? That's where I'm saying who's allowed to query this server. Right afterwards, I'm just gonna add another entry and I'm gonna say, allow transfer, all right? So this is gonna be a list of IP addresses that are allowed to transfer the full zone. A lot of times I'll put my work station's IP in the list. So that from my workstation I can do troubleshooting and
+
+[00:08:21] poll the zone and look at stuff. But we also need to put every slave server that we want to support right in here. Now I've only got one slave server that I'm setting up so I'm gonna do 10.0.222.102. Is the other server. If I had more than one, you just do a semicolon, you just start listing each one. You can do subnets.
+
+[00:08:40] So I can do slash 24, or whatever if I want to do a whole range of IP's, but usually it's just individual IP's like this. And I'm gonna close that out so it's allowed to transfer, all right? So that's important, because I need to know to look for that. So I'm gonna go ahead and save that. And now it's in place and I did a couple of stray commands when I was typing there. So I'm gonna run a named-checkcom real quick just to make sure I didn't
+
+[00:09:03] botch it up. There we go. And remember with this command, it's checking the config file to look for syntax errors and what I want is exactly what I got. No response. If you get no response, things are good. And we're in business. All right, I didn't change the zone file, we just looked at it. We didn't change it.
+
+[00:09:20] I did change named.conf. named.conf is only loaded when bind starts. So I need to do a systemctl restart named.service. And now my master server's up and running. It's really up and running the same way that it was before I got started, except now it's allowing a zone transfer to a secondary server.
+
+[00:09:44] That's it for the master, master's done. Now I can go and configure one or more slaves and get them set up to reach out to this server and get that data, right. Now, if you didn't watch the episode where we install BIND, remember that we did things like opening the firewall ports, and other stuff. That all has to get done too, right?
+
+[00:10:01] So I'm using a server that's already set up. Definitely check out that other episode if you need to, to catch all the steps to get the master set up. Now on my secondary server here, dns2, I haven't done anything on this server. Don't even think I've logged into it in this show yet. Let me bump up my privileges, so I don't have to show you all this stuff. If we take a look at, I don't have BIND installed yet, so for example,
+
+[00:10:22] if I do a ls/var, I don't even have a named folder in there, because it hasn't been created, it's not installed. So I'm gonna need to get BIND installed and configured, at least the basic stuff before I go and synchronize some other zone over to it, right. So let's run through the basics here, we're gonna have to open up some firewall ports and all that good stuff,
+
+[00:10:40] and we'll have this guy up and running in short order. So I'm gonna start by doing Yamin Saw bind and bind as utils, now if you're running a Redhat based OS, like OHEO, Cent OS, Fedora bind utils is already installed. I'm adding it here cuz likely it's out of date. Bind on the other hand is not installed by default so it's gonna need to install that.
+
+[00:11:01] There we go and I'll say yes. And we'll get that installed. Now, once it's installed, I'm not quite ready to start it just yet, cuz I need to modify its configuration a bit before I can get it up and going. And, if I start it now, I'm just gonna have to restart it again later. So no point in really starting it. So I do need to jump in and start to tweak some things though. And so, let's get that started.
+
+[00:11:21] I'm gonna jump right back into /etc/named.com, which is that basic configuration file, and we can start to get things set. Now, if I want this server to answer to other people, then I'm gonna need to modify this listen-on port, and make sure to add in its accessible IP, so this is 102 So I'm gonna add that to the list.
+
+[00:11:42] I'm not really worried about ipv6 so I'll leave that one be. But I am gonna go ahead and listen on it. If I want to define an ACL I can come in and do that. Now, it's up to me if I wanna do that. You may want to just allow everybody to query. This might be a server that you want to be held private that you only use in case of emergencies.
+
+[00:12:00] But typically I'm gonna take whatever I set on the other server and apply it here. So if I look back on my other server when we pull up its configuration. When I set it up, I created an ACL. This guy right here, all right? So that's the ACL that we defined last time. And I'm just gonna use that same ACL All over on my other server,
+
+[00:12:22] it makes sense that that's kind of what we'd want. And so on the other one, I put it right before the logging section. I'll do the same thing here. And I'll just paste that in. So sense in reinventing the wheel, right? Same ranges, we'll get that put in place, all right? And then, I called it local dash clients, so up here, where I had the allowed query
+
+[00:12:41] option, I just need to change that to say local-clients just to match. And, I don't know, maybe it would have even been faster to just copy and paste whatever came out of this one into there cuz it's all kind of already set here. But there it is, allow Dash clans, our local dash clans. So do the same thing here give that in place, all right.
+
+[00:13:02] So now I'm listening on my IP address and I got an easy all control and who's a lot to do were cursive query against my system such as pretty good spot to start. The next thing though is the important part, that way down to the bottom files. If I get down here right before the includes. I'm gonna make a little room.
+
+[00:13:20] This were we define our zones. Right and if I look back on the master when I did that. I did it right here by saying, the zone name, and then i designated that, I was the master, and here is the file where all the records come from. Right and that file I didn't put a path If you don't put a path it assumes,
+
+[00:13:41] slash VAR slash name D. So it already knows the path, I didn't to put that I just put the file name. Well, on a secondary server. What you gonna do is a little bit different. I need to say zone and I need to identify the zone to its lab.itpro.tv It is a internet zone, or internet class.
+
+[00:14:00] They all are. So I'll just do IN on that. And then here's where things get a little different. As you've probably guessed, I'm gonna say type slave, because this one's not the master of the zone, it's not able to make changes. It's only able to receive the changes. Then, I'm gonna say file, and here's where it gets weird. And I have a file, do I?
+
+[00:14:21] Okay. Well, when you are configuring your slay, you are telling us where to put your file,and the default is, slash VAR,slash name D, slash slaves,slash the name of the file. Right, well, it gonna assume, slash VAR,slash name D, by default.
+
+[00:14:40] So all I need to do here is type slaves. I'm gonna try and type slaves, there we go. And then I'll say /lab.itpro.tv.dns. And so it's gonna know to put this file in the slaves folder. That's important because the slaves folder has different permissions on it
+
+[00:15:03] that's gonna ensure that we don't write changes into it, that we receive changes from the other side but that we don't write them ourselves. So, you might be tempted to put it somewhere else but it really needs to go there. And that folder's already created, even if I go back to the master here, if I go into /var/named and
+
+[00:15:20] take a look This one configures the master and that slave's folder already exist. It's ready to receive zones if it's the slaving. You can be the master for one zone and a slave for another one. You can mix and match like that, it's not terribly common thing, but you can certainly do that but in any servers ready to receive that.
+
+[00:15:40] All right, now, I'm not quite done yet. I've given it a type and I've given it a final name, and when looking at the master, that was pretty much all I did, write the type and the final name. But here I'm gonna get one step further. I'm gonna tell it, where am I gonna get this zone from? Where does the data actually come from? And so that's where I add a little bit more to this line.
+
+[00:16:02] And I need to say masters, and then specify who that master is going to be. And I'm going to punch it in here. Now, notice how it's masters with an s. I could have more than one master. Right, you can, you actually could have more than one master. Not normally, normally, there's only gonna be one master.
+
+[00:16:21] If you have more than one master any time you make a change, you've got to go to the other masters and update them, too. That becomes a real challenge. Unless we're doing tiered, master, slave type models. Okay, a slave can actually be a slave to another slave. So you can have a primary, a secondary, and a tertiary.
+
+[00:16:44] Tertiary, right, we're gonna make up words today. So, I can have the primary, which is actually a master. Then I can have, say, two secondaries, which would be slaves. And then maybe I have six tertiary servers, which would also be slaves.
+
+[00:17:00] And on those tertiary ones, I might configure more than one master, to say, hey, if you can't get to this guy, go to this other guy, go to this other guy. These are kind of backups. That's a scenario where we would have more than one master, but it's fairly uncommon. You have to have a really big DNS infrastructure. Well, somebody out there in the Internet, which is exactly who bind was designed for. So, that's why it's got this scalability, I know a lot of you are looking at it
+
+[00:17:22] saying, that's ridiculous, I would never ever do that in my business. And you're absolutely right. Unless you work for an ISP, unless you work for one of the root hint name servers, right, if you work for one of those guys, you're gonna do it. You're gonna have as many servers as you can. Well, you're probably not gonna use mine. But, [LAUGH] but you will do that to provide that functionality.
+
+[00:17:41] So, remember who this was designed for, that's why it's got a little over-kill. I'm just gonna put in one master though, cuz I just have one. And so when we do that, you're just punching in the IP address. And mine is 10.0.222.101, and if you had more than one, you just do a semicolon to separate each one out, and you put them there in the list.
+
+[00:18:00] And we'll close that out, cuz that's the last thing that I need. So, I'm gonna close that one with the squiggly bracket, and I actually have to close it again with the squiggly bracket, cuz if you're tracking, I opened a squiggly here, and then I opened another one for defining where that master was, right? So, I'm actually two squigglies deep.
+
+[00:18:20] And so, that's why I've gotta close it twice, all right. So now, I've got that my server's configured as a slave. It's gonna store the zone in this file, but it's gonna get the zone from this guy right here, those are the pieces of information I need. And because that syntax is a little wonky, it's easy to make a mistake here, so
+
+[00:18:42] I definitely drop out and double check this one. So I'm gonna get out of that file, it's gonna save it, and then I'm gonna do a named-checkconf, so I can look in there and see if I screwed it up, right? It seems to be happy. Now, that's telling me the syntax is happy. There's still a number of things that could make this not work.
+
+[00:19:01] If the firewall's out on the master, I'm not gonna be able to reach out and get this data, right? If the master isn't set up for a zone transfer, then I'm not gonna be able to reach out and get that data. There's any number of things that can break it, but at least as far as my syntax, I remembered the right amount of semicolons. So, we're good there. So, I'm pretty much done here, except there is a little bit of
+
+[00:19:23] security stuff I need to worry about, before I really get this going. So, I do need to open up the firewall on this system. So, I'm gonna do a firewall-cmd. If I didn't want people to do lookups against this one, it's actually go enough to reach out and get the zone from the other one. So, if I'm trying to use this as some kind of crazy backup, I can do that.
+
+[00:19:41] But typically, you want people to do lookups against the secondary. The whole point is to take load off the other server. So, I'll do firewall-cmd--add-service Equals DNS, and I'm gonna run the same thing again, and do a little dash dash permanent. And remember, I run the command twice because one makes it take effect right
+
+[00:20:02] now, the other one makes it take effect after a reboot. I could just run the second command. And then restart the firewall, but anybody connected to the server right now would get disconnected. On a brand-new server, that's not a big deal, but if this is a production server, I don't wanna do that. So, I've just gotten in the habit of always running those commands twice to take care of that. All right, then, if I've feel like I'm done and good,
+
+[00:20:24] I can go ahead and restart it, and get the system up and online. Since this is the first time I've installed bind, I need to do a systemctl enable named.service, and that's gonna tell it to start bind every time I boot up, right?
+
+[00:20:40] Otherwise, when I reboot, it's gonna be stopped. And then I can start the service. And a lot of times, it actually starts it already, so it might already be started. It looks like it wasn't in this case, so it went ahead and started it for me. Now, I'm probably done here. I'm probably done, the secondary is up and going. When it boots up, it's gonna say, I'm a secondary, I'm a slave for this other zone, I'm gonna reach out and get a copy of it.
+
+[00:21:01] And hopefully it worked, right, I'm stalling. [LAUGH] So, so it reaches out, it gets a copy of that zone. It brings it down, and it saves it in that slaves folder, and now it's able to start responding to that zone. It should have the data. That's happened ,to be happening in the background. If it fails, I'm gonna have to dig through the logs and find out why it failed, and see what's going on there.
+
+[00:21:20] But assuming that everything worked, we should be good to go. Now, I'll walk you through how to trouble shoot some of that in a minute, but let's just see if we lucked out, and everything worked. I'm gonna go in to /var/named And I've got that slaves folder right here that I pointed out earlier. I'm gonna get into that slaves folder and just take a look. And I've got lab.itpro.tv.dns.
+
+[00:21:44] And if I take a look at that file, that's not so good, is it? Take a look at the file, it's got an entry for TV, and it's got an entry for mail1labitprotv. Well, that's not exactly in any format that I'm used to, is it? That's okay.
+
+[00:22:00] What it means is that I've caught it while it's still transferring. It's still kind of getting the data. What bind does is it brings the data into RAM first, and it likely has the whole zone in RAM. And then when it gets bored, it starts writing stuff from the hard drive. Now, normally, I'd worry about that. I'd say, well, what if this ever has a failure while the data's in RAM, right?
+
+[00:22:21] Well, who cares? It's a slave. If it loses the data when it reboots, what's it gonna do? It's gonna go and get the data from the master again. So, I don't have to worry about this one losing data. So, it is not uncommon to see the file in the hard drive be wildly out of date from what's in RAM, okay? But we can test this against what's in RAM and kinda see, and
+
+[00:22:41] make sure it's actually pulling things. So, if I wanna do a lookup for something like the WWW entry that we made, right? I'll use dig this time. When we use dig, you can specify what server you wanna query against by using the add symbol. So, I'm gonna query against my local system. I'm on DNS two. That's what I want to query against, and I'm gonna do a lookup for
+
+[00:23:02] www.lab.itproducttv, and if I query that, I should get a response for what it is. And I picked a good one, because it's a cname. When you have a cname, you don't just do one lookup, you do two lookups. And I can see I did a second lookup for what it pointed to. It pointed to webserver01, and here it is, and there were two different IPs for
+
+[00:23:20] webserver01. That lookup happened against this server. I didn't see those entries in the file on the hard drive, but the lookup went just fine. That means it is in RAM, and it will get written to the hard drive eventually, you just have to wait it out. And we don't normally care, right? Cuz again, if we reboot or whatever, we can just get the whole zone from the master again. It doesn't really matter.
+
+[00:23:40] Now, I could repeat that lookup against the other server, if I wanted to find out if it was there. Let's see, 10.0.222.101 is the other server. And do the lookup there and see. If you're ever having a problem where it doesn't resolve, this is a great way to troubleshoot. Because with dig, you're overriding the DNS server. And you're not just using whatever your system is set to use.
+
+[00:24:02] So I can say, let me do this lookup against the master and then let me repeat the lookup against the slave and just verify, am I getting that response back from the two? All right, so that's great way to do that. Another thing that you can do is you can test the zone transfer functionality, right? The zone transfer functionality is really built around the ls or the List command.
+
+[00:24:23] And it's kinda like on a folder, right? If I wanna see everything in this folder, I type ls, and I get a list of the files, right? Well there's not much here, but I get a list. The same thing works with nslookup, that you can use nslookup and you can switch a server. And so I am on the slave right now, I'm on 10.0.222.102.
+
+[00:24:44] And I'm now connected to 10.0.222.101 as my server. So here's my, wait, that's the service address, and I'm on 102. Now, if I run ls, that's gonna say, give me the whole zone, or you can even follow it up with a particular zone if you wanna specify different ones.
+
+[00:25:03] I'm saying, give me the whole zone. That's effectively a zone transfer. And that's blocked by default. And if I run that and it's allowed, shoot. There's more than one version of nslookup, and in some versions you don't have the ls command. And I've got one that doesn't have the ls command, darn it.
+
+[00:25:20] Like, on a Windows machine, Microsoft's left ls implemented. On this one, even help command is stripped down on this one, shoot. So I've got one of the stripped down versions of nslookup that's missing all of this. But you can do ls, and it will do a transfer, it'll basically pull the entire zone. We can do the same thing with dig. Let me pull up dig's documentation here real quick.
+
+[00:25:41] Dig has an option where you can come in and tell it hey, just grab the whole stinking thing, and it's effectively doing a zone transfer. So when we do a, here, like this. With dig you can do a -t, to specify the type. And normally you'd say like, a, I'm pulling an a record or whatever. But if you set that type to any, where it's gonna grab everything,
+
+[00:26:04] then it's the equivalent of doing a zone transfer, it'll bring all that in. You can do it incremental, like IXFRs, incremental zone transfers. Or AXFRs, if you wanna try and grab the whole thing. So that's basically what they're doing there. So if you see here where it says, a zone transfer can be requested by specifying a type of AXFR.
+
+[00:26:22] I can come in here and I can say dig @10.0.222.101, so hitting the other server. I wanna pull lab.itpro.tv and I'm gonna do a type of AXFR. I'm gonna do a zone transfer. And when it reaches out I should get the whole zone.. If I don't, then maybe I am not listed on the approved zone transfer list, right.
+
+[00:26:44] So this is a great way to test whether zone transfers are allowed and even perform one outside of bind. Cuz bind is doing everything in the background, right? We don't necessarily see its errors. We have to go dig through the syslog or journalctl. And go in and try to find out what happened there.
+
+[00:27:00] Which, I mean, that's where you'd find it. If you do a journalctl-x will normally bring it up and I probably should have tailed it, well anyhow. Let me just pipe that into tail. There we go, and you could see the last handful of lines and the bind encountered an error, we'd normally spot it right in here.
+
+[00:27:20] I've got a start-up of a unit here which is, well that's just system D starting up. Shoot, it's too late. I'd have to restart bind, to get at kind of at the tail. Or we could jump in there and search. Maybe we can hunt it down. Digging through logs isn't fun though, is indeed the point. So if I'm getting an error I can say, all right, let me just stick bind to the side, and I'm gonna use dig and I'm gonna do a zone transfer right here.
+
+[00:27:44] I'm on the host, I'm on DNS2. So if it works for dig it should work for bind. The difference here is that dig, if I get an error I'll actually see it right here on the screen. It'll tell me what the error is and what my problem is, and then we can try and sort it out and fix it from there.
+
+[00:28:00] &gt;&gt; Lot of great information on configuring replication. I can see where this can get you in trouble just as much as it can help you, for sure. &gt;&gt; [LAUGH] &gt;&gt; Don, it does look like it though, we are coming to the end of another episode. But before we do, do you have any additional words of wisdom about configuring your replication, or verification, or even troubleshooting? &gt;&gt; You mentioned monitoring, right, that we need to keep an eye on this stuff after it's done. You turn it on and you kinda walk away, everything's working really well.
+
+[00:28:22] But you do need to double check from time to time, make sure that your secondaries are healthy. And then be aware that you can use it for load balancing. You can also use it for failover though. If the master were to fail and go offline, I could jump over to a secondary and I could copy that zone file out of the slave folder into the main folder and
+
+[00:28:42] then add it as a zone in that system as the master. I could turn a slave into the master if I needed to. It is a manual process, though. Most of us never worry about it, though. You just leave it as a slave, because as a slave, yeah, you can't make changes to it. Or you're not supposed to make changes to it. But it'll still run and answer. So, the master is offline but your DNS zone is still working.
+
+[00:29:02] And now you can go and bring the master back online, in your own time. [COUGH] Excuse me. You just can't add new records in the meantime. So, that's basically it. It's a pretty straightforward process. &gt;&gt; Well Don, we appreciate you taking the time to be here with us in the studios. And we appreciate you, the viewer, watching out there. Signing out for ITProTV, I've been your host Wes Bryan.
+
+[00:29:20] &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC] &gt;&gt; Thank you for watching ITProTV

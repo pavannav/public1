@@ -1,0 +1,55 @@
+[00:00:06] - Let's talk about troubleshooting failing Systemd services. We need to understand a little bit about Systemd and what's happening in the background, so let's go through some slides to understand what matters. So in Systemd the Unit is the thing that is started
+
+[00:00:22] by Systemd. Anything is a Unit. You have services with other items can be Units as well, such as mounts and many more. To get an overview of the Systemd Unit types, you can type "systemctl-t help". It will show you a list of all the different types.
+
+[00:00:41] The default target determines what will be started, which is typically set to multi-user target or graphical target. And in a target, there is this thing called a want. Wants specify which Units should be started within a specific target. Units can use a requires to indicate that other units
+
+[00:01:02] are required. There are multiple dependency types in Systemd. A requires means that by starting this unit, the required units are started as well. And on failure, the unit will not load. You can use "Requires=" in the unit file. Or you can create "/etc/systemd/system/unit.requires",
+
+[00:01:24] containing symbolic links to the required modules. Notice that "unit.requires". In that name, "unit" should be replaced with by the name of the unit. For example, "sshd.requires". Then there is a "RequiresOverridable", which allows
+
+[00:01:41] the required unit to fail, but only if started by an administrator. This is not a very common option. And there is a "Requisite". A requisite means that the mentioned unit must already be loaded on the system, because otherwise, it fails. Next, there is "Wants". The unit should be loaded, but failure is tolerated.
+
+[00:02:01] This is what you typically get in a target, because a target is a composition of a group of wants, and if there is one unit in the target that fails, then it's not going to bring down everything else on your system. Also, there's "Conflicts". Conflicts is what you will use to indicate that
+
+[00:02:21] starting this unit must stop all of the conflicting units. Then there is the "Before" and "After". Before means that this unit will be loaded before the unit specified with "Before=", and After means that this unit will only be loaded after all units specified with "After=".
+
+[00:02:40] This is what is typically used if, for example, you have a service that depends on the network. Now, you can specify "After=networkmanager" or "After=network" to make sure that the network is up and running. Now with all these dependencies, it may happen that you need to fix dependency issues. If loading a unit hangs, you may
+
+[00:03:01] have to wait a very long time. That depends on the timeout that has been specified in the Systemd unit. If that happens, you can use "systemctl enable debug-shell.service". This enables a virtual console on "/dev/tty9" with a logged-in root user. I hope you realize this is a really dangerous option,
+
+[00:03:22] because if you leave it accessible by default, anybody can log in as a root user. So this is typically something that you will use for troubleshooting only. From this shell, you can analyze failing services using commands like "systemctl list-jobs",
+
+[00:03:40] which will show all current jobs and give an option to stop or kill these jobs. You should notice that Systemd has a strong mechanism to automatically fix dependencies, thus preventing vital hangs. Let me show you how to work with Systemd from the command line. So first, let's have a look at this debug shell service.
+
+[00:04:03] So I'm using "systemctl enable debug-shell.service". And now, we are going to reboot.
+
+[00:04:30] Even if this system has already been booted, I have enabled the debug shell service, so I can press control+alt+F9 to access the tty9 with
+
+[00:04:43] a logged-in root user. And I can do any troubleshooting from here. One command that you might want to use from this troubleshooting shell is "systemctl list-jobs", because it will show you all of the current jobs that are still running, and it will give you an
+
+[00:05:00] option to stop or kill these jobs if anything is running that you need to kill. If nothing is running, then you can use control+alt+F1 to get back to your original console. Now, in order to analyze the unit, you can use "systemctl show" followed by the name of the unit, like "rsyslog.service".
+
+[00:05:24] And this is showing all of the different parameters that the unit is using. And all of these parameters can be changed as well for the unit. So, if, for example, there is this "TimeoutStartUSec=1min 30s".
+
+[00:05:42] If one minute 30 seconds is not enough in general to start the service belonging to this unit, you can use "TimeoutStartUSec", put it in the unit configuration file, and make sure that it is set to whatever value you want it to be set to. Another useful command for troubleshooting Systemd units
+
+[00:06:02] rebooted from a root shell is "systemctl list-dependencies" on "rsyslog.service"
+
+[00:06:21] or whatever unit you want to see it for. So this is showing you a list of everything that needs to be loaded in order to get to "rsyslog.service". So it's giving you the entire tree of configuration and services that need to be available to get
+
+[00:06:40] to this specific point. Now, finally, let's also have a look at "systemctl -t help", which is giving a list of all the different unit types. So here are the different unit types. And you probably are aware that behind these units there's a configuration file.
+
+[00:07:00] The default configuration files are on a "/usr/lib/systemd/system", and you can read them to understand what this unit is going to do. So, we don't see anything very specific here. There's no requirement definition in here.
+
+[00:07:20] Oh, talking about requirements, there are these targets as well, so if you go to "/etc/systemd/system", then you can find symbolic links that point to the different targets. Let me just type "ls" to make it more readable. Here we have the default target, for example,
+
+[00:07:41] or the multi-user.target.wants. So this is really what the target is going to read when it initializes. The target needs to read its wants to figure out what needs to be started. So if you want to know what needs to be available in multi-user.target, then you can just type "ls",
+
+[00:08:03] and you can see everything that needs to be loaded. Make that "ls-l", and you can see that all of these are symbolic links. And you know, if you type "systemctl enable" to enable whatever you want to enable, really what's happening is that symbolic link will be created here.
+
+[00:08:23] Do you see "atd.service" on top? Let's show "systemctl disable --now atd.service". The "--now" option, by the way, only works since Red Hat 7.3 on. Well, Red Hat Enterprise Linux 7.3, because
+
+[00:08:40] Red Hat 7.3, that's a long time ago. You can see the output of the command. It has removed the symbolic link in the wants directory. And if you type "ls-l" again, then we can see that "atd" has been removed. And if you want it to be available, well, why would we want it to be available?
+
+[00:09:01] I mean this is atd. I'm not using that ever, so it may disappear, as far as I'm concerned.

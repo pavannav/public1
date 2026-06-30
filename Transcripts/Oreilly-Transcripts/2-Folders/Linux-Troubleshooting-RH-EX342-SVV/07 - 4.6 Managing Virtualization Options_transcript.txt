@@ -1,0 +1,71 @@
+[00:00:06] - In this lesson we are going to talk about issues that you may encounter when working with virtualization. In virtualization there is hardware as well but this hardware is represented by something. So let's talk about it. So first we need to talk a little bit
+
+[00:00:20] about KVM hardware support. Virtualization support must be offered through system firmware. To monitor availability of virtualization support you should have looked at the vmx or svm flag in the proc/cpu file. So just grab to figure out if these flags are available.
+
+[00:00:40] If they are not available you cannot do any kvm virtualization at all, period. But in some cases, if the flag is not available, you may be able to enable virtualization support on your platform by going into the system bios. If hardware support is available, the kvm-intel or kvm-amd kernel modules can be loaded.
+
+[00:01:04] A useful command is virsh capabilities, which will provide detailed information about your system. The guest section in the output of this command defines a type of virtualization guest. And you should look for the arch name to check specific platform support.
+
+[00:01:21] I will show you this utility in my upcoming demo. Within the arch name section, you should look for domain name for supported virtualization options which apply to this architecture. So this is providing real detailed information about what you can do given the hardware that you are using. And you will figure out if you are using virsh capabilities
+
+[00:01:41] on an I3 or an I7 CPU that it is very likely that you will see a different set of features. Let me show you how to use virsh capabilities from the commands line. So, I have opened SSH sessions to two physical machines
+
+[00:02:00] that offer kvm support. Let's use virsh capabilities to figure out what they have to offer. By the way, let's start using LS CPU. LS CPU is telling us what this is, and here we can see, we are on an I3 CPU, two gigahertz, with a total of four cores
+
+[00:02:21] and on the other machine, LC CPU, it's showing that we are on an I5 CPU, also with four different cores. So if you want to inspect in detail what's happening, virsh capabilities, they'll show you information
+
+[00:02:40] about the hardware properties. It normally gives a lot of output, so let me type it to less immediately. So here we can see the virsh capabilities perspective on the host platform. So the host platform is giving information about the CPU which is specific CPU mobile, the number of circuits, the number of cores,
+
+[00:03:00] the number of threads, which is hyperthreading, and also the different features which are supported by this CPU. Also useful, you can see the different caches that I mentioned here, and you can scroll down through more information about this specific host.
+
+[00:03:21] And then we get the guest option, which is about the emulator layer that is offered. So the emulator is qemu and qemu is providing support for all of the features that we can see below here. Then we get the domain type is kvm,
+
+[00:03:40] so the domain type kvm is a specific virtualization step that is used here. Remember that the virsh command talks to libvirt, and libvirt is not unique for kvm, it works in Zen environments as well. So you can see from a kvm perspective what exactly is supported.
+
+[00:04:00] And then we get some more information about features and more guest information. Operating system type, hvm. Now with this hvm, that is hardware virtual machine. So if we go directly to the hardware virtual machine, then these are the figures that we can deal with in this context.
+
+[00:04:22] There's also kvm related information. So we can use either qemu information or hardware virtual machine information and this is what we get. Now if you want to know which platform supports more, than on the other platform you can use virsh capabilities
+
+[00:04:41] as well, pipe the information through less, and see what exactly it is that you get here. This is interesting, for instance. The I3 CPU that we have just seen, gave us two cores and two threads. This CPU is giving us four cores and one thread only.
+
+[00:05:02] So this is no hyperthreading. These are real cores, which for performance, especially on virtual machines, might be a little better. And just scroll down to figure out what exactly is supported on this hardware platform which may help you in getting your virtualization organized
+
+[00:05:21] in the best possible way. Apart from the hardware features, there are other features to deal with as well, like overcommitting of resources, which is pretty important in a virtualized environment. In virtualization, the resources that you present to your virtual machines can be shared.
+
+[00:05:41] You can have 20 virtual machines on one CPU. Every virtual machine thinks that it has one CPU, which will mean that in total, there should be 20 virtual CPUs available, and they can all learn on one physical CPU. That's what we call CPU overcommitting, and the same applies for memory overcommitting.
+
+[00:06:02] If the virtual machines are using more memory than the total of physical RAM that you have available on your system, then the virtual machine memory can be swapped out as well, which is not recommended, and is bad for performance. A much better solution is Kernel Samepage Merging.
+
+[00:06:21] The KSM, KSM reduces duplicate memory pages to a single page. So if every virtual machine is loading the same Linux kernel, then it has to be loaded once, in a KSM environment, instead of 20 times in case of 20 virtual machines.
+
+[00:06:40] And this obviously can be overcommitted as well by using sparse images. A sparse image is an image that is presenting a certain amount of disk space but the disk space is not yet allocated, which means that the total of all the sparse images may be larger than the total of available disk space.
+
+[00:07:00] Now in virtualization, you may have to troubleshoot the XML files that are used behind the virtual machines. The virtual machine specification is saved to XML files, which by default are in etc/libvirt/qemu. Manual changes may introduce errors to these files,
+
+[00:07:21] so the bottom line is very simple. Do not manually change these XML files, but use the virsh command line interface, or the virt manager dref-col interface. In case you want to validate the syntax of XML files, you can use xmllint-noout on the filename,
+
+[00:07:40] that will validate the syntax and indicate if there are any problems. Also interesting is the virt-xml-validate command that you may run on a filename to verify the XML file that matches the correct schema. Next in virtualization, there's libvirt networking. Libvirt defines software bridges for networking.
+
+[00:08:03] And the network configuration is stored in etc/libvirt/qemu/networks. You can create symbolic links in etc/libvirt/qemu/networks/autostart to automatically start specific networks. Let me show you a bit what is behind the configuration
+
+[00:08:20] of KVM virtual machines. So here we are on a platform that I'm using as a virtualization platform. Let's start by typing ip a. Ip a is exposing to virtualization network. There is virbr0,
+
+[00:08:40] which is the virtualization bridge, and virbr1, which is another virtualization bridge. So apparently this configuration is a complex virtualization network with two bridges that are involved. If you want to know what exactly is involved, then etc/libvirt
+
+[00:09:01] is directly where you want to go to. So in etc/libvirt we see a generic configuration file, which is not the most important. The most important is a qemu. Qemu is about the qemu emulation layer, and in this qemu emulation layer, you can see XML file for all of the virtual machines.
+
+[00:09:24] These XML files should never be edited directly, but since you can edit them directly, there are people who are using them directly. Instead of editing them directly, use virsh edit on the XML file,
+
+[00:09:40] at least it allows you to avoid syntax problems. So it helps understanding a little bit what is in the XML file, and you can use utilities like xmllint if you want to verify the XML file. In networks, we can see that there is a configuration of all the networks
+
+[00:10:00] that are available. So here we have the default.xml, which defines the virtualization network using the bridge name virbr0, and the IP address 192.168.122.0, as the network. Here also, don't edit it, use virsh net-edit instead,
+
+[00:10:20] if you need to edit it. There's the autostart. And the autostart lets you, an (mumbles) on the LS command, the autostart, you can see that there is the default XML, as well as the local only XML, which are symbolic links
+
+[00:10:40] that are pointing to the networks that should be started. So what exactly is this local only .xml? Well local only XML is defining the virtualization bridge. So we can learn here that virtualization bridge one is using its own networking and it's available as local only.
+
+[00:11:01] So that is an isolated virtualization networking stack. Another part of virtualization is libvirtd, so libvirtd, if you want to run systemctl status on that, then we can see the actual state of libvirtd and that is providing much information
+
+[00:11:21] about the virtualization stack. If anything goes wrong in your virtual environment, I would advise to consult the output of systemctl status libvirtd, because this nice command will not only show you that libvirtd service is running, but it will also give you access to recent information that has been logged,
+
+[00:11:41] and that's very useful.

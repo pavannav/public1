@@ -1,0 +1,67 @@
+[00:00:00] Hello and welcome back. Let's start exploring volumes. I'm using the code from our Containerized React app project. And if you have decided to skip the project, you can download the code in the resources section of this lecture, we will explore how we can use bind mounts to bind to mount our local source director here inside of our containers.
+
+[00:00:22] It's very useful for development time because here it, you remember when we run the start command, we have a feature called hot reloading, which means whenever we change the contents in our source folder, then the application will get refreshed automatically.
+
+[00:00:40] However, we saw that when we build our image and we serve it as we do here in our Docker file, we just serve it here with Nginx. This simply represents the code at build time. It does not get automatically refreshed nor we would like it to do so because we would like to have a stable production build.
+
+[00:01:01] However, for development time, this is very useful. Now, why would we use a Docker file for development time? In our case here, the process to set up the project is fairly straightforward, we would clone the repository, make sure that we have node 22 installed and then we would run NPM C.
+
+[00:01:21] This is fairly straightforward, but for many projects, it's not that simple. There might be several steps here. And when we use Docker containers to also execute these steps, we actually get a lot of consistency across different environments. Think about it this way, instead of you having to run all these commands in your local machine,
+
+[00:01:41] when you are starting with a new project, you can just spin up a container that's gonna have all the steps for you. And then it's gonna look at your actual local folder here for changes in the files and it's gonna refresh the code whenever necessary. Isn't that amazing? So let's get started with implementing our development Docker file.
+
+[00:02:01] I will actually take the one that we have here and I'm just gonna copy paste and I'm gonna call this Docker file dot dev. So that I know that this is the development Docker file. The only difference that we will or the only thing that will actually change here is that we are not going to build a production build. Instead, we will simply run the NPM start command.
+
+[00:02:22] So we don't need to serve this via engine X because remember the start command here, it does start up a development server behind the scenes. Great. This is the first step. However, if we were to just build an image here and then create a container based on this image,
+
+[00:02:40] we will say that the hot reloading feature is actually not present before we can actually build this Docker file and run our project. We do need to change this run here from being a run to actually being a CMD instruction. So remember this is the command that we wish to run whenever the container starts.
+
+[00:03:00] So let's just add CMD NPM start like so let's then save this here. Come back to the terminal and build this image in the terminal. Let's run Docker build with a tag of React App colon DEV. And the file here that we use is the Docker
+
+[00:03:20] file dot DEV. And the context is the current directory. If you did the React App project and everything is gonna be cached. This is a very quick build. Let's now start here our containers. So I'm gonna say Docker run in a detached mode. We're going to map the port here and I believe that's port 3000, let's map port 3000 to port 3000.
+
+[00:03:42] And we simply say React app colon DEV like so we can also add a dash dash RM here to remove this container. Once it is stopped, we can confirm that the container is running as expected by inspecting here, Docker PS and then getting the name of the container
+
+[00:04:00] and then also having a look at the logs. So you can see here this is the log that these are the logs that are coming from the container. If we also visit the localhost port 3000 here, we can see our application up and running if however we were to come here to the source directory. And let's now change our app
+
+[00:04:21] TSX file here. We're gonna say hello from, let's say the green GX. For example, let's save this and let's come back to the browser. If we refresh our page here on the browser, then we don't actually get the changes. And that's because whenever we build our container here in or whenever we build our image here in the ID
+
+[00:04:42] with the Docker file dot DEV, we have copied all the files from our directory, including the source folder into the container file system. However, we made a copy of this, but we are not really referencing. We are not telling the container to look at the folder in our local machine.
+
+[00:05:01] This is just the default behavior of Docker. Even if the NPM start command here, it does support hot reloading because the files inside of the container are not changing. Then the NPM start command is not able to identify the changes that are made in our local machine.
+
+[00:05:21] For us to address this, we can use bind mounts. So let's now the only thing we need to do here, we don't really need to change the Docker file dot DEV file. We just need to add a couple of volumes to our Docker run command. Let's then come to the terminal. Let's clear the console here.
+
+[00:05:40] Let's clear the page and let's have a look at once again the commands, the containers that are running. Let's stop here. Docker, stop the react container. So the React app container and let's confirm that this was also removed. So Docker PS A is also gone. We will now run the same Docker run command.
+
+[00:06:01] However, we will add a couple of volumes. The first volume that we want to add is a reference to our local public directory. So the first part here is our local directory public. Then there is a column and then we provide the path in which we want to mount this in our container.
+
+[00:06:22] And remember here in the IDE, we are using a work working directory of forward slash app. That means the public folder is gonna be mounted inside of forward slash app forward slash public, right? So here is the public folder. We're just copying it here. So we're just gonna mount that inside of forward slash app, forward slash public.
+
+[00:06:43] So let's come here. We're gonna say forward slash app, forward slash public. And the second folder we would like to mount is the source folder. So we would like to mount both the public and the source folder, the reference to the source folder locally. So let's add another dash V here and locally this is inside of the SRC folder,
+
+[00:07:02] but within a container. That's gonna be under forward slash app forward slash SRC. Perfect. Now let's start our container and let's see what happens. And if we come to the browser and we refresh the page here, we will immediately see the changes. Now, that's very interesting. We did not rebuild the image. OK?
+
+[00:07:23] That's a very important distinction to make here. We did not run a Docker build command. Once again with the updated code, we actually just mounted the local directory inside of the forward slash forward slash SRC directory in our container.
+
+[00:07:40] Another important point to highlight is that the command here, it has to support hot reloading. If it doesn't support hot reloading, then this automatic refresh will not take place if we were to come here in app dot TSX, for example, and change hello from a brand new engine X for example, let's save this,
+
+[00:08:00] come back to the browser and you can see that immediately we get the new version here and that's because of the NPM start command. So it's important to highlight that when we are creating this bind mounts here with the dash V and then the path of the folder we want to mount inside of the container.
+
+[00:08:20] We are not really triggering the Docker file build process every time the file changes, all it is doing, it is really just looking at our file system instead of looking at the files that were copied to the container. Great. So just for us to wrap up. Let's go through once again, the changes that we did to the Docker run command.
+
+[00:08:42] This first part here is exactly the same and the last part is also exactly the same. This is just the image name with the tag here. What we have introduced here are two bind mounts which enable us to tell Docker to basically, hey, instead of looking at the forward slash
+
+[00:09:00] app forward slash public files inside of the container, actually look at the files inside of this folder in my local system. So I'm just saying here, the public folder, the same thing for the source folder. So anything that comes before the column, so this left side of the column, it specifies the path in the Docker host in our basically for our purposes here
+
+[00:09:24] in our local machine, both public and RC and whatever comes on the right side of the colon, it simply specifies the path that this bind mount here will actually be mounted. So from the container's perspective, when it looks at this folder, it will actually be just looking at our public folder.
+
+[00:09:43] And the same thing here when it looks at the app forward slash SRC, it's just gonna be looking at our SRC because our Docker file dot dev here supports hot reloading with the NPM. Start whenever we change our folder here or the contents of any file within the SRC folder.
+
+[00:10:02] Then from the container's perspective from the npm start process perspective. It's gonna identify. Oh wait, there are changes in the local files here inside of the container. I'm just gonna recompile them and update the code. Perfect. So hopefully that is clear for a first introduction to the topic. This might take a while to get user to.
+
+[00:10:22] But once you do so then you will see the power of this because it really enables us to get all the good things that we get with local development and combine them with. Also getting all this setup done that we can do with Docker files. Let me remove the comment here. Let's now come back to the terminal and let's do a little bit of cleanup.
+
+[00:10:40] Let's stop all our containers. So let's say Docker stop and then we say Docker PS dash Q. So we're just stopping our react application. I believe that this will already be removed. So if we have a look at Docker PS A, this is gone and then we can remove our image here. Docker images dash
+
+[00:11:00] Q like so once we do that, we should then be on the safe side to wrap up this lecture with a clean environment and come back in the next one. So see you soon.

@@ -1,0 +1,123 @@
+[00:00:00] Welcome to ITProTV. I'm your host, Don [CROSSTALK] &gt;&gt; [CROSSTALK] &gt;&gt; You're watching ITProTv. &gt;&gt; Welcome to another DNS Tech Skills show. I'm your host, Cherokee Boose. In this episode, we're gonna go ahead and take a look at how to configure and
+
+[00:00:21] create zones. In the last episode, we installed Unbound, so I'm really excited to see how we get started. &gt;&gt; [LAUGH] &gt;&gt; So we have Don Pezet in studio with us today to go ahead and help us with that. Thank you for being here today, Don. &gt;&gt; Thanks for having me back. And ready to continue on with the Unbound configuration. If you watched the first episode, we got it installed. But it's really just a glorified caching server, right now.
+
+[00:00:41] Which, I guess, is ultimately the point of Unbound, so technically, we're kind of done. But many of you will have internal records that you need to create. A records, PTR records, the forward and reverse lookup zones that we did in other DNS servers. We can certainly do those in Unbound, also. Now if you're using Unbound as a caching server, then you wouldn't normally create zones on it.
+
+[00:01:02] But you might still wanna throw some records when you want to override something. And a great example of that would be, I might have an internal caching server, and I've got a public website. And if somebody out there in the Internet, I want them to go to the public website via the public IP address. But if they're on the internal network,
+
+[00:01:20] wouldn't it be nice if they got the internal IP address, instead? That way they can go right to the internal network adapter. Instead of having to go through the firewall and bounce around. Yeah, it can shorten that path a lot. And make the experience even faster for our users. Which is what a caching service is designed to do. So in Unbound, we can override any lookup that we want right inside of the Unbound configuration.
+
+[00:01:42] And by doing that, by overriding those configs, we can return any kinda response. It's great for development and testing, lab environments, and for creating forward and reverse lookup zones, if you wanna host them directly from Unbound. &gt;&gt; Could we also rely on this as a form of redundancy? &gt;&gt; You sort of could except, people would be looking to this Unbound server.
+
+[00:02:03] They would get the override value. If the override value wasn't working, that would usually mean the Unbound server isn't working. So you have a total failure. You could get redundancy in the way of like a syntax mistake, I guess. But not necessarily from a server standpoint, so. But you could introduce additional IPs that maybe the public doesn't see.
+
+[00:02:20] And so now you do get redundancy out of it. Sky's the limit, so whatever you could think of and jam into that config file, it'll work. Unbound has a lot of flexibility to it, even though it doesn't support some of the stuff that we do. And just to give you an example something that's not supported. Things like CNAMEs, Unbound doesn't do CNAMEs.
+
+[00:02:40] So when I request a CNAME, normally what happens is the DNS server finds it, sees it as a CNAME, and returns it back to me. But then it looks up the destination. And it does what's called expanding the CNAME to find out what the actual IP should be. And it gives me the IP, also. Unbound won't do that. Unbound will say, hey, it's a CNAME, here you go. And it'll give you the CNAME.
+
+[00:03:00] So the client receives a CNAME, and it's like, okay, it's a CNAME. Where's the IP, I need the IP. Unbound says, well, you have to ask for it. And so the client has to know to send a second lookup to say, okay. You just gave me the CNAME, the actual host name. Now I need to look that one up and perform it. Unbound won't do that for us. And unfortunately, most clients won't do it either.
+
+[00:03:21] WIndows, Mac OS, pretty much every Linux distribution, they don't do that follow- up question. So from that perspective, CNAMEs, while supported in Unbound, are effectively broken. But it's not Unbound's fault. It's the client's fault for not bothering to ask, so it's a weird little catch. We don't have to worry about that in BIND. We don't have to worry about that in PowerDNS. We don't have to worry about that in Microsoft's DNS server, but
+
+[00:03:41] in Unbound, we do. So know that there are limitations. &gt;&gt; Yeah, and just knowing those limitations can really help you make the best decision for your environment. &gt;&gt; Right, absolutely. &gt;&gt; So Don, is this utility similar to BIND in the sense that we would need to create separate zone files? &gt;&gt; Well, you can. You can create separate zone files, if you want. But the neat thing about Unbound is it'll actually read its entire config right out
+
+[00:04:01] of the single central configuration file. And we just put everything there. So if you're just doing a handful of little overrides, you can just go right into the config file and be done with it. But if you're trying to do whole zones, yeah, you'll want to do separate files. So let's start with just a simple override, right? I'm gonna jump into, let me edit that file, /etc/unbound/unbound.conf, right?
+
+[00:04:22] And when you browse through there, we already saw several of these options in the installing episode. I'm just gonna do a quick search for local-zone. There's two commands that were gonna be using, local-zone and local-data. And I'm looking for a particular section where it gives some little examples. There we go. So search through the file and find the spot where it says local-zone, local-data.
+
+[00:04:44] Remember that this config file is made up in sections. So you can't just throw the commands in wherever you want. You do need to try and get them in the right area, so that's why I search for that. But I'm gonna come in and introduce just a few little breaks. And I'm gonna punch in a local-zone, and I'm gonna put lab.itpro.tv.
+
+[00:05:03] And I'll chuck that one in there so I've got a nice little local-zone. And I need to tell it that I'm turning this into a static zone. In other words, I can override entries manually right from here. There's a few other types of zones. Like dynamic, where it can auto update, and forward, and all that mess. I'm just gonna do static. I'm gonna put it in, right here, what I need.
+
+[00:05:22] And after that, I can start to put my entries. I can say, local-data, and then I can put what is effectively an A record, like we did in BIND. I can come in and I can say, www.lab.itpro.tv is an Internet record.
+
+[00:05:43] It's an A record, and it's pointing to 10.0.22.100, right? If you look at just this piece here, that's exactly how we wrote A records under BIND. But I have to add a little more to it because it's an override in Unbound. It's not an actual A record.
+
+[00:06:01] It's overriding the search results of what an A record would normally be. And the reverse lookups are very similar. I say local-data-ptr, so it know that it's a pointer record. And because it already know it's a pointer record, I don't have to specify that it's a pointer inside of the record itself. I have to do, up here, that it's an A.
+
+[00:06:21] Cuz it might also be a 4A, or CNAME, or an MX, right? It can be any of those. But with a PTR, there's only one type of record, a pointer. So I can just come in and I can say, 10.0.222.100 is www.lab.itpro.tv. And that's it, right, as simple as that.
+
+[00:06:40] Right here, I'm overriding those. This local-zone is important. I have to define the domain that I'm overriding, otherwise, it doesn't work. And then after that, I can do one or more of these records to override. And have it all right here in the central config. And if you're only doing a couple of them, this is the easiest way. You pop them in, and now they're working.
+
+[00:07:02] Well, I say they're working. We do kinda have to kind of get out of the file. We need to check it. I can do an unbound-checkconf, and no errors, thank goodness. &gt;&gt; Nice. &gt;&gt; It only reads it when it starts, so I need to do a systemctl restart unbound. Or .service is what I should have stuck on the end to be all formal.
+
+[00:07:22] But now I should be able to do a mslookup, switch to my local server. Which is, we'll just use the loopback cuz I can't remember my IP. And then [LAUGH] I will do a lookup for www.lab.itpro.tv. And when I look that up, I get 10.0.222.100.
+
+[00:07:41] That was returned right out of Unbound. And if I do the reverse, and I look it up, I get that it's www.lab.itpro.tv. Those were served directly out of Unbound's configuration because I overrode them. All right. But what if I had a huge zone?
+
+[00:08:00] Hundreds of records. Thousands of records. I don't wanna put that in my main config file, right? That's gonna be a mess. So instead of putting them in there, we can use include statements to include files. &gt;&gt; Referencing those files? &gt;&gt; Yeah, absolutely. &gt;&gt; Okay. &gt;&gt; And that lets us put the files wherever we want within limits. &gt;&gt; Keep it clean. And we keep it clean, that's the key piece. And the include files, all we're really doing is taking those same commands I
+
+[00:08:22] just did and putting them in a separate file and then using an include statement to bring them back in. So let's start by creating that file and then we'll go from there. Now, when we did the BIND episodes, I put all the domains, all the zone files, in /var/named right, cuz that's where it expected them to be.
+
+[00:08:40] With Unbound, it actually expects them to be here, in /etc/unbound. I say here, I'm in the wrong directory aren't I. So let me get into /etc/unbound. There we go. And when I look in here I'm gonna find my unbound.cnlf that I've been working with. And then all this other stuff that's in here. These are mostly keys for DNS sec.
+
+[00:09:00] But I can start to create zone files right here and populate them in with their data. So if I wanna override lab.itpro.tv I can just come in here and say, I'm gonna create a file called /lab.itpro.tv. And the final name can be whatever you want. Doesn't really matter, but again I fall into habits, so I like to do the domain.dns.
+
+[00:09:20] And then in that file, I type those same exact commands I did moment ago. I may just be typing a heck of a lot more of them. So I'll do local-zone. And then I'll put in lab.itpro.tv and it's a static, right? And then I'll do local-data.
+
+[00:09:40] And then I start to populate in my local data. So for example, the one I did in the other file was webserver01.lab.itpro.tv and I put that that was a internet class, that it was an A record, and then it pointed to some IP that I'm having a hard time remembering. &gt;&gt; 100? &gt;&gt; There we go, all right now.
+
+[00:10:00] So that's exactly what I put in the other file. &gt;&gt; Okay. &gt;&gt; Right? And, I even put local-data-ptr to create the pointer records for it, where I said that that IP was tied to web server webserver01.lab.itpro.tv. I can now continue on and add all my other records.
+
+[00:10:21] And what I'm doing is I'm putting my forward and my reverse look up zone right here in the same file. I don't have to do that. I could have the pointers in a separate file too if I wanted to go really the way bind was. But the key thing is I'm following that same file name command convention that we followed in the main configuration.
+
+[00:10:41] So now I can come through, and I can start to add everybody else that I need to add, including records that aren't just host records. I mean I might have more host records, I might say like local-data, and have a record for mail1.lab.itpro.tv. That is an Internet A record and- &gt;&gt; An X would be?
+
+[00:11:02] &gt;&gt; I just doing the A record for now, but good point, right? &gt;&gt; Okay. Then I add it in the right. Yeah. &gt;&gt; If I wanna mail server to work it's gonna have an MX record too, so I need to have both. Let me, I'm gonna do two of them because I'm all about redundancy. So we'll do one for another mail server and get that one in place.
+
+[00:11:20] And as I put these in I've been doing just A records this whole time. Which, that's not fun, right? So we wanna add in the MX records like Cherokee mentioned, I can say local-data and then I can start to put in the records there. Now, an MX record doesn't point to a host name, it points to a domain, and in bind, I would throw an at similar reference to domain.
+
+[00:11:41] That doesn't work in unbound, because I could have more than one domain smeared in here, right, so I need to say this is lab.itpro.tv. It's an Internet record, but it's an MX record. And so here's what I'm gonna return for that MX record so that people will be able to get to my server. I'm gonna do a priority of ten and it's mail1.lab.itpro.tv.
+
+[00:12:03] I thought that was gonna wrap for sure and it didn't. And then I can add a second one for my other server, right? So I wanna pop that in. And this one's gonna be mail too, if I wanna load balance I can leave it the way that it is. But I'm gonna bump it up to a 20 priority. And so there's my MX records. All that really changed was the record title, I made it an MX, okay?
+
+[00:12:22] I can keep going, I can add other things if I've got them. If I wanna have more than one IP tied to a name, well before, like in bind what I would do, is I'd put the first one in. And I would say maybe files at it.pro.tv and then I would assign an IP to it, right?
+
+[00:12:42] And then if I had another IP what would I do? I would leave the name blank and then I would- &gt;&gt; Could you back off of that previous entry. &gt;&gt; But that doesn't work on unbound either &gt;&gt; Okay. &gt;&gt; Because unbound, again, these could all be mixed up, they could be in different domains, it doesn't know. So I just have to specify it again.
+
+[00:13:00] Nothing end of the world, a little extra typing, but it let's me specify that extra IP. So you can do that, you just don't get that little short cut. So the little alias shortcuts that we used in Bind don't work so well here, but you type them out and you're fine. Now, notice this whole time I didn't do a start of authority. I didn't do name server records, I didn't do time to lives.
+
+[00:13:22] And that's because Unbound is expecting all those to exist somewhere else. I could do them here. But it's expecting them to exist somewhere else. This zone, lab.itpro.tv. I'm actually overriding it. It doesn't truly exist here. These are all overrides. But I've effectively created the zone right here, because I've got all of my records. And I guess I've got most of my records.
+
+[00:13:41] I kind of need to update all my PTRs. So I've got one PTR in place. But if I wanna create other ones, I need to get them in and get them in place. So I've got what, four or five different IP addresses. And I can just copy this guy or something and save me a little bit of time.
+
+[00:14:01] And put each one of these in. So just getting each one entered in. And what I'm effectively doing is building the entire zone file out. But the challenge I have is that I do lose some basic things. I can do cnames. So for example, if I just change this where it say it's an A record and
+
+[00:14:20] change it to cname, it would work but clients aren't going to follow it. They're not going to work properly, so I'll have my own unique issues if I were to go that route. All right, so when this is done, I've effectively created my forward look-up zone and reverse look-up zone and all the entries for lab.itpro.tv, although I kind of left that out with files, didn't I, so I screwed that one up.
+
+[00:14:42] Let me fix that and I am having to type all this stuff out each time, right? No shortcuts or whatever for me on this one. Gotta type it out, but once they're in there, then we're in business. Okay, now, that was just a collection of commands. I need to tell the centralized config file to load all this stuff, right?
+
+[00:15:01] So I'm gonna go right back into my central config file. And I'm gonna go and find the local data commands that I put in a little while ago. So I'm just gonna keep searching till I find them, there they are, and I'm gonna delete them out of there. We'll just get rid of that, get rid of that, get rid of that, all right.
+
+[00:15:20] And instead of having those commands, I'm gonna do an include. And so by coming in here and saying, include, and then pointing to a file /etc/unbound/lab.itpro.tv.dns, which I can spell, there we go.
+
+[00:15:41] I can put that in there and notice that I put it in the same place where I would've put local-data. Cuz when it reads this config file it's just going to go out and grab the file and just stick it right here in this spot, so all those commands I type would go here. If I had other zones, like if I split out one of the other one's, I would just add more include commands. And so I can put each one in here, maybe I've got dev.itpro.tv.
+
+[00:16:04] And each one, or maybe I did the reverse lookup zone in a separate file, no reason I couldn't. And so I might have put that in here as 222.0.10.in-addr.arpa.dns like that.
+
+[00:16:20] Just list each one or if you call it bob.txt or whatever. And it's just gonna load those in. So now I don't have to go and edit the central config file when I modify zones. I can go into the individual zone files and modify them there, right. So they're just all being included. Now I don't actually have these so I'm gonna delete those out. And just leave the one that I've got. &gt;&gt; Okay. &gt;&gt; All right.
+
+[00:16:40] So I'm gonna check that configuration. And there we go, no errors found, so that's a good thing. Although I will tell you, it sees the include line and it verifies the other file exists, but it doesn't actually load that other file. So I could still have problems. We'll see when I do a restart. So I'm gonna do a systemctl restart of unbound.service.
+
+[00:17:04] No errors, that's a good sign. And I'll do an nslookup, let me switch to myself as the server. And if I do a search for webserver01.lab.itpro.tv, that should be getting served out of the include file.
+
+[00:17:21] Well, I looked that one up earlier, so it might just be cached, I didn't flush the cache on this thing. So let me try one of the new entries that we did. I did files.lab.itpro.tv, I get two addresses. &gt;&gt; There you go. &gt;&gt; 103 and 104, right. If I do a search for MX records. Let me switch my type over to MX records.
+
+[00:17:40] And I'll do a search for lab.itpro.tv. There's my MX records. Served up just like they would from a regular DNS server. The difference here being, they are served up very fast. Unbound can scale to handle a huge amount of throughput, and I get that information back. On the configuration side, it's almost easier in a way that how you write those files. It's a little bit more forgiving in the syntax.
+
+[00:18:01] But, for the most part, once it's done it's now up and going. Just remember, these aren't real zones. They're overrides. We're treating them as zones. They work like zones. But we're really just overriding some other recursive look up to provide the values we want. And we can change them to whatever the heck we want. And I can even override google.com or microsoft.com.
+
+[00:18:21] And anybody who looks to my server will get the values that I provide. Which you can have a lot of fun with but- &gt;&gt; Especially if you wanted to try to prevent certain end users from going to unauthorized sites maybe. Something like that. &gt;&gt; Yeah, if you do a Google search for unbound block ad server, there's tons of people that release include files that are specifically designed to block ad servers.
+
+[00:18:41] &gt;&gt; And you can just pull them right in? &gt;&gt; Yeah. &gt;&gt; Nice. &gt;&gt; You pump the right in and then when anybody does a name lookup to go an ad server it hits these include files that you're updating. Usually create a cron job to keep them up to date. And they'll just get white squares where there will be an ad or there will be tons of people that do that. It's not the most effective way to kill that stuff, but it kills it at the network
+
+[00:19:00] level, so you don't have to have clients or anything running on workstations. A lot of people use on bound that way. If you do a Google search, you'll find a lot of good information on that. &gt;&gt; Great. Well, thank you for showing us how to go ahead and create those files. Are we going to be taking a look at any kind of zone transfers in the foreseeable future? &gt;&gt; So funny you should mention that.
+
+[00:19:21] Technically there's no zone to transfer, right? So I can't do a zone transfer, there is no replication in unbound. So if I wanna set up any kind of replication, I need to do the include statements like I did, and then I can use Rsync or some other utility to sync the little zone files that we make. But otherwise, there's no zone transfer functionality built into unbound.
+
+[00:19:40] No replication, you have to do it by hand. If you're using include file, it's not that big of a deal to do it by hand. But that's the way you sync it across otherwise, no replication on this one. &gt;&gt; Perfect. &gt;&gt; [LAUGH] &gt;&gt; All right. So, I think that's it. Unless we have any other final thoughts. &gt;&gt; That's about it for unbound. Remember, you can scale really high. It is the default in services like open BST so
+
+[00:20:00] you might already have it installed in your system. Just jump in there and configure it and kinda tweak it. It's pretty powerful stuff. And maybe we'll do an episode on the ad filtering if people find that interesting. &gt;&gt; Okay. &gt;&gt; If it is a good use of unbound. &gt;&gt; Well, that about wraps it up, ladies and gentlemen. Let's go ahead and sign off as your host, Cherokee Boose. &gt;&gt; And I'm Don Pezet. &gt;&gt; See you next time here at ITProTV.
+
+[00:20:22] [MUSIC] &gt;&gt; Thank you for watching, IT PRO TV.

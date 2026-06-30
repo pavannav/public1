@@ -1,0 +1,53 @@
+[00:00:06] - Well, moving right through the OSI model, let's go from layer two to layer three. And this is kind of a fun one. Who doesn't like to be a good neighbor? By performing IP spoofing mitigation, you can actually be a better neighbor on the internet
+
+[00:00:22] and it's really easy, but nobody does it. So, I'm looking for some good neighbors, I'm hoping you're willing to be one too. Let's just look at this and talk a bit for how this can be implemented and how easy it is and how unfortunate is it that nobody else does this. So, by leveraging access control list, we can permit only legitimate traffic to leave the network.
+
+[00:00:43] Let me show you what I mean. Typically, access control lists, ACL's, are constructed and then they're applied to interfaces. Remember, an ACL can be applied inbound and outbound on each interface. So, I could do one on the inside and I could do inbound and outbound here as well.
+
+[00:01:02] Now it's important to understand is that when a packet is leaving the network, it's sourced from something in the 10.1.1 space and then as it traverses the router, and it egresses the outset interface, we're going to change that source IP to 23.202.74.24. Now what happens, if you're sending a packet
+
+[00:01:22] and it says that the source is 8.8.8.8, well, it's not going to match our NAT policy cause NAT says change anything from 10 to 23. So, looking at the destination IP address, it's still going to be forwarded out the outset interface, but it's not being natted.
+
+[00:01:40] So this is actually somebody spoofing from inside of our network. We're forwarding spoofed traffic, and we can actually prevent this if we wanted. If we had an outbound ACL, what we would do is permit this IP address, permit traffic sourced from 23.202.74.24.
+
+[00:02:00] What comes after that permit statement? The implicit deny, this says drop everything else. So, just by doing that one statement alone, I go, what's my IP address? And they say, let's say 5.5.5.5, great, permit traffic from 5.5.5.5, anything else? Drop. That's all I have to do
+
+[00:02:20] and no longer could people spoof from my environment. If everybody did this, it'd be a much better world. But they go, how does that keep my network secure? It's not about keeping your network secure, it's about keeping your network from attacking other people. You don't know that your users are infected, not until later. So we can cut off the attacks that they would be launching against others
+
+[00:02:41] by blocking spoofing. How do we do that? By only allowing traffic that's legitimate to leave the network. So, the inside interface allows our sub-net inbound, the outside interface allows the public IP outbound. There's our statement, and this would catch it. This is on the inside interface.
+
+[00:03:01] We say, permit 10.1.1.0, if anyone's trying to send traffic from other places, drop it and log it. Is that an implicit deny? No, the implicit deny you don't see, it just drops traffic. The reason that they type this statement out is because it gives us the log keyword, so we could drop offensive traffic right there.
+
+[00:03:21] Again, on that outside interface, this is where we say, only allow traffic from our IP address to go anywhere. What happens if it's coming from something else? Again, instead of using an implicit deny, we've got a hard-coded statement there, and that log keyword says, when you see a packet that offends this rule generate a CIS log message and let us know about it.
+
+[00:03:42] Let's talk about another layer three security mechanism, and that's going to be DHCP snooping. With DHCP snooping, you will go to each switch port and you'll define what a trusted port is. So, let's talk about it for a second. I've worked on lots of equipment from lots of different vendors, many support this feature and I encourage everyone to use it.
+
+[00:04:01] With DHCP snooping, it does a couple things, the first important one is it stops unauthorized devices from giving DHCP broadcasts. It does this because when you enable DHCP snooping, and in most vendors you'll do this on a VLAN by VLAN basis, let's say I've done it for VLAN 10, once I turn on DHCP snooping,
+
+[00:04:21] all ports are untrusted. What's that mean? An untrusted port can't make a DHCP offer. Well, most ports aren't making DHCP offers, so that's okay, but it requires an extra step. What you'll have to do is go to the link that goes to your DHCP server, mark that link as trusted. If it's trusted, that port can have DHCP offers come into it.
+
+[00:04:43] So over here, just above my head, we've got another system. This is the attacker with the laptop trying to become a rogue DHCP server. They can turn on the service, but as soon as they try to send a DHCP offer into this switch, this switch is gonna drop it and it's gonna send a logging notification. So, man in the middle,
+
+[00:05:01] this is a tack type that's been around for a long time. They're trying to de-pronoun it, I guess, and call this an on-path attack. So know this term also, on-path. I could think of it as a mouse in the middle, I think that works for me as well, MITM. But, with these types of attacks, if we think about,
+
+[00:05:21] you know, is there somebody trying to screw with our traffic? What can we do to protect it? Well, first off, I would tighten up your DNS. We can use DNS crypt to encrypt it, that keeps us private. We can use DNS SAC to authenticate it, to at least make sure nobody's goofing with us and giving us bad data. We could secure ARP.
+
+[00:05:40] There's secure implementations to ARP, especially under IPB6. We can secure our routing protocols by using authentication. And we can also do additional things like logging. Remember, there's a command to tell OSPF to log adjacency changes. It's like, Hey OSPF, tell me when you get new neighbors and when you lose neighbors.
+
+[00:06:00] So, if we tell the device, if we ask it nicely, it will tell us when things go wrong. The back half of that is that we have to be watching the logs so that when things go wrong, we realize it and obviously we can respond then. Said this before, back to that rule one of security, is we want to disable unused protocols. If we're not using it, shut it off.
+
+[00:06:20] That goes for IPB6, goes for CDP, it goes for any services that are on the device that you're not utilizing. Additionally, we want to monitor wifi. Other devices, like unauthorized access points, rogue APs, could come into the environment. How are we going to know that they're there? We've got to look at the RF space and we've got to have something that sends us alerts
+
+[00:06:41] when it sees unauthorized devices, we call that a WIDS, or wireless intrusion detection system. Additionally, use encryption whenever possible. If you see a protocol like FTP that's in use, see if your application will support FTP(S). This is the same for SMTP, IMAP, POP3, HTTP,
+
+[00:07:03] LDAP, et cetera. Most protocols that we know about, will support a TOS implementation. And the acronym for that is just the original acronym, typically with an S at the end. Black Hole Routing is another concept to understand. Think about a black hole in space,
+
+[00:07:21] things go into it and they just disappear forever. What we can do is say, hey router, did you know if you want to get to the 5000 network slash eight, you can go to null zero. Which is just the bit bucket or the trash can, it's a way to throw away traffic
+
+[00:07:41] by creating a specific route, but setting the interface to a null interface. We're basically saying all traffic that is destined for that particular network should be thrown away. Why would we do this? Well there's specific subnets that are just known, they've got bad reputations because there's bad actors spreading malware, running botnets,
+
+[00:08:01] doing lots of nasty stuff. What we can do is find definitions of those networks. This is called a, let's just call it a block list. There's different terms and different types of block lists, you can do it by geographic region, it's a GOIP block list, or you can do it by threat actor. Basically somebody out there that you trust
+
+[00:08:20] is doing threat intelligence, and they're providing you a list of what's nasty. We take that list of what's nasty and we program it into our routers. We say, hey router, if you've ever got packets that are destined for this network, they could be going out to a command and control point, it could be going out to a bunch of crazy hackers that are trying to steal your data. If we see those messages, just throw them away. That's going to break communication
+
+[00:08:41] between your devices and their devices. It can never work because we're not even allowed to reach that network. There's not a way that you can circumvent an access list because we're not allowing any protocol, we're not allowing any communication under any circumstances.

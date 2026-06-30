@@ -1,0 +1,47 @@
+[00:00:00] Welcome coas to video number five code deployment with code pipeline. So in this video, we're going to look at how we begin to take those manual steps that are causing us issues in the failure mode analysis out and replace them with an end to end code pipeline using AWS code pipeline.
+
+[00:00:20] So if you're ready, let's get started. So code pipeline is basically an orchestration tool. So it allows you to model and visualize the end to end flow from your source, be that codecommit or github all the way through to your production environment. Integrates with a couple of third party tools. Jenkins and github.
+
+[00:00:41] We're gonna focus just in this module on integration between the Amazon solutions around co commit codebuild and ECs. So if you're familiar with Jenkins, all those kind of orchestration tools, then a pipeline is just a set of stages with some additional configuration.
+
+[00:01:00] So here's an example of a code pipeline pipeline. And so here we've got a couple of stages and then we've got the final artifact store where we're gonna store various artifacts. And if you want more information on this, then please go to the user guide down here. So by default, any pipeline must have at least two stages
+
+[00:01:21] and that must contain at least a source action. So you must say, where am I pulling my code from? So the pipeline we're gonna build, basically, we're gonna pull from our master branch. We're gonna pull from our pi car repository that we created as part of our breaking apart our monolith. We're gonna pull the code, we're gonna launch the
+
+[00:01:41] build pipeline. The build pipeline is now also going to do our testing and I'm gonna generate two artifacts and then one of those artifacts is going to be used to deploy our service. So let's look at our configuration. So if I go into route 53 in my hosted zone, you'll see. I've just got a,
+
+[00:02:04] a link from API internet widget.com to a ALB. So if I just hit that A LB from here, so query the health interface, I get back a good stat of db errors is zero.
+
+[00:02:21] So I've gone from my route 53 name to my A LB to my ecs instance running. Now, let's say I wanted to change the code of that. So here's my code. I'm just going to add a new key in here. I'd say that should be,
+
+[00:02:41] I just copy that down. OK? I'm just gonna push that. Ok. Now, had we thought about this process before? What would have had to have happened? I would have had to manually go into my build job, trigger the build. And then once I've got the container crated, go back into my terra form
+
+[00:03:03] and recreate my containers, push it to my service. However, if we go into pipeline, I have my pipeline set up, um it's going to read and co commit
+
+[00:03:20] from pike houses, it's then going to run my build job by cars, build from providing the source values. And then I'm going to deploy to CS going to my EU two
+
+[00:03:40] EU two cluster and this particular service. So we go back into our pipeline. I push that and what should they be able to see now? So I refresh this, it's now in progress.
+
+[00:04:01] So it's going through the process of reading this, reading the code in, then it will go through build and we can just see now we've got an in progress build. Let's go and have a look at the details from that. Now, what's happening here is it's running the new build project.
+
+[00:04:20] So not only is it going to do testing, it's also going to generate the additional two artifacts. If we have a quick look at our build spec file, we can see that at the end we've now added in this image definition file. And what this image definition file is doing is basically
+
+[00:04:40] getting the image that we're going to deploy to ecs out of the build. And we're going to only do this at the moment for our default region which is Eu West two. So we go back into our build. It's starting to progress. What will happen is I'll just pause it here while we wait for it to complete.
+
+[00:05:01] It takes a minute or so and then you'll see you on the other side. Welcome back. So you can see we've had success in our build. I just look at the process we're doing. So the same as before we're building our image, lots of building, we then basically push to the two regions.
+
+[00:05:23] But here's me running the Docker container so it can see it connecting, connecting to our R DS instance. Um We can see that that change has gone in now. So we're getting new key band. Um We've got five tests passing and so we push that image
+
+[00:05:41] to both regions now and then we upload our artifact, which is the name of the container we want to build. So we go back into our pipeline. We can see we're starting to deploy into ecs so we can look at the details of this. So now we've got two tasks effectively or two sets of tasks,
+
+[00:06:03] one that's active and one that's becoming active. And if we look in here, we can see the versions here. So at the moment, it's in the process of depreciating the two instances that were running. If we go back into our C two and our load balancer
+
+[00:06:22] target group, so you've got two healthy and two that are being drained of connections. Now, what should happen is if I click now on this link, I get my new key added. So we've made a change in code. We've built a commit,
+
+[00:06:42] we've triggered a commit and emerg into master that's then triggered our pipeline. Our pipeline has pulled the code. It's configured our existing build project to run the code and test it now and then to push the artifacts to different repos part of the output of that process.
+
+[00:07:00] It's then picked up one of those new images and deployed it to ecs without us having to do anything. So our failures that we had around testing around manual intervention, manual failures, all of that now has been addressed through the addition of automated testing into our build
+
+[00:07:20] and to the end to end pipeline. And if we go back into our pipeline, we will see this complete. So it's just until those instances have been draining, uh this will stay active. So we'll just pause here for a second and here we go. So we've now got all three stages successfully deployed.
+
+[00:07:40] If I look at my target group, there's just two targets in it. A couple of things. You can see the source, the commit I DS here and we've got our pipeline running. So I hope that was interesting. Let's start looking at the final parts of the course application telemetry and tracing. Thanks very much.

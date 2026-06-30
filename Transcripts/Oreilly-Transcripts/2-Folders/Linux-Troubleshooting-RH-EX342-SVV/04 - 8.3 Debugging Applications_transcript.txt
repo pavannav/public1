@@ -1,0 +1,83 @@
+[00:00:06] - Sometimes you need to go a little bit deeper into the application behavior, and start debugging and tracing what the application is doing. So, this is necessary if the application isn't doing what you expect it to do, you want to know why.
+
+[00:00:22] A very useful utility to figure out what the application is doing is strace. Strace will show you all the system calls the application is using, and also, if it fails in executing a specific system call, it will tell you why. And it may help you in finding
+
+[00:00:40] why an application is failing. So, in strace you will find every system call. And a system call, you probably know, is when an application is talking to the kernel to get some things done, like fetch a file. The system call will show you a list of the arguments
+
+[00:01:01] that were passed to the system call, as well. And that makes strace quite difficult to read, but it will provide all the information. If strace is not giving you enough, you might want to use strace-f. Strace-f will also give you system calls
+
+[00:01:20] about child processes, and sometimes that's necessary because, in some cases, the application is not doing everything by itself. And also, you can use strace to attach to a daemon, using strace-p followed by the PID of the daemon. And if you want to trace a specific system call, you can use strace-e.
+
+[00:01:41] For example, use strace-e open,stat cat/etc/passwd so that you can see all open and stat system calls. Oh, and in case you are encountering problems with specific system calls, and you don't know what exactly is happening, every system call is documented in section 3 of the main page.
+
+[00:02:01] So you may wanna have a look at that to figure out what is happening. Another solution is auditd. Auditd can also give you detailed information about an application. To determine what exactly you want to show in auditd, auditd allows you to write specific rules so that the result
+
+[00:02:21] of the match on the rule is written to the audit configuration. You need to be specific, of course. So, if you write rule, you must have an idea of what exactly the application is trying to do, so that you can be very specific in writing your rule. And actually, audit log file will hopefully tell you
+
+[00:02:42] what exactly is happening. Let me show you how to use these two utilities. So let's start using strace. So strace on cat /etc/passwd for example. So here we can see the result of the cat command, which is also displayed by strace,
+
+[00:03:01] and this is what it's all about. The exit that is happening and the close that is happening. And if you wanna know exactly what's happened from a system call perspective, scroll up a little bit and you can see what it is doing. So that's interesting, apparently it has written something.
+
+[00:03:23] It has read something, and here you can see everything that's happening. So the things with a 3 behind it, these are typically your system calls. So we have a close right here, we have an fstat, which is related to getting properties of files,
+
+[00:03:40] we have an open of etc/passwd. And, as you can see, this is quite verbose, and not all the information is as useful, but it's giving you an impression of what exactly it's trying to do. Interesting information can be in the beginning,
+
+[00:04:00] like here, where we can see that it is calling the library linker. Like here, where it's calling the libc library. This is the cat command, cat is a very simple command, so it's not using any external libraries, but it does allow you to trace what exactly it's doing. And because it's so verbose,
+
+[00:04:21] strace helps you finding out where exactly it's going wrong. Now let's use strace on cat of something that doesn't exist, so that you can also recognize an error. So what do we get? Well, we get a list of everything that it is trying to do.
+
+[00:04:41] And here we see a write no such file or directory, no such file or directory. So it's kind of interesting, at the end of the cat procedure, apparently, it's trying to write. That is the default behavior on Linux, that after accessing a file,
+
+[00:05:02] the last access time on the file properties will be updated. And it is trying to write that information for the dummy file that didn't exist and, obviously, that is generating an error. So, what else do we see? If we scroll up, then we can see
+
+[00:05:22] right here it's relating to the file again, but this is still the write, and here we can see the open on a non-existing file. And the open is giving no such file or directory. Now, obviously in this case there is no such file or directory, because I'm doing it on purpose,
+
+[00:05:43] but if something more complex is happening and you run a binary or a daemon that's trying to access something that doesn't exist, strace will always tell you. Also useful may be strace-e open. So if you just want to figure out
+
+[00:06:01] the open system calls, then here you get the list, and as you can see, it's much more readable. Why would you wanna do that? Well, in many cases, if it's going wrong, then it's going wrong while referring to something else. And if an application needs to refer to something else, the open system call is used.
+
+[00:06:23] Now, let's also have a look at auditd. So what can we do with auditd? We've talked about it before, you can use audit rules to write specific information through the audit log. Let me give you an example. I'm trying to run blah. Blah is a command that's not found.
+
+[00:06:42] Now, I want to get more specific information about it. Let's have a look and see if we can find anything right now. And in the audit log we don't see anything, we see some PAM messages, but that's all. Now, if you want more specific information
+
+[00:07:00] about the system calls, you can trace the system calls using the audit log. So let me use auditctl so that we can write a log. So, auditctl-a always, exit, so we are going to audit on exit. F architecture is b64, we are doing this on the 64-bit architecture,
+
+[00:07:23] - S open, we want to trace the open system call and we want to filter also on success... Is 0, and to make it a little bit easier to find the appropriate messages,
+
+[00:07:42] I'm putting in a keyword. Let's call it blahtrace. Now if you run blah again, we get the command not found, but if you use grep on blahtrace /var/log/audit/audig.log
+
+[00:08:02] and here you can see everything that has been logged because of this command. Now, this looks as if it's all more or less the same, just the same library that is called a couple of times. And next you can start analyzing what is wrong. So we can see command as pk command not,
+
+[00:08:22] exe, usr/libexec/pk command not found, so our library is called at the closing of the command that is displaying the message command not found. Now, this is just one example of how you can use the audit log to trace more information about what an application is doing.
+
+[00:08:41] And this can go pretty deep, but this is enough for now. Once you are done, don't forget to use auditctl-D to delete the lines that you have created in runtime, because, otherwise, you may find that your audit log file will be completely full pretty fast.
+
+[00:09:01] Now that you know more about strace and the audit log, let's do a quick lab. So, on this lab, on server1, you are trying to change the password for user Linda and you get an error message. Use strace to analyze and fix it, good luck. Oh and notice, this lab has script. So run the script to make sure that you have the right lab.
+
+[00:09:21] Alright, to install the lab, we need to run the script. Which is in scripts, lab83.sh and now let's see what's happening. So passwd on Linda. It's asking for new password.
+
+[00:09:40] We can ignore this PAM generated message about the failure and then retype new password, and, oh no! Authentication token manipulation error. That's an error that doesn't mean anything at all. And that's a specific case where a utility like strace may help. So let's see what happens if we use strace passwd Linda.
+
+[00:10:06] So you just put strace in front of the command that you want to further analyze, and it is going to provide a lot of output. Now, in the output we can see exactly what it is doing, everything that it's reading.
+
+[00:10:20] The information that strace is providing is so much, that I would advice you not to read everything, but do what you wanna do, see how it works out. And if it fails, read from the bottom-up. We see the write message, the write message, the write system call that we are using here is
+
+[00:10:40] writing to stand it out, it's prompting for a new password. And now, there's the read system call that is waiting for us to enter text, so I am entering the new password and I press enter. And then you can see that another lot of things are happening again. So now we can see on the last line
+
+[00:11:01] that it's prompting to retype the new password, so I'm typing the new password once more. And there we can see that it finishes. Exited with 1 memory on map and a lot of other stuff. When something happens like that,
+
+[00:11:20] then you read from the bottom-up. Here we can see one thing that has happened, authentication token manipulation error. And that's exactly what we had seen before, but we wanna know where it is going wrong. So we need to carefully scroll up from here and see if there is any error message that means anything.
+
+[00:11:47] So look, right here, we have a rename of etc nshsadow, etc/nshadow -1 EPERM operation not permitted. In order to understand this line, you need to know that the passwd command,
+
+[00:12:02] when you write a new password, it writes to a temporary file. And this temporary file will be copied over to the original etc shadow file. And here we go, we get an EPERM operation not permitted. So, apparently, there's a permission error on etc shadow. Now, that's helpful information,
+
+[00:12:21] and with that information in mind, we can analyze what is happening and which permissions are set on the etc shadow file. Let's just do that. So, we start using ls-l on etc/shadow. And in case you think, "Hey, this is old,
+
+[00:12:40] "we have nothing at all as permissions." That's correct. That's how etc shadow is supposed to look like on a RHEL 7 machine, nobody has any permissions. Only a root has direct access because of the fact that he is a root. But ls-l is showing that there is a dot as well.
+
+[00:13:00] For comparison, if you do it at only etc/passwd, we also see a dot. But this dot indicates that attributes have been applied. So if we type lsatr on etc/shadow, and just out of curiosity, I also wanna type at on etc/passwd, we can see that etc shadow
+
+[00:13:21] has an attribute, the I attribute. I stands for immutable. And that is probably the reason why this is going wrong. So we need chattr -I on etc/shadow to take off the attribute. And now, if we type passwd Linda again,
+
+[00:13:42] without strace of course, because I think we have fixed the problem. And here we have confirmation we have fixed the problem, all authentication tokens updated successfully.

@@ -1,0 +1,79 @@
+[00:00:07] All right, so now we are actually on the third module where we are going to be talking about accelerating and scaling everything, you know, so we talked about some of the fundamentals, we built, some of the key capabilities. Now we are going to be talking about how to scale this to
+
+[00:00:21] that next level. So this lesson is going to be focusing on what we call as the golden path accelerators. It's all about removing that every possible obstacle between developer and production. Right? So if you are able to provide a capability to a developer to actually be more efficient in their work, you also want to try and see what is it that will make them more productive than
+
+[00:00:43] otherwise. So the goal is simple. Developers should be able to focus on the business logic, not on the infrastructure logic. So as part of doing this, we'll talk about some very specific things. First, we'll talk about understanding golden paths as an opinionated, secure by default patterns. We talked
+
+[00:01:00] about golden paths a lot. We'll get into a little bit more details around it. Then we will talk about this idea of service mesh. So service mesh provides this idea of zero trust networking. We talked about zero trust networking earlier and traffic control without really having to make some of the code changes. So this is an infrastructure level capability that developers should
+
+[00:01:21] get for free, you know, instead of having to worry about it or even know about it. Third, we'll talk about the idea of mastering the DNS and certificate automation with something called external DNS and cert manager. These are to me those last mile problems that frustrates developers a lot.
+
+[00:01:40] If you are a developer, if you are supporting developers and if you ask them, you, you would find that these are kind of things that they worry about and this is how you'd be able to fix that. Next we'll talk about platform CLIS. So we talked about platform APIs in a previous lesson. The idea is that what do you do if you want a command line interface as opposed to having an API?
+
+[00:02:02] Because we talked about using APIs to actually have the services integrate those APIs into the actual system so that it becomes more programmatically accessible. But if the developers just want to do a cli, how do you do that? So we'll talk about that. Then we'll talk about building starter kits that sort of accelerate the development.
+
+[00:02:21] So this is usually one of the best ways to provide your golden path to your developers because you have a very structured way of doing things and you put those things in some sort of a scaffolding and provide it to the developers. And the demo for this lesson is going to be deploying a service with automated source ingress, where what we'll be doing is as always,
+
+[00:02:43] looking at the code, see how the code design is done, then we will actually run through it and talk about the validity of it. So let us actually get into this lesson further. Let's start with Service Mesh. This is one of the most powerful platform capabilities that you can offer.
+
+[00:03:03] Here is a problem Service Mesh solves in a traditional architecture. What you find is that every application team implements their own logic for service to service communication in a typical microservices based organization. So things like retry logic, circuit breakers, mutual tls, load balancing,
+
+[00:03:20] all of these are scattered around multiple applications, sometimes maybe hundreds of applications or hundreds of services. And this is usually implemented fairly inconsistently. And every team sort of maintain these things based on their priorities. Service Mesh sort of removes all of that, right, because it moves all of these things into a dedicated infrastructure layer. And
+
+[00:03:42] that is what Service Mesh is. So the application code gets simpler because the communication concerns are handled externally. So the business logic focus that developers always want to do is easier to do that way. So what do you get with Control plane? So there are three
+
+[00:04:01] main things that you get with control planes. Three core capabilities. Number one, the idea of zero trust networking. So this is this automatic mutual TLS encryption between the services. So every service get a cryptographic identity. In one of the previous lessons we went into multiple cryptographic identity detection and solutions around that.
+
+[00:04:23] So every communication is encrypted. That's what you really need to know. No configuration is required by application teams. So everything comes out of the box. So it's sort of security by default if you think about it, and not security by effort. Right. I mean that is another way to look at it.
+
+[00:04:40] The second thing that they get is this idea of advanced traffic control. There's like declarative canary deployments, blue green routing, A B testing. So all of these things are controlled through the configuration and not the code. As you do any kind of deployment, you're familiar with the canary and blue green and AB routing. If not, definitely look it up. We will actually be doing that in our code demo code walkthrough this time.
+
+[00:05:03] But the idea is that you can route 5% of the traffic to a new version. Watch the metrics. And that gradually increased from 5% to whatever you want it to be. And that is extremely valuable if you think about having a deployment that isn't going to impact a whole lot of customers.
+
+[00:05:22] So if you are just taking some of those, you know, customers or the Traffic that you know isn't going to be that critical, a small percentage of it routing through a different version, then you are going to have a much better way of creating that customer delight over time. Or the other way to do it is you can instantly go switch from blue to green. Right? I mean, so you can. So that is the other way of doing it.
+
+[00:05:42] So once everything's working, can just switch from one to the other. And so there are multiple ways to do all of those things. Right. So the third capability that you get with service mesh is called universal observability. It's called the consistent metrics, you know, traces, logs, you know,
+
+[00:06:00] so we talked about all the observability, the three main pillars of observability metrics, logs and traces. So you get that consistently for every service generated automatically by the service mesh. So application teams don't need to instrument their service to service calls, which is what they would have to do otherwise. Right. The mesh would do it for them. So you get the complete visibility without
+
+[00:06:20] asking for anybody to add code. So as you can see, the transformation is what you see on the left side to what you see on the right side. So here on the left side, you can say that there are multiple services here and they're all trying to talk to each other. Right? I mean, there is this huge confusion of how to actually make it all work.
+
+[00:06:42] Now instead of that, what you get is this control plane that actually works clearly and consistently across each of them. Now it's also good to understand a little bit more about the service mesh architecture. So let's look at that in a little bit more detail. So service mesh has this idea of control plane. And within the control
+
+[00:07:02] plane, you know, let's look at, there are multiple service mesh options. The one that I would recommend is this idea, you know, service mesh called istio. And I've done some lessons and teachings on istio outside of this particular lesson. So feel free to go Google and check that out. The way it works is that for istio, the control plane will have something
+
+[00:07:20] called istio daemon or istio Daemon. It contains that policy engine that defines how traffic should flow and the telemetric collection that aggregates the observability data. So the control plane is sort of managed by your platform team. So everything that you see here, the istio daemon, policy engine, telemetry, that is what's managed by your platform team.
+
+[00:07:43] So if that's control plane is managed by your platform team, you know, who manages the data plane. So that's where the developers Come in. So this is where the actual traffic flow happens, right? Every pod has something called a sidecar proxy injected alongside that application container. So if you have an application container, this is something that's,
+
+[00:08:02] you know, injected there. So all traffic sort of goes through the envoy and the sidecars communicate using mtls. So every hop is encrypted and authenticated. So the key insight here is that the application developers don't interact with any of this directly. So they deploy their application and the mesh handles everything else.
+
+[00:08:22] So the platform team sort of manages the control plane and the data plane is sort of automatically injected into every part that the developers use. So the good thing about it is that it sort of reduces the amount of work the developers would do. So typically when we have talked about control plane and data plane, we have always said that, hey, control plane by
+
+[00:08:42] platform team, data plane by developers. Pretty true in this case too. But here the beauty is that ISTIO or the service mesh, any of the service meshes provide the developers these capabilities right out of the box. So what are some of the other capabilities of service mesh?
+
+[00:09:00] So we talked about these things, those three capabilities, right? So let's do some level of categorization. So zero trust we talked about. This is where that mutual TLS is used to encrypt the traffic. Every service authenticates every other service. So network location is not the identity here. So because if there is a compromised pod that is coming within the
+
+[00:09:20] cluster, it can't impersonate any other services because it is authenticated right at that level. The next one is resiliency. So by resiliency, what I mean is that retries with configurable backups and maybe things like your timeouts to prevent cascade failures and circuit breakers that sort of isolate those failing services.
+
+[00:09:41] The next one is the traffic control. So this is probably where people really use service mesh. You can see that real usage because things like zero trust and resiliency sort of built into it when it comes to traffic control, mirroring that prediction to test those environments, because in our releases we talked about how that helps.
+
+[00:10:01] And the blue greens, because it can shift traffic and area can sort of shift traffic, right? I mean small percentage of traffic and then, you know, progressively increase that in the blue green you can do that instant cutover and you know, you can do a B testing where you can really for start doing some experimenting certain things and you can even do some mirroring in that whole process.
+
+[00:10:20] So the last part we talked about is that observability, right? This is where you have Your load balancing awareness request, routing, sort of those visibility and metrics, logging and traces and all that. And all those things are generated automatically for you. So let's look at the traffic control patterns a little bit more, because this is the exercise that we are actually going to be doing later.
+
+[00:10:41] So canary releases are where we are actually going to be routing small percentage of traffic, as we talked about. And then you can sort of monitor the error rates and latency. If everything looks good, increase that to 10% or 25%, 50, 100. Right. And if something goes wrong, you can easily go back. So you can go from 5 to 0 or 10 to 0 or whatever. Right.
+
+[00:11:02] So the whole purpose is to say, how can you reduce that blast radius of a bad deployment? On the other hand, when you talk about blue green deployments, what we are doing is that you have two identical environments and a blue is protection, the current protection, and your green is your new version.
+
+[00:11:22] So what you do is that you should test green thoroughly. When ready, switch over the router from blue to green. So if something goes wrong, you can always switch back because that is something that existing and working. So this gives you the zero downtime deployments with complete instant rollback.
+
+[00:11:41] So your rollback should not be an issue. That is really the idea. Because things can go wrong. If something can go wrong, it will go wrong, right? I mean, so when that happens, your rollback should be that instantaneous. The next thing to think about is the idea of AB testing, right? So if you're routing the traffic based on headers, cookies or user segments,
+
+[00:12:01] you can have the user sent to a B group or a beta group for the experimental version and send everybody else to that original version. So this is one way historically, product teams have really tried to see like, hey, I have a newer behavior I want to try out. How's that working? So that newer group of people who are actually doing the B testing or the
+
+[00:12:21] beta testing will get those newer set of features where the original set of users continue to be in the A. Another one is idea of traffic mirroring, right? So if you are sending a copy of production traffic to the test environment, you have to do that without impacting the users. So the test environment sort of processes all these requests
+
+[00:12:41] and then the responses you get are mostly discarded. You can test with real production load in this way without having to impact the user. Right. I mean, this is a real beauty because as you test in your lower environments, one big challenge that you have is that you don't have access to that data. That problem is solved by having the traffic mirroring.
+
+[00:13:02] So all these patterns that we looked at are configured declaratively, so no code change is needed. And that is how this all works.

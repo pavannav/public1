@@ -1,0 +1,73 @@
+[00:00:06] - Now let's talk about what you can do to manage kernel modules. We have already talked about kernel and udev, or use the formal word, system d udev d,
+
+[00:00:20] and how kernel and udev d are working together to get these modules operational. Now normally kernel and udev are taking care of loading the modules, as we call it, automagically, but there's a system behind it
+
+[00:00:42] that you need to understand a little bit about. First thing you need to know about is module dependencies. Very often, in order to address a specific piece of hardware you need a generic model and you need a specific model.
+
+[00:01:00] These module dependencies are written to a file with the name modules.dep. This modules.dep file is generated automatically, and at any time when modules are loaded, the modules.dep file is consulted. Now we have already seen how modules can get loaded,
+
+[00:01:21] so one solution is where udev is involved. Another solution is where you, as administrator can do it, and if you want to do it, then modprobe is what you need to use. Because modprobe is a command that does consider the module dependencies, and if you want to load a module
+
+[00:01:41] that has a dependency, modprobe will automatically do that for you. In the old days we used commands like insmod and rnmod, we don't do that anymore because insmod does not consider module dependencies. In order to get an overview of the modules that are currently loaded, as well as their dependencies,
+
+[00:02:01] there is the lsmod command, and I will show you how this command displays all the currently loaded modules. Now there is a second thing that we should talk about and that is the module options, because you know a kernel module often is a hardware driver,
+
+[00:02:21] and hardware drivers can have options that you can turn on or off, and that is also the case for Linux kernel modules. So if you want to work with options, the very first thing that you need to know about is which options are available. The modinfo command will tell you.
+
+[00:02:40] And once you have figured out which module options are available, you can use them using modprobe.conf. Well, that is, modprobe.conf, that is how it was called in the old days. On modern Linux systems, we don't use modprobe.conf anymore, but we use configuration directories.
+
+[00:03:02] The configuration directory, there is a usr/lib/modprobe.d, and there is etc/modprobe.d. These are sub-directories
+
+[00:03:21] and this is a distinction that you can see for other services as well. In the usr/lib/modprobe.d, you will get the defaults. So these are the defaults as installed from the rpm packages. And if as an administrator you want to change anything yourself, your custom configuration
+
+[00:03:42] is going to be in the etc/modprobe.d. And in this etc/modprobe.d, you will create configuration files. Make sure the fd extension conf, put anything in the configuration file that you have figured out using the modinfo command and you will be able to load the module
+
+[00:04:00] in the specific way that you need it to be loaded. And this will make sure that in most cases your modules will do exactly what you need them to be doing. Let me show you a little bit about working with modules from the command line. Okay, let me do a quick demo about managing kernel modules. So there's lsmod to start with.
+
+[00:04:21] Lsmod is providing a list of kernel modules that are currently loaded, and if you pipe the output to less you can see that there's the module name, the size of the module, and used by, which indicates by which other module this kernel module is being used.
+
+[00:04:40] So behind these kernel modules, there are the dependencies, and the dependencies are automatically managed by the depmod program. There's a modules.dep file that generates dependency relations, so that when you type modprobe anything, the kernel module will be loaded,
+
+[00:05:01] and related dependencies will be loaded as well. Let's try to load the vfat kernel module, for example. Here we can see modprobe vfat and at this moment, the vfat kernel module should be loaded. So lsmod pipe grap vfat is showing that the vfat kernel module is loaded,
+
+[00:05:22] and the fat kernel module is used below that. So fat is used by vfat, and vfat is providing the functionality. Now let's unload using modprobe -r vfat, and now the kernel module is unloaded.
+
+[00:05:41] Now where is this modules.dep file? Because that's a pretty critical file if it's about kernel module dependencies. You can see it exists in usr/lib/modules kernel version modules.dep. Let's see what happens if we remove it.
+
+[00:06:00] So rm on usr/lib, modules. And modules.dep.
+
+[00:06:20] And yes, now it is gone. So can we still load the vfat kernel module? Modprobe vfat. And lsmod pipe grap vfat. And for now, it's still, is capable of loading.
+
+[00:06:40] But sometimes, sooner or later, we will get in problems, and if that happens, you need to run the depmod command. So the depmod command will just scan for all kernel module dependencies, and the result will be written to the modules.dep file.
+
+[00:07:00] So if at any case you have a problem with kernel module dependencies, this is where you want to look. Now kernel modules work with options as well. These options are shown using the modinfo command. So modinfo on cdrom, for example, shows parameters, and all of these parameters
+
+[00:07:20] can be loaded as options while loading the kernel module. So let's try this and first let's see if cdrom is currently loaded. So it is loaded, so modprobe -r cdrom and oh no, the module cdrom is in use, so we cannot use the cdrom module
+
+[00:07:40] to do this demo. Well, that's not really a problem, because you can specify kernel module options from the command line. You can also specify them through the modprobe mechanism. So how does that work? Well there is usr/lib/modprobe.d,
+
+[00:08:00] and in modprobe.d, you find a couple of configuration files that exist there by default. These are the default configuration files. We have seen it before. Usr/lib is for defaults. If you want to create something that is custom then you go in the etc/modprobe.d directory, and in this directory you create
+
+[00:08:21] the configuration file that you want to use. So let's do modinfo again, on cdrom, and there we have a list of all the different parameters, and I'm going to use the debug option. So that will be vim on cdrom.conf
+
+[00:08:45] and here we specify options cdrom debug equals one. Notice that I make a typo, I think it's interesting to make typos, and that we can see what the kernel is doing with this,
+
+[00:09:01] when we are going to reboot, and on the reboot, the cdrom is automatically activated. That's because of the configuration of this virtual machine. I don't feel like reconfiguring it, I'm just going to reboot, and I want to see what's happening after the reboot, and how resilient the Linux kernel is
+
+[00:09:20] in dealing with errors like this. Alright, this is after reboot. Let's do lsmod pipe grap cdrom.
+
+[00:09:40] And what do we see? Well we see that the error message apparently is non-critical. The cdrom module did load anyway. So it's just ignoring it. If you want to find out if anything has gone wrong while loading a specific kernel module, d message is one of the areas where you want to go.
+
+[00:10:01] So kernel modules are loaded by the kernel, and d messages showing the kernel ring buffer. So you will see anything that was logged by the loading of this specific module. Also, for more details, there is sys/module/cdrom, and in the sys/module directory
+
+[00:10:23] you may have a parameters directory, and that depends on the specific module that you are using. So if there is a parameters directory, then in the parameters directory you will see files with the current values that were set by the specific parameters.
+
+[00:10:41] For cdrom that is not the case. Let's do a find . -name parameters, and see if we have anything else. As you can see, there's quite a couple of module directories that do have parameters.
+
+[00:11:00] So let's have a look at battery, for example. So in this battery directory which corresponds to a kernel module with that specific name, we have a parameters sub-directory and in parameters sub-directory
+
+[00:11:22] we have $_time, and $_time is set to 1000. This is nice, and this is how you want kernel modules to behave, to log the parameters that you've been using into the module directory so that you can actually find them. And if at any case you have a problem activating kernel module parameters,
+
+[00:11:41] look here. If your kernel module doesn't write its parameters to the file system, well, then there's nothing really you can do. You can try to load the kernel module from the command line and specify the parameters manually to see if that makes an effect,
+
+[00:12:00] and see what the result like is in the message, and that's about all you can do in troubleshooting kernel modules.

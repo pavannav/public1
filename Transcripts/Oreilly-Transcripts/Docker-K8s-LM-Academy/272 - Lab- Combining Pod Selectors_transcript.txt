@@ -1,0 +1,57 @@
+[00:00:00] Hello and welcome back. I would like now to show you how we can extend a little bit more our selection here of pods that are allowed to send traffic to our color API pods. And I would like to do that by using another selector here. So we are being very specific about pods that can communicate with our color API.
+
+[00:00:22] Now, if we want to be a little bit more general, then we can also use what's called a name space selector. The name space elector works the same way or at least with the same match labels and match expressions filters here. And the difference is that we can, we cannot actually name or add the name of a name space here.
+
+[00:00:43] So there are a few ways around it. One way would be to add explicitly a label to the name space with the value here that you wanna allow. So let's create, for example, a new name space here, let's say the DEV name space dot GL and this will be of kind name space.
+
+[00:01:00] The API version will be V one and the metadata here. We just need to pass the name of the name space. So the metadata name will be DEV, right? So now here, one way for us is to explicitly add labels here. So if we were to add a labels section and then we can add a name here, Dev,
+
+[00:01:22] this would mirror the name here and then we can reference this label here, right? So it say name and then DEV here and then any pod that is within this name space, selector here within the name space that has a label with the name, key and value DEV will be allowed to go through another way for us to set.
+
+[00:01:44] This is to actually use a label that is set by CORS when the when the name spaces are created. So let's save this. Let's come back to our terminal. Let's now apply our DEV name space and let's now describe the name space. So let's describe name space, DEV
+
+[00:02:03] and we will get here. You can see that we have a single label that has been added by Kernis here and this label is a stable label. So its behavior is not going to change and it will reflect the name of the name space. So we can also copy this here
+
+[00:02:21] and use it in our selector for our crow here. So we will say CDIS dot IO forward slash metadata, oops metadata dot name. And this will then be the name of our name space, whether you wish to add your own labels or use. The ones that are automatically populated by cerns is really up to you.
+
+[00:02:40] I can leave the one that is populated by Cnis here. Now, we can also combine this or restrict the pods which are within this name space only to a few pods, right? So we can combine name space selector with pod selector here and the pod selector would then also have its match labels.
+
+[00:03:01] So let's add here, match labels. We're gonna say app, let's say traffic generator like so and let's save this. Now, let's take our cURL pod here. Let's rename this, let's copy paste and let's now deploy this in the name space DEV. So I say name space DEV here
+
+[00:03:22] and let's just go back or maybe we can set this to three anyways, let's remove the tier here and let's add this to three. Let's save this. And let's also create a new pod definition here, which will be our traffic generator and the traffic generator. So traffic generator like so
+
+[00:03:41] it's gonna have an app label of traffic generator, traffic generator container and we're gonna use the traffic generator image and we're going to use a series of arguments here. The first one will be the endpoint. Now, remember the endpoint here needs to be the fully qualified domain name because we are in a different name space.
+
+[00:04:01] So that's going to be the name of our service call SVC dot And then the name of the name space where the service is deployed. So if you have a look here at the service, there is no specification. That means it is in the default name space. So color SVC dot default dot SVC dot cluster dot local,
+
+[00:04:21] right? Because this is a cross name space request. And in here, let's just put 0.5 seconds. So let's save this here. We have updated our ingress policy. So we also need to apply this. And basically what this will do is it will allow traffic from pods that are
+
+[00:04:42] both in this DEV name space and they have to have this label as well. If only one of these conditions is satisfied, this is not enough. Both of them need to be satisfied. So let's save this. Let's confirm here. We have the correct, the correct app label and for core, we have a different app label.
+
+[00:05:02] So let's save this. Now, let's come back to our terminal. Let's apply our policy once again here and let's now apply all the files in our current directory. You will see that it will create a bunch of pods here. So let's now try to get the logs of our traffic generator
+
+[00:05:22] in the name space DEV. And perfect the traffic generator is getting through. It's able to retrieve the message. I forgot to add the forward slash A PS. We're actually getting the HTML file here or the, the HTML response. But let's now try to exact into pod three or core three
+
+[00:05:40] and see if we are able to reach the, the color API. So let's now, oops, sorry, I need to add here the name space. So the name space is going to be DEV and now we're good to go. So now if we were to send a call request to color SVC dot default dot SVC dot cluster dot local
+
+[00:06:00] forward slash API, then this will once again not be able to complete, right? So this is just something I wanted to show you here regarding how we can compose and even increase the security around our applications by combining multiple selectors. Why is this important? Well, in many cases,
+
+[00:06:21] you will be running multiple versions of an application in different name spaces. Let's say that you have a DEV and the prod name space in your cluster or let's say that we have such a setup. So let me just add a few lines here so that we can discuss this a little bit more. So let's say that we have a DEV here, name space or actually we have four name spaces,
+
+[00:06:41] let's say here our call API DEV. And then we have our Mongo DB DEV and then we have call API PROD and then we have our Mongo DB prod, right? So just something like this or we could even do like a little bit more general here, let's say apps prod
+
+[00:07:00] and apps DEV, right? So now we would like the apps name space here to be able to communicate or the pods within the namespace. Apps proud to be able to communicate with the Mongodb Prod but not with the Mongodb DEV. And we would like the apps, the deployments and pods within our apps DEV, namespace to be able to communicate with the Mongodb
+
+[00:07:21] DEV, namespace, but not with the other name spaces. So this is where we could potentially have apps with the same set of labels but deployed in different name spaces. And that's where we would actually need to add this kind of more composite conditions here to our network policies where we also specify the name
+
+[00:07:42] space so that we can make sure that only the pods with these labels here and also from within this name space are able to talk to the other name space, the Mogo DB DEV name space. Perfect. So let's remove this example here. Let me just save the file. I think that this also has a few more lines here.
+
+[00:08:01] Let me just format this a little bit better. And the last thing I wanna cover here before closing this lecture is the difference between having this syntax here and also having a dash before the pod selector. So this makes all the difference, right? Just to make it very clear, this makes all the difference because the moment we have this dash here,
+
+[00:08:23] this becomes another entry under the from list. That means the end logic that was applying before now becomes an or logic. And what you are effectively doing here is actually allowing all the pods from the DEV name space to communicate with our color API.
+
+[00:08:41] And also all the pods that are marked with this label app here, traffic generator, even if they are not inside of the DEV name space. So this little syntax change here is very important. We must be mindful about it and about how we define our ingress rules. Perfect. Let's save this. Let's now come to the terminal, clear the screen.
+
+[00:09:01] Let's delete all our running pods here. So we have row one, row two, row three. We also have the traffic generator. So there are quite a few pods that are running here. Now, let's have a look if we have anything else. No, we just have the DEV name space. We can leave the DEV name space for now. So let's leave this as it is right cluster API um sorry color API is running.
+
+[00:09:21] Our network policies are still defined. So that's a good moment for us to take a short break and I'll see you in the next lecture.

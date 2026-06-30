@@ -1,0 +1,79 @@
+[00:00:07] - [Instructor] IPsec. This is a good one. IPsec is Layer 4 like many of the protocols that we've been talking about. It's standards-based. Standards-based is exciting. It means it's gonna work between lots of different vendors, Windows, Linux, OSX, CISCO, Juniper, Palo Alto, Checkpoint.
+
+[00:00:23] Everybody's gonna do Ipsec. So widely supported. That's always nice. It's a framework. What does framework mean? Well, just like the OSI model, we've got different components, different requirements. If you wanted to come along and create your own encryption system, your own hashing system,
+
+[00:00:41] that's better than anything we have today, you take out the module that they're using, let's say it's AES encryption, whoop, and I put in RES, Ryan's Encryption Standard. When we say that IPsec is a framework, it's built to allow people to come in in a modular fashion, upgrade and replace certain components within it.
+
+[00:01:01] It's need because it's additionally standards-based, which means any vendor can do this. The trick will be, if you wanna support a certain feature set that both vendors, if you've got two different ones, have to support all the same components or all the same features. Just things to keep an eye on. The goals of IPsec are threefold, really.
+
+[00:01:21] Confidentiality. Integrity. I'd even say authentication because you authenticate to bring up the tunnel. Once you authenticate, everything is gonna to be encrypted. Encryption is what gives us privacy, which is what we call confidentiality. But what gives me integrity?
+
+[00:01:41] If I just signed a contract and I said I'm gonna provide X services and Y days, how do I know that that contract wasn't altered? How do I know that it's exactly as I created it? And if you've ever heard the term hashing or a digest, that's what this is.
+
+[00:02:00] And just realize that encryption and hashing are very different. They've got different goals. They're both good. They both are included in cipher suites. But once job is privacy, the others is integrity. And IPsec tunnels, just like GRE, uses a separate Layer 4 protocol called ESP, typically. But the goal here is that we're gonna have the ability
+
+[00:02:21] to do some encryption where we didn't have that before. Now, the downside to this is that it's IP only. So remember I said GRE is a big plastic bin. I can put anything I want in it. Nobody can tell me no. They say our implementation of IPsec does not support multicast. Some vendors do, some vendors don't.
+
+[00:02:40] It's not officially in there. If you start to see some weird stuff between vendors, I go, "Well, let me just use GRE. I can do whatever I want." There are no rules, really. IPsec is really slick, but it only supports IP. GRE doesn't have any of this protection stuff but it supports everything. If you feel like you're caught in a little bit
+
+[00:03:01] of a bind there, you go, " Well, geez, I wanna support everything, but I wanna be secure." that's where we can put GRE inside of IPsec. So just additional Layer 4 headers. So IPsec, most commonly used in virtual private networks, both site-to-site and remote access. So a virtual private network is a private connection
+
+[00:03:22] between couple systems, typically, to polit across the internet. But it could really be on top of any network. When we started looking at it in classifying VPNs, the biggest classification is it two structured sites, two geographic buildings that I'm gonna connect, these tend to be permanent. Hard-coded lots of permanent addressing.
+
+[00:03:42] Anytime I do a site-to-site connection, I'm going to leverage IPsec. If I do remote access connections, this is users out in the field. What field? All of them. Well, in an actual field, or like at a client office? I don't know. I literally have no idea on earth where my clients
+
+[00:04:00] will be connecting from. And you go, "Yikes. Well, what's the best solution for how they connect?" Ipsec,. we've used for years. This works really, really well. But it uses something called ESP at Layer 4, which has no port numbers. TCP and UDP have port numbers. ESP does not.
+
+[00:04:22] Well, a lot of times when you've got these users in the field, here's their laptop, they might be out at Marriott. And that Marriott hotel has got a router. That router is doing something called port address translation or PAT, where you might have 3000 people on the inside
+
+[00:04:40] all connecting to a single IP or a handful of IP's on the outside. And you can tell which user is using that outside IP address because each port number is unique. We look at the source port of every communication and we tie it back to a user. Can you see where this is headed? When we looked at ESP, we said there is no port number.
+
+[00:05:02] So when we hit a PAT gateway, this is common. This is at every airport, coffee shop, restaurant, every wifi place, they're all doing this. They're sharing a single outside IP address with lots of private internal IP addresses. And we're keeping everything unique based on port number.
+
+[00:05:20] What's the problem here? ESP has no port numbers. So when you set up your VPN, it might break in a PAT environment. There's some cool stuff called NAT traversal, NAT-T, that we can do on top of it. But that might still be blocked by their firewall policy. So IPsec is excellent,
+
+[00:05:40] but the problem is, coming back to this question mark, we don't know where our users are gonna connect from, and we could have connectivity issues with the way that the circuits are established, and we have no control over the router or firewall where that user is. So we're kind of in a bind. So an alternative to IPsec is called TLS or SSL VPN.
+
+[00:06:04] This is gonna use TCP 443, which you may know from HTTPS communications. This is something that is allowed by just about everywhere our users go. So when our users are visiting an airport, they're visiting a coffee shop,
+
+[00:06:20] SSL VPN is more likely to go through based on the port number. It's not any more secure. It's not any better at hashing. There's nothing special there. It's just the Layer 4 transport. But notice that we've got site-to-site and remote access here. Site-to-site is IPsec always, because we're not worried about intermediate equipment,
+
+[00:06:43] or if there is an intermediate device that's under my control. I'll modify an access list or a firewall to let Ipsec go through. So site-to-site IPsec is king. Remote access, we don't always know what our users are gonna get. So SSL VPN is easy.
+
+[00:07:00] We don't have to understand networking or encapsulation. It should just work. Can you still use IPsec for remote access? Yes. But your village may vary. Why? Because we've got no clue where users are gonna connect from, and we have no control over the firewalls routers that they're connecting through. So looking at IPsec, let's just talk about it real quick.
+
+[00:07:23] I'm gonna show you how two routers build a VPN session. And we're gonna talk about a lot of terms. Not all of these terms are gonna be known to you yet, but keep up with as much as you can. We've got Alice on the left. She wants to talk to Bob on the right.
+
+[00:07:40] Alice is in the Tampa location, Bob is in the Orlando location. Between Tampa and Orlando, there's the internet, of course. In each of our sites, has an IP address. So what we'll do is we'll go to the router at site A and I say, "Hey, your partner is over here at site B."
+
+[00:08:00] And we point to its outside IP address. And I do the same thing on router B. I say your partners over there at router A. Now when one of these hosts, let's say Alice sends traffic into the router, there is gonna be information here that says it's either going to be a routing table
+
+[00:08:20] or something called a crypto map that says, "Hey, anytime you see packets coming from 10.11.0/24 going to 10.1.2.0/24, we want those to be encrypted." It's really pretty simple. It's like, "Hey router, should you see an envelope,
+
+[00:08:41] that Layer 3 header, source from here, destined for there, dot, dot, dot, like incomplete sentence. If, that's our "if" condition. If you ever see that, he's like, "Then what?" I go, "Well, I want you to send it to this device right here."
+
+[00:09:00] So I need to know the peer IP address. I need to know how to encrypt, right? You've gotta know what to encrypt. That's your if condition. And then how do you encrypt it? Maybe use AES. How do you hash it? Maybe use Shaz56. This is the encryption algorithm and the hashing algorithm.
+
+[00:09:20] So long as these match on both sides, we're going to successfully negotiate a tunnel. So interesting traffic comes into the router and I say, "Hey, this is something I should encrypt. It's coming from 10.1 to 10.2. What do I do? Well, router A is gonna call router B, using what port number?
+
+[00:09:41] UDP 500. This is where I go, "I see Camp Live, internet key exchanger, internet security association, key management protocol." What we're basically doing here is setting up what we call a management session. We're setting up a connection between these two routers to talk about a VPN, to talk about keying information,
+
+[00:10:01] talk about error rates. I go, "Hey, I wanna build a tunnel with you. Is that cool?" And the other side says, "Who are you? You have to authenticate to me." If I authenticate successfully and I negotiate an encryption capability, that's where we go, "Cool, we've got a secure channel", using AES, using Shaz 56.
+
+[00:10:21] And this is all established in something we call Phase 1. Phase 1 of Ipsec, we build a management session. Once that management sessions is established, what do you think we do? If you said Phase 2, your genius. We move to Phase 2. In phase two, this is where we set up our communication channels for doing IPsec.
+
+[00:10:43] This is where the data moves. So this first session was for management. That's for the two routers to talk about the health of the tunnel. It happens in Phase 1. Once Phase 1 complete successfully, we move to phase two, which is the negotiation of IPsec data essays.
+
+[00:11:00] Router A talks to router B. It says, "Hey, are you cool with AES? in Shaz 56?" If the other side's misconfigured and it says, "No, I was set for a Triple DES and MD 5." If they don't have a matching, and you could think of this as like a cookie recipe. I go, "How do you make oatmeal cookies?" And you have your recipe and I've got mine.
+
+[00:11:20] If we're gonna have a bake-off, we need to do it the exact same way down to the grain of sugar. We want them to be identical. That's what's happening in our policies for encryption. You say, here's my interesting traffic. Once packet comes in, it's interesting. The router tries to establish this VPN. How does it do it? Contacts the other one. UDP 500 reaches out and says, "Hey, I'd like to build a VPN.
+
+[00:11:43] I'm this other device, here's my credentials. Here's the type of crypto I'd like to do." If both sides agree, we formed that tunnel. Basically, it's an agreement upon how to send encrypted data between the two sites. We'll send data back and forth, back and forth or watch the tunnel. All of a sudden they stopped talking,
+
+[00:12:00] we run an idle timer and we keep watching. And if enough time passes, we'll just tear the tunnel down because it's no longer being used. The moment somebody tries to reach out and connect again, we'll sense that and we'll reestablish the tunnel. So these tunnels timeout, and they're re-established on demand. You can even run an application across it constantly so it never times out.
+
+[00:12:20] Sometimes people just do like a continuous ping, but it's really not necessary. You can typically bring up a tunnel very, very rapidly. All right. So that's not everything to IPsec, but it's a high-level overview. Think about it. You've got your "if" condition, what traffic needs to be protected. And then you have a policy, a crypto policy.
+
+[00:12:40] How are we gonna protect it? Make sure that your encryption and hashing match on both sides. Also remember that you're pointing to the public IP addresses on each of those routers. If they're dynamic addresses, you've gotta figure out a way around that because those IP addresses are gonna change. But typically, for site-to-site tunnels, we use static.
+
+[00:13:00] Realize that they are all workarounds for dynamic addressing.

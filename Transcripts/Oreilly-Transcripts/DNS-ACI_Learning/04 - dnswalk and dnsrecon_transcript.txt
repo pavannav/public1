@@ -1,0 +1,99 @@
+[00:00:01] Welcome to ITProTV, I'm your host [CROSSTALK]. &gt;&gt; Live from San Francisco [MUSIC] &gt;&gt; You're watching ITProTV. Welcome to another exciting episode here at ITProTV. I'm your host Wes Bryan and in today's episode, we are continuing through our series on DNS. That's right, DNS tech skills.
+
+[00:00:21] And joining me back in the studios today for this very endeavor is none other than Mr. Don Pezet. Don, how you doing, sir? &gt;&gt; I'm doing great, Wes. Ready to dive right back into DNS, and we're gonna continue on with our little adventure in DNS utilities. We've seen some of the more common ones that are out there. I wanna cover some of the less common ones that are out there, and so in this episode we're gonna take a look at DNSWalk and DNSRecon.
+
+[00:00:41] Two tools that have been around awhile but are a little less known because, mostly cuz they're not included in the majority of distributions that are out there. So if you have Windows, Mac OS, pretty much any Linux distro, they're not normally gonna have DNSRecon and DNSWalk, you got to go out and get them. But there is one place where they come prepackaged,
+
+[00:01:01] a great collection of utilities called Kali Linux. Kali Linux, or Kali Linux, whatever. Kali Linux is a, it's really a penetration testing suite. So if you're a security engineer, you've used it. It's got tons of software in there that lets you examine servers and look for vulnerabilities and all sorts of other stuff. Well, as part of that, we've got information gathering.
+
+[00:01:23] And when we do information gathering, we can use that to troubleshoot and locate issues. The same goes for DNS. The inside of Kali Linux, we've got a number of tools that are focused just on DNS. And DNSWalk and DNSRecon are two of those. Now, we don't have to use them as a hacker to just break into a network. We can use them ourselves just to gather information about our systems and
+
+[00:01:42] even check for errors and so that's what I'm gonna do. Now, before we really get going on these tools though, one good thing to do is to set it up so that we'll be able to query our entire zone. Now when you query a zone, normally we reach out to a DNS server, and what do we do? We give it a name, and it returns an IP, it's very simple.
+
+[00:02:01] But if you reach out to a DNS server and you say, hey, can you give me all the records you have? What's the DNS server gonna say? It's gonna say, no, I'm not gonna do that, right? And that's because some attackers will try and do that to get all your records, try and identify servers on the network. It's not true security, it's just security through obscurity. But if we're gonna be troubleshooting and
+
+[00:02:20] diagnosing our network, we need to be able to pull that. So by pulling all the records from a zone, that's called a zone transfer and we need to enable that. You don't always have that enabled by default. In fact, the majority of time you don't cuz you don't want that enabled by default. So what I need to do is, I need to get my system set up to be able to do that. If I try and use some of these tools without it, I'm gonna have a little bit of a problem, right?
+
+[00:02:40] So the first thing I need to do is, here on my workstation, so I'm booted into Kali Linux, and I'm gonna fire up a web browser. And I just need to find out what my IP address is, so I'm gonna go to showmemy.info, and it'll tell me what my IP address is. And I need to get that address added to my zone transfer list, right? And my machine's running a little slow there, but there we go.
+
+[00:03:01] So, my public IP is 209.251.131.98 and if I jump over to my DNS server and I take a zone like lab.ITProv.TV, it's gonna pull up its properties here. And I jump into zone transfers. Look at these default settings.
+
+[00:03:20] I'll do zone transfers but only to servers listed on the name servers tab. In other words, I'll only allow zone transfers to other DNS servers in this zone. And that's what we want, that's what makes sense, right? But I need to add my workstation so that I can reach out and query it too. So I'm gonna come in and say, only to the following servers. And I would need to add in my DNS servers, but I can also go in and
+
+[00:03:42] add my workstation. So, 209.251.131.98, I believe is what it was, let me just verify that. And it was, okay. So I've got that added in. It's gonna try and resolve it, but I don't have a reverse lookup zone, so I'm just gonna hit OK on that. And there we go. So now, I'm gonna be allowed to do a zone transfer on this machine.
+
+[00:04:00] And that's going to enable DNSRecon and DNSWalk to work. If you've got BIND or Unbound or a different DNS server, you'll need to do it's steps to enable a zone transfer for this to work. Al right, but now I can jump back over to Kali and I can start to use my utilities. Now, Kali Linux already has them baked in so it's easy to go and get an iso image of it, fire it up, and run these utilities.
+
+[00:04:23] But you can get DNSWalk and DNSRecon for your system. So, for example, if you have Ubuntu or Debian, you can do an apt-get dnswalk and it will go in and install it. I'm just using this cuz it's already got it built in. All right, you can check and see if you've got it. We'll start with DNSWalk. What DNSWalk does, it's a DNS debugger.
+
+[00:04:44] So it'll look at your zone. It'll download your zone file and it'll parse through it and it'll look for errors. So it's a great way to spot problems in your file. And if you've got problems in your zone, it'll help you identify and tell you what they are so you can go in and and you can fix them. It does some really neat stuff. If you're running dnswalk -h, it'll give you the help output.
+
+[00:05:01] Well, normally it'll give you the help output, though in my case it won't. So, there we go, I'll just do a little man dnswalk. We can pull up the help output here and see the different options that we can provide. The default options are probably enough. We usually just do dnswalk And then provide a domain name to run against. But you can go in and
+
+[00:05:20] tell it to do other things like recursively descend subdomains. That's really useful if you have SRV records. SRV records will always be tucked into subfolders and this will scan through and check your SRV records also. You can tell it to do other things like Perform fascist checking, which means, make sure that every forward entry has a reverse entry also.
+
+[00:05:41] Every name to an IP also has an IP to a name. It'll look for reverse look-up entries. We don't always have that on the internet, so that's turned off by default. You can tell it to suppress checking for invalid characters. This is kind of important because they've loosened the rules on DNS recently, so that you can have foreign or UTFA characters and international characters in your domain names.
+
+[00:06:00] And so, if you are using those, that can cause problems. If you're in an English speaking country or you're just using the regular character set then we can leave that turned on. You can also look for lame delegations, lame delegations. That's where I have a delegation entered where I'm pointing to another server and that server doesn't exist or it doesn't respond.
+
+[00:06:20] It'll actually check to make sure that any kind of delegation actually does work. So it's gonna scan to my zone and look for errors. And in order for it to work, it's gotta be able to pull the zone. So that's why I had to do the zone transfer entry at the beginning of the show. Then, once I've got that set up, I can do a DNSWalk, and I can specify who it is I wanna walk against.
+
+[00:06:40] Actually, there's one more thing I need to pull from here. When you see all the stuff here that we're specifying, the zone transfer and so on, I need to override the server that I'm pointing to. And so I'll need to specify that in the command line in order to do it. And they've got a command line option buried in here, after I get past it. Actually, all this stuff I am scrolling past, let me talk about this real quick.
+
+[00:07:01] Way up here, it's got all the different errors that can come back. And so it is just highlighting unknown hosts, a record not found, CNAME to Z, it's looking for all these entries that it can respond back. And just kind of giving you, kind of an idea of what it does, how it checks, and what it looks for.
+
+[00:07:20] So great way to kind of punch through and specify and find that information. Now, in my case, I need to be doing this look up against my own DNS server which is out there in the Cloud. So I need to make sure that my system is using it. So I'm gonna go into my network settings here. And I'm gonna override my DNS server.
+
+[00:07:40] Right now, I'm set to use Google's DNS servers and that's not what I want. So I need to get in here and kinda fix that. I'm set to Automatic. So I'm gonna turn Automatic off and specify my server. So my server IP is something weird, which I've got written down here. It's 38., something creative. So it is, I was close, 34, I'm glad I didn't guess it,
+
+[00:08:03] .193.248.100, that's my DNS server. So I'm gonna set that up so that that's what I'm doing my lookups against. And we'll give that a second. That should have kicked in already but didn't. We'll give that just a moment.
+
+[00:08:20] Let me, I'm gonna turn my wired connection off and turn it back on again. Give that just a moment while it resets itself. And I wanna make sure that I'm doing lookups against the right server. There's a good way to make a mistake. If this were just a publicly hosted zone, I could just run right off against it. But I've got mine private right now, so I gotta make sure I'm looking at the right server.
+
+[00:08:40] And DNSWalk is just gonna use whatever I am set to look for by default so that's why I'm trying to get that set real quick. And then once I've got it, then I'll be able to go in and override it. And so, there we go. Now I can see that my DNS server is set correctly. All right, so let's jump in here and fire this thing back up. I'm gonna do dnswalk lab.itpro.tv and I'm gonna throw that little dot right there on the end as we know we need.
+
+[00:09:02] And when I run that, it's gonna reach out. And right off the bat, I get checking lab.itpro.tv, that's kinda what I wanted. And then I get BAD, there's a problem, right? Lab.itpro.tv has only one authoritative name server. Well, all right, so I got an issue here. I only have one authoritative name server.
+
+[00:09:20] If I were to go and look at my DNS records over here, I can see, sure enough, under name server, I've only got one. For redundancy, I should have at least two. That's a problem, right? So DNSWalk spotted that. It's also going on to do the zone transfer. So it found that even before doing the zone transfer, right? So then it does the zone transfer and now it's finding other issues.
+
+[00:09:41] Here's my SOA data, and then I got three warnings. That's not too bad, right? It's not gonna list all the good stuff that happens. So, I might have done great things but here, I just see everything I've done wrong. The first thing files.lab,itpro.tv is a CNAME and it's pointing to fileserver01.lab.itpro.tv and that's an unknown host.
+
+[00:10:00] I've got a CNAME pointing to somebody that doesn't exist, right? So that CNAME either needs to go away or I need create whoever is missing. My next two warnings are www.lab.itpro.tv with an IP and no PTR record. Now, that may or may not be a problem. That's why this is a warning instead of a bad because,
+
+[00:10:21] just because I don't have a reverse lookup record doesn't mean it's an issue. Email servers, it's usually a big deal, everything else, we usually don't worry about it. But these two guys are missing their PTR records. So I got three warnings, one error. DNSWalk scanned through my zone and that's all it found. Now if you have a massive zone file with thousands of entries, this is a heck of a lot easier than going through line by line and looking for
+
+[00:10:41] these types of mistakes. That's what DNSWalk is all about. And we can tweak it's settings with the extensions we saw a moment ago, the command line arguments, to get it to look for additional things and make it more strict or less strict to meet our needs. DNSWalk's a pretty cool utility. It does make it a lot easier to scan for these errors. All right now, along the same lines, is the DNSRecon utility.
+
+[00:11:04] DNSRecon will scan through your DNS and try and find as much information as it can. If you have the ability to do a zone transfer, it'll get a lot of data. If you don't, it'll get less. But, it's a Recon tool, so it's still gonna try and get as much as it can out of
+
+[00:11:20] your domain even if you don't provide it with the additional information. Now DNSRecon has several different modes that it runs in and they're listed somewhere here in the documentation. My word wrap is really making this look terrible. Let me stretch this out so you can see the different modes. So, these are the modes right here, that. [LAUGH] The standard mode is what we're running by default.
+
+[00:11:44] And it's gonna look for Start Of Authority, Name Server, A, AAAA, MX, SRV, and AXRF, which are our four transfers. It's gonna look for all that stuff to report back to me, and get me all the information it can. But we can change it to do reverse lookups, if we want. If we wanted to brute force, you could provide a dictionary of terms so
+
+[00:12:02] it can look to see if servers exist. You can look just for SRV records, if that's all I wanna find. AXFR, if we've got a separate zone transfer. It's a great way to spot if you got DNS servers on your network where you left zone transfers turned on and you meant to have it turned off. GOO, that's Google. It'll actually do a Google search, it'll pop up a window and
+
+[00:12:21] do a Google search on every name that it finds. You don't want to do that on a big zone, that's bad news. You can do cache snooping where you try and find out what's in the cache on the server and TLDs can let us exclude certain top level domains if we don't want to query all that. So these are all different little tweaks that we can do. I left off one, zonewalk.
+
+[00:12:40] If you're troubleshooting DNSSEC, the secure DNS zonewalk will actually go through and follow the DNSSEC entries to make sure they're all intact and show you what servers are involved in that. So, those are all functions inside of DNSRecon. And if you wanna use it, the easiest way is just say, dnsrecon -d and the domain that you want to scan.
+
+[00:13:01] So, I'm gonna do lab.itpro.tv. And I'm gonna run a scan on it. Now, if I wanted, I could go through and change the mode that it's running in but I'll just run it in the default mode. And when it runs, it's gonna reach out. I don't have DNSSEC on my domain, haven't configured it yet. But it found my SOA and my name server.
+
+[00:13:20] It could not resolve any MX Records. I don't have any. Well, I don't think I have any, let's see. Nope, no MX Records. So that's probably why we got that one. But I wasn't able to find that. And then enumerating SRV Records, they didn't find all my SRV records but it did find some. It found the sip values that I created. And so it's turning those up and showing them here.
+
+[00:13:40] It's parsing through and showing me everything that it could find. Now it didn't necessarily do every check in the book to find things out, but it did the standard ones and I can go through and manipulate it if I needed to. Another great way to scan across your servers and just kinda see what's what, see if your exposing information or not.
+
+[00:14:00] If I were to take an actual public domain, so maybe itpro.tv itself, which we host with Amazon. If I were to point against that one and run it, well it's not going to allow zone transfers so it's going to have a much more limited view. But, it's gonna reach and it's gonna find those name servers, which are Amazon's, and it's gonna come out and show me any bit of data that it can find.
+
+[00:14:22] So it's finding IPv6 servers and IPv4. It found our MX Records and so it's gonna lay those out. It found a TXT record for SPF, that's our sender policy framework. And now it's trying to enumerate our SRV records, it didn't find any. Now, I know for a fact we have two for our Skype for
+
+[00:14:40] Business server but it wasn't able to find those and it returns it. This is all publicly available information that it was able to scrape without doing a zone transfer, right? If zone transfers were enabled, it would be able to get even more. But it was able to find things including the A record for itpro.tv and a couple of other well knowns that it will look for in the background too.
+
+[00:15:00] DNSWalk, same thing, I could have pointed DNSWalk at itpro.tv. And if we do that, see how the zone transfers are all disabled? It wasn't able to do a zone transfer. And so it tried to get other information, but everything else it was able to see checked out okay so, there weren't anything to report other than the errors of querying at it.
+
+[00:15:21] So, that's all we got back on this one. So both cool utilities. If you wanna run them, the easiest way to run them is just to fire up Kali Linux in a VM, because they've got DNSRecon and DNSWalk already installed, already ready to go. But if you've got a Linux box or Mac OS, you can install them, they just aren't installed by default. Just quick ways to check your zone and look for errors.
+
+[00:15:41] &gt;&gt; Don, great information, great utilities there. Does look like we're coming to the end of another episode but before we sign out, Don, do you got any additional pieces of advice about our two utilities here, DNSWalk and DNSRecon? &gt;&gt; Number one thing is, if you want DNSWalk to really be effective, you need to turn on zone transfers. The temptation is there to just open up zone transfers to anybody.
+
+[00:16:00] If you do that, make sure you turn it off. You gotta turn off that zone transfer stuff afterwards when you're done, otherwise you're leaving yourself vulnerable. I prefer to just add my individual IP but the IP that I had to add was the NAT'd IP for the building. So technically everybody in this building can do a zone transfer off of that zone right now I don't wanna leave that there. So be careful, don't leave your servers open to zone transfers,
+
+[00:16:21] make sure you turn that off when you're done. &gt;&gt; Words of wisdom. Lock down those zone files, that's right. So we're gonna go ahead and sign out here for ITProTV. I've been your host, Wes Bryan. &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time. [MUSIC] Thank you for watching ITProTV.

@@ -1,0 +1,85 @@
+[00:00:00] Welcome back. Let's now go through our practical exercise to explore how to control the execution of workflows. Let's create a new file under our workflows directory or simply call this 10 dash execution flow dot Y. And we will have once again named 10, controlling
+
+[00:00:20] the execution flow. And this will be triggered on workflow dispatch and it will have a series of jobs. Now, here we will try to mod model a little bit more complex behavior or at least a few dependencies. This is more in the direction of what you would see when you work with real world scenarios. So or in real world projects.
+
+[00:00:41] So let's have a couple of jobs here. We will have a link build job, we will have a unit test job. We will have also a deploy nonprod job A E two E tests job and a deploy prod, right? So now we have provided at least an overview of all
+
+[00:01:01] the jobs we would like to then populate with information here. But just for you to understand some of the common steps in a CI CD workflow for the workflow dispatch here, we will define an input so that it allows us to control the behavior a little bit better. Normally, this would not be provided by an input, but here will simply say
+
+[00:01:21] pass the unit test. So since we don't have a real application with real unit tests that can pass or fail, we're going to control this behavior via an input of type boolean. We can also provide a description, this will be shown in the UI and this is whether unit tests
+
+[00:01:40] will pass or not. And then the default here will be set to true, right? So we will just whenever we run the workflow, we can toggle whether we want to pass the unit tests job or not. Perfect. Let's now start populating the different jobs here. They will all run on Ubuntu latest. This is the same for all of them. So I'm just gonna copy this
+
+[00:02:03] and in all of them and then they will all have just a very basic echo comment. I'm not gonna put any complex functionality here because we want to work on understanding the dependences between different steps within a job or between different jobs, right? So here
+
+[00:02:20] we will have a simple step which will have a name of lint and build. This could be, for example, could be a series of comments where it is normally done. So in in node projects in javascript project, you would run the NPM run link, then you would probably also have some
+
+[00:02:41] typescript checks and then you would run the build comment, right? So it could be something like this. You could also um run a format checker. So for example, using prettier and then after the series of commands, which are relatively fast to execute a couple of seconds should be enough. Even for larger projects,
+
+[00:03:00] then you reach into the build command and then this would output a build directory. But for us here, we will just have an echo command. I will say linking and building project, right? And then here in the unit tests, we have then step and we will have a name here. This name is going to be running unit tests
+
+[00:03:21] and this will simply run once again echo running tests. And then here we're gonna add another step that is going to be conditionally executed based on our inputs, right? So we say here failing tests and this will be executed if and only if we our inputs pass unit tests, they are negative, right?
+
+[00:03:43] So if not input, pass unit tests, then we want to execute. So basically, if this is true, the negation is gonna be false and this whole step here will not be executed. And the only thing we want to do here is run exit with a code of one, right? So basically
+
+[00:04:01] if we set this to false, then so if we set the pass unit tests, input to false, then this expression here will evaluate to true. And then this step will be executed. Since there are no dependencies between these two jobs, they will be executed simultaneously. So whenever the workflow executes or whenever the workflow starts,
+
+[00:04:22] these two jobs will be executed in parallel. Let's now proceed to the deploy nonprod and the deployer. Non proud here, we would like to add a needs keyword because we only want to execute the deploy non prod if the unit tests are successful and the linking and building is also successful.
+
+[00:04:41] And so here it needs two jobs, it needs the linkt dash build and it needs the unit tests. Then if and only if these two jobs here complete successfully, the deploy non prod will be executed. Our steps here will be once again, very simple. We'll have a name here deploying
+
+[00:05:01] to non prod and then this is just going to echo something deploying to non prod. And so now we think, OK, once we are done deploying to non proud, we would like to perform our end to end tests against the non prod environment. And for that, we actually need here,
+
+[00:05:21] we need the deploy non prod job to successfully complete. So if the deployment to non prod has been successful, we would like to proceed to executing our E two E tests and perhaps even other tests, maybe we could execute some load tests as well, right? So we can say here, I'd say maybe load tests
+
+[00:05:40] and we're gonna do exactly the same. We're gonna paste this here. And we will say that both the E two E tests and the load tests will be executed simultaneously once we are done deploying to nonprod. Now here, let's have a couple of steps and we will simply say name running E two E tests
+
+[00:06:01] and then echo running E two E test. So nothing fancy here. Same thing for the load tests. We're just gonna put it here and I'm gonna fix the indentation. Perfect. So now you're running the load test and then running the load tests and then we look at the deploy prod
+
+[00:06:21] and we want to deploy to prod if and only if load tests and E two E tests are successfully completed, right? So if there is something that was deployed to non prod that broke the E two E tests or that made our system very inefficient so that it doesn't support the required load, then we definitely don't want to roll out these changes to production, right?
+
+[00:06:41] So here we will have, I'm just gonna copy this since that's very similar. And then we will have here that it depends on the, not on the deployed nonprod but on the E two E tests and on the load tests, right? So once these two are successful here, then we would like to deploy D
+
+[00:07:04] prod. So I'm just gonna copy this here, paste it here and then deploying to prod deploying to prod, right? So as you can see here, we can model very realistic scenarios, very realistic situations. And we can also leverage parallelism here by running certain
+
+[00:07:22] jobs that are independent from each other by running them in parallel. For example, the Linton build and the unit tests, as well as the E two E tests and the load tests. Because the E two E tests, for example, they are normally, they normally run for a little bit longer. And then we don't need to execute everything sequentially except
+
+[00:07:40] if you would like to do so for a reason, right? Maybe you would like to execute the load tests when there is absolutely nothing else happening on the non prod server. So it's, it depends. But here it's more a decision based on your specific project, right? On the, on the requirements and on the conditions of your specific project. So
+
+[00:08:00] that's it that we would like to do in our workflow. Perhaps this is the longest workflow we have done so far. But I think it models quite well some real world scenarios here, except for the actual steps. That's these are the things that you would then change and put your actual commands to build your code, test your code and deploy everything
+
+[00:08:21] to both non prod and prod, right? So here let's just add everything, let's commit it and let's push to github back here on github. Let's click on our actions tab and we will see our new workflow if it doesn't appear here it's because there is a limit
+
+[00:08:40] of the number of workflows that is shown. You just need to click here. I'm just gonna refresh the page. You just need to click on show more workflows, right? And then it will appear here. Now we can trigger this workflow. As you can see here, there is a checkbox, whether unit tests will pass or not, we will start the first run with passing the unit test.
+
+[00:09:00] So let's click on run workflow. If we refresh the page, we should already be able to see here the acute workflow. And as you can see, this is a more complex than what we had so far, right? So github allows or it gives us a nice visualization regarding the dependencies of the jobs. And then we can actually see which jobs will be
+
+[00:09:21] executed in parallel and which ones will be done sequentially. There's nothing fancy about the output here of our jobs. But if you want to inspect them, you can click here and then navigate also on the left side to go to whatever job you want to inspect, right. So if we were to come here under actions again
+
+[00:09:41] and then click on 10 on the left side and run the workflow without passing the unit tests and clicking then on running workflow, let's see what's going to happen. Now, we click here to inspect the output and we will wait just a couple of seconds until everything is completed perfect. So
+
+[00:10:00] the unit tests have failed. And as a consequence, we can see that none of the downstream jobs have been executed, right? So anything that has a dependency, either a direct or a transitive dependency. And here you can, you can think like this as an indirector or a transitive dependency to unit test, right? So if this is dependent on deployment,
+
+[00:10:21] proud, then deploy non proud is dependent on Unitest and indirectly E two E tests are dependent on unit tests. So everything that has, that comes after the failed job is not executed by default. The last thing I would like to show you before we wrap up. This, this practical exercise
+
+[00:10:40] is one option that we can pass to both jobs and steps to control whether we continue when there is an error in a job or in a step as you can see here in, in, in this screen, whenever there is an error, then everything downstream is simply skipped. And instead of having to come and add this
+
+[00:11:02] to every single job to say, if not canceled, if not canceled, if not canceled, there is another way that we can do that. So let's come here to code and let's open our our file, then we would just edit this on the browser. And the option that we need to add is called continue.
+
+[00:11:20] So I'm just going to scroll down a little bit, continue on error. And this can then be set to true. Now, what this will do is it will not only execute downstream jobs. Even if there is an error here on the unitest, it will also set the workflow to successful
+
+[00:11:41] if there are no other errors. So even if this job fails, if there is a continu on error option set to true, this will make the workflow, it will make the workflow exist with a successful state. Even if this job here fails. Let's see how this works. I'm going to commit this
+
+[00:12:01] directly to the main branch. Click on commit, coming here to the actions tab, let's rerun this workflow and we will once again here um deselect this check box so that the unit tests fail. And now let's see what's going to happen in our execution. As you can see the unit tests have failed here.
+
+[00:12:20] But the deployment to non fraud and the other downstream jobs are still being executed despite this failure. And the other thing that changes here is that the whole workflow was considered successful. If we were to come back here to actions and I scroll down a little bit here, then we have for example, this one and we click here
+
+[00:12:40] and then we click on the job and we will see that there is the failed step here. We have then continued with the execution, meaning other steps have executed. However, the entire workflow is set to fail. This would not have happened if this failing step here had a continu on error set to true. OK. Then this would fail,
+
+[00:13:02] but the workflow would actually be taken as or be considered successful. So while this might be something thing that we want to use for some experimental features or something that we expected to fail under certain conditions, and we would still like to continue the execution.
+
+[00:13:20] This is definitely not something that we would like to do for unit tests, right? So unit tests should not continue any deployment or we shouldn't continue any further if unit tests fail. And so this year, we're just going to commit the changes once again. And we will say here that we are removing the
+
+[00:13:40] continue on error option. And this, this is a much better setup, right? So here if either link or if either type checking or if anything here on these two steps fail, then we definitely want to stop anything else that comes afterwards? Perfect. With that in mind, we can wrap up this practical exercise,
+
+[00:14:00] take a short break and come back in the next lecture.

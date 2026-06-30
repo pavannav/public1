@@ -1,0 +1,45 @@
+[00:00:07] - At this point, I think we know enough about PAM, so let's do a lab. Users cannot log in anymore. Fix it. Good luck. All right, so I have used the script lab96.sh.
+
+[00:00:22] I ran it and now this is what I get. I'm trying to log in from TQI two and whatever I type, user, for example, I'm getting a login incorrect.
+
+[00:00:41] And how about root? I'm getting log in incorrect, so whatever is happening, log in incorrect is my fate. So, let's apply the scientific troubleshooting methodology to find the issue.
+
+[00:01:00] Well, the issue is no matter what I try, I can't log in anymore. So, we need to gather information. Well, that's pretty difficult if I can't log in anymore. So, I need to form a hypothesis. Well, the hypothesis is that the login procedure has got damaged and as this lesson is about PAM,
+
+[00:01:20] probably it's about PAM but of course, you cannot be sure about it and everything else should be included as well. So, what can we do from here? Not much. We can reboot the system in troubleshooting mode to try to find more information, so let's do that. So, I'm going to the VMware Virtual Machine restart
+
+[00:01:42] and I'm restarting the virtual machine. I need access to the grep boot prompt. So, I'm on the grep boot prompt and I need to get into something minimal. Let's try emergency target. I would always recommend if you don't know exactly what's happening to try to get into the emergency target,
+
+[00:02:03] so systemd.unit is emergency.target. And I'm using control X to boot emergency target. So, it's asking for a root password.
+
+[00:02:21] And yay, I'm in. So, fortunately in emergency target I was able to log in. So, now we can try to gather some more information. So, what kind of information might we be looking at? Well, the PAM configuration might be a reasonable suspect, so let's go into /etc/pam.d.
+
+[00:02:44] Oops, I'm trying to hit the tab key and bash is complaining that it cannot do that. So, let's just ignore that and let's have a look at the log in for PAM. So, if we quickly look through that, then it appears as if nothing serious has happened here.
+
+[00:03:01] Obviously because the login file is not where it's happening. It's happening in system-auth. You can see that it's a symbolic link by the way. Well, let's investigate that. If you look at system-auth, then you can see it's a symbolic link going to system-auth-ac.
+
+[00:03:20] System-auth-ac is a file that is written by auth config utilities and system-auth is just a convenience, so it doesn't really matter where it is going to happen. Well, this matter is that we can see that we have some modifications that were just not so long ago,
+
+[00:03:43] just a couple of minutes ago. So, it's very likely that something is wrong here. You know, in troubleshooting, if you think it's due to a configuration file, it may help to just do a good old ls -lrt so that you can see the files that were modified last, last
+
+[00:04:00] in the list. So, system-auth is where we go. Now, what do we see in system-auth? We see something very special. Let me give you a couple of seconds to allow you to see it for yourself.
+
+[00:04:22] Have you seen it? Well, it's on the fourth line. We see there's an auth required pam_ldap.so and after that there's an auth sufficient pam_unix.so. So, what does it mean? Well, it means that you need to log in through LDAP and if you cannot log in through LDAP,
+
+[00:04:41] then you will never get to the pam_unix.so and that is wrong. Some administrators like this configuration but if you use a configuration like this in case of trouble you cannot log into anything anymore. So, this means that you are first going to log into LDAP
+
+[00:05:00] and if LDAP does not answer, well, end of story because it's required. The fact that authentication on PAM LDAP is required, even makes it you might as well totally remove the pam_unix.so line because you will never get there. The nice solution would be to remove it from here
+
+[00:05:20] but oh, we can see in the lower part of the screen that right now we are in delete only mode. About the troubleshooting methodology, the hypothesis is that this order is wrong, so we need to fix it. But before we can fix it,
+
+[00:05:40] we apparently have to do a mount -o remount,rw on /. So, what we need to do? Well, we are going to delete the line from here and paste it a little bit lower, so now we can see that auth sufficient
+
+[00:06:02] is going to pam_unix.so and later we get an auth required going to pan_ldap.so which means if you cannot log into Unix, then that's okay. If you can log into Unix, then you are welcome. We don't look any further. If you cannot log into Unix,
+
+[00:06:20] then you must be able to log into pam_ldap and if ldap also doesn't allow you in, then automatically you will be denied access. By the way, on Red Hat, by default it's not set to required, it's set to sufficient. I think it's not very important if you set it to required or sufficient
+
+[00:06:41] because in both cases, you won't get access through LDAP if LDAP is not configured correctly and you will hit the PAM deny which will kick you out of there anyway. Okay, now we can use systemctl isolate to graphical.target
+
+[00:07:02] to start the normal operational mode and see what we can do from the normal operational mode. I'm back on the login prompt. And it's a little bit slow but as you can see, it's proceeding.
+
+[00:07:22] We are logged in, so this is yet another problem that has been fixed.

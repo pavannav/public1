@@ -1,0 +1,67 @@
+[00:00:06] - Cool, let's dive a little bit deeper into iBGP peering. Remember iBGP is within an autonomous system, EBGP is between. So in the previous example, we had our corporate network connected to two service providers.
+
+[00:00:20] Let's say that our corporate network is here, autonomous system number 64512. These three routers we see in front of us shaped kind of like a triangle, these are iBGP neighbors. IBGP neighbors are governed by different rules than EBGP neighbors. Let's talk about them. First off, they all have to have the same
+
+[00:00:40] autonomous system number. That's how we know that we're peers. Each of your neighbors. This is a little bit different than what we've seen before with OSPF and what we saw with EIGRP. In BGP, we don't have automatic neighbor discovery, right? This is the writing protocol of the internet. We don't trust anything on the internet. We wanna be very very careful, very strategic about how we
+
+[00:01:01] set this up. So what we do is we actually define neighbor statements. I say, hey, router your peer is over there at that IP address. And my link is only gonna come up when the other router points at me and says that's my peer over there. If we're not pointing at each other, we'll never become neighbors. Besides pointing at each other we have to have the same AS number.
+
+[00:01:20] Additionally, a full mesh is assumed. A full mesh if we remember from early in the course is where every device is connected to every other device. So we have to have neighbors statements defining who our neighbors are, and all of our iBGP neighbors have to be neighbors. So let's say we had 20 routers in our iBGP environment.
+
+[00:01:42] And this week we've got the lucky chance to add one more, making it a number of 21. In order to add one more router, I have to update 20. I have to log into every single router and say, hey, you've got a new neighbor that just showed up. For that one neighbor, I've got to say, hey,
+
+[00:02:01] here are the 20 other routers that you need to know about. So full mesh is cool, except it's gonna be a lot of administrative work, it doesn't scale super well. Remember that we explicitly define our neighbors. We don't have auto neighbor discovery. We must know how to reach those neighbors. What's that mean? Maybe you've got an IGP running,
+
+[00:02:21] at the same time you've got OSPF or EIGRP advertising loopback addresses. And then we do all of our peering based on loopbacks. It's not a bad way to do things. Remember that it doesn't propagate local updates to local peers. What's that mean? Well, in iBGP because we're a full mesh and everything's connected, if I receive an update
+
+[00:02:42] and I'm local, I wouldn't tell you. Because you're also local, I'm assuming the source of that update if they told me and their internal to me, they've also told you. Why can I assume this? Because there's a full mesh, everyone's connected to everyone. So there's no reason for me to repeat what one
+
+[00:03:01] of my internal neighbors has told me. They've already told you too. Now, some of the things we like to do with BGP, for one, loopback interfaces. Remember this is a logical interface, it's not a physical interface. Physical interfaces go down, logical doesn't. So I do my logical interface and I advertise it out of all my physical links.
+
+[00:03:20] If one physical link fails, no problem I still got it. Interior gateway protocol. We're probably still using an IGP to advertise how to get to loopbacks. So loopback is a software interface we created out of thin air. Hey router, config T, interface loopback zero, IP address 1.1.1.1.
+
+[00:03:41] Give it a size 327 (indistinct), you're done. That's one interface with one IP address. At that point no one can get there, but it exists. If we want people to get there, we advertise it through OSPF. We advertise it through EIGRP, making it reachable. Another work around for that whole concept of full mesh
+
+[00:04:02] is a route reflector. I'll show you that real quick. The idea of a full mesh is that everyone connects to everyone else. So it would look something like this. And yep, everybody's connected. If I bring in that fifth router, we have to do this.
+
+[00:04:22] I have to log into and make configuration changes on every other router every single time I add something. What a mess. I add another router. We're doing the same thing for this new router. Add another router, it becomes the same. So this is a classic iBGP kind of problem,
+
+[00:04:43] because we've got this full mesh requirement. One of the things that we could do is define a route reflector. In route reflector breaks the rules. You see, if we say all of this is autonomous system 10, here's a new router, here's a new router. Typically, we assume that everything is full mesh
+
+[00:05:02] so if this was router A and this was router B, and this is router C up top, router C would normally never tell router B what it heard from A. Why? Because it assumes that there's full mesh, that everybody's connected. But we can use something called a route reflector. Just from the name I bet you can guess where this is going.
+
+[00:05:22] With a route reflector we don't have to be full meshed. I just do this. So if C is my route reflector RR, whatever comes in from A, it will propagate out to B. This is kind of like a normal thing to see in routing protocols but it's different in iBGP. Why?
+
+[00:05:40] Because iBGP assumes there's full mesh so that there's no reason to do this. But if you don't wanna do full mesh, just set up a route reflector. That way when you come along later and you add router C, you peer, remember we've got to define neighbor statements. I log into my route reflector, I log into router C, I tell them about one another. At that point, they're neighbors.
+
+[00:06:01] The route reflectors are responsible for taking in information from router C and pushing it back out to them. Add router D, we got the same thing. Now, if you're looking at this like me, you say wait a minute, that's a single point of failure. That's a horrible idea. I'd agree with you. I'd say you should use two route reflectors.
+
+[00:06:20] So here's route reflector two, and everyone will peer with that. The neat thing is let's say that we've grown to a point where we have 25 routers total. With our route reflectors if we've got full mesh, when we add that 25th router, I've gotta define 25 peers.
+
+[00:06:40] And this is a tricky part I found just from a logistics perspective, I have to get approval to go in and make changes on 25 other devices. What global company wants you or me going into all the routers and all their data centers and adding a statement to talk about a new neighbor. It's not a big deal, it's a normal thing
+
+[00:07:00] to define a neighbor. But people get weirded out. They go, oh, it moves and changes, we got to plan for it, what's our backup plan, how long is the window gonna be? It's just a necessary evil, we've got to do that for our job. What I've got to make configuration changes on 25 other routers, just to add one. Yeah, that's horrible. In this situation with the route reflector,
+
+[00:07:21] I've got 25 routers, no problem. I come along to add number 26. I tell it about two neighbors, route reflector one and route reflector two. What it tells us router reflectors we propagate it to everyone else. So in summary, route reflectors break the full mesh requirement and they allow us
+
+[00:07:40] to propagate information easily inside of an iBGP domain. Sounds complicated, right? There's so many rules to BGP. You could read about it for days, weeks. There's a lot to it. But as far as setting it up, if you've got a lab it's really pretty easy. We say config T, we drop into our global configuration here. We say router BGP 64512.
+
+[00:08:03] That's our autonomous system number. Now, what we have to do next are two pieces. One, we define our neighbor. Remember when we looked at OSPF and EIGRP, there was automatic neighbor discovery. So we turn it out on an interface and immediately it starts shouting through multicast,
+
+[00:08:21] will you be my neighbor. I won't sing you the Mr. Rogers song but you can imagine. It's happy, it's upbeat, it's trying to find friends. What we do here is not that. We're not happy and upbeat, we're careful. We say, I'm not neighboring with anyone except for that one IP address over there. Let's talk about it. What we do here is we define the peers IP address.
+
+[00:08:43] And that peer is doing the same thing pointing to us. We're also specifying that peer's remote autonomous system number. So say I have a neighbor 10.1.1.1 and their AS number is 64512. Well, this is where it gets kind of slick. If we look at our configuration,
+
+[00:09:01] we see that our AS number is 64512, their AS number 64512 indicating that these must be drum roll, iBGP neighbors. They're part of the same AS number, they require the full mesh, yadda yadda. What are we doing here? Well, we're describing this network 192.168.254.
+
+[00:09:23] This is how we inject a network into BGP. We say, hey, BGP, I would like you to announce this to the rest of the world. And BGP is like wait a minute, you wouldn't make me look dumb, would you? We go, of course not. Like you're not gonna make any mistakes, are you? We go, of course not.
+
+[00:09:40] We just bang out network statements. BGP goes well, before I make a fool of myself telling everybody that I know that I know this network, let me double check. BGP will look at its local routing table and make sure that it knows how to get to that network before it goes out and tells the whole world. It wouldn't wanna do that and be wrong. So really pretty neat that it does that in the background.
+
+[00:10:02] It's kind of like a sanity check. You could disable it if you wanted to but it's typically there for your best interest or your help. It is trying to find an exact match. So make sure that you've got that exact network there. But if you do, it'll start telling other neighbors that this network exists. As far as your network statement, remember that it's different.
+
+[00:10:21] When we look at interior gateway protocols, IGPs, the network statement was like, hey, this is where I'm gonna run OSPF, this is where I'm gonna run EIGRP. That confused the heck out of me for years. I didn't get that the network statement was not the network advertisement. I thought network statement was like, hey, this is what I wanna advertise.
+
+[00:10:40] That's not how it works. You were saying, this is the interfaces you wanna run the IGP on. Kind of weird. With an EGP, it's a category of routing protocols, the one that we care about is BGP. Why use a network statement in BGP? This is actually an announcement.
+
+[00:11:00] It's saying, hey, BGP tell the world that this network is over here. And again, it doesn't wanna mislead anybody. So your router will verify the network exists in the routing table. And if it does, it'll go ahead and inject it to BGP peers.

@@ -1,0 +1,55 @@
+[00:00:00] Welcome course taker to video typical application reliability patterns. So in this video, we're gonna look at typical things you need to do within your microservice within your application to kind of alleviate and mitigate some of the infrastructure and data reliability issues we've seen. So we'll look at how you manage health and retries and timeouts.
+
+[00:00:23] We'll look at typical implementation. We'll look at things like circuit breakers and bulkheads that help you scope and manage reliability. And finally, we'll look at compensating transactions. So if you're ready, let's get started. So question, how do you determine if your service is healthy?
+
+[00:00:40] Well, you typically do is present a slash health point that shows service health. The challenge with that as we see in the first example is if that health endpoint actually goes and queries the health that can quickly turn into a problem. So imagine somebody a user clicking refresh, get health, get health, get health, get health.
+
+[00:01:00] And every time that's going to query your database, you know times out by 1015 20 give your healthy microservice a problem then that in itself becomes a major problem and can become a high of service attack So instead a good example here is to actually run the get health state. In this case, get the beef state as a separate thread.
+
+[00:01:22] And all that's doing is creating a database on regular intervals and writing the state to a file to a variable to some sort of in memory structure. And then all your get health method is doing is querying that in memory data structure and then you have no direct relationship. You can hit health as many times as you want.
+
+[00:01:41] And it's only ever going to return the status from the last poll. The other thing is health is multidimensional while you always want to return like a 200 if the health is good or a 500 if it isn't, it's also very important to include maybe in the payload details on the other aspects of the service network, database cache.
+
+[00:02:01] Um But bear in mind that often health endpoints are not authenticated. So you don't want to expose too much information that can be used to gain some sort of security knowledge or gain some knowledge about your application. So your application is healthy, that's fine. What about the downstream application? So in this case,
+
+[00:02:21] microservice A is talking to microservice B something happens to microservice B an intermittent failure
+
+[00:02:49] and also you're not really giving it a chance to recover, you know, having the same wait time every second. For example, then you've got three seconds to determine if the application is working.
+
+[00:03:00] Um So instead you can use exponential backoffs where you introduce some sort of randomness to your wait time. This means that in another service that's querying, it's unlikely to have the same collision. It gives you a little bit more time and it's something that Amazon does in their own API S and recommends you doing when using their API S just to include, you know, more random amount of wait time.
+
+[00:03:20] So retrive introduce exponential back off and timeouts. It's important, I think to at least have a specific deadline for when you want to request to terminate. So, is it three seconds, is it five seconds, you know, actually getting to the right timeout
+
+[00:03:40] is quite a challenge. However, explicitly setting a timeout and not just relying on the library or the system defaults is probably important because at least it gives you that deadline. So timeouts and retries are important, but setting them and getting the right values is quite hard. So circuit breakers is a way to kind of remove the guesswork.
+
+[00:04:01] What a circuit breaker does is it works in the same way as an electrical circuit breaker while it's closed, the current will flow. If something trips it, then it flips open and current stops. Same thing applies in a microservice circuit be while it's closed microservice, a can talk to Microservices
+
+[00:04:21] and when they breach a threshold, it flips to open and no, you can no longer talk or send requests to service B after some sort of mitigation or typically a timeout, it will fail back to half open where it's sending a few requests to the microservice B if that all proceeds, well, it flips back to closed.
+
+[00:04:42] So these states closed, open half open, mean that it actually manages the communication. It's reducing the issues downstream. So you're suddenly not getting hundreds of Microservices trying to talk to a failing service and making the situation worse. It means you can put explicit timeouts and retries in there
+
+[00:05:01] and it will automatically perform those and then close fail restart. So there's no manual intervention. The final advantage is that state of the circuit breaker, which tends to be or at least in this implementation is managed externally can be queried. So if you've got a microservice one talking to microservice, a
+
+[00:05:21] it can actually query either directly through the state database or through a method. Is there an issue with downstream? And it can look at the circuit breaker state and say, oh yes, it is. And then maybe it can perform some mitigating action of its own. If we extend that principle, we can use a bulkhead. So a bulkhead is a naval term, all it means is kind of door that separates,
+
+[00:05:44] you know, one section from another. So if you're on a ship, you get flooding, you can close the bulkhead and the water can't get through. Same concept applies here. It does tend to be a bit more conceptual. But what we're doing here is grouping Microservices together. And in this case, we've got microservice A one and a variant of microservice A two and microservice B
+
+[00:06:05] and we can manage the routing throttling failure detection in that bulk head. Normally this is done through a service mesh. So at least, but at least conceptually, it's a good process to go through to kind of define bulkheads and failure zones for your different Microservices architecture.
+
+[00:06:23] And then begin to think of the policies and controls that you need to put in your service mesh to control those. The final pattern is compensating transactions. So in a large distributed system, every microservice has a task and often those tasks
+
+[00:06:40] are built into a sequence or a process or a workflow. So the challenge becomes where you've got a set of distributed Microservices each using eventually consistent data sources or data syncs. How do you manage transaction integrity? Now we're not talking about, you know, kind of bank, we're talking, you know, in transactions to do with your current account
+
+[00:07:02] or your checking account or your savings account. We're talking about much more loosely coupled services. So the example that's often used is booking a holiday. So I want to book a flight, then I want to book a hotel and then I want to book a car. If I can't book a flight, we don't go any further. If I book a flight and then I book a hotel and then I can't book a car.
+
+[00:07:21] I want to roll back, I want to get rid of the car booking, get rid of the, the hotel booking and get rid of the flight booking. So this example here we've got four Microservices AB CD. And then our Happy Day path are we basically create the service? So we create the service microservice A then B, then C, then D and if all of that is successful, our process is successful.
+
+[00:07:44] So we can build that function into a step. So each step basically has a create action for a particular microservice running in Lambda or running on EKS or EC R. But we also need to build in the compensating transactions. So in this case, if I get all the way to microservice D and it fails and I want to cancel the service,
+
+[00:08:05] I want to cancel the resource in microservice D, then I want to cancel the service in C then B and then A and then ultimately, I want to fail back. So depending on what your workflow engine is. So in step, you can create, you know, failure actions.
+
+[00:08:20] For each one of your steps, you might have a full compensating workflow defined in your JBPM workflow engine. You could use event sourcing to figure out what the compensating pattern is based on the state changes. But nevertheless, compensating transactions are an important part of a distributed microservice architecture.
+
+[00:08:41] As I said they're not a replacement for kind of acid phase two transactional integrity. They're not a replacement for acid and two phase commit kind of models. But where you have more loosely coupled services that are working together and collaborating to provide a specific outcome, compensating transactions is an important pattern.
+
+[00:09:02] So I hope that was interesting. Please join me for the next video. The last video in this section where we're going to describe the architecture of our example, microservice. Thanks very much.

@@ -1,0 +1,53 @@
+[00:00:00] Hello and welcome back. Let's define our reverse proxy and configure it. We're gonna use engine X as the container as the image here to act as the reverse proxy. So after we include both decomposed files from the individual projects that we have here, we can also define additional services.
+
+[00:00:20] We can then let's call this reverse proxy. And now we're going to use an image here. The image will be engine X colon 1 27.0. And then we would like to expose this on port 5000. So port 5000 of our localhost will map to port 80 of our container.
+
+[00:00:42] And very interesting we can of course specify dependencies to services that are defined in the included compose files. So let's say depends on here and we can just add the first one will be the notebooks service and here we are using the service name.
+
+[00:01:00] So let's confirm that the service is correct. Notebooks here. That's perfect. And we also have our notes service here that's called notes. Perfect. So we would like to depend both on notebooks and on notes. That means that the reverse proxy will only be created after both our notebooks and note services are up and running.
+
+[00:01:22] The next piece of information that we need for the reverse proxy service is the configuration, the engine X configuration itself. So let's just create a new file here. We're gonna call this engine x.com. And if you wish to look for any extension for auto completion or syntax highlighting of the
+
+[00:01:40] nginx.com file, then feel free to do. So if we have a little bit closer look, we can see that the last date this was published here was in 2019 by this person here while this other extension here was last published in 2024. So this seems to be a little bit more up to date and more
+
+[00:02:00] and better maintained. We can then install this one here and go back to our engine x.com file. If you're using another ID, then by all means, feel free to look for the respective extension within this file. Let's define then here, worker underscore processes. And I'm just gonna say one here,
+
+[00:02:20] we then have to define an events section. And within this event section, the only event is worker connections and it's gonna be 1000 24. Let's format this a little bit better. I'm just gonna format with four spaces. And then the main part here is the http section of our configuration.
+
+[00:02:41] The http section of our configuration is where we will define all the rules for our proxy. We will then say here server and we're gonna listen on port 80. So listen 80 then we're gonna define two locations. The first location will be forward slash API
+
+[00:03:00] forward slash notebooks. And all this is going to do is to provide a proxy pass to the upstream service that's going to be under http colon slash slash notebooks. Like, so remember this is the name of the service and we will need to set up some networking for this to work correctly.
+
+[00:03:21] Let's then set some headers here. So proxy underscore set underscore header and the first header will be the host and this will map to the variable dollar sign host from engine X. And we will also have the set underscore header and then we're going to say X real
+
+[00:03:40] IP and this will be dollar sign remote ADR. We can then copy this location configuration here and do the same for our node notes service. So this will redirect to nodes instead of notebooks. That's great. This is pretty much everything we actually need to do for GX to behave as a reverse proxy for us.
+
+[00:04:03] We can also define a catch all rule here or location which will then try the files following the U parameter. And then we can say here uri I forward slash and then the last one will be 404. If nothing is found, this is everything we need for our configuration.
+
+[00:04:21] So I'm not expecting you to know exactly how to work with GX or how to set up and what these individual variables are actually used for. If you are interested in diving a little bit deeper into what this configuration is actually exactly doing behind the scenes, then by all means, Ngen X has a very extensive documentation
+
+[00:04:42] and you can look for what the host is doing, what the remote address is doing as well as what this URI variable is doing. If you hover over this, you will get some information here. So let's just hover over URI and then you will see that this is the current URI in the request normalized, right? So this will this extension will already provide some information about
+
+[00:05:03] what exact value is contained in these variables here. But if you want to understand the structure of an engine X configuration and the details of it, then by all means, feel free to explore the engine X documentation. Now that we have our engine X file set up, let's come back to the compose
+
+[00:05:20] and let's add this as a bind mount. So volumes type here will be bind the source for this bind volume. The source here will be our reverse proxy forward slash x.com. And the target here will be
+
+[00:05:41] forward slash etc slash slash and then adjust the name of the file, the moment we mount this file here, then engine X will pick up this configuration and we'll start redirecting the requests that are hitting both the forward slash API notebooks and API
+
+[00:06:00] notes and points. Great. If we were to try to run as it is, we will see that this is not going to work as expected. Let's come to the terminal, let's clear the console and then let's run Docker compose up and then let's run this in a detached mode just so that we can run some requests. This is going to take a little bit of time if you do not have the
+
+[00:06:22] next image locally. But as soon as this image is up and running, we should see the containers created. And oops, I actually already have something running on port 5000. So let's maybe just change the port here from 5000 to 8080. Let's save this. Let's come back here. Let's take our Docker compose service down or we could stop this here
+
+[00:06:45] and then let's just take Docker compose up once again, I forgot the detached mode here. So let's scroll up a little bit more to see whether we have the engine X service running. Perfect. So as you can see here, we already have some logs from the reverse proxy container.
+
+[00:07:03] And as you can see here, I did add an additional colon. So we should not add a colon after the curly brackets here just inside of the configuration values. Let's just remove this. Let's save this. Come back here to the terminal. Let's stop everything. We can force the stopping of the databases by exiting this. Once again,
+
+[00:07:24] let's finally run Docker compose with a detached mode once again. And let's confirm whether our container is up and running. So now we can run Docker compose PS to just have a look at all of the containers. And as you can see here, the engine X container is not really shown on the list.
+
+[00:07:41] So let's inspect the logs of our reverse proxy service and then we can have a look here. That's once again an additional my column. So let's just scroll down here. Let's remove this from both these lines. Let's then save this here. Let's come back to the terminal. Let's take our project down. Once again with Docker compose down,
+
+[00:08:01] we can wait a few seconds for the database to stop and then let's run Docker compose up detached mode once again, if we now inspect the logs of our reverse proxy. So Docker compose logs, reverse proxy, we will see that we have some errors here. So the first one
+
+[00:08:20] is that the host could not be found in the upstream notebooks. In this configuration, the configuration was complete and the service was ready for startup. But the moment we added this host here, engine X was not able to resolve this host because we have not created any network and we have not connected the existing services
+
+[00:08:42] to this new reverse proxy service. We have already done quite a bit in this lecture and I feel like the lecture is getting a little bit longer than expected. So let's just take our project down once again and then we will come back in the next lecture to create the missing components here to connect all of our services. Let's then take a short break and I'll see you in the next video.

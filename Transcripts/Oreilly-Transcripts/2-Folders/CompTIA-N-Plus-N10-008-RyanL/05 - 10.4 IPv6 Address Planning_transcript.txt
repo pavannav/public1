@@ -1,0 +1,111 @@
+[00:00:06] - I'd like to discuss IPv6 address planning just a little bit. Some of these concepts we've talked about before, so it'll be a refresher, before we go diving in just a bit deeper. So we start off with the highest level, a global authority INA,
+
+[00:00:20] which can push things down to local or national levels. We've got service providers that give customers addressing and also provide tunneling. Why would you need tunneling? Because your service provider doesn't give you V6 natively. They only give you IPv4, so I can have an IPv6 network inside my organization. It hits a router or a firewall, that router or firewall
+
+[00:00:42] will take the V6 traffic, put it into a tunnel across an IPv4 network, just do an encapsulation. And then once it gets to that next top, peel the IPv4 header and send to IPv6 on its way. It sounds crazy, but you can actually do this. We'll take the IPv6 traffic that wants to go somewhere.
+
+[00:01:02] It's a layer three header. Let's say that there's TCP on top of that, I draw it as an envelope cause it's got source and destination port numbers and then we've got our layer five through seven payload on top of this. Again, that's an IPv6 header, say that we want to send it somewhere and there's no IPv6 to get there, it's only four,
+
+[00:01:20] we encapsulate the V6 header inside of, you guessed it, an IPv4 header. And you go, that looks funny. You mean that the header format goes and then we've got our other envelope for layer two, possibly ethernet followed by IPv4 encapsulated by IPv6, encapsulated by TCP and I'd say, yes, absolutely.
+
+[00:01:41] If we were to look at this IPv4 header, remember if you look at all those different fields in the header diagram, you've got diversion, the time to live, et cetera. One of the fields that's in here is referred to as your protocol field. It says, this is what I'm carrying at layer four,
+
+[00:02:02] this is what I'm carrying inside. Well, normally there'd be a layer four header there. What we would do is we would just change the value to say what I'm actually carrying inside is another layer three header and it's IPv6. So long as the device that's receiving this IPv4 packet is set up for an IPv6 tunnel.
+
+[00:02:20] We can just peel the IPv4 header, look at the IPv6 header and make affording decision. Pretty sleek. So let's get rid of all that scribbling and keep our story moving. So /48 is a very standard prefix. Can you use things other than this inside your organization?
+
+[00:02:40] Not impossible, but this is just an easy one to go by. Remember that we'll typically start off with wanting to put our networks, our subnets into a /64. This is the smallest value set assignable by many vendors. There are some that kind of deviated and lets you use other prefixes,
+
+[00:03:00] but a lot will make you stick this /64 and there's a lot of advice out there telling you that this is the way that we prefer that you do things because it works the best way. So I like things to be easy, follow the directions. All right. They want me to use a /64. Where do I go from there? And they say, well, unless you've only got one IPv6 network
+
+[00:03:20] in the entire world, you'll probably want subnets. And again, this is a review. A lot of times what we'll do is we'll drop down to that /48. Why? Because this is what a service provider gave us. They said here, this is space for 65,000 networks. You may look at them and say 65,000 is all? That's not enough for what we're doing here. Maybe you've got a good reason for that.
+
+[00:03:42] If so, they'll do one or two things. They'll either say we'll have a second /48 or they could do something really weird and say, here have a /32, that would give you 32 bits worth of subnets that you can use for, you know, basically different networks within your org. Most organizations are fine with the /48.
+
+[00:04:02] So again, the way that I like to do this, it just makes sense to me is we take a /48 prefix might come from your service provider, might come from your tunnel broker and then in this fourth block, we can put a VLAN ID. You can put anything you want. You could put maybe assign a site prefix there,
+
+[00:04:21] whatever makes sense to you, whatever is logical, but the easier these long strings and numbers are to look at the more intuitive it's gonna feel for everybody. Remember, you'll have to write access control lists for these later, you'll have to use them within DNS. Like the more intuitive it is, the less mistakes we're gonna make.
+
+[00:04:40] So other things we could do, we could break up the 16 bit block as one part site, one part VLAN, giving me 255 VLANs, 255 sites, 256, right? Cause you count zero. And then ultimately, we could just use a spreadsheet and we could assign any entity ID. So whatever it is that your company does,
+
+[00:05:02] whatever it is that you're managing, we could take groups or classifications of devices and put those into individual subnets. So the host ID can be static or it can be dynamic. What I mean when I say host ID is the last 64 bits of that 128 bit address.
+
+[00:05:21] When I talk about dynamic, dynamic could be stateful or stateless. So let's reel things back a bit. Just don't want to lose anybody. If we think about IPv4 should be familiar by now, we could have static IP addresses, servers, switches, routers, firewalls, or we can have dynamic. Anybody who joins the network, run DHCP, remember with DHCP,
+
+[00:05:43] someone sends a request out. They go, hey, I need addressing. And the server's like, I have addressing, and the client's like, can I please have some? And he's like, yes, there's a process where someone requests, someone offers. There's a checkout. There's an acknowledgement. That's why we say that it's stateful. If I'm the DHCP server, I look at my registry here.
+
+[00:06:04] When you ask for IP addressing and I say, well, let's see, yes, right here. Here's a perfect IP address for you. And I take your MAC address and I note that this IP address is being reserved for you and your MAC address until a certain time, maybe it's six hours, 24 hours,
+
+[00:06:21] something that you can configure. So we have a stateful mechanism for assigning values to people. This is handy because we can log it. And if we find crimes later, if we find compromises in security, we can go back to our DHCP log and we can say, hey, on the 1st of May, 2021,
+
+[00:06:41] who the heck was using 10.3.3.25? And at least you'd see a MAC address there. MAC addresses can be spoofed, they can be altered, but at least it gives us a clue. If the attacker wasn't careful, if it was a static MAC address, at least we know where to look now. So what IPv6 introduce is this concept called SLAAC.
+
+[00:07:01] You'll see it abbreviated like this. And it stands for a stateless address auto configuration. In other words, instead of doing DHCP, which would be stateful and there is DHCPv6, we can do stateless. Let me describe it to you. If you came over to my house
+
+[00:07:22] and you plugged into the network and you got your laptop here and you said, hey, wait a minute? I'm not getting an IP address. I said, you're not supposed to, I turned off DHCP for security reasons. Just go ahead and assign yourself an IP address and you go, okay, how do I assign it? And I tell you, the gateway is 10.1.5.1.
+
+[00:07:42] We're on a /24 network, which means the first 24 bits are fixed. It's gonna be 10, 1, 5 something. And I say, go ahead and make up your own host portion. So it would be up to you to fill in the fourth octet with whatever you pick out of the sky. The problem with this is how many bits
+
+[00:08:00] are in the fourth octet, IPv4 is 32 bits, four octets eight, right? Two to the eighth power, it's 256, we've got a network. We've got a broadcast that gives us 254 assignable values in the middle. So your odds are one and 254 of not colliding with another person
+
+[00:08:21] because at least there's a gateway there. What happens if I've got a bunch of different devices? I've got tablets, thermostats, IP enabled garage door openers, sprinklers. All of those devices take IPs, and you can't just pick one out of thin air and have a good chance of not conflicting with somebody. Why is that?
+
+[00:08:40] Well, because there's only eight bits worth of addressing and who knows what you got in your sub-net. If we look at IPv6, remember our prefix is 64 bits, our suffix or the host is 64 bits. So what we were doing, grab blue, what we were doing here in this fourth octet
+
+[00:09:02] with eight bits, we're doing here on the back half of the IPv6 value with 64 bits. That's two to the 64th power. Use a scientific calculator to see how big that number is. That's huge. So now we go, wait a minute, I need to make up an IP address out of thin air.
+
+[00:09:22] And I hope that I don't conflict with anyone and they go, you're not going to, look at that big old space. It's like jumping out of a plane into the ocean and landing on top of somebody. It's not impossible, but it's unlikely because there's so much space there. And it's unlikely that we're gonna have that many hosts two to the 64th in a particular network.
+
+[00:09:41] Now, if you do have a conflict, you'll detect it with DAD, duplicate auto discovery. You're basically gonna do a shout and say, hey, who's using this IP address that I wanna use? And if nobody answers, it's all yours. So to recap, when we set up the host ID,
+
+[00:10:00] the last 64 bits, we're picking an IP address, we're gonna put on something. It could be static or dynamic. Static is great for routers and stuff. What about our users? Stateful or stateless, stateful is cool. This is DHCP version six. We can assign additional attributes through DHCP things like TFTP servers, DNS servers, proxies.
+
+[00:10:22] Stateless is pretty simple. It's just, hey, figure out what your IP address is gonna be. I'm the gateway, get going. So we can use randomized values, but they can be difficult to track. Is that good or bad? Microsoft thinks it's good. They're gonna randomize your 64 bit host ID all the time,
+
+[00:10:42] they're gonna constantly change it. Why? To give you some privacy. Static IP addresses are great for servers. Why? Cause they are writing access control list to define who can go where, we want this to be simple. We want it to be easy. This is a good place to use as many zeros as you can and use our double colon track to make a little bit shorter.
+
+[00:11:02] It'll save you many keystrokes over a lifetime. What the heck was a AAAA record compared to an A record? Same thing in A record says this server www maybe .pearson.com equals some IP. And, of course, this is V4.
+
+[00:11:20] All AAAA record is doing is the same thing, we're taking a name like www.mydomain.com and putting it to in IPv6 address. If you open up Wireshark and you do some sniffing, you may notice that you're doing queries for both IPv4, as well as IPv6. It's a little bit funny to look at.
+
+[00:11:40] I'll talk about it for a second cause this kind of tripped me out the first time I saw it. I expected that if my client was here and I was gonna get an IPv6 answer that I would talk to the DNS server over IPv6, right? I mean, doesn't that make sense? I'm an IPv6 host, I'm gonna talk to this DNS server over IPv6
+
+[00:12:01] and ask it questions about IPv6 stuff. That's not really how it works. See, IP is just the transport as is UDP. What's really happening here is in the payload. Where we talk about what's going on up there at layers five through seven, the payload that's being moved from a client to a server
+
+[00:12:21] is a request for AAAA record. This is part of the query that goes into the payload of a DNS message. What's underneath it? A layer four header, for UDP, where at 53, what's under that a layer three header, which could be V4 or V6.
+
+[00:12:41] V4 or V6 works just fine, why is that? Because it's simply the transport. That's why we have the OSI model. Those pieces can work independently. DNS really lives up here in our payload. So anytime you do a DNS query, you could say, hey, who's www.cisco.com? When you look that up and you ask the DNS server,
+
+[00:13:02] it may give you a AAAA answer and an A answer. In other words, a V6 as well as the V4 answer. Another piece that's important with IPv6 cause you see how long these addresses are, is Dynamic DNS. Dynamic DNS is really sleek, if you haven't seen it before,
+
+[00:13:22] it basically is the concept that we're gonna register with a central server and say, hey, I'm over here. What you're doing is reporting your IP address to that central server. It's typically a username and password involved so that you can register your account is now at this new IP. Should anyone want to find you, they do a DNS lookup.
+
+[00:13:41] That server is the authoritative server for doing your domain. They're gonna find out that your host is that this new IP address, how? Well, you just registered it. Should you log off, should the computer go offline, should it come back, we'll do an update. The DNS server will get refreshed with new information and people will be able to find you again.
+
+[00:14:00] That's all the DNS is. Static means we as administrators go in and it's almost like chiseling it into a piece of concrete where we're setting it up that one time. Where dynamic is a client application that runs on the client side, reports what the IP addressing is to the server and then the server gives that information to anybody else who wants to hear it?
+
+[00:14:22] DHCPv6 is optional. What can you use instead of DHCP? Well, of course, static addressing everywhere, but you can also use stateless. So DHCPv6 is a stateful mechanism just as DHCPv4 was, there's a database that's maintained
+
+[00:14:40] and there's logging that can come from it. So at any time we know which users are using which specific IP address, we're monitoring a timer. When that timer expires, we're taking the IP address back. We may assign it to someone else. The logging is great for security purposes. If we're curious about what's happening in our network, what device did what, we can figure who was who
+
+[00:15:01] at any given time. Without logging, we won't see that. Just as in DHCPv4, we have the concept of a reservation, reservation means I can go into the DHCP server, I can type in the MAC address of my printer of specific workstations or laptops or thermostats,
+
+[00:15:22] and should the firmware get erased, should the device even maybe get altered in some way, OS becomes corrupt. Maybe just the upgrade process blows up my config. Whenever that device comes back in for the first time cluelessly. So long as the MAC address is still the same,
+
+[00:15:40] it sends out a request for DHCP, the server hears it and goes, oh, we've actually got a reservation for you. And that device will get the same IP each and every time. It's kind of cool, if somebody was to take a Windows laptop and reboot it, and now they come back up in Kali Linux, or they come up in Parrot Linux,
+
+[00:16:00] whatever it is that they're using, because the MAC address hasn't altered, we're gonna see that MAC. We know it's the exact same user. We given them the same IP address that becomes real handy, when you start looking at performance over time, you'll always know what that one particular user did because they're always getting the same values. Also handy for doing things like access control lists.
+
+[00:16:23] Additionally, one of the nice things that DHCPv6 can do for us is support additional options. What I mean by that are DHCP options, the server's gonna assign you an IP address, it's also gonna assign you a gateway, It's also gonna assign you a DNS server,
+
+[00:16:41] it can also sign you a TFTP server, so you know where to reach out and pull down your operating system image, or, you know, where to reach out and pull down a configuration file. We can set parameters for web proxy auto discovery, a WPAD server. There's lots of different details that are optional.
+
+[00:17:00] Go to Wikipedia, look at DHCP options and you'll see a long list there. These that I've listed are just things that customers commonly use, but you'll see there's more additional attributes if you had a need to push them down. Here's a list of some of them. At the time of this writing, there's roughly 70 options.
+
+[00:17:20] Some of the good ones are SIP, this is session initiation protocol. We use this for setting up phone calls, DNS, who's the DNS server? Who's the TFTP server? Who's the network time protocol server? This is great if we want to make sure we've got the same time on every device so that things are synchronized. If they're not synchronized, it can cause a lot of trouble.
+
+[00:17:40] Imagine that there was a security breach you're involved in the investigation, and we want to gather information from all the equipment. Only problem is, our servers have different times. They're about a minute apart. Our network equipment is about 30 seconds off. And then I've got a central database, maybe a Splunk or something that all my logs are getting dumped into.
+
+[00:18:01] I'm trying to do a timeline of event correlation and figure out what happened in which order. There's millions of events, there's lots of noise. I need to have a very specific window to get very specific answers, always time. Well, the key to this is keeping time synchronized everywhere. Good way to do that is through the use of NTP, network time protocol,
+
+[00:18:20] which we can advertise in a DHCP advertisement. So when someone says, hey, you know, what IP address should I use? We say, not only should you use this IP, but you should use this gateway, this DNS server, this TFTP server and so forth.

@@ -1,0 +1,69 @@
+[00:00:00] Hello and welcome back. Let's mark this here. As done. We have investigated a little bit the rds resource in Dataform, we know how it looks like. And we also have a pretty good idea about the variables that we need to provide so that we can customize our rds instance. Let's start with 0.2 to create a module with the standard structure
+
+[00:00:22] we will create here under our project form, we're gonna create a new folder. This is called modules. And then within these modules here, we'll simply have an RDS folder. You could also call this a database folder. For example, if you don't want to have the module name coupled to the underlying implementation,
+
+[00:00:41] maybe you prefer to follow the second approach. However, for us here, R DS is more than enough within the RDS folder, we will create then a couple of files. The first one here will be the variables dot TF. The second one will be the outputs dot TF. And the third one here will be provider dot TF.
+
+[00:01:02] I will purposefully refrain from using main dot TF here because it does not tell us much about what is contained in that main dot F but you could also create a main dot TF file in our provider dot TF. Let's then create a telephone block and the required providers.
+
+[00:01:20] The only one that we need is the AWS provider. The source will be hashicorp forward slash aws and the version here will be version at least 5.0. So this is our required provider. And with this here, if we change into project 04 and run a data form format recursive here,
+
+[00:01:44] then we should actually get something a little bit better. If we run terraform in it within the project 04 folder, there will be nothing happening. This is an empty directory because these files here for terraform, they are within the modules folder.
+
+[00:02:00] And remember terraform always looks only at the current working directory. If you want to include anything from nested directories, then you need to include these folders as modules. Let's then come to our variables dot TF file and let's create a couple of variables. The first one here will simply be the project name
+
+[00:02:20] and this will be used both to name the database as well as to add some text. The type here will be string and that's it for this variable. We also want to create an instance class variable and this instance class here will be of type string and we will also add some validation here will set the validation.
+
+[00:02:41] The condition here we will say contains contains So remember we do want to make sure that we are deploying only instances that are within the free tier. So for us here, the db dot T three dot micro will be the one within the free tier. Please make sure that you are also using an instance
+
+[00:03:01] class from your region that falls within the free tier. And here that's just gonna be bar dot instance underscore class and the error message here, the error message will be very simple. We say only db T three micro is allowed is allowed
+
+[00:03:21] due to free tier access, right? So very straightforward, nothing here to worry about. So we have the instance class. The next variable that we would like to specify is the storage. So storage size. And then the type here will be a number
+
+[00:03:40] and the validation that we will implement here, let's add a new line, a white line. The validation here will be conditioned and we simply say that storage size. So V dot storage size must be greater than five and V dot storage size must be less than 10 or we can say less than or equal to 10.
+
+[00:04:03] And the error message here will simply be that the TB storage must be between five gigabytes and 10 gigabytes, right? So we can also say that five is good enough for us or greater than or equal to five or less than or equal to 10.
+
+[00:04:21] We also would like to specify the engine here. So let's say variable engine and the engine here will be of type string and the validation here, we will simply provide a condition, so simple condition here that we will say contains.
+
+[00:04:40] And then here the allowed engines will be for us postgre latest and Postgre and here this is a new string, Postgre 14. If you look at the documentation, you will see that this kind of engines here, we cannot directly pass them to the underlying DB instance.
+
+[00:05:03] We also need to do a little bit of processing here and we will do that. Once we continue the implementation of our rds instance, we will also have here a V dot engine. And the other message here will say that the database engine must be
+
+[00:05:21] post latest or Postgres 14, right? So once we have that we can save this, we can run once again a data form format recursive. Now it's looking a little bit better. Let's now create another variable here. That's going to be credentials and this will not be of a primitive type.
+
+[00:05:42] So this is gonna be an object and this object here will have a username which will be a string and it will have a password which will also be a string. This will be a sensitive variable. So we will mark sensitive to true here and we will provide a basic validation for the password.
+
+[00:06:02] So let's add a validation block here and the condition that we would like to check just for us to get rid of the squiggly line. Let's just add here. Let's first understand what we want to check. So we say that password must contain at least one character
+
+[00:06:21] and one digit, right. So here we are just trying to create a little bit of security around making sure that the password must contain one character and one digit here. So it's slightly more diverse and we can also say and be at least six characters
+
+[00:06:41] long, right? So maybe we can also change this a little bit, make it a little bit more user friendly. Let's be here. Let's write eot and I will say eot here. And now we are good to go. We have then a multiline string. So we'll say password must comply with the following format,
+
+[00:07:01] following format. And then we say here first contain at least one character, one character to contain at least one digit and three be at least six characters
+
+[00:07:20] long, right? So now the way for us to validate this is to actually use regular expressions. Dataform has an interesting function is called REJ X all. And this REJ X all function applies a regular expression to a string and it returns a list of all the matches.
+
+[00:07:40] So we don't need to know much about capture groups, unnamed, named capture groups. Let's just scroll down a little bit and see a couple of examples. So you can see here, we check whether the bridge X has some letters here and then it returns the groups that are matching this letter. So are the substrings here where this matches actually happen,
+
+[00:08:01] we can then check here using the length of this list returned by this function and checking whether it is greater than zero. So in this case here, there are no letters in our, in the in the provided string here. So the rejects all simply returns a list with zero elements. If we scroll up a little bit, then you will see that we have this exactly here
+
+[00:08:23] that it says rejects all can also be used to test whether a particular string matches a given pattern by testing whether the length of the resulting list of matches is greater than zero. There are multiple ways for us to do that. I'm gonna keep it simple here to ensure that even if you are not very familiar with red jacks,
+
+[00:08:41] it's easy to understand what we are doing here. So we're gonna actually break this down into three condition checks. The first one will be red X all. And then the red X here, we will check is that there is at least one character with a Zaz and then we're gonna say plus here. So basically what this does is
+
+[00:09:03] just check this V dot credentials dot password and look for at least one character here that matches either lowercase or uppercase alphabet letters. So this is the first one, we would like to say length of this here has to be greater than zero.
+
+[00:09:23] And we would like to then check here that the length of our regexs also with digits here, we could use 0 to 9 like so plus here. And then we say that this also has to be greater than zero. And the last one here is,
+
+[00:09:40] we will say that we would like to have at least six characters or digits here. So we're gonna add all this. And then if there are six or more of this, then we are good to go. Now, this is once again, not ideal, we could actually combine all that into one reject if we wanted to.
+
+[00:10:00] And if you want to give it a try to do that by all means, go ahead. I just want to make sure that we can all understand what is happening here. And there is not a lot of more complicated syntax that not everyone might be familiar with. So the first one checks for a character and checks that at least one is present. The second one checks for a digit and checks that at least one is present.
+
+[00:10:23] And the third one here is checking for characters and digits that have at least six or a length of six. Now, this is very important here because this will include this will not include all the characters. So we are restricting our passwords to contain only lowercase characters uppercase characters
+
+[00:10:42] and digits. This here might not be ideal from a security perspective, maybe you want to include other allowed digits here or other allowed characters in the password. However, for us, this will suffice. So for demonstration purposes, this is definitely more than enough. Great.
+
+[00:11:00] So we have added a couple of variables here. And before we move any further, let's take a short break and back in the next lecture where we will test these variables by using this module in our project 04 folder and passing different variables. If you notice that there are some adjustments necessary, particularly here on the red checks might be that this is not catching all the cases
+
+[00:11:23] we would then do also, we will also do that in the next lecture. So let's take a short break and come back in the next video.

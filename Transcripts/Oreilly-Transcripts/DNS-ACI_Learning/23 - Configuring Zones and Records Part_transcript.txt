@@ -1,0 +1,189 @@
+[00:00:00] Welcome to ITProTV, I'm your host Don Pezet- &gt;&gt; [INAUDIBLE] &gt;&gt; Live from San Francisco, California [INAUDIBLE] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome to another DNS tech skills show. I'm your host, Cherokee Boose. In this episode, we're gonna be taking a look at configuring DNS records and zones.
+
+[00:00:21] Today, we have Don Pezet in studios. Thank you for being with us today, Don. &gt;&gt; Thanks for having me, Cherokee, and we're ready to dive back into the world of DNS. If you're watching all these episodes in order, then you know that in the last episode, we got BIND installed on a Linux server. We brought it online. I know it's up, and it's running, but it, it's kinda hard to test it because it has no records, it has no zones inside of it and that's kind of the whole point of DNS.
+
+[00:00:42] I guess caching server. Technically what we brought up at this point is a caching server but that's not cool enough, right? We, we need to get some records. &gt;&gt; [LAUGH] &gt;&gt; We need to get some zones in this. We're gonna actually put this thing to use. All right. So let's kick this off and get things started. I'm remoted back into my Linux box, and this is a cento_s7 box, which is the same as like, Red Hat or Fedora.
+
+[00:01:02] If you're on Debian or Ubuntu, the installation can be a little bit different. But these steps we're about to go through are pretty much the same on those guys too. BIND is nice like that, that it is consistent across the platforms. But what we're going to do is we're going to jump in, and we're going to get some zones and records created. Now, there's two different pieces of this puzzle we have to put together when we
+
+[00:01:21] work with BIND. One part is the BIND configuration itself that we were working with in the last episode. So, we've got the /etc/named/named.c, hang on a second, not a directory, .conf, that guy right there. And this is the file that we added for the server's configuration, right?
+
+[00:01:42] So that's what we worked with in the last episode to get it in place, now we need to work with zone files. And the zone files are actually stored in separate files and I've got to come back to this /etc/named.conf and tell it about the zone files that I've got. So the first thing I'm gonna do is I'm gonna create the zone and
+
+[00:02:00] get that kind of structured and built, and then I'm gonna come back and edit this file right here to let it know that the zone exists. So that's the basic process we're gonna have to go through to get these zones created and put in place. All right, so you're gonna go ahead and show us the actual database, the directory in which we store the records, the information. &gt;&gt; Yeah, absolutely. So you've got this folder that I kind of keep going back to,
+
+[00:02:21] which is /etc/named, and it's got a bunch of stuff in it, or does it? It's basically empty, right? Looking in here, there's nothing there. And the reason is that /etc, software's not supposed to be able to write to it, it really needs to be protected. But our email, or not our email, but our DNS databases and stuff, those are the things that we need to be able to modify and they change.
+
+[00:02:40] The DNS cache is constantly changing. So, all of the actual data that we work with beyond the basic server config is stored in /var/named and so if I go in there, now I see some stuff. Right now there's some things in here. And some of this is really simple stuff like named.local host or empty or loopback, and these are just files that reference some of the default
+
+[00:03:03] stuff that's created as part of BIND. We've got the slaves folder. We're gonna set this server up as a master. In another episode, we'll set up replication. And if I've got replicated zones, the replicated zones actually go in here, in this folder. But if I'm the master, the primary zones that I'm creating, the ones that I'm authoritative for are gonna go right here in this folder.
+
+[00:03:23] Now a regular user's not allowed to write to this folder. They're not even allowed to browse to it like I just did. So you're gonna need to do one or two things. You have to elevate your privileges, which you can do with the sudu command, so every command that I'm about run throughout the rest of this episode, you can do sudu and then the command and then run it that way.
+
+[00:03:40] Or, you can just do su to elevate your privileges and that's what I've done, I've bumped myself up to root so that I don't have to issue sudu for every single command, and when I'm done, I can always exit out of that and go back to my normal level of permissions. So the first thing I need to do is create a zone file. And the zone file, you can actually call it whatever the heck you want. The name of the file doesn't really matter. You do need to remember it, so there's that piece.
+
+[00:04:00] So what I like to do is I like to follow a standard naming convention, it's not in the standard. You can call it whatever you want, but I like to call it whatever the domain name is dot DNS. That's kind of my habit. There's other people out there that like to do DB dot and whatever the domain is, you pick what works for you. I'm going to create one for lab dot itpro dot tv. I'm in slash VAR slash name d, and I'm going to edit lab.itpro.tv.dns.
+
+[00:04:26] So just a regular old text file, and this is going to be the zone file for this particular domain. Now, if you're working with something like Microsoft DNS, it's nice, because it's GUI. You just create a folder, you start adding records, and you're in business. But with BIND, I have to write the actual zone file by hand.
+
+[00:04:44] The zone file's not the easiest thing to write, so you kind of have to get used to what the format's like, and I usually, I usually just jump on Google [LAUGH] and pull up an example zone file, modify it to my needs, and throw it in there. The very first one I create's usually the hardest. After that, I just copy that one and modify it so
+
+[00:05:01] you don't have to reinvent the wheel over and over and over again. [INAUDIBLE] &gt;&gt; Yeah, this isn't something you would be doing on a regular day to day basis, so you might just want to spend a little extra time to make sure you have the proper syntax. Otherwise, you're gonna get some nasty messages. [LAUGH] &gt;&gt; Absolutely, and it's almost a guarantee with me, I'm guaranteed to miss a semicolon, or something like that. So I'll show you a neat utility that we have that can check to see if we're missing those syntax type things.
+
+[00:05:21] &gt;&gt; Cool. &gt;&gt; And it will help us to find them and fix them. All right, now technically there' s only three things required in a zone file, none of which are records. I don't have to create a records at all, which kinda defeats the whole purpose. But the three things I have to have. One, I need a default time to live. So that's the very first thing I'm gonna put. Right here, on line number one, is gonna be what my default time to live is.
+
+[00:05:42] And the way we enter it in is by putting in a dollar sign, oops, I gotta get into insert mode, there we go, dollar sign, and then TTL, and whatever we want the time to live to be in seconds. So I'm gonna set mine to a nice big number. I'm gonna do 604,800, which if I remember right is eight days, or
+
+[00:06:01] right around eight days. That's gonna be my default time to live. Now that sounds like a really long time, and it is, eight days. If I've got a seven day DHCP lease, though, then I don't really care if it's an eight day cache. People are gonna have their IP address for a nice long time, and so I can let these things cache. But for some things like my name servers or a mission critical server,
+
+[00:06:23] I might want a really short time to live. And I can override that on the individual records. Every record can have the time to live overridden if you wanna go that route. I'm not gonna do that here. I'm just gonna go with this default time to live. So that's the first thing we have to have. The second thing we have to have is identifying who the start of authority is.
+
+[00:06:40] The start of authority is the DNS server that is responsible for that domain. Well that's easy, it's the server I'm on, but that's not always the case. Sometimes I've registered the domain with an external provider and they're the start of authority. This is just a name server. So I need to designate who that SOA is, right here. It might be me or it might be another server. Now when you designate the SOA,
+
+[00:07:01] there's a couple of different things we have to provide. First, I'm gonna do an @ symbol. And what the @ symbol means is that I"m providing this start of authority for this domain. The one I'm working on right now which is going to be lab.itpro.tv. Then I need to tell it the class and the class is going to be Internet. The class is always Internet. There's actually four or five different classes like the chaos class and
+
+[00:07:22] a few others that were used for testing and development way back in the day. &gt;&gt; Chaos? &gt;&gt; Yeah, they had cool names. &gt;&gt; [LAUGH] &gt;&gt; [LAUGH] And chaos, they called it that because it was designed so it could support more than one protocol. So you didn't necessarily know what protocol it was running. &gt;&gt; Okay. &gt;&gt; So it was &gt;&gt; It was chaos. But some of the other ones, I cant remember the other names, but they're weird names like that. But today, everything is Internet so we just do IN and its in the Internet class.
+
+[00:07:45] Then, I need to tell it that im creating an SOA record, a start of authority, and you'll notice im doing tabs in between these. I dont have to do that, im just trying to get it to look nice and separate so its easier for me to read this, I just do that for readability. I've got SOA, and then I need to tell it the domain that I'm the start of authority for.
+
+[00:08:02] And this server is dns1.lab.itpro.tv, and so I'm gonna punch that in. So that's my host, dns1. Now I can't do a name lookup for dns1 yet, can I? I'm gonna need an A record for that one, so I can look it up. But this could be a host in a completely different domain.
+
+[00:08:21] The start of authority server doesn't actually have to be in the domain that it's an authority for. The next value I have to provide is an administrator. Who is the administrator for this domain? Now this record is largely ignored. And kind of a legacy of older times where you'd point to the computer of the person who was the administrator. These days, we normally just put admin followed by whatever that domain is.
+
+[00:08:43] Doesn't necessarily mean I have a computer with that name. But I can always come and create a text record, or something that pointed to an email address for that to let people know. The exception would be if like if I had a completely different domain I wanted to reference, they could pull the whois record for this. Or the whois record for
+
+[00:09:00] whatever the other domain is to find the contact information for that admin. &gt;&gt; Now Don, I noticed that you have the dot at the end of your syntax there for your domain name. How important is that? Is that something that's required within this operating system or this program? &gt;&gt; So it's required here. It's not always required. Sometimes I'll leave it out, and I let the syntax checker tell me if it's got it or not.
+
+[00:09:21] What happens is, in DNS names, we don't see it. But there's always a dot at the end. And it all goes back to the DNS hierarchy. When I do a lookup, I"m gonna reach out. So if I'm looking up dns1.lab.itpro.tv, right? The very first thing I'm gonna do is I'm going to go to the root hint servers. And I'm going to say who controls .tv?
+
+[00:09:42] The root hint servers don't. They just tell us who does. Well, the root hint servers, they're that dot. They're the dot at the very top of that hierarchy, so that's what that dot is. Your web browsers, they put that dot in for you. You don't see it, they hide it, so most of us don't even know it's there. But it is there, and it's important. And in these config files, if I leave it out, it'll usually generate an error.
+
+[00:10:02] &gt;&gt; Okay. &gt;&gt; Here, we'll take them out. And when we run the syntax checker, we'll see if it gets upset about it. But it's easy enough to punch those back in. But for most of our records, we're going to want to have that dot on the end. All right, now if you think that's weird, wait until this next part. &gt;&gt; [LAUGH] &gt;&gt; So the last part of the SOA is a collection of weird numbers and other things.
+
+[00:10:22] And I could pop them right here. But what I'm gonna do is just throw in a open parentheses. And go down to the next line and add them here. The version of BIND that I'm using here on the show is super-mega-picky about exactly what I put in here and the format that I put in. Most servers are actually really lenient on this. And so you can enter in the data just all right inside of the parentheses
+
+[00:10:42] in one line. It makes life a lot easier. But I've gotta break it out here or BIND will complain at me. So the very first value I need to provide is the serial number. Every time you edit the zone file, you're suppose to increase the serial number. And when you have replication, that's how the systems can track that a change has occurred. And they need to load the changes and so on.
+
+[00:11:01] So I need to put in an initial serial number. Since this is the beginning, I can just throw in 1. So I'll go ahead and punch that 1 in. And once I've got that value in, I'm putting in a semicolon to let it know that another value's about to come up. &gt;&gt; Sure, so Don, with the serial numbers, is there a way to go ahead and exclude different versions for replication if we have any kind of bandwidth issues? Or these files, is it something we should even be concerned with?
+
+[00:11:23] &gt;&gt; It's something that I don't normally worry about. There's not a method to say like, don't take serial number 4. Well, I guess there sort of is. If serial number 5 is out, and I haven't gotten serial number 4, I'll skip 4 and go right to 5, right? It's not like an incremental here. It's grabbing the whole file, so we just move right beyond it. If you have a bad network connection, maybe dial-up or
+
+[00:11:42] a VPN tunnel that comes up and comes down, then I might miss a few serial numbers. And that's okay. We just skip and get the latest one. This is all contained in one file, so it's not like I just get a portion of it. So typically, we don't have to worry about it. &gt;&gt; All right. &gt;&gt; All right, now whenever you do a semicolon, everything that's after the semicolon really gets ignored. And so if I wanted, I could add other text here.
+
+[00:12:02] And you'll see a lot of sample files out there where they actually write what that field was for right afterwards. It's kinda nice cuz it helps you remember what the heck that number's all about. Serial numbers, easy to remember. But some of the other ones that we're gonna see here in a minute actually get really confusing. So I'll go ahead and put the naming in there. I don't normally do that, but we'll just do it here for the show.
+
+[00:12:22] All right, the next value that I provide, well, I've actually got four different timers that I need to set. And this version of BIND isn't gonna let me do it. But a lot of them you set it not just in seconds, which is the default. But you can also set it by saying things like 1d for one day, or 1w for one week, 1h for one hour. So you've got variations you can specify.
+
+[00:12:41] It makes life easier. This version of BIND isn't going to accept that though, for whatever reason. So I'm gonna have to do it in seconds. So the first value I'm gonna provide here is going to be the refresh interval. How often do I check and see if my database file has been updated? I can always go in and restart BIND to make it refresh and check this stuff.
+
+[00:13:00] Or it'll Refresh on a set interval. That's really important if you're doing replication. So often are the replicas tuning in to check it out. So just gonna go with some of the default values that you'll see on a lot of servers that are out there. So I'll do 86400 seconds. Then I'm gonna do the Retry interval.
+
+[00:13:20] If I fail to contact a server, like if I'm doing a lookup, how long to I wait before I retry? So I'm gonna set that to 7200 seconds. And then we'll do the expiration. If I haven't contacted somebody in a certain period of time, how long before I expire the records that I have from them? And this is more for the cache. If I have stuff going to the cache, and I can't verify somebody's up,
+
+[00:13:40] I can expire out their records. And then the last one is what's called the Negative Cache. And this one applies to the server itself, as far as like when it's aging things out and when it's a caching server. So I can set that value, I'll set it to a smaller number, here. I'll do 3600. Now the syntax is a little different here. Because I need to close out my parenthesis for doing the semicolons.
+
+[00:14:02] So I'll throw that in, and I'll just put here that that's the Negative Cache. All right, that is the end of my start of authority record. So all of what I just did is SOA, right? That's all start of authority. I've gotta have that, and that's designating who's in charge of this domain, right?
+
+[00:14:21] Time to live, followed by start of authority. And then the third thing that I have to have are the name servers. Who are the name servers for this domain? So I need to come in and put in the name servers. And notice I'm putting an S on that. You normally wanna have more than one name server for redundancy. If one name server goes down, the whole zone is gone. You're kind of out of luck, right? So I'm gonna add in two.
+
+[00:14:40] &gt;&gt; We should have at least two. But is there a limit or a maximum within this software that'll go ahead and prohibit you from entering in [CROSSTALK] &gt;&gt; That's a great question. I don't know if there's a maximum. I've seen ten, so- &gt;&gt; I guess your limit would be your budget, maybe? &gt;&gt; [LAUGH] Yeah. &gt;&gt; [LAUGH] &gt;&gt; I've definitely seen ten in production. &gt;&gt; Okay. &gt;&gt; I thought ten was overkill. In Amazon Web Services, they consistently do four on most of their stuff.
+
+[00:15:03] So you can certainly do more than two. And there's a lot of good reasons for that. Using Amazon as an example, they usually do four. Where each name server is in a different top-level domain. So they have one in .net, one in .com, one in .co.uk, and one in .org, I believe is the fourth one.
+
+[00:15:20] And the reason they're doing that is they're trying to spread those servers. So that if there's a DNS failure, like actually all the way up at the TLD level, that you can still get to one of the other servers. It's a very high-level redundancy, so you could certainly go more. All right, so I'm gonna punch these in now. And when we punch in a name server, we have to tell it what domain it's being a name server for. If it's being a name server for this domain, which it typically would be,
+
+[00:15:42] you can just put an @, right? That same alias that I used with the SOA, that's gonna be referencing the domain. Now sometimes we can find versions of BIND that don't like that. And we actually have to type the domain out, so I could put lab.itpro.tv. This one should take the @ symbol just fine, so I'm gonna punch that one in. Then, its Internet class, just like the other guys.
+
+[00:16:01] Except, instead of an SOA, this is gonna be a Name Server record, so I'll put in an NS. And now I need to put in my record. And Name Server records are just the name of the server, so I'll do dns1.lab.itpro.tv and fill in that little dot, right? Or wait- &gt;&gt; [LAUGH] &gt;&gt; We're leaving the dots out for now so we can see the error, but we'll come back and add that dot in a minute. And
+
+[00:16:20] then Cherokee mentioned more than one DNS server, so I'm gonna come in and add dns2.lap.itpro.tv. All right, technically what you see here is the bare minimum for zone file, I'm done. I can save this and go. But it's got some problems, right? First off there's no A records so why- &gt;&gt; It's only functional at this point.
+
+[00:16:42] &gt;&gt; Why bother creating it? All it's gonna do now is make the zone fail faster, right? So there's that, I guess. But also, my name servers? I put their name in here. There's no corresponding A record, right? So I can't even resolve those name servers. If they were in a different domain, maybe that would make sense. But since they're in this domain, I'm at least going to need A records for
+
+[00:17:01] those name servers. So I'm gonna add in two A records real quick. And A records are pretty easy to make. Basically you start off by saying who the server is, right? So I'm gonna say dns1. And I'm not gonna type lab.itpro.tv, because this is the zone file for lab.itpro.tv, so it knows that domain. So I'm gonna say dns1. It's an Internet class, This is an A record and what IP does it tie to?
+
+[00:17:25] For me it's 10.0.222.101. And I can do the same thing for dns2, and I can spell IN right. And we can put that one in there also. Now we've got some A records, and now my zone file is right.
+
+[00:17:41] Now it's actually something that I can use, sort of. I mean, I can look up my name servers, they don't have any other names to give me, but at least I can look them up. All right, so from here is where we get the real fun, right? We need to start adding in our other records, and trying to branch out. &gt;&gt; That's what I was gonna ask. Do we have any limitations on the types of records that can be input into the system, like our mail records or anything like that?
+
+[00:18:00] &gt;&gt; This is the big advantage of running bind. Bind is the reference DNS server. So if there's a record type that exists, bind supports it. Other providers, you're gonna have to wait for them to add support, but when somebody proposes a new record, they propose it against bind and so it's the first one to get it. So if you can think of a DNS record, we can put it here. So we saw an A record.
+
+[00:18:20] Now I might have an A record for my web server. That's gonna screw with my formatting. &gt;&gt; Close enough. &gt;&gt; I get a little picky on this stuff sometimes. But let's say I've got a web server like that. &gt;&gt; I knew it. &gt;&gt; I'm gonna fix my format. So I can create some more A records like that.
+
+[00:18:40] Remember that the A record doesn't have to match the name of the host. That host might be webserver01 but I might just call it www when people browse to it, so I could come in and I could punch that in. So we could do it that way, or I could do a CNAME. CNAME would be a lot easier cuz then if I ever change the IP address of the web
+
+[00:19:01] server, it would just automatically point to a new address. So I'll do that. Now when you do a CNAME you do have to provide the DNS name. So I'll go ahead and punch that, like the fully qualified DNS name. So I'm gonna go ahead and punch that one in so it's got it. But now if somebody tries to resolve www.lab.itpro.tv they're gonna get that web server.
+
+[00:19:21] So we'll be able to go ahead and input different URLs or different domain names for the same web server. Or if we had a device with multiple adapters we could go ahead and input the IP addresses here so we could implement a round-robin technique and it would all be stored right here. &gt;&gt; Yeah, I'm glad you mentioned that because like here, it's just a CNAME, right, so it's one name, it points to one host, that's not very exciting.
+
+[00:19:41] But if I want a round-robin, I need more than one IP address tied to the same hostname. So what if I have more than one web server? Or webserver01 has two network adapters. Or let's just say, I gave it .100, let's say it's also got .99, right? So two different adapters. I can add another line and leave the name blank.
+
+[00:20:02] By leaving the name blank, I'm saying this is an extension of the line above it. &gt;&gt; Interesting. &gt;&gt; And so I can come in, I can say this is another Internet class. It's an A record. And it is that IP, that's a second IP. And they don't even have to be the same record type. So for example, I might have an IPv6 address.
+
+[00:20:22] So I can come in here and punch in whatever the address happens to be. I'm just trying to make one up. So we can throw that one in there. So all three of these records are a part of webserver01. Two of them are A records just IPv4 addresses and one is an IPv6 record, a AAAA record.
+
+[00:20:40] So those are the addresses I'll kind of punch right in there. And this one CNAME, it's gonna resolve to all of those. So that's kinda cool, right? You get that kinda balance. &gt;&gt; It is cool. &gt;&gt; If you're into the testing- &gt;&gt; [LAUGH] As cool as DNS records can get. &gt;&gt; It's so awesome. So let's kick it up, a notch. You mentioned mail servers. &gt;&gt; Yeah. &gt;&gt; And MX records, I need to create some MX records and you always wanna have at least two
+
+[00:21:02] MX records MX records are a little weird cuz that they look like A records. Well actually, they look more like CNAMEs, but we have to stick a priority into them also to prioritize the order that they're used in. So, I'm gonna come in and add another one. Now, when we do MX records, MX records don't usually have a name tied to them. They're tied to the domain.
+
+[00:21:20] So if I send to somebody's name at my domain I need to find MX records for that domain. So instead of putting a domain here I'm gonna put an @. Remember that the @ symbol is always an alias for the domain whose zone file you're editing. So I'm gonna come in here and punch this one in. And this is gonna be an MX record. And like a CNAME I would normally point to some
+
+[00:21:41] kind of server like mail1.lab.itpro.tv. The only difference here is that, as a part of that name, I also need to provide a priority. And, when I do that, it's just a number and technically it is part of the name. It's stored in the same field so that's why I'm grouping it together instead of doing my anal retentive tabs to get that kind of set up. But, we'll leave it like that and then we'll add in another one for
+
+[00:22:02] a second server. And I'll give it a priority of 20 so that it'll be redundant. &gt;&gt; So Don, looking at those numbers there, how would I know which record to reference first? Is it a lower priority with the number, or higher? &gt;&gt; On MX records, the lower number wins. &gt;&gt; Okay. &gt;&gt; So I have one with a value of ten.
+
+[00:22:22] Everybody's gonna use mail1. Unless mail1 fails, and they'll go to mail2. But they'll never go to mail2 unless mail1 fails. Now if I had another one I wanted to load balance on, I might add another entry here. So I can punch this one in and maybe I give it the same priority. And by doing that, it'll now load balance between those two, I can go to either one.
+
+[00:22:43] But as long as somebody's better, as long as somebody has a lower number, that's gonna be the one that we prefer. And of course now I've made a little bit of a situation for myself because I don't have A records for any of these guys, right? So I need to make sure I've got A records for them and we'll be able to fix it. But actually maybe I'll leave it like that for now cuz it's not gonna be too picky. I'm not gonna look those up.
+
+[00:23:00] So well, I'll get error. The right thing to do is to populate it in there. So let me just create A records real quick. We'll do it right, but we will cheat a little bit and do some copy and paste action, cuz that'll be faster. All right, so I'm just gonna add these new IPs in, and change these names that I've got all these records.
+
+[00:23:22] All right, so, at this point, I've got nameserver records, I've got MX records, I've got all this other stuff kind of laid out. Things are looking pretty good here, right? Looks like everything's pretty much laid out the way I want it. I'm leaving some spaces in here, like between the nameservers and the other records. I'm just doing that for my own benefit, to keep them kind of separate.
+
+[00:23:41] Technically you could group all of these together and have each one on an individual line, and it's all just grouped together. I'm just trying to make it readable. What I've got now is a zone file. And assuming I didn't screw it up too bad, it should be ready to go. But knowing me, I probably left a semicolon out somewhere or left a dot off the end of a domain or something like that.
+
+[00:24:00] So the cool thing here is, when you're done writing a zone file, there's a neat little utility that's a part of the bind utils, and it's named-checkzone. In the last episode, I used named-checkconf, and that checked the main configuration file. Slash etc slash named.com This one will let me check a zone file.
+
+[00:24:22] And the way I check it, is by telling it the domain that I'm checking and the file that I'm loading it from. So I'm gonna say lab.itpro.tv is the domain I'm checking. And then the file, /var/named/lab.itpro.tv .dns, right?
+
+[00:24:42] And so I'm gonna run that check, and I get an error. I get that the zone has no address record for dns.1.lab.itpro.tv.lab.itpro.tv. It's doubled up the domain name for some reason there. Probably because I forgot to stick a dot on the end to let it know that it was
+
+[00:25:01] over, and it stuck a DNS suffix on the end, so I'll have to double check that. I've also go, well that's the only real error I've got. The way this utility works is it checks for errors and it stops at the first one. So, there may be additional errors down the line, but this is the first one that it spotted. It spotted two instances, the same error so I got them both. I need to fix the error, and then I can reroute it.
+
+[00:25:22] All right, now the solution to this one is gonna be one of two things. Adding the dots to the end of these will probably solve my problem. So, I'm gonna come in here and just add the dot to the end of each of these references because it's supposed to be there. And if that solves my problem then great, I'm done. If that doesn't solve my problem, then the other thing I can do is take just
+
+[00:25:44] the @ symbols for the name servers, and actually write the domain name out there. That helps sometimes too. I don't think it'll come to that, so let me just correct those, and now we'll just rerun that check. And so there we go, I'm gonna rerun it, and this time I get the thumbs up. &gt;&gt; [CROSSTALK] The okay, yeah.
+
+[00:26:00] &gt;&gt; Tells me, it's okay. It parsed the whole thing and it was good, so I just needed to fill those dots in, kind of an important thing. If you're missing a semicolon. Let me go back here and I'm gonna edit this, and let me just leave a semicolon out, right? In the named.conf file, it was really good about telling me exactly where the error is. You'll see that this one is not so good about that.
+
+[00:26:20] That when I run it, I get an error and it's telling me I've got a syntax error and it's telling me line 6 near the retry command. So, it gets me close. &gt;&gt; Pretty, specific there, or at least helps. And so now I can look in and I can find the retry. It's telling me somewhere the retry, I mean right here. Well, I can spot it and hopefully see that I'm just missing my semi colon. &gt;&gt; Now, Don, you mentioned that anything after that semi
+
+[00:26:40] colon is just basically for notes, any kind of notations there. Is that the only place where we can add the semicolon notes or anywhere throughout the document? &gt;&gt; Where some people who are more particular than I'm, we are coming at the end of every DNS record, so that we can add a little bit at the end without just say like creatin 12/9/16, or whatever [INAUDIBLE] they got a little node.
+
+[00:27:03] &gt;&gt; [INAUDIBLE] Who created it. They put all sorts of information. You can do that just about anywhere inside of here. And you even do individual lines. So, I might come in and say something like NAME-SERVERS, right? So just try to create some kind of notation so I can spot it easy.
+
+[00:27:20] You can pretty it up. If you wanna go all crazy ask style, yeah. &gt;&gt; [LAUGH] &gt;&gt; Just remember that the more junk in that file, the bigger the file gets. And that does impact your application time. &gt;&gt; But it's pretty small. All right, I know I'm running out of time but I've got one last thing to do. I ran that check command and it checked the zone file and told me it was okay, but, I'm not done yet.
+
+[00:27:41] It's still not working because I need to tell bind about the new zone. And so, the way we do that, is by going into that /etc/named.comfile. So I'm gonna jump into that file And at the very bottom of this file, there we go, just try to get page down something else.
+
+[00:28:04] Down at the bottom, you'll see where you can define zones, and we need to tell it about the zone we just made. And so, look for the part, usually the very last thing in this includes, I normally go right above the includes And right above there I'm just gonna add that zone in so that it knows to have it, so
+
+[00:28:22] it knows that it's there and it's ready to rock. So I'm gonna punch that in I'm just gonna say zone lab.itpro.tv. So that's the zone that I'm actually. Hang on, I don't need the dot here, lab.itpro.tv. It's an Internet class zone, so I need to tell it that.
+
+[00:28:40] And then I need to tell it that the type is master. I am the authoritative server for the zone. I'm not a replica, I'm the one who controls it. So I'm gonna set that one as master. And then I need to tell it the file. Where is it gonna find the zone? And this is why the file name didn't matter. I could call it whatever I wanted, because I'm gonna type the file name right here.
+
+[00:29:02] Now, as long as you're putting the zone files in \var\named, that's where it looks by default. So you can just type the file name which mine was lab dot itpro dot tv dot dns &gt;&gt; You probably want to keep it kind of logical, not anything like Harry Potter wizardry. &gt;&gt; If I called it Bob.txt, I have to remember that, and
+
+[00:29:21] I'm not going to remember. So, I've seen people do Simpsons characters and dumb things like that, but if you just make it the domain name, it's easy, I can reference it, it already knows to look in slash bar slash name d. If I move them anywhere else I'm gonna need to put the full path in there. But if I just leave it that way they'll know where to look, its gonna find what it wants. I need to do a semicolon to end that out, which I'm really guilty of
+
+[00:29:42] forgetting on many occasions and then I'll do squiggly bracket to close this one, and one more semicolon to end that record. That right there is what's gonna tell bind that this zone exists. And as long as I got my syntax right, I should be able to run named-checkconf, and I should get no errors back.
+
+[00:30:01] That means I didn't screw up my line. And now, if I just do a systemctl restart named.service, it's gonna see that zone file, load it, And now it's ready to work. Now it's up and going. I should be able to do an NS lookup, switch to me as the server. And I should be able to look up something like www.lab.itpro.tv.
+
+[00:30:25] And I get web server 01, which gives me 10.0.222.100. And 99, the two different addresses that I had. So I get those back if I do webserver01.lab.itpro.tv. I get those two addresses back. If I set my type to four A and I do that same look up,
+
+[00:30:44] webserver01.lab.itpro.tv. &gt;&gt; Look at that, IPv6. &gt;&gt; I get the IPv6. So it's all working, the zone is functional. And we're in business. &gt;&gt; Pretty cool, I think that's about it for this particular episode. Don, you were able to go ahead and show us how to create that zone,
+
+[00:31:00] create our resource records. But let's go ahead and hold off to go ahead and create the [LAUGH] The reverse lookup zones. &gt;&gt; The reverse lookup zones, yeah. So thank you guys so much for tuning in. We do have more information headed your way so stay tuned, get comfortable. I'm gonna go ahead and sign off as your host, Cherokee Boose. &gt;&gt; And I'm Don Pezet. &gt;&gt; See you next time here at ITProTV. [MUSIC]
+
+[00:31:25] &gt;&gt; Thank you for watching ITPROV.TV.

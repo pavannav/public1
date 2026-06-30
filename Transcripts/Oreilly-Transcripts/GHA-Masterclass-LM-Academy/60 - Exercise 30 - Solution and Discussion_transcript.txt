@@ -1,0 +1,67 @@
+[00:00:00] Welcome back. Let's now start exploring reusable workflows. In practice, we're gonna start by creating a new file here. I'm just gonna call this 18-1 dash reusable workflow, right? So this reusable workflow file will basically just contain the definition for our reusable workflow.
+
+[00:00:21] And then we will call this workflow from within another file. Let's start by defining the name here. And as always, we're just gonna say 18.1 working or just reusable workflows, workflows and then reusable definition, right? So here this is just going to be our reusable definition
+
+[00:00:42] and all we have to do to make this workflow reusable is just adding a workflow called trigger here. Once we do that, we are already able to reference this workflow from within other workflows. So let's just define a single job. And this is just going to be a simple deploy job. Nothing fancy here. We're just going to add a couple of echo statements, this runs on
+
+[00:01:03] Ubuntu latest and it has just a few steps here. The first step is for us to check out the repository and this is important because remember that reusable workflows, they are mentioned at the job level. We'll see that in a little bit. So we do not specify any steps within our color workflow.
+
+[00:01:22] So it's important that we check out the repository here from within our reusable workflow. We're just going to use the actions forward slash checkout at V four and all this is going to do is it will just check out the current repository of the call workflow.
+
+[00:01:40] We then just add here a dummy build step and all this is going to do is just gonna run a couple of echo comments. So we're just gonna say building using directory. And then here we're going to define an input in a little bit. So I'm just gonna add three dots here and then we will also add an output here.
+
+[00:02:00] We're gonna say build status is equal to success and we will append this to the file that is referenced by the github output. And then the last step here would be just a simple again, Demi deploy step and let's then add run. I would simply say your echo deploying build artifacts
+
+[00:02:23] and we will add another output here. We're just going to say equals two https colon forward slash forward slash. And then we'll just say here could be www google.com for example, right? So this could be for example, a URL that is generated based on,
+
+[00:02:40] on the commit sha so that we can use that for integration tests, for example, or end to end tests before proceeding with further deployments. Another possibility would be to put build step here outside of this reusable workflow so that the reusable workflow just does the deployment and it fetches the build artifacts from some other source.
+
+[00:03:02] There are many ways for us to go about this. This is not the point of this lecture. I just want to illustrate a few aspects of working with reusable workflows. So let's keep it simple for now. And let's define a couple of inputs. So the way that we do that is just by using the input key and then we can define here for example, the target directory,
+
+[00:03:21] right? And that would be of type string and it would be required, right? So we will mark that as required and this is the only, this is the only input that we will define and we can then use it here, inputs dot target dash directory. And so now we can pass some information also to this reusable workflow.
+
+[00:03:43] And we can also output some information by defining an output key. And the first one will be here, the build status that is going to have a description for us to provide some information to the external world. And that's just gonna be the status of the build process.
+
+[00:04:00] It's quite intuitive and then it requires a value. Now, this value can then be retrieved here from our jobs, the deploy job and one of the outputs of this deploy job So we also need to define outputs here and this output, the one of them is going to be the build status. And then we need to define the value of this build status,
+
+[00:04:22] which is going to come from this second step here. Since we need to reference the step, we also need to add an id to the step and we're just gonna call this build. So now we can reference this here steps dot build dot outputs dot build dash status, right? So what this is doing is setting the output for the deploy job
+
+[00:04:44] and then add the workflow definition level here at the workflow call. We can then retrieve this value by using jobs dot deploying dot outputs dot build status. We will do the same for the URL. So I'm just gonna copy and paste this here at the bottom
+
+[00:05:01] and then instead of build status, we're just gonna call this URL. And so now here the URL of the deployed version and then the value here is going to come from jobs dot deploy dot outputs and we will create here a new URL that is going to be then coming not from the build step but from the deploy step.
+
+[00:05:21] So I'm just going to copy this and deploy here and we're going to add the id in a little bit. So I'm just gonna add URL here and now we can use this id at the bottom at the deploy definition level or at the deploy step. And so now we have here the correct, the correct ID, the deploy is referenced here and the URL is then referenced here and I forgot,
+
+[00:05:42] let me just copy and paste this at the bottom. We do need to add this to append this to our output file. Perfect. So now here instead of referencing our, instead of referencing our build status, all we would like to do is reference the URL and we can then make this information available to the external world.
+
+[00:06:01] Let's stop defining our reusable workflow here. I think it's already good enough for us to actually use that workflow within another workflow. So let's just create a new file here. We're gonna call this 18-2 dash reusable workflows dot YAML.
+
+[00:06:20] And then we can use this reusable workflow here within this file. So this one we're gonna call this name and it will be 18.2 reusable workflows and this is going to be then triggered on workflow underscore dispatch. So this we can trigger from the UI. And now here we have the jobs
+
+[00:06:41] and the first one, I'm gonna just call this deploy. And then here at the job definition level, we can then use the user keyword. Now the user keyword requires us to provide the address here or the the path for us to retrieve this reusable workflow. And since they are both on the same repository, they are next to each other.
+
+[00:07:03] Then we don't need to add the owner nor the repository. You can just add a dot forward slash dot github forward slash workflows, work flows forward slash 18-1 dash reusable
+
+[00:07:21] workflows dot Y, right? So this is all we need to do here and we do need to provide a couple of information. So a couple of input parameters, basically just the target directory, right? So here we could say that there, for example, and then this will be used here within our, within our build step.
+
+[00:07:44] If we were to now define another job that would let's say print the output of this deployer job. We're just gonna say print outputs. This would then run on Ubuntu latest and we have to make or create a dependency here between the print outputs
+
+[00:08:04] and the deploy since we want to access the output of the deploy job. So we will say that this needs deploy. And the only thing that we are going to do here, there will be just one step, print outputs and this will run just a multi line statement to echo comments and say build status.
+
+[00:08:20] There is going to be and remember we use the needs context here. We're gonna say needs dot deploy dot outputs dot build dash status. And then here we'll have also another one echo and the other one is URL and this will be very similar here. So it's gonna be needs
+
+[00:08:41] that deploy, there's gonna copy paste and then change this to URL instead of build status. Just important here that we make sure that the names are correct to build status. And L they are matching our outputs here and the values for these outputs are actually provided here and they are correctly mapped to the outputs of the deploy job on these names here,
+
+[00:09:03] deploy and deploy here. They don't need to be the same, right? So this could be just some job. There's no problem. And then here we would say that it needs some job. There are, there is no relation here between the names of the jobs just gonna keep this deploy
+
+[00:09:20] for it to be a little bit clearer. Perfect. So I believe that this is a good point for us to just check our status here and then add everything and commit this with whatever message you see fit. I'm just gonna say add first version of reusable workflow and push this to github back here on github. Let's click on actions, show more workflows and let's scroll down
+
+[00:09:43] all the way to our 18.2. If we click on the 18.1 you will see that we cannot trigger it from the UI there is nothing here for us to trigger it. But if we scroll down to the 18.2 then we are able to trigger this from the UI once we click on, run this workflow and we can then inspect the output here.
+
+[00:10:02] You can see that we already have some deploy, deploy. And this means this is coming from our workflow definition and this deploy here comes from our reusable workflow, right? So first job name here is the job name defined at the call workflow. And the second one is at the called workflow.
+
+[00:10:23] So let's click here and we see that we actually have all the code checking out the repository building it using the midi directory. And then we have some some basic deployment here, nothing really working and or or nothing doing anything in reality. And then here we can just print the outputs and we
+
+[00:10:41] see that we can retrieve these outputs from our previous job. I believe this is a good introduction to how we can define a reusable workflow. As you can see there is nothing really very different here in reusable workflows. They are just or basically we are just adding another trigger here. Another event that triggers this workflow, which is basically a workflow call.
+
+[00:11:03] Let's now take a short break and come back in the next lecture.

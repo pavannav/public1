@@ -1,0 +1,153 @@
+[00:00:00] Welcome to ITProTV. I'm your host [CROSSTALK] [SOUND] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome to another DNS Tech Skills show. I'm your host, Cherokee Boose. And in this episode, we're really gonna be taking a look at how to go ahead and
+
+[00:00:20] install and configure DNS with BIND. I've never used BIND before, so this is gonna be really interesting. With us today, we have Don Pezet in studio. Thank you for joining us today, Don. &gt;&gt; Thanks for having me, Cherokee. And you mentioned, you hadn't used BIND before, and if this were ten years ago, I'd be shocked to hear that. How have you not used the most common DNS server on the planet? But it really isn't the most common DNS server on the planet anymore.
+
+[00:00:43] It's been supplanted by a couple of other ones like Unbound, Power DNS, and Microsoft's DNS. But it is important that we understand how BIND operates. There's many organizations that still use it, even today. It's still very prolific out there on the Internet. But more importantly, it's the reference design for DNS servers.
+
+[00:01:00] So let's say that you decide one day that all the other DNS servers out there just absolutely stink, and you're gonna write your own. At a minimum, you have to maintain compatibility with BIND. That's how the DNS infrastructure is developed. That's that reference piece. So it's still very important, it's still very widely used, and that's why we're gonna take a look at it right here in this show. And get a chance to see how to install it, get it configured, and get it up and running. And there's actually a good bit to it, so
+
+[00:01:21] we're gonna run through it in a couple of different parts. &gt;&gt; Now Don, you mentioned that this would be a good reference point or the source. So is that source code freely available, or what type of platform would you be working with? &gt;&gt; Yeah, so BIND was originally developed under Unix, in the early days of the Internet. We're talking about the mid 1980s, it started development even earlier than that, so it's been around a long time.
+
+[00:01:42] And as IP addressing started to become prolific, well, it's hard to remember IPs, so people had to come up with a name system, and BIND was the original system for powering that. It stands for the Berkeley Internet Network Domain, wait sorry, Berkeley Internet Naming Domain, I'm screwing this all up, aren't I? That's why I have it written down for me,
+
+[00:02:01] Berkeley Internet Name Domain, there we go. Cuz it was developed at the University of California of Berkeley to help them with name resolution. And then it just kinda spread from there. So, it is open source. It was developed under Unix and BSD, brought over into the Linux world. It runs on Mac OS, if you have OS 10 or OS X, whatever. There's versions of it ported over to Windows.
+
+[00:02:21] You can go right to the BIND website and download it for Windows, too. So you can run it on anything, and when I say it's the reference, everything that we write in here is basically what sets the standard for DNS records. And so what you're gonna see, it's not just cross platform, but even cross product between other DNS servers. &gt;&gt; Thank you. &gt;&gt; Yep, all right, so let's dive into it and take a look.
+
+[00:02:40] Now I will say, I'm gonna do everything on a Linux box. Well, I guess, my laptop's a Mac, but I'm gonna be remoting into Linux servers for all of this for setting it up, cuz we normally host it off of Linux. And on the majority of Linux distros that are out there, you'll find where BIND is already installed, it's very common. If you're on a BSD like FreeBSD, they do Unbound instead. Others have moved over to Power DNS, there's a few different ones.
+
+[00:03:02] But a lot of them will already have BIND installed. So I'm gonna show you how to install it as if it wasn't there. If it is there, it's not a big deal, it just doesn't do the install, right? So let me remote into a server, and I'm gonna use Acentel 7 Server. Those are pretty common these days, a lot of people are using, it's the same as RedHat Enterprise Linux 7 and the same as Fedora 24 or 25, right around there.
+
+[00:03:23] &gt;&gt; So Don, if it was integrated into the operating system, is it similar to Windows where we have that features on demand type style where you would have to go ahead and install that role? &gt;&gt; Yeah, and they don't have a, well, they do have a role for it. Actually, if you're doing a fresh server install, so I pop in a RedHat disk or Acentel disk, when I go to install it, I can choose the server group.
+
+[00:03:43] And in the server group, you have that option to set it up as a DNS server. So I can do it as a group there. But if your server's already up, it's easier just to install the packages, there's only two packages for it. So, I'm gonna elevate my privileges right here at the beginning of the show cuz otherwise I'm gonna be typing passwords all day long. So let me just bump that up, so I'm switching over to the root account.
+
+[00:04:02] And I'm just gonna do a yum install, and the two packages that I want, there's bind and there is bind-utils. All right, now bind utils, almost always installed. Because that's got ns look up and a couple of the other utilities that we use in any given day. Bind itself, though, that may not be, and
+
+[00:04:21] I'm pretty sure that's the case that I'm gonna run into here. So, it's fine if something's already in use. My graphical package manager is locking that up, so let me just kill that real quick. &gt;&gt; So Don, if I was using this server previously as a DNS server, and I wanted to go ahead and install that package, would it overwrite any previous configurations that I may have had? &gt;&gt; No, it actually does pretty well with that.
+
+[00:04:41] Here, I actually ran it here, and it's looking. And I don't have bind, so it's gonna install that. But I do have the bind-utils. And see how there's an update available? So if there was an update, then it would try and update it. If there wasn't an update, it would leave it be. And if it leaves it be, it leaves all the configuration files and permissions alone, too. So it's really no harm, so I don't even normally check to see if bind's already installed. I just blindly run this command cuz I know it won't hurt anything.
+
+[00:05:03] So I'll go ahead and say yes to that and get it installed, and once it's in there, then I'll be in business. So it's gonna install bind and then it's just gonna update those utilities, I'll be in good shape. Now, when that's done, right there, very exciting. I am now a BIND server. I know, it's somewhat anti-climactic. But it's not actually working, it's not actually doing anything.
+
+[00:05:22] &gt;&gt; I was gonna say, I don't see any kind of notification. So how would I know if the installation was successful or not? &gt;&gt; So it tells us, I can tell because it says, installed, bind, it doesn't show an error. So it did finish, so I know it's there. It verified all the files, so I've got that status. I know what happened. It just doesn't turn it on, right, because we need to go in and configure things and
+
+[00:05:41] actually get it going. So what it really did is just copy the executables to where they needed to be. Copy the config files to where they needed to be, and that's it. Which we can spot a lot of that. The service itself for bind gets a little confusing. Cuz in the Unix world, God forbid you named a service the same thing as the program. So instead of being called bind, it's called the named or name demon.
+
+[00:06:03] And so that's the service that's running in the background, and when it did that install, it should have created inside of slash etc a folder called named, right there. And that's where our bind configuration is gonna be. And it created a file called named.conf, and that's the server configurations.
+
+[00:06:20] So I know it did what it was supposed to do, I just need to get it configured and get it turned on. So I'll start with that configuration. So, the first thing that I'm gonna do is I'm gonna jump into that named.conf file. So remember that I've elevated my privileges. I'm running as root right now. I used the SU command. If you're not running as root, you'll need to make sure you do a sudo on each of the commands that you run, so
+
+[00:06:40] that you run them with elevated privileges, otherwise it's gonna fail. So I'm gonna edit/etc/named.conf. And we're gonna open up that configuration file for bind. And this is where we start to really deviate from the DNS servers that have graphical interfaces. Here, it's all defined in an option file, and I've got to go through and
+
+[00:07:00] specify my settings and get things configured the way that I want. Some of the defaults here might be perfectly fine for me, some of the defaults might not be. I might need to tweak and change these to meet my needs. So I'll start right here, the very first option is usually the first one that I've got to address. It's got listen-on port 53, and then it's got an IP address. And the IP address is 127.000.1, so it will run and listen for DNS queries that
+
+[00:07:23] are coming to the loopback address cuz that's the only address it knows about. Well, my clients are gonna use that address, so it's not terribly helpful. &gt;&gt; So Don, when we see that that port is being utilized, but are we talking UDP, TCP, how would we know? &gt;&gt; Good question, right, because DNS can use both UDP and TCP.
+
+[00:07:41] If a DNS query fits entirely in one packet, really one frame, then it'll use UDP. But if it's a big query, if I'm doing a zone transfer or there's just a ton of hosts mapped to one name, then I'll have to segment it. I'll have to break it up, and it's gonna switch to TCP, so it could use both, this
+
+[00:08:00] will be both Now I need remember that, put it in the back of your mind, cuz later on I've gotta open up some holes in the firewall to allow this traffic through. And I gotta make sure I do UDP and TCP. Because otherwise what's gonna happen is, if I just do UDP, little queries will work, but big queries won't. &gt;&gt; It might seem like it's working- [LAUGH] Until other functions are called. &gt;&gt; And it's super frustrating, cuz it's an intermittent failure.
+
+[00:08:21] You gotta figure out that pattern. &gt;&gt; They're the worst. &gt;&gt; Yeah, you gotta remember. So this is both. Port 53 is what I'm opening. I could change the port, not usually a lot of reason to do that but I could. I am gonna add my own IP address in here, though. So this machine is 10.0.222.101. So I'm just gonna add that IP so that I'm listening on it as well as the loopback.
+
+[00:08:42] And if I had five network adapters here, I'd wanna add all five addresses if I was going to be answering DNS on all five, right? Maybe this server has a wide area network connection and a local area network connection. And I only wanna answer on my LAN, not on my WAN. And so I would just put the IP address for the LAN, and that's it.
+
+[00:09:00] &gt;&gt; So Don, If this were a virtual environment, would you need to do any additional configuration here with IP addresses? Or how would that work? &gt;&gt; The only spot where you really get into [LAUGH] a bind, see what I did there? &gt;&gt; [LAUGH]. &gt;&gt; [LAUGH] Is as if you're using DHCP. If I'm using DHCP what could happen? My address could change, right. And if my address changes that's bad.
+
+[00:09:21] Well, you don't want your DNS server's IP address changing anyways, so you should be using a static IP address on your server. And if you're doing that, doesnt matter if you're physical or virtual the IP will always be the same as long as the IP is assigned to at least one network adapter on the system. It's not actually calling out what my physical network after is, just wants to know the IP, doesn't care about the adapter.
+
+[00:09:40] Same thing goes for IPv6 on the very next line, it's doing the loop-back for IPv6. If I have an IPv6 address, which I don't but if I did, I can add that in here and I'm terrible at making up IPv6 addresses, but I'll just punch that one in, and there we go. So I've got that one in, and if I have a network adapter that has that address, then I'll answer queries on it.
+
+[00:10:01] If I don't have an adapter with that address, then I'm only gonna answer on the loopback and it's gonna be a pretty quiet DNS server. All right, that's the main thing, I could probably stop right there. And just you know what? That's good enough, the server's now listening and I just need to go on and create zones. Which we're gonna do in the next episode. But there is one other thing I recommend you do.
+
+[00:10:22] By default, these servers support what are called recursive queries. If I ask it a question and it knows the answer, it's gonna tell me. If I ask it a question, and it doesn't know the answer, it's gonna turn around and ask other DNS servers, right? So, if I ask it for www.google.com, I don't have Google zone here,
+
+[00:10:41] I don't know it, right? So, I'll act as a non-authoritative server and I'll do a recursive look up, I'll jump over to another server somewhere else, and I'll ask them. Well that means that this server would be susceptible to DNS reflection attacks. Somebody could start to flood me with queries that they know I don't have the answer to. So I'll turn around and start hitting other systems,
+
+[00:11:00] effectively pulling off a portion of a Denial of Service attack. So if this is exposed to the internet, and I'm trying to answer DNS queries for people out there from my own domain, I need to turn off recursion so that I don't allow those people to recurs through my server. They can come to me from my domain, but they can't come to me from any other domain.
+
+[00:11:20] But if it's for a local DNS, or like a caching server, then I want that recursion on. So I gotta figure out which one that I want, and I've gotta configure it. Well by default, the recursion is on. So if this is the LAN server, I can just use the firewall to control who can get to it and then I can allow the recursion to go, that's the default. But if I am exposing it to the internet, I need to turn that off, I need to stop it.
+
+[00:11:40] And the easiest way to do that, because there is five different ways to do it, the easiest way is this guy right here you got allow query. And by default it just says local host. The localHost setting, if you have anything in here under allow query, then it turns off people's ability to query you. So right now only the local host can query the system.
+
+[00:12:01] So what I can do is, I can change this and I can set it to be my local networks. I only want my local network to be able to query against it or whatever. And there's actually a couple of alias you can do here, localHost is the default. But I can change that to localNets, I'm sorry, localNet, just singular. And that'll say whatever my local network is, in this case 10.0 and
+
+[00:12:22] that's actually a, A /16, so it would be 10.0/16, I guess. Anyhow, so [LAUGH] it will allow that network to be able to run queries. It's similar to a firewall. If I'm getting queries from people that aren't in that network, then I'm not gonna allow that to recurse and go and find other DNS servers and help them out.
+
+[00:12:41] I'll answer for the zones that I'm authoritative for, but that's about it. &gt;&gt; So Don, if you had a specific range that you wanted to utilize, would I be able to go ahead and set any kind of exclusions here to prevent certain users from utilizing a service? &gt;&gt; Absolutely, let me show you how I do this. So I have a problem, which is, I have a terrible memory sometimes. I can never remember aliases.
+
+[00:13:00] So I always forget this localNet alias. I remember it now, because it's written on a piece of paper over here. &gt;&gt; [LAUGH] &gt;&gt; But I don't normally remember that one. So I almost always put in the networks. And when you put in the networks, there's, you could list them all here, if you really wanna do a crazy. But you can actually do an access control list that makes life a little bit easy. You can create your own alias right here inside of the configuration file.
+
+[00:13:22] Now the section that I'm in right now is Options. So it says options, it's got that squiggly bracket and opens up. I'm going to scroll down and find with a squiggly bracket closes off right there, so there's the end of options. And I'm going to add a new entry right after that. And I'm gonna create an access control list, I'm going to say ACL and
+
+[00:13:42] then I'm gonna give it a name, right. And I'll call it, I don't know, local clients, something like that, right. Or allowed to recurs or whatever you wanna put on there, that's the name that I'm gonna give it. And then I'll open my little squiggly brackets, and now I can come through and
+
+[00:14:00] I can start to list anybody that I want to be able to do recursive queries on this system. And so at a minimum, we'd probably wanna do like this server, right which I could say localHost. And I could do localNet right? But what if my company has more than one network? This server might not have an interface on every single network that I've got, so
+
+[00:14:22] I may need to list other networks. I can do it by individual IP. Maybe there's a host, 192.168.0.100. I can add them in or I can do ranges like here at the office where we've got 10.0.0.0/16. I can punch each one of those in there and these are the people that I'm gonna allow to do recursive queries off my server.
+
+[00:14:42] Other people can still do authoritative lookups. They ask me a question, I give them an answer. But I'm not gonna go and talk to other servers on their behalf, and that helps to protect our system. I do need to make sure I close this out or I'm gonna screw it up. And that's gonna be a recurring theme throughout the whole bind series. &gt;&gt; [LAUGH] &gt;&gt; Since it's me editing text files.
+
+[00:15:00] I can make mistakes. You can too. Probably not as much as me though. So I'll show you guys a neat little utility we'll use later to spot mistakes in this file and save us some troubles there. All right, looking at it, I think my ACL is good. So I am gonna close out with my little squiggly bracket and I named it local-clients. So I'm gonna go back up here, to where I had that allow-query,
+
+[00:15:24] and I'm gonna change that to see, local-clients, the ASL name. You can put an ASL name in there and it will find the ASL right here in the config and so now I restrict you, whose gonna be able to get to this server, and I'm able to protect it. Probably could have achieve something similar using the firewall but
+
+[00:15:41] the firewall doesn't let me differentiate between whether if it's a recursive query or an authoritative query, it doesn't know that, right. This does. Okay, so, we're pretty good there. I think it's about all I really want to take with this file. There's other things you can do. You can change your director, use to move those around. I'm on CentOS, which is Red Hat based and that means I'm running SC Linux.
+
+[00:16:01] And SC Linux hates it when you move default folders around. You get permissions problems like crazy. I'm gonna leave it where it is. I'll show you how to fix that too. But some of the other options that you have in here, you can do dnssec, which I haven't set up. You've got that recursion, remember how I said recursion was on by default? Here's recursion yes. I can turn it off by default.
+
+[00:16:20] Hey, I'm just not going to recurs and then that's it. When you do that, it turns it off for everybody though. Even people that you've allowed to query, it turns it off for them. So you can kind of tinker with that if you want. And then after that are my logging settings and the zones, which we'll address later on. So that's basically that file in a nutshell. All right, I'm gonna save that and now that it is done, I need to check it to make sure that I didn't make any mistakes.
+
+[00:16:43] When we installed the bind utilities, there's a neat little utility in there called named-check conf, right? It's gonna check my config file and it's gonna look for a mistake. Now you need to be root to run it, I elevated my privileges so I got it.
+
+[00:17:00] So you can sudo name-check config, and it's gonna look and sure enough, I'm missing a semicolon before a closed bracket on line 12 of the file. That's super handy otherwise. &gt;&gt; How specific, yeah. &gt;&gt; Yeah. &gt;&gt; [LAUGH] &gt;&gt; Speaking from experience, you'll spend a lot of time going through and try to find these individual things, this is gonna make life a lot easier.
+
+[00:17:21] So if I go to line 12, and I can find that semicolon that's missing. And basically, I screwed it up right here in our IPv6. See, how we've got the loopback and the semicolon? And then I typed in an address and I didn't stick a semicolon after it. Now you might ask yourself, well Don, that's the last IP,
+
+[00:17:40] why do we need a semicolon there? It's not like that one that follows it, doesn't matter, it's the standards, that's what they want to have. And so you don't forget to have it when you add the next IP. So you just- &gt;&gt; Okay. &gt;&gt; Have to have it. Now I might have other mistakes, so I need to run it again just to double check. And I got undefined ACL localnet, all right. What's that about? Well, if I go back in here and look into my ACL, when I typed in localnet and
+
+[00:18:04] maybe it does have an s on it and I screwed it up, localnets. So it looked at a name here, it was happy with localhost, it wasn't happy with localnet. And let me just look at my notes, it does have an s, darn it. So the alias that's built in has localnets, it has an s, since I didn't have the s, it assumed I was talking about another ACL.
+
+[00:18:23] You can actually nest ACLs, I might have an ACL for research computers and dev computers and so on. And I could nest them all together into one big ACL, if I really wanted to go crazy. So in my case, I just left the s off. So now it should identify that as real alias. But notice how it didn't complain about that the first time.
+
+[00:18:40] It stops at the first error. So you do need to run it- &gt;&gt; Multiple times. &gt;&gt; Over and over. &gt;&gt; Yeah. &gt;&gt; Until you get what I just got right there. When you get nothing back- &gt;&gt; Okay. &gt;&gt; Your config file is good. &gt;&gt; Yay. [LAUGH] &gt;&gt; [LAUGH] It's an achievement. It'll get worse, believe me. &gt;&gt; [LAUGH] &gt;&gt; The zone files are harder. All right, we're almost done. So couple of things that we need to do now, just tidy stuff. I know I've only got so much time here.
+
+[00:19:00] So a couple of things to tidy this one up and get it ready. First off, I know my config file is good. So I should be okay to go ahead and start up name d. Now if you've been running it before you know you can start it, it's no big deal. But if this is your first install and you been dinking around with the files. I know I'm guilty of this, every now and then you can mess up the permissions on the files. And I mentioned SC Linux, so
+
+[00:19:21] if I start changing directories around that can cause a problem. So I like to just do a quick check to reset file permissions to get those cleaned up. And then we need to setup name d start when our system starts and to start it now so it's working. And then lastly, we need to open it up in the firewall because we have the firewall d that's running here. You might have iptables or some other firewall.
+
+[00:19:40] You need to open it up to allow that through. So let's hit those three things and then this'll be done. &gt;&gt; All right. &gt;&gt; Okay, so let's start with the permissions. I'm gonna do a chgrp, change group. The name d files, the bind files, they need to be owned by a group that's called bind. And so I need to set that, I'm sorry it's called name d.
+
+[00:20:01] Again the service has a different name than the actual software, so it's name d. So I need to change group, name d. And I'm gonna do a recursive reset of the /var/named default. Now I've been working in /etc /named.conf all this time, so why am I doing /var? Well my zone files when I create them, I haven't created them yet.
+
+[00:20:22] But when I do there gonna be in /var /named. My cache /var /named. My log files, /var /named. So that's where it stores all the really important stuff. So I need to make sure that it has access to that, and having that group set is how I'm gonna achieve it. It should be that way by default, but if it isn't, here I'm resetting it so
+
+[00:20:41] that it will be. I also need to do a change ownership of the config file. When I messed with that config file I was root. If it didn't exist and I created it myself the user's gonna be root and the group is going to be root, and so I need to change that. Now I'm in this folder right now, so I could just pull it up and see.
+
+[00:21:03] See, how it's owned by root? And then the group si named. That's actually what I want, if it isn't for any reason, you can come in and do a chown root:named, and point to that file, all right? And that resets it and makes sure that it's owned by root, and
+
+[00:21:21] then the group is named. Now the named service will be able to access that file, it's really important, all right. So that takes care of file permissions. The next part is SC Linux. SC Linux only let's the bind service access folders that are approved. That's why I want to change my default folders earlier. So I'm just gonna make sure permissions are done right. I'll do a restore con which will reset the security context known as folders.
+
+[00:21:44] And I'm gonna do -r to make ti recursive, I need to do this on folders two and I'm gonna do /val /named and get that one set. And then I'll do the same thing /ect/named.conf, right?
+
+[00:22:00] So just making sure that those are all set properly, that they should be by default, but now I know they are, okay? Now I'm go ahead and start up named. I'm going to do a systemCTL and if you're running CentOS or Red Hat Enterprise Linux 7.2 or higher all you need to do is systemctl enable named.service.
+
+[00:22:22] And what that's gonna do is going to tell it to start named when the system boots up. And if it isn't started right now it will start it right now too. But in older versions it didn't actually start it, it would just creat the link and sit there. So you need to follow that up with a systemCTL start.
+
+[00:22:41] Remember that start will start the service right now. But if you reboot, it wont start it so you gotta do the enable to make sure it starts at boot. So I'm just gonna knock those two things out. If you're on an older system you only need to use chkconifg check config to turn that on. It's difference this is a systemd system. This is how we would do it on new versions of Red Hat and CentOS, and how we would do it on Debian, Ubuntu, and pretty much everything else these days.
+
+[00:23:01] &gt;&gt; [LAUGH] &gt;&gt; So that's pretty much the way. All right, now technically I'm done. But I still have that pesky firewall sitting there. And much like what I just did with systemCTL, there's two commands that I'm gonna need to run to get this one in place. I'm gonna do Firewall-cmd and I need to do --add-service=dns.
+
+[00:23:24] Now, I could do add port, and do TCP 53, but then I'd have to add UDP 53 also. By doing add service, it does both, TCP and UDP. And it's gonna allow them through the firewall. This assumes I'm using the default zone. The default zone would be like --zone=public.
+
+[00:23:42] If your server only has one network adapter, the odds are all your adapters are in that public zone. And so I can leave that off, that's the default. But if you changed your zones, you'd need to specify that. Maybe you created a DMZ zone or LAN or whatever so you'd have to add that. But I can leave that off because mine is just in the default. All right, that's added.
+
+[00:24:00] Now it's working until I reboot. Remember with the firewall, the command I just issued is affecting the firewall right now, not the config file. So I need to run that same command one more time, and add --permanent. And that's gonna add it to the config files. But that doesn't take effect right now, that takes effect at boot. So I have to run both for it to take effect at boot and to run now.
+
+[00:24:23] Or I could just run this one command and then restart the firewall. But that's kind of a pain in the butt, it restarts the firewall. You lose all your network connections, I didn't lose any connections here. Just ran the same command. Just added that --format. And with that, I think we're pretty much done. It probably wouldn't hurt to give named a quick restart,
+
+[00:24:42] just in case any of the things were wrong or aligned in correctly or whatever. It's gonna make sure that it reads all its config files and fires back up. You probably don't have to do that but now, I'm up and I'm running. Bind is up on my system and I'm ready to answer people's queries, although I don't really have any answers, do I?
+
+[00:25:00] I haven't created any zone files. So we gotta take zone files next. But as far as the bind service itself, we're installed, configured, and up and running. &gt;&gt; Well I think that's a really good start to get me looking at things a little bit differently. Definitely a different- &gt;&gt; [LAUGH] &gt;&gt; Interface than what I'm used to in a Windows environment. So I'm excited to see what we have next was we continue to look at configuring the DNS files.
+
+[00:25:20] But I think that about wraps it up for this episode. Thank you guys so much for tuning in with us today. And thank you Don for being here. I'm your show host, Cherokee Boose. &gt;&gt; And I'm Don Pezet. &gt;&gt; See you next time, here at ITPro.TV. [MUSIC] &gt;&gt; Thank you for watching ITPro.TV.

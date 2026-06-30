@@ -1,0 +1,67 @@
+[00:00:00] Let's look at another scenario where users are reporting that Kubernetes dashboard loading is slow. So, as a first step to debug this issue will check if Kubernetes dashboard pod is running fine or not, and then look at some of the troubleshooting steps with respect to networking. Ok, so the dashboard is running fine. Now let's see on which node
+
+[00:00:20] the dashboard pod is running. Ok, so it's running on VM 2. Now let's find out what's the network latency in VM 2, if it is slow or not. Let me just being VM 2 from my client. Hmm, so ping might be blocked. Let me see if I'm able to ssh to the system or not.
+
+[00:00:40] Yes, I am able to SSH it, so ping is blocked, which is fine. In many environment ping could be blocked due to security reasons. Now I will run some quick commands on this host to find out whether things are in order or not. This is the node where dashboard is running. Let me see the dashboard container. Ok, it's running fine. Let me see if
+
+[00:01:00] sufficient memory is available. Let me also see the output of the top command. The CPU utilization is fairly low. So, system uptime also doesn't indicate any problems. Now let's look at network stats. The ubiquitous tool is netstat. Now, if netstat is not present on this node fall back to the debug tool. You
+
+[00:01:21] deploy it as a privileged container as a demonstrate running on host network and run these commands. In my setup, netstat and some of the usual debugging tools are already there on the node, which makes my task a little easier. Let me run netstat. So, this shows me the stats for all the Calico interfaces, the tunnel interfaces and physical
+
+[00:01:40] interfaces as well. Is there anything that is not normal. We have receive okay, receive errors are zero, received drops. I do have some drops on the physical interface, it's fine. Some packet drops in Ethernet network is very common so no cause for concern here. Transmission okay, which is P X - okay. Looks to be fine, no errors in
+
+[00:02:02] transmission. Okay, so we have the TX drop which is fairly high. It's 2754, close to three thousand packets. Let's observe the netstat output few more times. Let's see if the number changes or not. Okay, now this is interesting. The packet drops are increasing. This is not a good sign.
+
+[00:02:21] The packet drops continue increasing. So, packet drops are an indication of a problem. Now let's use the netstat tool for some more data points, or we can use netstat - s2 see some statistics. Outgoing packets dropped 20 is okay
+
+[00:02:40] on an Ethernet network. Three nine three six fragments failed again is not a good sign. So, fragments failed and increasing packet drop counts is an indication that there is something wrong in the network. Now, the question is what is wrong. Now, if you see this is the tunnel interface which is showing the packet drops. Let's
+
+[00:03:00] see the output again. So, we have fragments failed, as well as we have TX drop which is continuously increasing. Now, these two combinations typically is an indication that there is an incorrect MTU setting in your network, and since the drop is on the tunnel interface this tells that most likely the MTU setting
+
+[00:03:21] of the tunnel interface is improper because we are correlating with two things. One is the fragments failed and another is the packet drop. You see the fragments failed is also increasing, as well as the packets drop is also increasing. Now, tying these two data points together we get an indication that there is something wrong with the
+
+[00:03:41] m2 setting. One of the things we can do is take a look at the Calico network documentation. What the documentation says about MQ that needs to be used in a Calico network, and if we are using something else. You can also do some experimentation and see what MTU works fine. You can continue reducing MTU and check
+
+[00:04:00] whether there are packet drops or not. Now, this is the iterative way to figure out the correct m2, but first and foremost it's always good to check the documentation. So, let me go and check the Calico documentation. So, this is the Calico MTU documentation page. We are using an IP over IP tunnel, which is set by Calico. The m24 I pin IP tunnel should
+
+[00:04:22] be 1480, this is what it says. This is the explanation. So, if you need IP over IP tunneling then m2 size for both the workload and the tunnel interface should be 20 bytes less than the network MTU. Now, if we see here these are all my container interfaces and my tunnel
+
+[00:04:40] interface as well. So, all these are 1490 MTU, which is not 20 bytes less than the physical interface whose MTU is 1500. So, this is a wrong config that is applied to this cluster. Now let's do one thing. We know at least from the debugging steps that the m2 is wrong. Now,
+
+[00:05:00] what is the correct MTU to be set could be an ID rative process, but when we go back and check the documentation one thing is very clear, that it should be minimum 20 bytes less than the physical interface, which in the current case is not. So, what we will do is we will reduce the MTU by 20 might, make the correct configuration, and then check if the
+
+[00:05:20] problem gets resolved or not. So, in order to change the Calico network settings we have to edit the config map. So, if I look at the config map of Calico I can see the m2 size. Veth MTU is the setting that needs to be changed for modifying the view. I will make it 1480. Now, in order to
+
+[00:05:40] make the setting effective I need to restart the Calico pod as well. So, I use a very simple patch command to change some attribute of the pod and this will result in the pod getting restarted. So it's done. Let me look at the Calico pod. Okay, so it's getting created.
+
+[00:06:02] Now we see that the Calico pods are getting restarted. We wait for the Calico pods to be in running state before going and checking again. Okay, so everything is running fine. Now let me login into the node again and look at the netstat outputs.
+
+[00:06:25] As we see, the packet drops are not increasing and the fragments are also not increasing. So, at least from a networking point a few things looks to be okay, but then we need to go back and check if the dashboard is loading fine
+
+[00:06:40] or not because that's the problem which users reported. So, what I will do is I will go to the browser and load the dashboard. I don't see any improvements. Now, let me go back and check for the fragments failed count again. Has it increased from the previous one.
+
+[00:07:00] No, it's not. But still the problem remains. Let me see if proxy and everything else is fine or not. Maybe I can restart the proxy again. No luck. The one thing which is interesting here is while the tunnel
+
+[00:07:20] interface MTU has changed to 1480 the m24 the Calico interfaces have not changed. Now, this is because when we restart the Calico pod it's only the tunnel MTU that it changes but it doesn't go and change the container interfaces. Now, that's because the containers are already running and we haven't started the containers. So, one of
+
+[00:07:40] the things that we usually need to do is when such configuration changes are done in your cluster many a times you would need to go and restart the node as well, so especially when you are changing some critical configuration of the network. So, what we will do here is instead of restarting the node I will restart Docker so that all the containers gets restarted. So, I will restart Docker and
+
+[00:08:00] the kubelet daemon. We need to wait for some time, because the dashboard is in error it will get restarted in some time and then we'll check again. So, let me look at the
+
+[00:08:20] other node as well, and if things are not fine there you might need to restart that node as well. So yeah, the same problem here. I will restart Docker and kubelet on this node as well. Now, you might not have to do this for all the settings but as I said for some of the settings it's required that the entire node is rebooted for the
+
+[00:08:42] changes to get effect. Now, in this case I have not rebooted the nodes, just restarting the Docker and the kubelet daemon fixes them to problem for the interfaces. So, once the pods are in running state we need to go back and check if the dashboard is loading fine or not.
+
+[00:09:00] So, the pod is running fine now. Let me load the dashboard and check. Cool. So, my dashboard is loaded and things are fine. As you just saw, some of the settings are very specific to Calico. But if you get the concept, many of these things applies as this for other container networking solution as well.
+
+[00:09:20] The debugging steps are same, look at the packet drops, look at Network statistics using commands like netstat. Use route command to get the routes, use TCP dump to capture the packets, and combining all these will give you enough information to do the initial level of debugging and analysis. Now, there is one more thing which I would like to cover. When this
+
+[00:09:40] slowness is reported one of the things that you might want to do is to time some of the operations. Let's say you have a tool to time it. You can use browser to time some of the API calls or very simply you can use curl and time the API request and response. So, this is the typical curl format file that I will
+
+[00:10:00] use to time the API operation. Now, I already have the kubectl proxy running at specific pod. I will use that and time the API calls. So, very simply what I will do is I will do curl - W the curl format file specific API.
+
+[00:10:22] So, I'm using curl and calling the deployments API here. See the output which is generated. This is very handy when you are debugging Network performance issues with API or latency issues with API server, or your users are complaining that some APIs are taking more time, and so on. So, you can start with curl and use a similar curl
+
+[00:10:40] format file like I showed here and time the responses. Post that, what you can do also is you can tell it network traces, look at the trace files and see what time it takes, and so on so forth. Now, these are some of the preliminary steps. Based on the results of this you will go deeper and find out what's happening. Whether the pods are running fine, whether there are packet drops, whether
+
+[00:11:00] they are fragmentation, whether there are errors on the system itself, and so on. So, this concludes the networking section. I hope you got enough feints, enough data on how you will go ahead and start debugging network issues in your Kubernetes cluster. So, we look at multi-platform aspect in the next video.

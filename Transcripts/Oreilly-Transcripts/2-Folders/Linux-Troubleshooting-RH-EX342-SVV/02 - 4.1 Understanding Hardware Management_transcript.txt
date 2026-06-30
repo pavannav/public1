@@ -1,0 +1,43 @@
+[00:00:06] - Let me explain hardware management. Hardware management really is all between the kernel and its help process, which is systemd-udevd.
+
+[00:00:21] In the days before systemd udev already existed as a separate process, and really procedure hasn't changed much. Now when new hardware is plugged in, the kernel will send a signal to systemd-udevd, and systemd-udevd will act upon that signal
+
+[00:00:40] by processing some rules. Now based on the systemd-udevd rules, udev, it can do different things. It can create a device node, let's call it a devnode, and when we are talking about device nodes, we are really talking about the files that you can find in /dev directory,
+
+[00:01:01] or it can run a program, or it can tell the kernel to load a module. I mean you must realize that it's a two-way communication between systemd and the kernel.
+
+[00:01:21] Kernel's telling something to systemd, systemd is telling something to the kernel, and of course create a symlink as well to make the device more accessible. Now in this entire procedure there is something that's very important, and that is
+
+[00:01:40] that the sysfs is written to as well. In modern Linux, hardware initialization is more than just the creation a device node. I will show you that where in the olden days creating a device node could help as troubleshooting procedure. I will show you that in current Linux
+
+[00:02:03] just creating a device node is not enough because you will miss all the information in the sysfs file system. The sysfs file system is a very important part of your analyzing of what has happened to that specific hardware that you have added to your system. Let me show you.
+
+[00:02:21] Now that we know how hardware management on Linux works, let's do a quick lab. In this lab your second hard drive is suddenly gone. Fix it. There's one constraint, it's not possible to restart the server at this moment. That's a typical constraint that you will see in business environments as well. All right, to install this lab
+
+[00:02:40] you can run the lab41 script. Now let's verify what's happening, ls -l on /dev/sd should not give sdb anymore. There you go. There's sdb1, sdb2, but there's no sdb device. So what can you do?
+
+[00:03:00] Well, you can start by manually creating the device file. Manually the device file that is one part, but you also need to involve udev. In udevadm you need to scan for devices. The problem with the device that is suddenly gone
+
+[00:03:20] is that it's not just the device file, but there is some information in file system as well, and the device file needs to match what is in the sys file system. So here's what we are going to do. We start using the mknod utility. Mknod --help is the command that you can use to create device files.
+
+[00:03:40] So mknod has a couple of options. It needs a name, which would be the file name. It needs the type, it needs the major and the minor. So the major and the minor is how the kernel knows this device. If you have a look at the output of ls -l on dev sd that is still on top of the screen,
+
+[00:04:02] you can see the major and minor right here. So for sd devices the major is eight, and sda by default the major is zero, and you can see that the numbering is as follows. So the disk itself is eight zero. The first partition is eight one, the second partition is eight two.
+
+[00:04:20] Then we can see that sdb1 is eight 17. From that follows that the major minor number of sdb must be eight 16. So now that we know that we have to use eight 16, we can use mknod. So mknod /dev/sdb b for block device eight 16.
+
+[00:04:43] That's a good start. Now we can repeat this ls command, and we can see that the block device exists. It's right here, but you can also see that the permission settings and ownership is not correct. So I'm using chown on root disk /dev/sdb,
+
+[00:05:02] and next I'm using chmod 660 on /dev/sdb as well. Now we are almost there, but if at this time you start working with the device, you will soon run in trouble because it does not match the information that was created by udev in the sys file system.
+
+[00:05:22] So there is udevadm. If you type udevadm --help, then you can see everything that's possible, and we need udevadm trigger. So let's see what's happening if we use udevadm trigger --help,
+
+[00:05:42] and there we can see the different options that are available. So here is what we need, the --name-match is name. So udevadm --trigger --name-match is /dev/sdb.
+
+[00:06:04] Oops, that's not --trigger. It's just trigger. This is triggering the creation of the sdb device and all the related information in the sys file system. So at this point we should be good. Let's test if we are good.
+
+[00:06:21] If we use fdisk -l on /dev/sdb, and then we can see the current partitioning on the sdb device, and if we are okay, then we should be able to create a new partition. So fdisk /dev/sdb, n for new, p for another primary,
+
+[00:06:43] and +500M. Let's write, and let's check cat on /proc/partitions, and you can see that the partition has successfully been created. So we have been successful in recreating the device.
+
+[00:07:00] Obviously a reboot would've been a much easier fix because in the reboot the kernel is probing for hardware and is giving the information to udev where udev automatically creates the device nodes as well as all the related information in the sys file system, but if you cannot reboot, then is a solution as well.

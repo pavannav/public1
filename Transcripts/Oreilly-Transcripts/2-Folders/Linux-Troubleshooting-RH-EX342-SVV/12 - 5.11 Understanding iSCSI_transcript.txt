@@ -1,0 +1,71 @@
+[00:00:06] - Next thing we are talking about is iSCSI. Here also before we can understand troubleshooting, let me give you a quick conceptual overview of how it works. So in iSCSI there is this thing called the target
+
+[00:00:21] and on the target you are going to create storage. And the storage is the LUN: logical unit. Typically, this logical unit points to a disk which is the physical storage that sits behind it. Then there is the initiator.
+
+[00:00:43] The initiator is the client software and in order to get your iSCSI device available on the initiator, the initiator needs to go in discovery. Obviously, for your discovery to be successful, you need the firewalling to be operational
+
+[00:01:03] and also on the iSCSI target, you need to take care of an ACL. ACL is the access control list and the access control list defines who can access a specific iSCSI LUN. ACLs are based on what we call the IQN.
+
+[00:01:21] The IQN is the internet qualified name and it's the name that you have assigned to your iSCSI initiator. So, the IQN needs to exist on the initiator and it needs to match as well. If it doesn't match, you cannot discover and you can also not access the iSCSI devices. After doing the discovery the result is
+
+[00:01:42] that on the initiator a directory is created. The directory /var/lib/iSCSI and in this /var/lib/iSCSI the discovery information is locked. The existence of this directory is pretty important because if it doesn't exist, if it goes away
+
+[00:02:02] you have lost the information about the iSCSI device. If this creates successfully, on the initiator you can do the next thing and the next thing is the login. The login is really going to connect you to the device shared through the LUN. And the result on the initiator is
+
+[00:02:20] that you will get a new device like /dev/sdb or whatever the name of your device is. And if you want to do iSCSI troubleshooting, really it helps you understand everything that is behind it. Let me show you how to set this up before we dive in to the troubleshooting of iSCSI next.
+
+[00:02:44] So, let me show you how to set up an iSCSI configuration. I'm going to use my host trouble, IP address 168 mls bytes is the iSCSI host
+
+[00:03:00] and trouble2 is going to be the iSCSI client because we need client-host configuration in order to use it. For your own configuration, it doesn't really matter how you call the hosts or what IP addresses you are using as long as you are applying the procedure that I am going to demonstrate right now. So, you need targetcli.
+
+[00:03:23] Targetcli is the target command line interface. It allows you to set up iSCSI. If you have done a certification like RHCE, you already know what to do. Now in the interface of targetcli you can see that the interface is organized as a directory searcher.
+
+[00:03:41] So, we have a route-file system and in this route-file system, two important items. The backstores and the iSCSI configuration itself. Backstores is about the storage that is behind the iSCSI that you are going to use. So that's where we start because in backstores you are going to announce which storage
+
+[00:04:01] is going to be available. I have created the device /dev/sdb2 and we are going to use this device in my iSCSI configuration. So, in order to do that I'm using create and tab completion. Targetcli has excellent tab completion.
+
+[00:04:21] So, create dev=/ followed by the name of the device which is dev/sdb2. If you don't know what to do and you just press enter then you will notice that the interface will prompt you to supply correct information. So, missing the required parameter names.
+
+[00:04:40] So let's use name is lun0. In iSCSI environments we like talking about LUNs, logical units, and they're going to be presented by iSCSI over the network. So, it says it has created the block storage object. Let's type ls and we can see that in this block storage object, lun0,
+
+[00:05:00] that's been created with sdb2 as the backing storage. Now we can continue, we can go to iSCSI and create an iSCSI configuration. So, what do we need? Well, if you use tab completion, it ultimately comes up with wwn=.
+
+[00:05:20] So that's the worldwide name also known as the IQN. So, the IQN is iqn. and then it's common to use year dash month dot inversed DNS name of this domain colon unique identifier for your iSCSI configuration.
+
+[00:05:44] I like target because that's something that's readable and I'm going to configure one target and that's all. So now we can see that that's done multiple things. It has created the target, it has created a TPG, which is a target portal group which is the exposure
+
+[00:06:01] of the target to the rest of the network. It has created the portal, listing null IP addresses, port 3260 which is the default IP address in iSCSI. If you type ls, then you can see that in iSCSI the TPG1 has been created.
+
+[00:06:20] The portal is set but we don't have an ACL, we don't have LUN and these are the quiet parameters. The LUN is the backstore that we have just created and the ACL refers to the iqn of the iSCSI client that we are going to use. Let's do the LUN first. So I'm getting into iqn-complete name tpg/lun
+
+[00:06:43] and there I'm using create tab tab, and tab tab is showing me what it wants to know. So, we want backstores/block/lun0 and I press enter and it creates lun0, no additional parameters required. From there, we need to specify the ACLs.
+
+[00:07:03] And the ACLs, well, we need to specify wwn= and that matches the iqn of the iSCSI client. So let's have a look at the iSCSI client where you should have a configuration file with the name etc/iscsi/initiatename.iscsi and here
+
+[00:07:24] we can see the iqn name that I've created in the client. There we go. So I can even copy it and paste it on the other machine to define this in the ACL. ACLs in iSCSI are very important.
+
+[00:07:42] Without ACLs, the client won't have access at all. And this is basically the configuration that we need. So, let's type exit and that should write the configuration into the system and now let's open firewall ACL.
+
+[00:08:01] Firewall-cmd --get services is showing everything that is available and there is a service with the name iSCSI target. So, firewall-cmd --add-service is iSCSI
+
+[00:08:21] target to add it to runtime we repeat it with --permanent to add it to the persistent configuration as well. And now we can continue on the client machine using the iSCSI ADM command. The iSCSI ADM command wants you to type long commands
+
+[00:08:42] and these commands are kind of tough to remember, so I would recommend you open the main page. And in the main page, you will find the discovery commands that you need to run after which, you will find the login commands. So, let's highlight it, use copy
+
+[00:09:00] and paste on the command line. And of course we need to change the things that are different in my configuration, which is the IP address. So what this is doing, well mode discovery db creates the iSCSI discovery information on the system. Type senttarget, that's what you want to ask the target.
+
+[00:09:22] Hey, target, show me what you've got. - - portal is the IP address of the target that you want to communicate with and discover is the instruction. We need to discover in order to find this result. Now you should notice that iSCSI ADM is not just to do the discovery,
+
+[00:09:41] it's also writing information to the /var/lib/iscsi/ directory. In the /var/ibl/iscsi/ directory, it has created nodes of directory and it has entered a couple of parameters in that sub-directory and that is
+
+[00:10:00] what the iSCSI ADM discover command has done. So it is really a very important command and it's not something that you can skip. After the discovery, you need to log in. And in order to do so, I would recommend you get back to iSCSI ADM and you just copy and paste
+
+[00:10:20] the command that is doing that for you. So, there we go. I am copying and I am pasting. And of course we are going to change the information that we are going to need. So 4.168 and we need to change this as well:
+
+[00:10:43] 2018-05.com.example:target. And now we can use a command like liscsi and liscsi is showing that this machine now has a new device.
+
+[00:11:02] Well, you cannot see it's a new device but you can see it's a lio-org lun0 device and that's definitely the iSCSI device that we have available, so this is what we need. And now on this device we can create a partition and mount it locally.
+
+[00:11:22] And that's basically all you need to do to set up an iSCSI configuration. So now that you know how to set up an iSCSI configuration the lab is set up an iSCSI configuration. I need you, on server1, to configure an iSCSI LUN with the name lun0 and from server2 to connect to the LUN
+
+[00:11:42] and mount it persistently on the directory /lun. Good luck. This lab does not have a video explaining how to do it because it basically repeats everything that you have seen in the video up to now.

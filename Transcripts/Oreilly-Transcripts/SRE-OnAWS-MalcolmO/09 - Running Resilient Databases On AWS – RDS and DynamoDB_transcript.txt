@@ -1,0 +1,45 @@
+[00:00:01] Welcome course taker to running resilient databases on aws, focusing on rds and dynamodb. So in this video, we'll have a quick recap on what SQL and NoSQL are, then we'll take a look at the RD SSL A and some of the techniques and configurations you use to provide a reliable service and we'll do a similar thing for dynamodb. So if you're ready, let's get started.
+
+[00:00:23] So we're gonna focus in this slide, at least on the systemic qualities of SQL versus NoSQL rather than the differences in the way the data is handled. And we're just gonna focus on everything in R DS other than Aurora. Aurora is a separate video for this course SQL tends to be scale up.
+
+[00:00:40] So when you want better performance, you have memory, you get better disks, you have better networking and high availability or reliability is given through multiple masters, read replicas configured across multiple ways or using some sort of cross regional replication and typically not always but typically master to stand by replication is asynchronous.
+
+[00:01:01] So it's pretty quick and pretty up to date. Whereas read replicas tend to be asynchronous. And so there tends to be a little bit of lag dynamo DB, you scale out. So you use multiple nodes to give you that performance. And therefore, resilience is achieved through using sharding and replication. Again, you have multiple azs and cross regional replication,
+
+[00:01:23] but consistency models tend to change. So you're taking a tradeoff kind of cap theorem based stuff to say, well, availability and performance are probably better than consistency. So here's the SLA for rds and again, we're excluding Aurora. So we're saying for mysql, Mariadb, Postgres, Oracle and Microsoft SQL server engines,
+
+[00:01:44] you'll get 99.95 availability 3.5 nines. If you want to call it that over a month kind of measured from every minute, the sort of standard service credits exist. So above 99% but below 99.95% you'll get 10% back and then the exclusions.
+
+[00:02:02] Well, the standard exclusions plus, if you under spec your machine, the SL A doesn't apply. If you ignore the basic R DS user guides and operating principles, the SL A doesn't apply. And if there's some sort of an inherent bug in your database engine postscripts keeps crashing because of something, then again, the SL A doesn't apply.
+
+[00:02:22] So R DS using multi AZ S for reliabilities is pretty much a given. So in multi AZ deployments, Amazon automatically creates a single primary in one A Z and a standby node in a second and use synchronous updates to keep them in sync or at least the primary replicated to the standby,
+
+[00:02:41] you get a single connection string. So something similar to the black box and Amazon, in the case of a compute network or storage failure will automatically fail over to the standby site and then fail back if you choose to. Now, if you have a database issue like a corruption or some kind of bizarre query that just eats your memory cycles,
+
+[00:03:01] it's not going to fail over. So you still need somebody a db A or somebody who understands databases that can manage this and troubleshoot issues inside the database itself. But anything to do with the kind of virtual infrastructure that will be handled in a multi AZ deployment. Now it is still a regional service. So if you have a regional outage, this won't support any changes. So
+
+[00:03:24] how do you cope with multiregional design? Well, you can use read replicas. So here we have our standard multi AZ deployment at the top. So we have our primary replicating to our standby. But in the same zone, the same region region X,
+
+[00:03:41] we have a read replica. So the read replica has its own connection string and it's asynchronous. So there will be a little bit of lag between the primary database and the secondary database, the replica. But we've also managed to deploy a read replica in another region entirely. Again, it has its own connection string.
+
+[00:04:01] So a lot of onus on the application to figure out which database it wants to talk to. So reader replicas are a good way of scaling out your infrastructure, particularly if you have data warehousing or some kind of analytics platform that needs to read a lot of data and you don't want to impact your primary. But in the case of a complete region outage, let's say region X disappears,
+
+[00:04:21] we would still have a database in region Y. Now that database can be promoted to a standalone database. And then all the applications can be pointed at that. And when you fail back, you can either keep region Y as your primary or you then reestablish and sync up through transaction logs your other databases.
+
+[00:04:40] So read replicas, not only give you the performance and Latency and Scalability that you're looking for, they're also a way to provide multiregion capability in R DS. Now, dynamo DB is a different beast altogether. So it's a key value store. So general key values plus more complex documents if you want.
+
+[00:05:01] But basically it comes down to a table which has a collection of items and items have a collection of attributes and other than the primary key, all of these are completely configurable. Dynamo DB uses a primary key to shard the data and also a sort key to source it within a partition and you can build a number of secondary indexes as well.
+
+[00:05:21] So this has a much higher availability 99.9995 nines availability for global tables and four nines for standard tables. And we'll come on to what global and standard are in a second. So again, availability is calculated for a month at this time at five minute intervals. And you have slightly different service credits
+
+[00:05:41] for global tables versus standard slas. And again, in exclusions, it's basically if you under spec your R DS instance, if you under spec your dynamo DB instance, then the SL A doesn't count. And if you do something that is against the kind of best practices and the dynamo DB guide,
+
+[00:06:00] then again, the SL A may not apply. So dynamo DB is inherently resilient. So data is partitioned across multiple data partitions and replicated across availability zones. And again, the more zones you have, the more replicas you have, you can also take continuous backup. So lots of points in time.
+
+[00:06:21] So youre restore whenever you need to or you can have on demand backup. So it's a fully managed service in that way, the tradeoff, as you said is eventually and strongly consistent for reads because of the way the data is stored and replicated in different shards and different partitions. So within a region, dynamo
+
+[00:06:40] is very resilient. How do we cope with multi regionality? Well, we can use global tables. What globals tables allow you to do is take an existing table. A prototype effectively shown on the left hand side, which has got all the resilience that any table has. And then you can basically keep replicas in different regions
+
+[00:07:00] and they all kept in state and sync with the global table. That does mean that for example, if I make rights in region Y, those will be replicated back to region X and vice versa. So it becomes a very resilient way of managing database tables across multiple regions as well as coping with failures and regional issues.
+
+[00:07:21] OK? So hopefully that was useful. Quick store, a quick trip over R DS and dynamo DB. Please join me for the next video where we'll do a similar thing for compute. Please join me for fault tolerant computation on AWS where we'll focus on Lambda and C two.

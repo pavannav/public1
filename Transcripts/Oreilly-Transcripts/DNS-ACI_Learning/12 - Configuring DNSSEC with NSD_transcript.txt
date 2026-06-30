@@ -1,0 +1,245 @@
+[00:00:00] Welcome to ITProTV, I'm your host. [CROSSTALK] [SOUND] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome to another exciting episode here at ITProTV, I'm your host, Wes Bryan. And in today's episode, we're coming back at you with more fun topics.
+
+[00:00:20] DNS tech skills, and joining us back in the studios is none other than Mr. Don Pezet. Don, how're you doing, sir? &gt;&gt; I'm doing great, Wes. Ready to dive into a super challenging topic on this one. A lot of people have heard of DNS SEC, right? And you know that there are DNS attacks that are out there that put your network at risk. And DNS SEC is the solution, right?
+
+[00:00:40] It's like a networking buzzword right now. The problem is configuring DNS SEC is kind of hard. [LAUGH] And the documentation that's out there is pretty slim. And the main reason is this is a bleeding edge new technology. And when we talk about new security technology, we mean five to seven years old.
+
+[00:01:01] But pretty new, and as a result, all the core DNS servers on the Internet have already implemented it, and now it's slowly trickling out to the edge where everybody else gets to deal with it. &gt;&gt; All right, Don, now I get to state the obvious here, right? DNS SEC, it's obviously about security. So can you tell us a little bit about what's involved in it?
+
+[00:01:20] &gt;&gt; All right, so what DNS SEC stands for is the DNS security extensions. And so, what they're trying to do is take the good old fashion DNS that you're used to and add security feature to it. Because remember, DNS was developed over 30 years ago at the University of Berkeley as just a simple way to find names. And back then, you could trust your network. It was a safer world back then.
+
+[00:01:41] And it's not like that now, right, now, the Internet sucks. [LAUGH] And we have to deal with it. And one of the big attack vectors that are out there is that when we do a DNS look up, we don't actually do the look up against the true authoritative server for that zone. Well, we do sometimes, but it's very, very rare. We normally do recursive look ups.
+
+[00:02:02] I do a look up against some DNS server here in the building. It then forwards me to my ISP's DNS server. From there, it probably forwards up to maybe a root hint server, or maybe some other caching server in between, right? And then ultimately, we hit the root hint server, which then sends us down to the TLD servers, which then sends us down, hopefully, to the authoritative server for that zone.
+
+[00:02:23] So I pass through four or five DNS servers when I do a look up. Now, I don't see any of that, right? All that happens on the back end. I don't see it, but it does happen. And an attacker could inject themselves at any point in that path, and when a DNS sever goes to do a recursive look up,
+
+[00:02:41] they could be looking up against an attacker server, instead of the real one. And the attacker server could return whatever IP address they wanted to you. So you think you're going to Nationsbank.com or Bank of America, or what do they call it today? Anyway, who cares, some banking site, you're going to donbank.com, right? And you typed in the name yourself, so you know it's right.
+
+[00:03:00] It's not one of those like typo squatting hacks, right? But you typed it in yourself, and DNS gave you the wrong IP back. And now you go to an attacker site, and you don't know it, right? That's the risk of DNS poisoning. And they usually target the caches on the servers, right? So if they can poison the cache, now everybody else who does the look up gets poisoned also.
+
+[00:03:20] So their man in the middle attack, they only have to pull it off for a brief moment, just long enough to get that record cached. And then they'll write out the TTL, which, by default, a lot of servers have a 24 hour TTL. So I can get 24 hours of attack data after just doing a single poison. It's an effective attack. So they recognized it as a problem.
+
+[00:03:40] And at the root hit level, they said, we gotta fix this. We gotta find a way to stop this at the core, and then spread it out to the rest, right? So, at LNET Labs, they're the people who did all this development. They're the ones who created NSD and Unbound, and that's why we're gonna use NSD in this episode. DNS SEC is supported in almost every platform these days.
+
+[00:04:00] It was supported in Bind, in Microsoft DNS, Power DNS, but it was developed in NSD. So we're gonna use the reference platform here. But the way that it works is basically, it lets you attach a signature to every single record in your zone. So when you do a look up on a record, you get this hash along with it.
+
+[00:04:23] And you can take the record and calculate your own hash and compare the two. And if they match, you know the record is good. And if they don't match, you know the record has been tampered with. But how do you calculate out of a hash? If you're getting this record with a hash attached to it,
+
+[00:04:41] can't they just manipulate the hash? The short answer's yes, they could. So you don't trust the hash that you get. You get that from them, and that's an untrusted one. So you hold on to that. Or if it's missing, that's an even bigger problem, right? And then you independently go out to the root hint servers, into the TLD servers, and you say hey, I need the signature for
+
+[00:05:01] that zone, I need the signature that was used to sign this signature. And you can use that to calculate your own hash and see if they match. It's independent verification from the top, right? Now an attacker could, in theory, spoof the top also, but if that happens, the attack has already gone far beyond where it should have been, right?
+
+[00:05:20] And this is like a complete network compromise at that point. But it allows you to independently verify, has this record been tampered with? Is it in its original form, or has it been modified? So it's an extra level of verification. Now the problem is, clients, like our laptops, they don't support it, right? Clients don't know to do DNS SEC checks yet. That's hard to say, all right.
+
+[00:05:40] So anyhow, they just don't do it, right? Servers use it. So right now, if I set up my own DNS server in my building, and I'm relaying all my DNS checks through it, all my look ups, if it's a recursive server, it can validate DNS SEC. And that's what created Unbound. Unbound is a caching server, and it's a validating server.
+
+[00:06:03] It will validate whether the DNS SEC values are accurate for anything that it does a look up for. So if we use NSD to host our zones with secure signatures, and we use Unbound to do our look ups, we get DNS SEC records on our entries.
+
+[00:06:20] And we get DNS SEC validation on our look ups. And the clients don't have to know what happens at all. So your operating system, your cell phone, your printer, they don't have to be updated. They don't even need to know that DNS SEC exists. If your caching server goes out to the Internet and pulls a bad record, it won't return it to the client. And so the client gets that it can't be found or whatever, and
+
+[00:06:41] you just stopped that spoofing attack, right, very effective. It does allow us to effectively stop the typical poisoning attacks. There are other attacks that can still be pulled off. So this is not like, okay, let's uninstall our antivirus and call it a day. Scary's over, right? Get rid of the firewall. You still need all that stuff, right? But this helps mitigate one particular attack. It takes a little bit of work, but
+
+[00:07:01] it makes it where that one attack is no longer valid for you. &gt;&gt; Don, it sounds like it's built on a model of trust, kinda like we do with our software and our distros and stuff. We have little checksums on them. We download them, we make sure we run them against that checksum. We can validate that software, now, you did say the client's not doing it, so technically, it would be the server doing this for us, right? &gt;&gt; Yeah, and so there's some important things here,
+
+[00:07:20] when you think about the servers that are involved, right? Remember, that diatribe I went on recursive lookups, and then you go, every server in that chain has to support DNS SEC. So, the server, I do the lookup against whoever it forwards to, the root hit servers, the top level domain servers, they all have to support DNS SEC. And unfortunately, they don't all support DNS SEC yet, all right?
+
+[00:07:41] The odds are that your DNS server does, right? The Bind, Microsoft DNS, Power DNS, NSD, they've all pushed out updates for DNS SEC, so the odds are yours does. Your next hop If it's a root hint server, it's gonna support it. If it's an ISP, which is what most of us do, it probably supports it.
+
+[00:08:02] If you forward to Google, a lot of us forward to Google, right, 8.8.8.8, or level three, 4.2.2.1, they support it, so if you're forwarding to those guys you're good. All the root hint servers do too. And then the root hint servers, they point down to the top level domains, the TLDs, and, unfortunately, not all of the TLDs support it yet, okay?
+
+[00:08:23] And where it gets even more complex is, when we do these hashes, there's different hashing algorithms we can pick from. Some are weak. Some are really, really strong. And not every TLD supports every algorithm. So before you even get started with DNSSEC, you've gotta find out what's supported along the way.
+
+[00:08:42] Now, I'll tell you right now, if you go out on the Internet and start looking for help documentations, almost everybody uses SHA-1. And they're doing it for compatibility reasons. And I'll tell you right now, SHA-1 is crap, and you don't want to use SHA-1 if you can avoid it. If it's the only choice, then it's better than nothing.
+
+[00:09:00] Right, so you can quote me on that, right, that it's better than nothing. [LAUGH] But SHA-256, the next level up, and SHA-256 is significantly better and almost everybody supports it. So when I deploy DNSSEC, I look for SHA-256. So if you go out there and Google, and pull up some help docs, anywhere you see SHA-1, just replace it with SHA-256, unless you bump into some problem there.
+
+[00:09:22] You can see even higher ones. You'll see 384 and 512. You'll see other algorithms, like Ghost, for doing the hashing, which are great algorithms. But they're just not very well supported. I'm actually gonna run into that, I'm using NSD in this episode. And NSD is the reference platform for DNSSEC, but
+
+[00:09:41] you'll see that mine actually won't have support for Ghost. So you don't always have compatibility, so where we start is by figuring out what we can do with DNSSEC. And once we know what we can do, then comes the part where we configure it. All right. So let's start out at where it's the most important. At the registrar.
+
+[00:10:00] The registrar is the authority for a domain. So when I buy a domain, right. If you've been watching this whole series, way back in one of the earlier episodes, I went to Amazon and I bought ITProTVdemo.net. Yes. ITProTVdemo.net. So I bought that and you know, actually let me just pull up my console.
+
+[00:10:21] I'm in my Amazon console here and I am looking at my not hosted zones, I need to look at my registered domains. There we go. So I registered ITProTVdemo.net, right. So I bought that right through Amazon. So they're my registrar. They hold it. And so anybody in the world, if they wanna find out about ITProTVdemo.net,
+
+[00:10:40] they're gonna go to Amazon. Amazon is the registrar. And they're my start of authority right now, they are hosting my DNS zone. So remember that your registrar doesn't necessarily have to be the person that hosts your zones. Your zones can be hosted on your own independent servers. But you gotta have a registrar somewhere. And your registrar absolutely has to support DNSSEC.
+
+[00:11:03] If they don't, you can pause this episode right there, it's over for you, right? If your registrar doesn't support it, you can't do it. You'll need to move your zone to some other registrar that doesn't suck, so. [LAUGH] Fortunately, all the big names out there, they do support it, just not fully.
+
+[00:11:20] Let me show you what I mean by that. This is Amazon, right? Amazon Web Services, route 53 is the most stable, scalable and reliable DNS service in the entire world. They're the best of the best, right? But they don't fully support DNSSEC. If I come in here and I go into my hosted zones and
+
+[00:11:41] I take a look at a record, so I'll go into ITProTVdemo.net. And I'll take a look at a A record here, like dns1.itprotvdemo.net. And I look over here on the right side where there's all the settings for that record, there is nothing in here that talks about security. And that's in the GUI, if I drop down to the API level,
+
+[00:12:00] there's nothing there either. There's no support to add a signature to this record, right? They don't support it. So does that mean I'm out of luck? The biggest provider in the world, and they can't do it? No. This is the start of authority side, this is the DNS hosting side, not the registrar side.
+
+[00:12:20] It's the registrar that's gonna determine whether we can do this or not. If I go back to my registered domains, now I'm looking at the registrar side of things. And if I pull up ITProTVdemo.net here, DNSSEC status. What's that all about, right? DNSSEC status not available. So, they're gonna tell me they support DNSSEC but it's not available, right.
+
+[00:12:41] But if you look at the little help, it'll tell you you can't add keys to this domain because Route 53 is the DNS service provider. And the Route 53 DNS service doesn't support DNSSEC, right. The Route 53 DNS service, not the Route 53 registrar. So what they're telling me is if I want to do DNSSEC, I can, but
+
+[00:13:01] not while I'm using their name servers, okay? So I can keep using them as my registrar, but I'll need to change the name servers, and point them at my own servers. Now, before you say, well I wanted everything in the cloud, this ruins everything, right. Well, you could spin up a couple of VMs in Amazon EC2 and throw NSD or Bind or
+
+[00:13:22] Power DNS on them, whatever you wanted, and you could point to those. So your data servers are still in the cloud, they're just not managed by Route 53 anymore. You're using Route 53 as a registrar, not as a DNS server anymore, right? And that's fine, it works that way. So you could do that. I'm gonna use Hover in this show and in Hover, I've got ITProTVdemo.org, okay?
+
+[00:13:46] The reason I'm doing this is, I'm actually connected to my servers via the ITProTVdemo.net domain. If I start messing with that it'll cause problems. So I'm gonna secure the ITProTVdemo.org domain. And Hover is the same way. If I come in here and I look at Hover and
+
+[00:14:01] I look at ITProTVdemo.org, see how it says DNSSEC active? It's already active. What? Well, if I edit that and I take a look, it's not actually active. I've activated it in the past and turned it off. But what they tell me here is, hey, put in a key, put in an algorithm, put in a digest, put in all this stuff, okay.
+
+[00:14:20] But if I actually look at the help here, it says keep the Hover nameservers to use for your email forwarding and DNS. Click edit to enter your hosting company's nameservers. I can't, actually here read this one too, DNSSEC. Add digital signatures to a domain name's DNS to determine the authenticity of the source domain.
+
+[00:14:40] It looks like they have full DNSSEC support, but they actually don't. If I go into the records, I can't add records there. As long as I'm using their name servers, I can't do the records. I can't create the keys. So, I can put the DNSSEC values in, if I use my own name servers. Just like Amazon, they're the same way, GoDaddy is the same way,
+
+[00:15:01] a lot of the providers are the same way. So you need to set up your own DNS servers, and then you go to your registrar and you point to them. But the registrar needs to hold the keys to the kingdom, they need to be able to validate all these records. So they've added DNSSEC support, so I can come in and give them those keys.
+
+[00:15:20] I can put those values in here. And once the values are in, now the individual signatures come from the zone and they validate it with the key right here. So that's the independent validation people will have. A server doing a lookup for ITProTVdemo.org might pull it from my DNS server or an attacker's DNS server.
+
+[00:15:40] And they get the key and they go to the registrar and they get this key. They generate their own hash and compare the two and they'll know if it's been tampered with. &gt;&gt; Don, where do they actually get the keys? Would you use something like you've shown us in past where you actually use for instance, Linux random key generator to get this? Or is it something you pay for? &gt;&gt; This is the crazy part, Wes. Typically it's all free, every bit of this is free of charge.
+
+[00:16:02] The DNS providers, I've never encountered one that charged for it, right? The flip side of that is you have to do all the work. And I'm gonna show you guys how to generate those keys, and there's a lot, right? Every individual record has to have a key. So if I have 5,000 records in my zone,
+
+[00:16:23] every one of them has to be digitally signed. And the digital signatures are stored in a separate record. So when we go into DNS, we have things like A records, and cname records, and stuff like that. When we enable DNSSEC, we get three new record types that are going to appear.
+
+[00:16:40] And the main one is, it's called DNSKey. And so for every A record, I would then have another, sorry we only have a couple of DNS keys because that's the key for the zone. And on the individual records you have what's called a RRSIG which is a resource record signature. So every A-record will then be followed by an RRSIG.
+
+[00:17:03] And every zone would have a DNS key. Right, the DNS key being the key for the zone that's used to generate the signature on all the individual records. And then on top of all that, we have a DS key which is a designated signer. And the designated signer is your registrar, right.
+
+[00:17:22] So we have to generate the keys for the registrar. We have to generate the keys for the zone and we have to generate the keys for each record, the signature for each record. &gt;&gt; And with that it would mean essentially if you do that 5,000 deep, you're gonna have one heck of a zone file, I mean looking through the data that's contained in it- &gt;&gt; Yeah, but it's easy to calculate, it's gonna double the size, right?
+
+[00:17:41] It's gonna double the size and also the complexity of your signature, the longer the signature is, it could increase the size significantly. If you got a small zone, it's negligible, who cares, right? It's a text file. But if you got a massive zone, you gotta account for that. Your DNS cache is gonna require more space, right? Your lookups will be a little more intensive. You might not be able to cache all record and ram, although again, we're
+
+[00:18:03] talking about text files here, so the odds are, it's all gonna fit just fine. So I don't wanna paint a picture of gloom and doom. There's no reason not to do this, it doesn't cost you any money, it's just a lot of leg work. In fact, we try to configure things in 30 minute chunks in our shows, there's no way I'm getting this done in 30 minutes, so we're gonna have a part two on this one, as we go through and get all this set up.
+
+[00:18:20] So, those are some of the things that we have to do. It sounds painful but we can get this set up and have it where it'll generate the individual record signatures automatically for us if we use a little suite of tools that are out there. Now when NLnet Labs created all this, originally they created some very basic tools. And you had to create all the records independently, and
+
+[00:18:42] it was a stinking nightmare. And so only the root servers were doing it, cuz it was just so difficult. But they released a little set of utilities called the LDNS Utils. And LDNS, man, let me tell you, it makes signing this stuff so much easier. The problem is, LDNS isn't on every platform.
+
+[00:19:00] So, for example, if you're on Windows, they don't have LDNS. If you're on Linux or Unix. Well, some distros have it, and some don't. And the distros that don't have it, you have to go and download it and compile it from source, which is kind of a pain. So in this episode, I'm actually gonna use some Ubuntu servers. And I'm using their 14.04 long term support, because that's one that a lot of businesses are out there using.
+
+[00:19:22] They always use the LTS's. So, you might be thinking Don, come on. Ubuntu 16 point, what is it, 16.04 is out. Which is great, definitely. But for this kind of stable, secure DNS, you're more likely gonna see 14.04, which is long-term support. So I'm gonna use Ubuntu in this episode because it's got LDNS baked into it,
+
+[00:19:44] right. So if you fire up your platform of choice, Red Hat, CentOS, whatever, Debian, it may or may not have LDNS. It's a life changer, right? You do not wanna configure this stuff without LDNS, or some kind of third party software that does it for you. But LDNS is free, so in this case it's enough for me to change platforms.
+
+[00:20:03] [LAUGH] All right, so I want to take a look at getting all this stuff set up. I told you guys you need to check to make sure your registrar supports it, right? There's one more thing we need to check, and that's whether your TLD supports it, right? All the route end servers do, right, the A through, is it A through M?
+
+[00:20:21] &gt;&gt; M &gt;&gt; A through M, and there is tons of servers behind them but all those servers support it. The route end servers though, they point to the TLD servers and there's a ton of those, right? .com, .edu, .net, .org, .mil and then there's all the county codes, right? .us, .uk, dot whatever AU, it's hard to think of two letters.
+
+[00:20:43] So all those guys, if your zone is in a uncommon TLD, it may or may not support DNSSEC. So there's an easy way to check, you can reach out to the TLD server and you can say, show me your DNSSEC key. And if they have a key then they support. If they don't have a key, they either don't support it, or
+
+[00:21:02] they haven't turned it on, which is the same as not supporting it, right? So we can easily check that to see. I've got domains in all sorts of TLDs here. I've got itprotvdemo.com, .net, .org. Our main site is ITPro.TV, which is right? And who knows if the company that manages that has enabled DNSSEC.
+
+[00:21:25] So if I wanna find that out real quick, what I can do is, if you just take any machine that has dig, you can use the dig command to query it. On any Mac or Linux distro, you've got dig. If you're on a Windows machine, go to the BIND website.
+
+[00:21:41] And BIND, they have Windows binary you can download that has the dig utility in there. So get dig one way or another. And you can run dig and then we can look for the DNS key, right, that's the zone signing key, the DNS key. And you can put in whoever your TLD is. So like if I have a .com, it would be com.
+
+[00:22:03] We're not used to typing it that way, right? Normally it would be like itprotvdemo.com., but I'm going to the TLD, so I'm showing com.dot. Like reach out to the TLD and if I just run this, I get a good bit of output. And you can manipulate this output a few different ways.
+
+[00:22:20] I'm gonna do this during the show a few times. Like you can tell it to do the short output which kinda shrinks it up a bit and minimizes some of the output. And you can do plus multiline. Which, instead of word wrapping these at the edge of the screen. It will word wrap it earlier, and make it a look a little neater. And so you can query it. And actually, that didn't work out so well, did it?
+
+[00:22:40] Let me get rid of short. Short might be my problem on that one. There we go. Just using multiline will do it. So I can see comdot has a DNS key. Here is their DNS key, right? And when you look at it, you've got the DNS key value, which is telling me they support it. Then I've got their key ID, right? This is key ID 256.
+
+[00:23:00] This is key ID 257. Be careful, cuz it's easy to mix that up. And you might look and say. They're doing Sha 256, right? It's just a coincidence. You can go and probably notice all the keys I generate. Though usually it'd be in the tens of thousands, the number that it generates. So that would be much higher. But the algorithm actually comes down to these things here.
+
+[00:23:21] 3 and a that you've got a main algorithm and then you got a digest algorithm. And I'll show you guys the list later of what each of these mean. Off the top of my head, I'm pretty sure 8 is Sha 256. But 3, if I remember right. I think that actually is Sha-1.
+
+[00:23:40] We'll have to look at the list. I can't remember. But that's what's actually telling me the algorithm. And then, here's the key, right? So if I got a look up for somebody and it came from a server that says it's in .com, I can reach out and validate that zone's DNS key by looking at the TLD and generating a hash using that and seeing if they match.
+
+[00:24:00] And that'll spot that attacker, right? So actually I said that this was the key ID. They have a extra value here with a key ID that is a completely different number. That's interesting. So I'm curious what that's about. But there are a few different key rotation techniques that are in places where the keys change over time. So they might have implemented something there that I'm not familiar with.
+
+[00:24:22] Mine, you'll see the records that I created with the key ID will actually be located right here. So I'm gonna use these. They may be overriding it somehow. Alright. So, I need to test that. So if I've got a .com, great. In this show, I'm gonna do an org. I'm gonna enable it for itprotvdemo.org. So I need to check that and I see org has it.
+
+[00:24:40] Be careful cuz some of them, see this one? 3 7. They're using a different signature, right? Remember, different ones support different levels. So always be careful with that. .edu has a bit of a reputation for using the stronger ones. And so much so that they warn you about how these lookups can take up more cache
+
+[00:25:02] space when you're doing it from edu. So you gotta be careful there. Let's try .tv. So could we enable it for itpro.tv, yeah, yeah. But, depending on how fringe, well I shouldn't say fringe. There's a lot of countries that just don't make use of their TLD, right? It may be a financial power in the world, but
+
+[00:25:22] they don't use their TLD so, they haven't enabled it. So just be sure to check that before you get going. Again that's another show stopper, that will stop you from doing DNS sect, all right. But I'm good to go, right? My registrar supports it sort of, I have to build my own DNS servers, but the registrar supports it. My TLD supports it, and so
+
+[00:25:41] now it's just up to me to do the leg work to get it enabled. If I don't do the leg work, I'm not doing DNS tech, my zones are not protected. So somebody can man in the middle and spoof my zones, right? So I've done my legwork here to get that done. So we're cool there. Now I just need to get my own server set up and redirect to it. Okay, so what I'm gonna do is back here in hover, I'm gonna take my domain.
+
+[00:26:07] And right now, the name servers are set to hover's name server, ns1 and ns2. So I'm gonna change that. I'm gonna edit that and I'm gonna point them instead to my name servers.
+
+[00:26:21] I'm gonna create dns1.itprotivdemo.net. And dns2.itprotvdemo.net. Now, I'm securing itprotvdemo.org, right? Remember, your dns servers don't have to be in the same domain as the domains they contain. One dns server could contain 100 different domains, right?
+
+[00:26:41] So, in my case am doing this on purpose, because I wanna make sure that I've got stable connection that I don't mess it up while I'm configuring DNSSEC. But it's very common to have name servers in a different domain. If you think, they were ns1.hover.com. And that's not a itprotvdemo.org either, right? So just remember when you see me do .net, that's my DNS server's, right?
+
+[00:27:00] .org is the zone I'm actually going to protect. So I'm gonna punch those in. Now, those servers actually aren't working yet. So I'm gonna save that, and it might gripe at me. No, it didn't, good. And the reason I'm doing this now is these records take a little time to propagate. So I'm gonna do that now, and then I'm gonna go set up the servers so that I've got those in place, and this'll be waiting for me, right?
+
+[00:27:22] So now I need to get those server set up and I've got two servers park at here. This servers, oops that's not one of them, that's my laptop. There we go. I've got dns1 and dns2. And these two servers I'm running them in amazon web services. They're running in EZ two. So I just span up a couple of Ubuntu MI, so that I can have them real quick, and this are on the internet publicly accessible.
+
+[00:27:42] I need them to be publicly accessible cuz they're gonna contain the signatures for my zone. And people out there need to be able to find my signatures. Otherwise, they can't validate all this stuff. So these are public, internet facing DNS servers. And I just need to get NSD thrown on. Now I'm gonna use NSD. I could use BIND or PowerDNS or the other guys.
+
+[00:28:02] I'm using NSD cuz it's the reference platform for DNSSEC, right? So it's really the one that does it the best. But the other guys do it, too. So we'll probably film some other episodes where we'll show setting it up on them. But I wanted to do the whole process, here, and we'll do it in NSD. All right, I'm gonna get NSD installed. And when I install it, I'm not just gonna install nsd,
+
+[00:28:23] I'm also going to install ldns, right? Those tools are gonna make my life so much more simple, that I can't live without them. So I'm gonna come in here and add in nsd and ldnsutils. And I'm also gonna install one other thing, right? So NSD is the name server daemon, right?
+
+[00:28:43] That's the server. ldnsutils are some command line utilities that'll help me to sign my entire zone instead of creating record by record. And then lastly I'm gonna add, I don't even know how they pronounce this or whatever but haveged, whatever.
+
+[00:29:01] I'm running this on Virtual Machines in AWS. Virtual Machines have a problem. Their problem is they can't generate truly random numbers. Normally on a physical server, it can use hardware resources to generate a truly random number. But in a Virtual Machine they'll have that hardware, so it's virtualized. If it's virtualized that means somebody wrote the software to virtualize and
+
+[00:29:22] it's no longer random. And so there are some prediction attacks that can be pulled off. So when start to go to generate keys, like salts, for our encryption we need something that's truly random. And if we don't have enough entropy on our server we won't be able to generate that or it just won't be reliable. So haveged tries to fix that.
+
+[00:29:40] Now, there's a lot of people out there that don't trust Haveged, and I know exactly where they're coming from. I understand what they're saying. So in a super secure environment, I'd actually go with a hardware random number generator. There's a couple of companies out there that create some amazing products that do that. I've worked with a few. They're expensive, but they give you some great security.
+
+[00:30:00] But In my case, just to get this done, I'm going to go back to the, it's better than nothing. At least this way, I'll guarantee that I got as good a random number as I'm gonna get in a virtual machine. So that's why I'm installing that package also, all right? Oops. And I probably need to be an administrator to do all this junk. So let me do this. All the commands I'm gonna do, I need to be an administrator.
+
+[00:30:21] So I'm gonna open up a shell as root so that I don't have to keep sudoing every command that I do. And so I can go in here and get that installed real quick. All right, and I'm just gonna do the same thing on my other server to make sure that it gets done. So that's installing. And I'll do the same thing here.
+
+[00:30:42] And so there it goes, right? So it's gonna get installed. Okay now fortunately with Ubuntu it's all right there in the repositories. They get installed and they're in place. If I'm on CentOS I gotta start poking around other repositories. I gotta download them, build some things from source. It gets a little more challenging, just depends on your distro, right? But once it's installed NSD is NSD.
+
+[00:31:02] And so the way we work on it here becomes pretty common across all the platforms. All right, I know I'm running short on time. But I wanna at least get through getting the NSD servers up. And then that way, in the next episode, we can pick up with actually getting in and signing in and having some real fun. So I need to get NSD up and going on this machine. And so I'm going to edit my config, so actually before I get too far,
+
+[00:31:22] Ubuntu does this thing just automatically starts nsd. I guess that doesn't really matter here. So I could stop it before I started working on it, but right now it's up. And it's just acting as a cashing server. It's a public internet server, so normally I would stop it right now. Cuz I don't want anything to get attacked while I'm working on it. But, in my case, it is just cashing, so I am not too worried about it, and
+
+[00:31:42] it will be configured here in a moment, anyway. So I am gonna go in and edit /etc /nsd/nsd.conf. And for those of you who watch my Red Hat episodes you know how Red Hat, they do this great thing where everything's fully documented and there's so much good stuff in here.
+
+[00:32:00] Ubuntu, they go for the less is more, right, so there's really no help in this. So I just need to put the bare minimum config for nsd. I'm not gonna bore us to death with nsd cuz that's not what you're here to learn. You wanna learn about dns sec. So the bare minimum to get this turkey up and running, I need to create a server section. And I'm gonna specify my zonesdir, so where it's gonna go to find all my zones and I'm gonna put my zones in /etc/nsd.
+
+[00:32:24] Some people like to put them in /var, I don't like to do that, so that's where I'm gonna put them. And then I need to, well, I don't have to, but I like to put a log file in because I typically mess things up. And if I mess it up, I need logs to go and find out why. And if you don't define this, you don't get logs. [LAUGH] So, let me point that to nsd.log, there we go.
+
+[00:32:45] Now I'm gonna accept the defaults for everything else, and the defaults for nsd they're just gonna bind to all of my IP addresses, I have one. Well, I guess I have one IP and my loopback. It's also gonna bind to port 53, which I'm okay with. And it's going to allow lookups. It's gonna allow recursive lookups through it.
+
+[00:33:01] I might wanna do an access list to restrict who's allowed to lookup through it. But here in my lab, I'm not gonna do that. Again, you can go and watch my NSD episodes and I show how to set all that stuff up. I just wanna go for basic and get it up and running. So then, I just need to define my zone. And the zone that I'm gonna
+
+[00:33:20] secure is itprotvedemo.org. That's what I wanna secure. And the zone file for it, this is gonna be interesting cuz I'm gonna point to the normal zone file now. I'm gonna have to change this later. I'm gonna make itprotvdemo.org.dns. That's gonna be the file I store this in. When I sign it, I'm gonna have a new zone file that'll have all the signatures.
+
+[00:33:44] I'll [INAUDIBLE] come and chang this to point it to my signed file. And the reason we use a different file, is any time you modify the zone file, you've gotta re-assign it. And if you're only maintaining one file, you can't modify it and sign the same file that's already signed. So this file, I'm gonna keep around forever, and
+
+[00:34:01] that's the one that I'll modify. And when I'm done modifying it, I'll sign it. And so up here, I'll change this later to .signed, like that. So it'll point to the signed version. But I'll keep the original version so that I can modify it. So you gotta remember to do that. You gotta remember to re-sign your zone file every time you modify it. Cuz you modify it, you broke the signature. All right, that's all I need to get NSD up and going as an authentication server.
+
+[00:34:23] And in fact, even for a production server, the only other things that I'd really wanna add here is the access controls to restrict who's allowed to run queries on this things, but that's the bare minimum. NSD's pretty easy to get going. All right, just in case I screwed something up, I'm gonna do an nsd-checkconf.
+
+[00:34:41] Because I am bad about sometimes forgetting a comma or whatever. So I'm just gonna double-check that. No errors, so I'm good to go there. The next thing I need to do is I need to create my forward lookup zone, right? And this is the last thing that we're gonna get done here in this episode to get NSD up and going. So I'm gonna go ahead and create that zone file.
+
+[00:35:00] It's gonna be /etc /nsd/itprotvdemo.org.dns. That's the file I wanna make. And I just need to throw in my standard DNS records here to get this thing in place. Nothing too crazy. I'm gonna do a $ORIGIN of itprotvdemo.org.
+
+[00:35:20] That's gonna be the default domain for this zone file. I'll set my default time to live to be 86400, and that time to live's important, because people are gonna cache my records, which means they're gonna cache my signatures also, right? And that's kinda what leads to this whole poisoning attack in the first place, so I need to have that default time to live. And you can make it far shorter if you want on a secure domain. But this is a pretty good default.
+
+[00:35:42] I'm gonna do my SOA record, which is gonna be held at dns1.itprotvdemo.org, which will ultimately be this server. And I need to point to an admin, so we'll just punch in a fake one for now. Don't tell anybody I did that.
+
+[00:36:00] Don't tell InterNIC. So now I just need to add my standard SOA-type records. We have to do one for the serial number. I don't need to do all the notations on this, but the serial number, my retry interval. We need to do the, that was my refresh, my retries.
+
+[00:36:21] Next, then we've got the expiration, and lastly we've got the minimum TTL or negative TTL. And we'll punch that in, and that's the end of my SOA record. Then I need to define my nameservers. So, I'll come in and put each one of those in here.
+
+[00:36:40] I'll get the syntax right, which will help this all work. And my nameservers are gonna be dns1.itprotvdemo.org, and they're going to be the other one, which is, or sorry, .net, I gotta make sure I get that right. If I get that wrong, it's a problem. Remember that mine are actually being hosted by the .net servers,
+
+[00:37:02] not the org ones. And again, it's not uncommon to have your DNS zones hosted by somebody completely outside of your zone. It can help in a lot of scenarios. So those are my nameservers. And then after that, I'm not gonna bore us with a ton of records here. I'm just gonna add some basic ones. I'll do DNS1, which will be my first server.
+
+[00:37:22] And it is 34.193.44.23. I'll do DNS2, which is 34.193.248.100. And I'm gonna create a record for www. We have a site called showmemy.info and it shows you your IP address.
+
+[00:37:43] I'm just gonna say that www.itprotvdemo.org points to that website so that there's actually a webstore there we can test with. So that'll be an A record, and I'll point to the IP of that server, 50.16.169.34. There we go. Super simple zone record. Nothing fancy there. Really, just the basic stuff.
+
+[00:38:01] I'm gonna go ahead and save that, and now it's in place. Okay, last thing I need to do is I could check the zone, actually, no, NSD doesn't have a zone checking utility, so I just have to hope that I wrote it right. And I can do a service nsd start, or in my case it's already running so I need to do a restart.
+
+[00:38:21] And we'll let that one go and so it'll restart and it's gonna load. I guess I could've done an nsd reload of the config and the zone file, but it's faster to restart the service. All right, nsd should be up and running and I can test that real quick by doing an ns lookup for www.itprotvdemo.org.
+
+[00:38:41] And if I point that to myself, it'll look up against NSD, and I should get a response that it's 50.16.169.34. So I know NSD is working, and it's up and going. So I'm now an NSD server, and I'm serving up these addresses, just like a normal server with no signatures. So, this is a unsigned DNS server.
+
+[00:39:01] My next task is gonna be to actually sign all this stuff. I need to get it all signed. I can generate all of my algorithms and all that other good stuff. And then I need to take the keys I created and stick them in my registrar, and we'll be ready to rock. Okay, but as it stands right here, I'm just a normal old DNS server. So what we're gonna do is this is a great place for us to stop.
+
+[00:39:21] And, in between the shows, I'll get the second DNS server set up. Cuz it's the same thing over again, you don't want to see that again. Although I will set up NSD to do a primary master replica. So if you watch our NSD shows, we cover how to do replication. Replication's important because you can't generate the same keys on two different servers reliably, there's various things that can impact that.
+
+[00:39:42] So, you generate the keys on one server and then it replicates to the other, so now your keys are the same everywhere, all right? It is important that when you set up your NSD servers, you set up replication for the zones. Or Bind, or Microsoft, any of the other guys, same thing. You generate the keys on one DNS server, and let it replicate to the others, rIght? So I will set up a replica to the other side.
+
+[00:40:00] We've covered that in another episode, so check that one out if you wanna see it. And when we pick back up in Part Two, we'll be ready to sign all this stuff, and really get in there and have some fun. &gt;&gt; Well, Don, we appreciate you showing us the first couple of steps, but know we got a lot more to go. Did you wanna put anything else in this one or do you wanna just go ahead and leave them with a cliffhanger and they can come back and see us in Part two? &gt;&gt; Let's leave them with a cliffhanger because at this point I've really done
+
+[00:40:21] the lame stuff. So the fun stuff's all in Part two. That's where we're really gonna jump in at it and you get to see the true configuration. So we'll save it for part two. &gt;&gt; Yeah, that's probably a new scene in a Mortal Combat or something like that. We'll call that the Lamealiti, that's right. Well, that's a perfect place to wrap this one up. Don, as always, we appreciate you being here.
+
+[00:40:40] And we appreciate you, the viewer, watching. Signing off for ITPRO.TV, I've been your host Wes Bryan. &gt;&gt; And I'm Don Sub-zero Pezet. &gt;&gt; And [LAUGH] we'll see you next time. [MUSIC] &gt;&gt; Thank you for watching ITPRO.TV.

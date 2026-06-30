@@ -1,0 +1,187 @@
+[00:00:00] Welcome to ITProTV, I'm your host- &gt;&gt; [CROSSTALK] &gt;&gt; Coming at you live from San Francisco. &gt;&gt; [CROSSTALK] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome to another great episode here at ITProTV, I'm your host, Wes Bryan. And in today's episode we are continuing through our series on DNS tech skills, and
+
+[00:00:20] well, we're bringing him back, that's right, none other than Mr. Don Pezet. Don, how are you doing, sir? &gt;&gt; I'm doing swell, Wes, ready to dive right back into NSD. We had to end our last episode kind of on a cliffhanger, I know you guys have been waiting in anticipation. We got NSD installed, we saw how that all worked, it was great, but without any zones, NSD is absolutely worthless. Because it is authoritative only, no caching, no recursive lookups,
+
+[00:00:43] no forwarders, it either has the zone or it doesn't, and that's it. So while we did have it up and running, I was able to show that it was running, we didn't really get to see it do anything. It's hard to feel like it's an impressive product when it doesn't do anything. So in this episode, we're gonna make it do something. We're gonna create a forward lookup zone. We're gonna get chucked in there and get a chance to see it resolve some of that
+
+[00:01:03] information and actually see it do the stuff it's supposed to do. So instead of gabbing on about it like I'm apparently doing, we'll go ahead and get started [LAUGH]. The first thing I need to do is I need to create a zone file, and when they created NSD, remember that BIND far predates NSD, but the zone file system used in BIND has been around a long time.
+
+[00:01:24] People like it, there's not really much to mess with, so when they created NSD, they just stuck with the standard BIND format for a zone. If you create a forward lookup zone or a reverse lookup zone, the file formats used in BIND are the same in NSD. Now, on a positive side, that makes it really easy to migrate cuz you can just
+
+[00:01:43] copy the zone files right over and reuse them. Now, you just need to add it to nsd.conf and you're in business, but if we need to write them by hand, it's just the old familiar format that I'm sure you all have memorized as well as I do, which is not at all. So anyhow, we're gonna get in here and write that zone file, I'm gonna create a zone file for lab.itpro.tv.
+
+[00:02:01] And on the Red-Hat-based distros, it's gonna go into /etc/nsd, that's where it expects its zone files to be. That's where we have nsd.conf also, as well as all the various authentication keys that our server can use. So that stuff's right there, I'm gonna jump in, and I'm gonna create the zone file right here. Now, you do need to be an administrator to write to this folder, so
+
+[00:02:21] you'll either need to sudo these commands, or do what I did which is use su to elevate your privileges. And I'm gonna edit lab.itpro.tv.dns, the file name can be whatever you want it to be. You can call it bob.text if you want, the file name doesn't matter. Right, but I've gotten in the habit of always using the domain name, so I'm doing lab.itpro.tv, that's what I want.
+
+[00:02:41] .dns, that's actually a carryover from some other work I've done on Microsoft systems where they always end them in .dns. I just do that for consistency across the platform, so you don't have to do that, you can call it whatever you want. Then inside of the file, I need to create my forward lookup zone. Now, if you're already familiar with this, it's the standard BIND format, so feel free to fast forward if you want, but if you're not familiar with these,
+
+[00:03:02] let me show you what has to go into one of these files. We'll kinda do the bare minimum, and then I'll add on some bells and whistles to it to make it a little nicer. So let's start with the bare minimum just so we can make sure the server works, and then we'll go and add the others afterwards, okay? It'll give me a chance to show you how cool NSD can do at updating zones, it's kinda neat. All right, the very first thing that I need to enter in is, well,
+
+[00:03:23] I'm gonna do the absolute bare minimum, just the rock bottom, the bare minimum what I need to do to get this put in place. So the very first thing I need to do is I need to put in my default TTL. And that's the time to live, how long I'll allow records to be cached. Now, remember NSD doesn't do caching, so this isn't how long I'm caching stuff,
+
+[00:03:41] it's how long other people can cache my stuff. If I'm using Unbound in conjunction with NSD, which is pretty common, [COUGH] Excuse me. If I'm doing that, then what's gonna happen is Unbound will use this time to live to determine how long it can hold a record before checking back in with me. So I'm gonna set it as 86400, which is a pretty common value,
+
+[00:04:01] I think that works out to 12 hours, if I remember right, something like that. So it's a pretty decent time, maybe too long for some records. Remember, you can always override time to live on individual records, so if you have some that are more critical than others. So I'm gonna throw that one in there. Then let me throw in our start of authority record. The SOA record, you have to have it, this is who is responsible for this zone.
+
+[00:04:25] And so the start of authority is going to be a DNS server somewhere who's in charge of this zone. Well, my box is gonna be dns3.lab.itpro.tv, so I'm gonna set it up as the start of authority. The @ symbol means that I'm going to be referencing
+
+[00:04:41] whatever this domain happens to be. And NSD will know what this domain is because well, when I load it in NSD.com, I have to tell it the domain so it'll know what that @ symbol is, and that's like an alias that it'll explode out. I could type lab.itpro.tv., you have to have a dot at the end, and that would be the same thing.
+
+[00:05:00] If you ever wanna override it, you can throw like a default domain up at the top using a Origin command. I don't normally do that, but you see it in a lot of textbooks' examples where they come in and they say like $ORIGIN and then lab.itpro.tv., whoops, lab.itpro.tv., there. And that way when we leave a domain off, that it'll assume this one up here.
+
+[00:05:24] But even that Origin command will get overridden when you use the @ symbol because nsd.conf has the domain specified there, so that'll override it with the @ symbol. This little alias here will really only work on individual records, we'll see those later on. All right, I know I said I'd do the bare minimum, but
+
+[00:05:41] I'll leave the origin up there just cuz some people like it. All right, when I do the start of authority, it is a Internet record, which almost everything is these days. In fact, in NSD it defaults to Internet class, and so you can leave the IN off on some of them, but it's not good practice to do it cuz we're trying to maintain BIND's format. And BIND hates it when you leave stuff off,
+
+[00:06:00] so while NSD is forgiving, BIND isn't, so I still include the class. I'm gonna create an SOA record, and it's gonna be for my server, dns3.lab.itpro.tv., all right? Now, and I'll throw my dot on the end, right, it's a stickler about that. Now, that's the name server that's gonna be the start of authority, the person who's authoritative for this zone.
+
+[00:06:21] And in NSD, NSD is an authoritative server, so it's almost always the server that you're on, unless you have more than one NSD server. If you have more than one NSD server, it could be one of the other ones, but it's gonna be some server that you control because you're authoritative. You can't be authoritative for somebody else's domain unless you're spoofing it, which you could do, but a DNS cycle will break that down pretty fast.
+
+[00:06:41] Then we need to specify an admin, now the admin, this is a throwback to the olden days where this would help us query a record, you'd create a text record that would tell you where to find this person. Most people don't use it anymore, but you still have to have it, so I'm gonna put admin.lab.itpro.tv., and then I'm ready to start my settings.
+
+[00:07:00] The start of authority has to provide five values, five numbers that identify how it functions. The first one is a serial number, and the serial number, I'm just gonna write the names out here so I can remember what each one is. The serial number is identifying which version of the database this is, I just created it, so this is version 1. If I only have one server, I don't really care about the serial number at all.
+
+[00:07:23] But if I have multiple servers, if I have other like secondary or slave servers that are replicating this, they need to know when the database has been updated so they can download the new database. If I've got version 2 and they're sitting on version 1, they need to know to get the new one, so we can bump that serial number up. In theory, every time you edit your database,
+
+[00:07:40] you should increment that number. Now, most people forget to do that, so it doesn't happen. And while there's other technologies like incremental transfers that can solve that problem and work around it, even though the serial number is not changing. But as a general rule, you're supposed to change that every time you edit the file. The next number is gonna be my refresh interval, which is how often I check for
+
+[00:08:00] changes in my zone files. So that's going to be my refresh. And then we'll come in and say my retry. If I try and forward out to another server and I get a failure. How long ago would you retry? On a NSD server, it doesn't really have much of an effect. But I need to have it there, because I'm following the standard bind format.
+
+[00:08:22] All right, and then lastly is my minimum time to live or my negative time to live. So that if somebody tries to reduce the TTL there are limits to how low we'll let it go. And so I can specify what I want that to be. So we'll throw in something like 3600 and I'll call that my negative TTL. All right.
+
+[00:08:40] Actually, I have my formatting wrong. That's the last value. No, it's not. Shoot. I only did four values. Who did I leave out? I left out expire. Shoot. See this is why we have notes. So the expiration, how long will I hold on to records from a server I can no longer contact before I expire them out and, and chuck them? So I'm gonna set my expire to 57,600 and so that will be my expire.
+
+[00:09:03] All right now 3600 that's my last number. The negative TTL and so I need to close off my parenthesis. I open the parenthesis here and I'm gonna close it off down here. And knows how I close it off before that semicolon. And that's because the semicolon's actually identifying the end of this whole line starting with the at symbol.
+
+[00:09:21] All the way to there. That's what's getting closed off, right. So it's important to have that. If the syntax is wrong, don't worry, we've got a syntax checker that will help us spot that and get in there and fix it. Making typos actually really easy to do in these files. All right. Now, technically there is only three things I have to have in a zone file.
+
+[00:09:40] I need to have a time to live, I need to have a start of authority and I need to have at least one name search. Preferably two, but at least one to be syntactically correct. I don't know if that's a word but I'm going to use it anyway. Syntactically correct. So I need to create at least one entry for a name server. So I'm going to come in here and do an at, again because this is a reference for
+
+[00:10:01] the domain, itself. It's internet class. And this is a name server, right? And my name server is going to be dns3.lab.itpro.tv. Now, I'm using the same one as my start of authority. I don't have to. I might have ten different DNS servers that all have this zone on it.
+
+[00:10:22] And one of them's the SOA but I'm providing to other people different name servers here. I might have more than one. So it doesn't have to match, in my case it does because I just have one server. Usually they do match though, and usually you have more than one name server but you only have one SOA so the match only goes so far. Later on I'm gonna add another name server dns4.
+
+[00:10:41] So I can go ahead and punch that one in now, if I wanted to, and we'll get that in there. All right. Now if I stop right here, I've met the minimum needs for configuring your zone. But it may throw some errors when I run a check tool. If I scan the server to look, there's third party tools party out there that'll
+
+[00:11:01] help you test it and look for things too. If I try and do something like that, it may throw some errors. And the main reason I might get an error here is that, I keep referencing dns3.lab.itpro.tv or dns4 I don't have any A records for them. So I'm not gonna get very far without an A record for these guys, and so I'll get errors cuz you can't look up who my name servers are.
+
+[00:11:22] So I'm gonna add two more entries. What you see here, if we were to delete the origin line. Everything else is the bare minimum, I guess if I went down to one name server also then that would be the bare minimum. But the true bare minimum would be for me to add some A records here. So I need to add a record for dns3 and dns4.
+
+[00:11:42] Now, if I use the ORIGIN command up here, I can just say dns3 and hit tab and it'll assume I meant dns3.lab.itpro.tv. If you didn't do the ORIGIN command, I normally leave it out, then I actually need to type the whole name in. Like that, okay?
+
+[00:12:01] So be aware that that format can change a little bit based on whether or not you used the ORIGIN command. And I'm gonna create an A record for it that points this guy to 10.0.222.103. And then I'll so the same thing for dns4. And I'll get that put in.
+
+[00:12:20] And there we go. So there's my A records. And I've screwed up my formatting thanks to the long file names, or the long server names down there. So if I wanna really be particular about this stuff, I'm gonna need to come in and add a few more tabs. And there we go. Now we're nice and clean. I like to have mine nice and in order. I usually do space out the name servers too. So I keep them separate, just so I don't mess them up by accident.
+
+[00:12:41] And then all of my A records and other things go at the bottom. But, as it stands, that should be pretty good for the basics. We'll come back and we'll add some more advanced stuff later. But at this point, I really just to test to make sure NSD is working. So I'm gonna just save this. Okay. So now I've got that file created. I might have some errors in it but it's at least created, we'll check it for
+
+[00:13:01] errors in just a moment. Okay, once that's done, NSD needs to know about it. NSD doesn't just scan this folder looking for zone files, cuz remember I said the file name could be whatever we want. So it wouldn't necessarily know which of these files are zones and which ones aren't. So we have to tell it that that file exists.
+
+[00:13:20] And we do that inside of nsd.conf. So I'm gonna edit /etc/nsd/nsd.conf. And I'm gonna go in here and where you put it doesn't truly matter except you have to be careful because there's these sections. See how this is the server section?
+
+[00:13:40] If I put it under the server section it's gonna break things. And if I keep scrolling down, I'll find the next section eventually [LAUGH]. Thought it was a little closer to the top than that. There we go. Here's an include section. Here's a remote control section, right. I think in the last episode I mentioned how you could use NSD control from another workstation, here's where I configure that.
+
+[00:14:01] When I want to enter a zone I can enter the zone in between any of these sections. I could have put it in between include or remote control. But if I stick it in the middle of remote control by accident it's gonna end remote control, it's gonna start my zone. And then all the other remote control commands are gonna get stuck onto my zone, it's gonna break things. It breaks the syntax. So when it comes to creating zones,
+
+[00:14:20] I almost always just skip right to the very bottom of the file. And if you get to the very bottom of the file, what you'll find is, they actually have a few examples of zones that are right there. And so you can use those examples to kind of mirror what you're about to type. But I usually just jump to the very end, that way I know I'm not in the middle of any other section. And now I can come in and I can tell it about the zone that I made, or
+
+[00:14:43] that I'm in the process of making. So I'm gonna tell it that I've got a zone, and I'm gonna give that zone a name. And the name is lab.itpro.tv. Remember that dollar sign origin variable I put in the file. And how I said NSD doesn't really need it cuz it already knows the domain.
+
+[00:15:01] This is how it knows. I gave it a name. It's lab.itpro.tv. And then, I need to tell the zonefile. Where's it gonna find this? Now I don't have to put a path on this because it knows to look into /etc/nsd by default. But if I put it somewhere else I do have to put a path. So only put a path if you moved it away from where the default is.
+
+[00:15:22] If you left it where it goes normally then we just come in here and we say what that file name is, and it knows exactly where to look for it. And it's gonna look inside at /etc/nsd and it's gonna find it. So that's gonna tell NSD about this new zone that I made. And it's gonna know that it's there, it's gonna load it, and
+
+[00:15:40] now we'll actually have a zone. So I'm done, right? Well not quite. Nsd.conf is only loaded when NSD starts. So it started in the last episode, so a while ago. It doesn't know that zone exists. It's not gonna look for it. So I need to tell NSD to refresh. And this is probably one of my favorite features of NSD.
+
+[00:16:02] In other nameservers like BIND, the way I'd do it is I'd restart BIND. So I could restart the service. Well, that works. When you restart the service, it loads the config file, right? So it works and it finds its own. The problem is, anybody doing lookups right then, they're gonna fail to connect. And they'll move on to another DNS server, you should have more than one.
+
+[00:16:23] You do have more than one, right? So, hopefully you do. And people don't notice. And that's how a lot of administrators look at it, like, they won't notice, they'll go to the backup. But what really happens is they're in Google Chrome and they're trying to get to Facebook and the page pauses for a second. And they finally get through, and they're like, my Internet connection is garbage.
+
+[00:16:41] And it all turns out that it was just a slowdown cuz of failed DNS lookup, right? So that's the kind of problem we can trigger. Well, on your home, or office, small, medium business, even an enterprise business, it's such a brief thing to restart that service that most people won't notice. But who's running NSD?
+
+[00:17:00] The big guys. The root hint servers. The guys that are at the heart and soul of the DNS infrastructure for the Internet. They're not handling hundreds of queries per minute. They're not handling thousands of queries per minute. They're handling hundreds of thousands of queries per minute, maybe even into the millions on some of them. We're talking about huge amounts of lookups.
+
+[00:17:20] And being down for even a fraction of a second, it just can't happen, right. So in NSD, we actually have the ability to refresh our config file and read the config file without restarting the service, right. And you can do the same thing with zone files. So when I modify a zone, I can reload the zone file without restarting the service. That's really important.
+
+[00:17:41] Now, if it's the first time that I created a zone like I did here, I need to refresh NSD's config so that it learns about the zone. But from here on out, any time I modify the zone, I can just refresh the zone file. I don't have to refresh all of NSD. So, I might have 20 other zones that I don't want to mess with.
+
+[00:18:00] I can leave them be, and I can just refresh the individual zone. For me, though, I'm going to need to reload the whole config. Now, before I do that. I've messed with the config a good bit, right. It's possible that I've made some typos. It's possible that I have some typos in my zone file. It's possible that I have typos in my config file. So I'm going to check those before I reload anything. Cuz if I try and reload it and there's an error,
+
+[00:18:21] I could potentially bring the service down. And I'm trying to avoid down time, right. So I'm going to do nsd-checkconf /etc/nsd/nsd.conf. So I'm gonna check my main config file and hopefully I get nothing back. If there was a typo, a missing semicolon, whatever, it would warn me, and
+
+[00:18:41] I could fix that. Then I'm gonna do nsd-checkzone. And I'm gonna check my zone file. Now, when you check the zone file, it needs to know the stuff that would normally come from nsd.conf. So I need to tell it the domain name, which is lab.itpro.tv. And then I need to tell it the file that I'm checking.
+
+[00:19:02] And so I'm gonna point to that file, all right. And so when I point to it now it knows the domain name and the file. That's the two pieces of information I put in nsd.conf. And it's gonna go and check that zone out and it's gonna look for errors. And hopefully you get a message back saying something like this. That lab.itpro.tv is okay, right?
+
+[00:19:20] If there was an error, if there was some kind of problem in there, right? Let's say I left a semicolon out, right, so I'm just gonna take that semicolon out. When I go to check that zone, I get an error. And it tells me we had an error, syntax error on line number 9. And then it tells me the zone is configured as lab.itpro.tv, but
+
+[00:19:42] it has no start of authority record. So I've got an error on line 9, and it's a problem with my start of authority record, right, that's what it tells me. And so I can go in and I can fix that. So I can get move down to line nine, which is right here. I'm in my SOA. And I can look, and I can say, all right, well, what's the problem on this line?
+
+[00:20:01] And I'm missing a semicolon. Or if I put the semicolon in the wrong spot or whatever, we can get in and we can fix that. And now once it's fixed, we can check that error. And the important part is, we're checking it without messing with the NSD service itself, right? So now, when I go and load the config, I know that it should be safe.
+
+[00:20:21] To load the config, we do nsd-control and then we say reconfig. That says, read the config file again and apply any changes you find. And the change it's gonna find is that new zone we added at the end. And so it's gonna load that zone in. And hopefully everything is right.
+
+[00:20:40] But key to this process, it didn't have to restart the service to do it, right. So if people were doing lookups while this was running, they were still doing lookups, it was fine, right? It kept running, everything was hunky dory. So we should be good there, and we should be up and running, all right? Now, I'm throwing out a liberal amount of shoulds on this, right? So how do we know it's actually running?
+
+[00:21:01] Well, the easiest way is I could do a lookup against it. We could say dig @127.0.0.1. Ooh, actually, when we did IP addresses in the config file, I didn't approve the loopback. So that might not work. So let me do the actual IP. It is a little literal. Like, I would have needed to have approved the loopback address, which I didn't.
+
+[00:21:21] So I did the actual address. So I'm telling it to do a lookup against this server. And I'm gonna look up dns4.lab.itpro.tv. That was one of the records that I created. And when I do the lookup, here it comes right back. And dns4 is 10.0.222.104. Lookup worked.
+
+[00:21:40] Great, right. I could have used nslookup, same thing. I could have looked up dns4.lab.itpro.tv and specified the server right afterwards, like that. And then it does the lookup, you see a little less data that way, but maybe that's good for you. You don't want to see all the junk. But I can see, so I am doing lookups.
+
+[00:22:00] And if I try a recursive lookup, like if I try and look up www.google.com, right? What's gonna happen? NXDOMAIN, can't, nonexistent domain, can't find it, right? If I do a dig for that, let's switch to dig, dig will give me better data. And you look, I'll say www.google.com, okay?
+
+[00:22:22] I did a lookup. And see what I got back. IN A. I was asking for an A record, it didn't find anything. And the reason is, WARNING: recursion requested but not available. NSD does not support recursion. It's authoritative only. Either it has the answer or it doesn't. If you need recursion, then get Unbound.
+
+[00:22:43] Have Unbound doing all your lookups recursive and then forward your authoritative zones right over here to NSD. And now you get both running. That's the way it's intended to run, I have the two different systems in place. All right, now if I wanna modify that zone, I wanna go and change some records in there, right?
+
+[00:23:00] So I'm gonna edit lab.itpro.tv.dns, and I'm gonna add some new records, right. So I'm gonna get in here and take this guy and I want to add maybe additional A records, maybe I have a web server, right. So I'm gonna add webserver01.lab.itpro.tv. And that's too long, let's make it shorter.
+
+[00:23:22] Webserv, I don't wanna mess up my formatting. [LAUGH] So webserv01.lab.itpro.tv, I'll make it an Internet record, an A record. And maybe it has more than one IP, right. So I can use standard bind format, where my next line, I just leave the name blank.
+
+[00:23:41] And now I can put in two IP's. Or I can even do an IPv6 address, right. Which is always a fun one to type. So I can punch those in. So just kind of adding all those entries for webserv. I might have a CNAME for www, right? So I can punch those in If you watched our unbound episode,
+
+[00:24:02] you'll know that unbound doesn't support CNAMEs. But NSD does. And this is where my zones are stored anyway. So now when a CNAME lookup goes to unbound, it forwards it over to NSD, gets the answer, returns it back, everything works great. So the two work together amazingly. Independently, they are of marginal usefulness. But when you put them together, it is the best DNS solution that's out there,
+
+[00:24:23] all right. So I'm going to create a CNAME that creates to webserv01. If I spell it right, that's going to help. I'll point that to lab.itpro.tv. And maybe I want some MX records, right? MX records, we normally stick on the domain. So I'll come in and do that.
+
+[00:24:41] So maybe I'll do mail1.lab.itpro.tv. And I might have a second one, cuz we always have multiple DNS servers, right, or mail servers cuz mail is important to most people. So I can start to punch those in. I probably need a records for those guys too if I really want to do this proper
+
+[00:25:00] style, [LAUGH] so I can come in and do those too. This is gonna get boring real fast, isn't it? What other kind of records should I mess with? I think that's probably a pretty good rundown right there. You think any others, Wes? &gt;&gt; Other than a PTR record, but you'd have to reverse lookup zone, right? &gt;&gt; Yeah, yeah, so a PTR record, if we want to do a reverse lookup zone,
+
+[00:25:20] we'd actually have to create a whole new zone file, right, cuz that's not gonna be a part of this one. But I'm glad you asked, cuz we definitely don't have time to jump into that one. But basically you'd create a zone file that would be named with the reverse lookup format. So in my case, I've got this 10.0.222 network, so I would create a zone that was 222.0.10, right, kind of backwards.
+
+[00:25:42] 222.0.10.in-addr.arpa, right? And that's the reverse lookup zone name format for that zone, and then for its records, I would still need a ttl, an soa. I would still need name servers, those three critical things, you'd have to have those. So, whoops, so you could actually just [LAUGH] I'm gonna blow it up here,
+
+[00:26:04] this is going crazy. So, basically all this stuff up here at the top would be the same. You can copy and paste this, which is what I was trying to do. You can copy and paste that, and then down here, the record is really all that would be different. So you would say PTR, and on the left side would be an IP, and on the right side would be a name versus what
+
+[00:26:21] I'm doing where it's a name on the left side and an IP on the right. So that would be it, but otherwise, the reverse lookup zones are just like forward lookup zones, except for flipping those around. &gt;&gt; Would your SRV records go into this zone as well? &gt;&gt; Yeah, if I did SRV records. You had to pick the hardest one, didn't you? &gt;&gt; [LAUGH] &gt;&gt; So yeah, those would go in here to if we had SRV records.
+
+[00:26:41] You'd put whatever their name was. Their type is SRV. And then you have to specify the protocol, the priority, the weight, and then the port information and all that would all go right into here. I actually don't remember the SRV format off the top of my head, but I know we did an episode on SRV records. So definitely check that out, we've got all the formatting right in there,
+
+[00:27:01] you can just kinda see how to do that. All right, this is a pretty good run right here of various records that I've added. I'm gonna get out of this and again, I was typing kinda fast on some of these. So I need to check that real quick. So I'm gonna recheck my zone file. And everything looks okay. Now, earlier, I ran nsd-control reconfig.
+
+[00:27:22] That reloaded nsd.config. I didn't modify nsd.config this time, though, did I? I modified an existing zone. So instead of running reconfig, which actually wouldn't help me here, what I can run instead is reload lab.itpro.tv. And that's gonna tell it the config hasn't changed, that's the same.
+
+[00:27:43] But let's just do a lookup or do a quick check on the zone file and reload that, update our database. Cuz it is maintaining a database in the back end. And that's not gonna affect any of the other zones and it's gonna get those records put in place. And so now when I do a lookup against my system I can come in and
+
+[00:28:00] do like a dig on my server. And I can do a lookup for www.lab.itpro.tv and it's gonna look it up. So here's the lookup, it found that it was a CNAME and if this was unbound it would've stop right there. But NSD goes the step further that we need ,and explodes that into the individual
+
+[00:28:21] IP addresses that we need. So they're they are, right like we want them. And if I were to do a, what is it, -tmx? Shoot, no I got that wrong. Let me use nslookup for this one. I'm gonna do nslookup and I'll do a set type=MX. So I wanna look up mail exchange records. And I'm gonna do server 10.0.222.103.
+
+[00:28:43] There we go, and then I can come in and say lab.itpro.tv. And there's my mail exchangers. Right, so my MX records come back. Now I know who to send email to. So everything's working the way that we want it to. NSD is up and running. Everything's happy. We're pretty good to go, right? After this all we have to do is make sure this stay is running, right,
+
+[00:29:02] constantly monitor its status. Make sure everything's okay. I know in the last episode I showed you the nsd-control status command, which let you know if the server is running. You also have systemctl status nsd.service which will give you a little more information there as far as whether it's running, if there's any current errors.
+
+[00:29:22] But there's also another command I wanna show you which is nsd-control zonestatus, right? So nsd-control status is the server status. nsd-control zonestatus is the individual zone. And so I can pull it up just for itpro.tv, and I can see that the zone is happy. It's loaded, and I'm currently the master,
+
+[00:29:41] which means I'm the one who's creating the records. There might be other servers that are getting replicas, but I'm the main source. So that's basically it, as this point. NSD is up and going. I continue to create additional zones for whatever I had in my environment. But it's now ready to go. It's doing its job. And its really, really good at doing that job.
+
+[00:30:00] &gt;&gt; [LAUGH] Great explanation on getting your zone up and running in NSD. Don, it does look like we're coming to the end of another episode. But before we do, do you got any parting advice you'd like to give anybody that maybe is setting up an NSD server? &gt;&gt; Never forget that NSD is authoritative only. I get that question a lot from people saying like hey, it's not doing recursive lookups for some reason.
+
+[00:30:21] It doesn't, there's no way to make it do that, you just can't do it. And also remember that in real life most people deploy NSD alongside unbound, they have both, right? That together, they can replace BIND or Microsoft DNS or PowerDNS or one of those guys. They can replace it, but individually, they're gonna rely on other things. So you might have BIND on the front end and NSD on the back end,
+
+[00:30:43] which is a terrible idea. But you can do it. Normally, you're gonna have unbound and NSD working together. &gt;&gt; All right, Don. Two parts to a complete solution. &gt;&gt; [LAUGH] &gt;&gt; We thank you for being here in the studios. And we appreciate you, the viewer, watching. Signing out for ITProTV, I've been your host, Wes Bryan. &gt;&gt; And I'm Don Pezet. &gt;&gt; And we'll see you next time.
+
+[00:31:01] [MUSIC] &gt;&gt; Thank you for watching ITPro.TV.

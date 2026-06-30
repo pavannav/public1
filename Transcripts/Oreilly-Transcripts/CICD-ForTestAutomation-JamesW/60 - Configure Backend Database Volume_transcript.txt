@@ -1,0 +1,49 @@
+[00:00:00] So let's try making some other API calls to our back end. So this is the core command I'm gonna send. So I'm gonna just make a simple post call. It's gonna send this body here and this should just create a bug within our application for us. So this is the post call that I'm going to. So I'm just going to send a post call to this endpoint here to my API bugs endpoint that should just create a new bug in the application for us.
+
+[00:00:25] So once we send that, we then get this message back at the bottom and that just shows us the details of the bug that was just created. I'm actually going to send that a couple more times just so that we've got three more bugs now added to the system.
+
+[00:00:40] The next thing we could do is we could actually list all of those bugs. So to do that, we can just call the bugs endpoint here. So again, I'm just making a cURL get request to this endpoint and now we get back the three different bugs in our system. Now, if you remember when we're running our application,
+
+[00:01:00] we haven't set up a database or the way that our application is running is that it's running in an in memory database. Now, the way that fly works for our deployment, if we look at our dashboard is our machines actually do go offline every five minutes they come. This does the way that this is really cool, the way that this works because it keeps our costs to an absolute minimum.
+
+[00:01:23] So after five, five minutes, the application will go down because we're running in an in memory database that does mean that we're probably going to lose the data that's in our database because it's running in memory. So I just want to show you this first. So what we're gonna do is I'm just going to wait a few minutes and then I'm going to wait for the machines to go down,
+
+[00:01:42] then I'll make the call again and then we'll see if the data is still there or not. So, just gonna pause here just for a few minutes. Ok. So it's now been about five minutes. If I go over to my dashboard, I can see here if I refresh both of my deployed machines should be offline now. So if I now make that, um, cURL called again to list all of the bugs,
+
+[00:02:02] make the cURL call and now we're getting a null back showing that all of the bugs in the database they've been wiped out. If we go over to the machines and refresh. We can see that one of the machines has come back online because we made that cURL call. So making the cURL call that brought the machine back up, but the data hasn't persisted, the data is gone.
+
+[00:02:22] So what we need to do here is that we need to set up volumes and we've set up a volume that will basically allow us to persist our data. So to do that, we're gonna go into the fly dot toml app. So this is the app that this is the file that gets created when we do the fly launch essentially. So what we can do here to add in the mounts,
+
+[00:02:42] we can just add in a couple of different options. So we just add in mounts. The source for our mounts is going to be called bug tracker underscore data and the destination for our mounts that is going to be in our forward slash data folder.
+
+[00:03:02] So that is the folder, ok. So we specified our data folder. The only other thing that we need to add is an environment variable, the environment we're gonna variable, we're gonna set is the db path. So we basically just want that db path to point to the data folder
+
+[00:03:20] and our bugs dot db file. So this is basically the file that gets created by our application. Um for that allows us to persist our data. That's this file over here, the bugs dot db, that's how our go application is set up to use our db. So we're creating that, we're gonna create that volume here.
+
+[00:03:40] It's gonna be in the data folder and then it's going to have this bugs dot db file. So that's the only configuration change that we need to make. The only other thing that we need to do is we need to create the actual volume on FLYCTL. So to do that, we can do that through the command-line. So to do that, we can say fly volume create,
+
+[00:04:01] we'll call it bugtracker underscore data just to match the source name that we have here. We say that the region we're just gonna, I'm just gonna leave my region to London. So L hr and we'll say we just want to create one single volume press enter on that. We might get a warning here saying that we should have more than one volume.
+
+[00:04:20] You could have more than one if you want. But because there's a steps to the demo application, we're just going to stick with just one single volume. So I'll just press yes to say, do you still want to use the volume feature? And then after a little bit of time, you should get a message back with the details of the volume that was created. If you want to go over and see that you can go over to the dashboard,
+
+[00:04:41] click on the volumes and then you should see that your volume has been spun up here like so, ok. So the only thing that we need to do now is that we need to redeploy our application. So because we're now using that volume, we want our application to know that that volume exists. So to redeploy with fly, we can simply do fly deploy
+
+[00:05:02] and then we'll say minus C for the configuration file. That's the fly dot toml file, that's this file up here, press enter on that and then fly CTO is going to go away and it's going to redeploy our application for us and it's going to use this volume, the volume that we've set up.
+
+[00:05:20] OK. So we actually got an error back saying that the volume wasn't created. So maybe we needed to do the deploy first before we created the volume. So I'm just going to copy the message to do the deploy. So it's gonna say minus R the region, our region is L hr for the count. We want to make that one. Let me run that command.
+
+[00:05:42] So that's created a volume. We may now have two volumes created if I look in the dashboard at the volumes, OK. We've got two volumes created now. OK. That's fine. Maybe we just need two volumes. That should be OK. Let's try and do the fly deploy command again.
+
+[00:06:00] So it's going to do the deploy command again. It should run through quite quickly because we haven't really made any changes to our application. We've just made changes to the volume that we're deploying to. And I think I know why this was happening. I think it is because we've got two machines set up in our deployment. We actually need to have two volumes running. So we did need to have two volumes. That's why we needed to go and create a second one. Ok. That makes sense now.
+
+[00:06:22] OK. So after a minute or so your application should be deployed. I am getting a message saying that the lease wasn't cleared, but I don't think that should impact us. So what I'm going to do is I'm going to make a cURL command to the bugs endpoint. So that returns null. That's what we would expect. Let's also make a post command to create a new bug. So that's worked.
+
+[00:06:43] Let's create, say three new bugs. So we've got three new bugs added to the system. If I make another cURL command to list those bugs, those three bugs come back. Now, what we're gonna do is we're gonna just wait a few minutes just to check when the application comes, goes down.
+
+[00:07:00] When we make the call again to spin up the application, we want to see if the bugs are still other bugs are still there. I if the data has been persisted. So I'm just going to wait a few minutes and then I'm gonna make another cURL command just to check that the data is still there. Ok. It's now been a few minutes. If I go over to the dashboard and refresh, I can see that both of my machines are offline.
+
+[00:07:24] So if I go back to the terminal, I now make the cURL command to get the bugs endpoint, we should hopefully see all of the data still come back even though the machines are restarted. So make the call and this time we do get all of the data coming back. So that's great. That means our back end is set up and that data is now persisting.
+
+[00:07:43] Even over time using the volumes, the data is being stored in those volumes. So even if the machine goes down, once we call it again, that data is gonna persist. So that's really cool. OK. So let's take a quick pause here. Then when we come back, we're gonna get our Frontend deployed as well and we're gonna hook that up to the back end.
+
+[00:08:01] So quick pause and I'll see you in a minute.

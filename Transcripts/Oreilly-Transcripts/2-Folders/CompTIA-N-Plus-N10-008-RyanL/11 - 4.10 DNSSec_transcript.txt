@@ -1,0 +1,43 @@
+[00:00:07] - Let's take a look at DNSsec. DNSsec has a goal, that is to validate the integrity of our DNS replies. And when we look at that, remember the DNS, traditionally has no privacy.
+
+[00:00:21] And with DNSsec, unlike DNSCrypt, there's still no privacy. DNSCrypt gave us privacy. DNSsec is gonna give us an authenticated response so that we know when a response comes back from a particular query, that, that is actually coming from a known and authoritative server. And I'll show you how that happens.
+
+[00:00:41] We'll do just a little bit of a crash course here in crypto, kind of revisiting some of the ideas on public key infrastructure. If you're not familiar with that, we'll talk about the application of it as it pertains to DNSsec. So DNSsec is gonna leverage digital signatures. What is a digital signature?
+
+[00:01:01] Well, we're going to take some type of data. Now this data could be an email, very tiny. It might be a device driver. It might be an entire operating system. Different sizes of data can be treated the same way. We take the data regardless of size,
+
+[00:01:21] and we run it through a hashing algorithm, such as SHA-256, MD5, SHA-1, et cetera. When we run it through that hashing algorithm, it's going to produce a digest or a checksum. This checksum has got one purpose. They call this a one-way function. The idea is kinda like, if I said,
+
+[00:01:41] I went to Publix yesterday, bought $123 and 45 cents worth of groceries. Did I buy a lot of groceries or a couple of things? We don't know. But if we took all the items, and we added them up again, we can always create that same total, $123 and 45 cents. It's kind of the way hashing works. When you look at the outcome of a hashing operation,
+
+[00:02:03] it's gonna, it's called a digest, sometimes called a checksum, we look at that digest and so long as the data is never altered, whether it's an email or an operating system, or just a teeny-tiny tax document, whatever it is, so long as it is not altered, the digest will always be the same.
+
+[00:02:21] If you alter one single bit and a 2 TeraByte file, giant file, we only went in there and we took one little bit, moved it from a one to a zero, the checksum's totally different. The hash is totally off. Makes it very easy to look at and go, oh wow, something has changed. It's not as it should be.
+
+[00:02:40] So the hashing function is something we wanna know about. That hash is just a checksum, it pro, it provides integrity. Where it becomes a digital signature is when someone takes that digest and they encrypt it with their private key. Remember digital signatures are used with asymmetric encryption,
+
+[00:03:00] things like RSA and DSA. These are the two, the common algorithms that you'll see for performing asymmetric encryption. You'll see key sizes of like 2048 and 4096. These are so big compared to looking at symmetric encryption with sizes like 128 and 256. Because of the nature of the algorithm,
+
+[00:03:22] you've got two pieces, a private key and a public key. Anytime someone creates ciphertext using, in this case, a digest is input. In the private key, it is the encryption key. Of course, this is gonna create cipher. That ciphertext can only be decrypted by the public and vice versa.
+
+[00:03:42] Anything encrypted with the public can only be decrypted by the private. Anything encrypted by the private can only be decrypted by the public. It's almost like tubes or straws going in different directions and it can only flow in one direction or the other. So when we use DNSsec, you're doing the DNS query.
+
+[00:04:00] The response to that is gonna have a hash or digest calculated. That hash is gonna be encrypted using the server's private key. Only the server has the private key. Who has the public key? The public. Anybody. So anyone who has the public key, that server can verify that this answer really came from them.
+
+[00:04:21] Pretty sick. So that's really, we think about digital signatures or signing these responses, that's at the core of DNSsec. Our goal is just to achieve authenticated DNS responses that can prove integrity. This is backwards compatible with DNS systems
+
+[00:04:41] that don't provide any security, whatsoever. They'll get a response and they can still just handle it without the checksum. And unfortunately, DNSsec has been around for a while. We've known that DNS has been susceptible to man-in-the-middle attacks, as well as many other attacks. If you'd like some historical examples, if you go to YouTube and you look for Dan, D-A-N
+
+[00:05:01] Kaminsky, K-A-M-I-N-S-K-Y, I believe. You'll see lots of his talks from DEF CON where he's abused DNS in different ways to make it do different things it was never intended for. So these different attacks have come out over the years. They've been well publicized, but the defensive side, the regular community, that's not hacking things,
+
+[00:05:21] hasn't been real quick to adapt measures such as DNSCrypt to protect the traffic from analysis or DNSsec, which it could still be analyzed, but we're stopping people from lying to us with forged information, preventing any type of DNS-based man-in-the-middle-attack.
+
+[00:05:40] So again, just looking a little bit deeper at the concept of DNSsec and Digital Signatures. Digital Signatures are most commonly used with websites. It's your X.509 v3 certificate that we leveraged for HTTPS. They're commonly used with device drivers. In this case, we're just going to use it for DNS.
+
+[00:06:00] So an Authoritative Name Server, a name server that is responsible for giving the answers for a particular domain, will share its public key. Who's the public key for? Everybody, that's why we call it the public key. If a user wanted to encrypt a message and send it to the server, you could do so with the public key. Anything encrypted with the public
+
+[00:06:20] can only be decrypted by the private. Who's got the private? The DNS server. Now this server decrypts using its private key as I just explained, and the responses can be digitally signed. That's where again, we've got a query that comes in, we've got a response that needs to go back out, that response, we can hash it
+
+[00:06:41] and we'll take that hash and we'll digitally sign it, we'll encrypt it with the private key. Once again, who can decrypt it? Anybody with the public key. So they know that, that message really came from the Authoritative Name Server. Like it says here, this signature can be verified using the public key.
+
+[00:07:03] It's basically just an encrypted hash. We'll decrypt it with the public key, we get out the original hash, we look at the data, we run SHA-256 against it, we create our own hash. If we compare them, everything's good. We, we trust it. We move forwards.

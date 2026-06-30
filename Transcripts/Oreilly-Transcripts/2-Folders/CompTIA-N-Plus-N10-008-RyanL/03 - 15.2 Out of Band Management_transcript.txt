@@ -1,0 +1,91 @@
+[00:00:06] - Let's take a little bit deeper look at Out-of-Band Management. So as mentioned before, administrative traffic is susceptible to monitoring as well as interception. Sometimes we take a look at the protocols that are used, and even with our best efforts using things like SSH or SNMP version 3,
+
+[00:00:23] the services themselves could have vulnerabilities, allowing someone to compromise the switch, router or even the firewall. So one of the things that we like to do is restrict access into those services. Now you can do that on a physical interface, that's attached to the internet with a public IP address.
+
+[00:00:40] We can attach an access-control list, to the SSH or HDPS process to ensure that only trusted IP addresses are allowed to communicate. That's not an out-of-band network, that's just our best attempt to secure an interface that's not in and out-of-band network out-of-band network could be even one step further,
+
+[00:01:00] it would be one step closer to security or one step further along the right path to get you to a better environment. Remember that administrative traffic can be intercepted, monitoring is just looking at it, intercepting is where we do a man-in-the-middle attack. What's that used for? Downgrading encryption protocols, having the ability to do denial of service,
+
+[00:01:21] we could block you from accessing it, potentially modifying any messages that are sent or received by you. The services that are used for administration are often susceptible to attacks. So what services do we use for administration HTTPS for one, SSH for another, IPsec for another.
+
+[00:01:42] Many vendors, Cisco one of them, has had vulnerabilities in the actual VPN service. So let's talk about that. When we leverage IPsec, before you construct an IPsec tunnel, you have to negotiate the details of that tunnel, that negotiation happens through IKE, Internet Key Exchange.
+
+[00:02:00] There have been multiple vulnerabilities in the IKE implementation on firewalls, yikes. That means the firewall, which is supposed to keep your company safe from the internet is running services on it, making it vulnerable to attack. If we look under the hood, what's it doing, using an Intel processor,
+
+[00:02:20] using a Linux operating system most of the time? Well that's well documented, how to exploit Linux and how to exploit Intel. So anyone that knows how to exploit Linux on Intel can now look at the services that are running. If IKE has a vulnerability, and this has happened many times you could exploit the IKE service and gain access to the Linux subsystem,
+
+[00:02:41] effectively taking over the firewall at the lowest level. This is a level that the administrator can't even see because it's really happening in the subsystem of the operating system. So that's one of the reasons we have to patch, switches, routers and firewalls like anything else. And again, those services can be restricted
+
+[00:03:00] to run on management-only interfaces. If it's on an out-of-band network, an out-of-band management network, that vulnerable service can't actually be accessed by the attacker, they can't even reach it. So if services are denial-of-serviced or DoS'd, the platform itself can halt. This is one of the things that I've been able to discover,
+
+[00:03:20] several times throughout the years, is that if I can create a magical packet, a packet that the firewall isn't expecting, and it doesn't know how to handle it, the firewall will crash upon inspection. Now, this is an attack technique where you're just trying to get things like a firewall or an intrusion detection sensor to crash, why?
+
+[00:03:40] Because some networks will fail open and allow you to pass traffic without any type of monitoring. So a sophisticated attacker could actually target vulnerabilities in your security platforms and use them against you. Last but not least your logging traffic can be monitored and intercepted. When we look at syslog, syslog is a standard protocol
+
+[00:04:02] for doing remote logging, whenever events happen, we'll send copies of this events off to remote syslog server. Syslog, can use UDP, but it's most commonly found to use UDP. So it could be TCP based, but it's typically UDP based, why does that matter? Well, we're thinking about security,
+
+[00:04:21] we're thinking about other people screwing with our traffic, if I'm passing syslog traffic through the same VLANs that my users are using to communicate, they could potentially intercept or modify syslog notifications. This is where it gets exciting, if I do a type of attack that gets traffic to flow through me, I can create rules that will prohibit any messages
+
+[00:04:42] that have my IP address. So as I'm firing off attacks, let's see that the firewall detects one of my attacks, it tries to send a syslog notification, if I can position myself between that firewall and the syslog server, I can see those messages, they're unencrypted and I can drop them or modify them in flight. In other words, I don't wanna stop all logging messages
+
+[00:05:02] from getting to the syslog server, that would look strange. What I wanna stop are my own logging messages or events that have to do with my misbehavior. If the firewall sees that, and it's trying to tell somebody else I can grab that message out of there and swat it down. That is, if the traffic is passing through a normal network
+
+[00:05:21] where user data and management traffic are going side by side. The point of this chapter is out-of-band management networks. If all of your syslog traffic is reduced to a restricted network that users don't have access to, it's gonna be awfully hard to intercept or modify this messages. So this is just showing kind of a crude illustration
+
+[00:05:41] of the back of an appliance and notice that you've got gig 0/0 and gig 0/1. This is where we'll typically set the outside and the inside of the network, so user traffic will pass back and forth between these interfaces. Now the management-only interface is an Ethernet interface, it can be used, like you know, for management only.
+
+[00:06:01] The cool thing about this is all the traffic is being passed on a separate physical network, separate physical switch, all of it's totally isolated. So if there's any type of compromise on the data side, it's not gonna impact our management. So just keeping these isolated.
+
+[00:06:20] So a management VLAN is a dedicated VLAN, just use for administration, it's a dedicated subnet. This is gonna help us in our rules. See, by creating different VLANs, If I've got 10 VLANs, I'll typically have 10 different subnets, there's gonna be a special subnet for management, so let's say it's 10.1.100.0/24.
+
+[00:06:40] What I can then do is create access-control lists and apply those ACL's to services. And I say, you can SSH in only if you're coming from this particular IP address block, if you're coming up from some other IP address block, we're gonna go ahead and deny it. So one of the nice things about dedicating a VLAN just for administration. Now, again, the access-control lists can be used
+
+[00:07:02] to filter traffic through a device that's most common, but we can also use it to filter traffic to a device. And that's where we typically associate an ACL with a particular service like SSH or HTTPS. We can also restrict traffic
+
+[00:07:21] using the VLAN Permit Parameter. See, whenever we create a trunk link, a trunk link is that connection between two switches. In Cisco, a trunk link carries all VLANs. So what we can do is we can restrict where our management VLAN flows, we can keep it off of specific trunk links
+
+[00:07:41] by using that permit statement, we can allow or permit VLANs to cross the link, or we can deny it. Additionally, there's a type of VLAN called a VLAN access control list, or sometimes it's just abbreviated or said as the term VACL. Now, what makes a VACL a little bit different,
+
+[00:08:01] and this was confusing for me at first because, I didn't see, I worked on a lot of customer networks, but they were all very similar, I didn't see VACLs in use for many, many years of network administration, I just didn't come across anyone who was using them. So let's talk about how they're useful
+
+[00:08:20] and maybe why they're uncommon. Traditionally, when we do filtering, most of us are filtering at a hop or a routed point, so as you cross from one network to another, we decide that on that interface, when you're going through that router, we're gonna apply an ACL to permit what goes through or what does not go through that particular interface.
+
+[00:08:40] Now, what a VACL does differently is it can restrict traffic within a VLAN. So this is a little weird. If you've worked with access-lists much in the past, we're doing permit and deny statements, and of course, source and destination. I had written hundreds of access-lists and in all my experience, when we write an ACL,
+
+[00:09:02] the source and the destination networks are different networks ,I'm permitting or denying to go from one network to the other, that just seems normal to me. Well, coming back to this concept of a VACL, a VLAN ACL can restrict traffic within a VLAN,
+
+[00:09:20] kind of crazy. So let me show you what I'm talking about. Let's say that we've got a demilitarized zone, DMZ. So we've got a bunch of web servers, mail servers, FTP servers, maybe a CA server, maybe a logging server, all sorts of stuff going on in our DMZ. And I go, well, a lot of times your DMZ will look like this,
+
+[00:09:41] you've got the outside to the right, we've got the inside with all of our users to the left and we're (mumble), here is our demilitarized zone. What we quickly find out is that extensions like WordPress make life really easy, but hackers out there can use utilities, there's actually one called WPScan,
+
+[00:10:00] it's a scanner for WordPress vulnerabilities and if there's a flaw in WordPress, the attacker can compromise the server, potentially and take it over. If they're able to take over that server, they're gonna have unrestricted access to everything else on every port number and every protocol within the DMZ.
+
+[00:10:20] You see filtering doesn't happen until you come through this interface to go through the firewall. So if I wanted to hit an SQL server, that's on the inside of the network that could be denied with an interface ACL or with firewall policies. However, if that web server wants to talk to this mail server on port 445,
+
+[00:10:41] which I would have never let through my firewall, it can within the DMZ, everything is unrestricted, this is all one common subnet, let's say that it's 10.1.50.0 Again, the point of our discussion is on a VACL, a VLAN ACL. So let's say that the physical topology is a firewall
+
+[00:11:03] going to a switch, and this is my DMZ switch. On the DMZ switch, I can write ACLs, and this is where they get weird, I say, hey, switch, when you see traffic sourced from 10.1.50.0, watch this, destined to 10.1.50.0,
+
+[00:11:25] do this, do that. So our permit and our denial statements are operating on the same subnet range, which is really weird, at least if you've been writing ACLs for a long time, and you're always used to working between networks, but remember traditionally ACLs are applied to interfaces
+
+[00:11:42] and we're thinking about traffic flows that go through a hop they're being routed. A VACL, is to filter traffic where it's being switched, it's within a V LAN. So if I want to allow the web server to talk to the mail server, maybe only on port 25, I could permit that, I could deny everything else
+
+[00:12:00] and that's gonna be able to restrict traffic or tighten up, what's able to communicate, within this one particular VLAN, meaning, and this is what I get excited about, so many solutions, if you're trying to help a customer solve a problem, costs money, and a lot of money. I don't necessarily mind spending money if I have to,
+
+[00:12:20] but what I get more excited about, especially on a group call with a bunch of people, and they're all thinking about budget, I can go, wait a minute, wait a minute, look at what we've already bought. Look at what we've already got in place, Everyone here has done a great job of picking out equipment, you've got great switches, great servers, it's reliable, it just needs to be configured a bit differently.
+
+[00:12:41] So we can go in with our skills and we can make this equipment, almost like a tuner, is gonna go work on an engine and make it create more horsepower, make more torque, why? 'Cause they understand the fuel system and the electronics and the airflow. Well, if we understand all that on switches and routers and firewalls, we can say, hey, it'd be nice to replace all this stuff
+
+[00:13:01] with a hundred grand of new equipment, but wait, before you spend a hundred grand this year, we know there's gonna be faster equipment next year, what can I do to tweak and tune your existing infrastructure, pause for effect, to make it just as secure or more secure than it was without needing to buy anything?
+
+[00:13:21] And I think customers technically they get a little bit excited about that. Nobody wants to think they wasted their money on horrible hardware. So we go look at all these cool bells and whistles that we can still enable. I feel like from a security perspective, there's a lot of kind of low-level, low hanging fruit, easy things that we can do to make a network much much more secure.
+
+[00:13:41] Don't get discouraged if you put up a barrier, or you put up a hurdle, in the back of your mind, you're going, oh, well, I read about an attack technique or a bypass mechanism to get around that, that's all that hurdles are, there's always a bypass technique. But if an attacker has got to go through one, after another, after another and then another,
+
+[00:14:01] they're just gonna get burnt out and they're gonna move on to an easier target. So my encouragement is that, if you learn more about a lot of these features and design best practices, you can go into environments where they haven't been implemented in add a lot of value, you can bring a lot of value with you just by following best practices, by using features that are built into the equipment
+
+[00:14:22] that just weren't necessarily turned on. In summary, I'll close this up, VACLs are something that I didn't come across for many years, but there was something that looking back on all those customers that they could have benefited from. And at the time I wasn't comfortable enough and I didn't understand enough with them to help those customers.
+
+[00:14:40] So I wish I knew more then, but 20 years into this, I'm still learning new things every day, and that's just part of the journey, that's just IT for us. So as you're looking at these things, you know, maybe have a little notebook of techniques or tips or tricks that you could maybe apply to your network or your clients' networks, where we could make things more secure
+
+[00:15:00] without necessarily having to spend any money. Using ACL's and things and switches are good one, DHCP, Dynamic ARP Inspection, those are typically pretty easy to get going, lots of good examples within the course, but just wanted to encourage you all to kind of keep that in the back of your mind as we're going through these concepts.

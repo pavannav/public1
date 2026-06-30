@@ -1,0 +1,109 @@
+[00:00:06] - In this section, we'll take a look at the access control list. An access control list as the name suggests is going to control access to a resource. The way that we do this, is gonna vary based on where an ACL is implemented.
+
+[00:00:20] You can implement an access control list inside of your operating system, so whenever you have a process that's running, that process can be controlled for who's allowed to access it. You can have separate access lists, in Linux, these are called sometimes TCP Wrappers, you can have different controls on each process.
+
+[00:00:40] So maybe you have an SSH daemon for remote administration, you can have a list that says only specific IP addresses are allowed to connect to that SSH service. Likewise, with your web server, maybe you only service a particular region of the world, and you can say this web server can be accessed by this range of IP addresses that comes from a specific Geo IP location,
+
+[00:01:02] and if you're coming from this location, great, you get access to the website, if you don't well, then you don't. So, there's ways of course, that we can do this inside of a computer, you can also do this within network devices, switches, routers, firewalls, all have access control list, the discussion that we're gonna have today is gonna be based on network-based ACLs.
+
+[00:01:22] So, when we create an access list, the verbiage that they use to describe the ACL components may vary a little bit based on the platform that you're on. A lot of people copy Cisco's vocabulary for the way that we work with it, and that's what I'm gonna use here today. So, if I talk about a standard access list,
+
+[00:01:42] this is gonna be a list, it's processed top to bottom, and it's only gonna contain source IP addresses. We're gonna permit or deny an IP address alone. So a standard ACL is very simple. An extended ACL, not only has the source, but also the destination IP, so it's more specific.
+
+[00:02:01] Additionally, we can get into the source and destination port numbers. So this is very handy for accessing or allowing access to some services, but not others, it's for more granular control. Now, when we create standard and extended access list, they're gonna have numbers with them by default, but you can also name them.
+
+[00:02:20] Naming is nice because it gets us outside of the defined ranges that you use, there's a finite limit for how many numbers we can use based on each platform, named says, there isn't the same limit, so that's kinda nice. And they're also fairly descriptive, so when I look at an access list, I can look at the name and I know what it does. It means more to me than just seeing it
+
+[00:02:40] say access list one or two, it'll say, access list, perimeter filter, or access list, ISP filter, it's like, okay, I know what that's gonna do. Now, sometimes you can actually do a technique where we'll resolve a user's IP address. This is a little bit complex. Now, I'm gonna show you this just for your own interest,
+
+[00:03:00] but it doesn't necessarily mean that you have to know this for exam purposes. So just kinda sit back, relax, enjoy the story and don't stress too much. So an identity based ACL, I'll show you what happens. So here's a firewall, the firewall has an access list on it. The access list, ACL, the access list,
+
+[00:03:22] is rules based on source and destination. The source is typically an IP address, but it could alternatively be a username. How cool is that? I could say permit Ryan to get from here to there. Now, the trick is how does the firewall know who Ryan is? What you're gonna do is connect
+
+[00:03:40] to an Active Directory connector. There's connectors for other services, such as Novell and LDAP, but a lot of companies, a lot of clients I work with use Microsoft Active Directory, so we use an Active Directory Connector. This typically comes from your firewall vendor. So if you're using Fortinet, it would be a Fortinet connector,
+
+[00:04:00] if you're using Cisco, it's a Cisco connector. What that does is it interfaces with Active Directory. See whenever a user logs in, they have to authenticate. When a user authenticates to Active Directory, there's a security log in, and it says, "This user," maybe Ryan Linfield, "Logged in from 10.1.10.5."
+
+[00:04:20] You can see where this is going. What's gonna happen is, the results from the security log are returned to the Director. And then the Director returns this to the firewall, and the firewall takes that IP addressing information and it substitutes your username for the IP address, basically dynamically solving what the source IP is.
+
+[00:04:41] The destination IP is typically hard-coded, and then you've got your ports there as well. Pretty neat right? So, gives us something other than just IP addresses to work with. Now, downloadable is another one that's pretty exciting. Come over here for a second. Let's say that I've got a switch,
+
+[00:05:00] and this switch is using 802.1X. And Cisco calls this sometimes, identity-based network services, identity-based network services. So we're providing network services, that's what's allowed through the ACL,
+
+[00:05:20] based on your identity. However, would we do that? Well, here comes a wire, this wire goes to your laptop, and when you authenticate, what's basically happening is we're sending our credentials to this switch. This switch is like, "I don't have all those credentials," so it sends it to, and if this is a Cisco world, they've got a product called ISE,
+
+[00:05:40] so an Identity Services Engine. The Identity Services Engine talks to Active Directory over here, and it passes your credentials there. So, if your username and password are correct, that's gonna come back as a pass from AD, but it's also going to include group information. See, when you have a user account
+
+[00:06:01] instead of Active Directory, you're a member of specific groups, maybe network admins. So, that detail is shared from Active Directory to ISE. Now, ISE is Cisco's solution, there's other vendors, other vendors have their own solutions, and we typically just refer to this as your AAA server.
+
+[00:06:22] So, that AAA server ISE, is getting group information for your user account. ISE contains policies for each user, and what we typically do, 'cause it's easier than users is we build our policies based on groups. So when you authenticate successfully, we determine what your group is,
+
+[00:06:40] your group gives us a policy and then ISE returns details to this switch, this is all happening using a protocol called RADIUS, and we return an AV pair, that's an attribute value pair. So what's an attribute? First name. What's the value? Ryan. What's an attribute? Last name.
+
+[00:07:00] What's the value? Linfield. That's all attribute value means. So what I can do here, it's really slick, is there's an attribute called VLAN, and I go, "Oh 10." Just like that, I've dynamically allocated a VLAN for that user, for that port. When they log out the ports de authorized, when a new user comes along, we authenticate them,
+
+[00:07:20] when we authenticate them, we determine the member, the member leads to a policy, the policy leads to a VLAN assignment. So we can dynamically configure this ports VLAN, based on who's attached to it, that's pretty cool. Another thing that we can do with these RADIUS AV pairs is reference a downloadable ACL.
+
+[00:07:40] What's a downloadable ACL? Well it's an access list that was created over here on the Identity Services Engine. Using a policy, it was associated with certain groups within the organization. Now, whenever somebody comes in and authenticates, we check that policy and we go, "Oh, you need an access list?" And as the name suggests,
+
+[00:08:00] we download the access list onto the switch, and it's dynamically allocated to that switch port. This is a big deal. I spent probably 20 years statically writing ACLs keystroke by keystroke manually, applying it to the interface. Just telling you now, that you have an option to retrieve a downloadable ACL from a central server.
+
+[00:08:21] So all the users that need a certain types of network access, we'll associate them with the group, that group gets associated with an ACL, that ACL is applied to their switch port dynamically, when they authenticate really pretty neat. And if that's exciting to you, that's more than a lot of companies do, it's a good practice,
+
+[00:08:40] but what we're talking about here is doing 802.1X authentication, and we leverage a protocol called EAP to do this, Extensible Authentication Protocol. And you've probably heard of EAP before that's used heavily in the wireless world. So again, these are just different types of ACLs. We started with standard, which is just a text file,
+
+[00:09:00] IP based, only source IP addresses, that's it. The extended, source and destination IP and source and destination port. Named is the same thing of either of these, using a name instead of a number. If that sounds funny, just realize once upon a time you only used numbers, so named was kind of a nice upgrade for us.
+
+[00:09:21] Again, identity-based is where the source IP is resolved through a third party agent that agent connecting the Active Directory. Downloadable ACLs, these are ACLs that are not built on your switch or router, they're gonna be built in ISE or whatever you're using for centralized AAA, and they're gonna be pushed down to your switches
+
+[00:09:40] when users authenticate. Access lists can also be time-based. This is pretty cool. So the permitter deny rule within the ACL will only apply maybe during business hours or after business hours. This just makes it very extensible so that we can adjust it or modify it
+
+[00:10:00] for whatever it is that we wanna control within the organization. You'll use access lists for lots of things. You can talk about what to encrypt, what to rate limit, how to route things differently, we call it policy-based routing if we use an ACL with the routing process, so you'll use ACLs for many, many things. Originally, you just learned to use them
+
+[00:10:20] to filter traffic through interfaces, because it says permit this IP, deny that IP. But later, you'll find that when we're doing things like traffic policing, or rate limiting, our permits and denies, sometimes you wanna be denied, right? If I'm policing a rate limiting traffic, I may deny your IP and permit everybody else.
+
+[00:10:40] That's not denying it through the interface, it's denying it the process of rate limiting. I don't wanna give you too much all in one session, just realize that ACLs are used for more complex things later in the networking career. What everybody uses them for in the most general sense is just permitting traffic through an interface, it's a very simple form of a firewall.
+
+[00:11:00] And as it says here with time-based, is firewall rules can be based on the time of day, or day of the week. So a standard ACL would look like this, deny the 10 network. Permit, the 172.16 network, deny the 192.168 network, permit everything. All right, so what are we looking at? Well, it's a little funny,
+
+[00:11:21] if you're looking at the second half of each statement, we're going, what on earth is 0.255.255.255? This is called a wildcard mask. And a wildcard mask is an inverted subnet mask. In other words, a slash eight is 255.0.0.0
+
+[00:11:46] That's a slash eight subnet mask. To do a slash eight wildcard mask, which is what ACLs want, is just a different representation of the same thing. It's inverted, just like that.
+
+[00:12:00] So when you write an ACL, the network goes on the left, the wildcard mask goes on the right, what's a wildcard mask? Just an inverted subnet mask. It's the opposite of whatever a subnet mask would be. Here's examples of extended ACLs. So what's different? We've got a protocol, UDP, IP, TCP, et cetera.
+
+[00:12:22] We've got source and we've got destination. So here's my source, here's my destination. This looks funny. Now, what I see here with the wildcard mask is 00, 00, remember that this is inverted. What's the opposite of quad zero?
+
+[00:12:41] Quad 255. So this is what the subnet mask would look like. How do I write that in slash notation? Slash 32. So if I say, "Hey, firewall, hey, router, "permit UDP traffic from 10.1.1.53," when I do this quad zero,
+
+[00:13:00] this specifies one host. I say, "Allow that host and only that host." And they go, "To go where?" And when I use quad zero with quad 255, this is anywhere. So I say, "Permit traffic from 10.1.1.53, "going anywhere in the universe, "so long as it's on port 53."
+
+[00:13:22] When you see the EQ at the end, that's equal. So there's also a not equals operator, I haven't used it a whole lot, but we can say anything that equals 53, is gonna be permitted. What if it doesn't equal 53? Then we don't permit it. Now, what's cool about this, is look at our second statement there.
+
+[00:13:41] What's it doing, can you tell? First off, it's denying UDP traffic from 10, and then what's this? That's a slash eight. So if you're 10 dot anything, and you're trying to go anywhere on the internet on port 53, we're gonna deny it. What does this do?
+
+[00:14:00] It says our one internal DNS server can go out and do DNS queries on the internet. How about everybody else in the company? They're not allowed. They have to do queries to our internal DNS server on that first line, 10.1.1.53. When they do a query to that DNS server, it does what's called a recursive lookup. It looks at its own tables and goes,
+
+[00:14:20] "I don't know what you need." And then it goes on and finds it on the internet, gets those results back to the client. So this is just an example where we allow DNS traffic from our DNS server, we deny DNS traffic from all the users, forcing them to send it to our server at 10.1.1.53, what do we do in the next line?
+
+[00:14:41] We permit everything else. If we didn't, we could do DNS lookups, but nothing else would be allowed to go through, why? Because there's an implicit deny at bottom of the access list. It says, if there's not something allowing it, we're gonna drop that packet. So ACL usage is great for permitting traffic
+
+[00:15:00] through a device. This is a very simple form of a firewall. It's great for permitting traffic to a device. Are we worried about people logging into the firewall or going through the firewall? Probably both. But we used ACLs in different places for different reasons. We can use an access list to rate limit. Remember when I say permit, you're gonna be rate limited.
+
+[00:15:23] If I say deny, your traffic is gonna go through a full speed, as fast as the network can handle it. Sometimes it's better to be denied. It comes down to what the ACL is being used for. We can use ACLs to describe how to route things, how to encrypt things, how to do QoS, it really just varies.
+
+[00:15:42] We can use access lists to identify a traffic flow, and then we mark it or classify it for quality of service purposes. Remember marking is where we set those QoS bits. We can identify traffic that should be encrypted. Permit means encrypt, deny means sending clear text. We can identify traffic that should be routed differently.
+
+[00:16:04] That is policy-based routing. If your traffic matches this ACL, go that way. This is really slick, using policy-based routing, I can identify specific applications and I can steer them over different links in my organization, instead of just using a destination IP address
+
+[00:16:21] to forward the packet, which is our default behavior, I can use an ACL. Why is that cool? Because we can look at the source and destination IP and time of day and the services that are running and even consider the username. When I start doing things like that, I can just create more specific policies on the way that applications should flow
+
+[00:16:40] through my organization. Anytime I'm gonna perform an action, like sometimes I might perform intrusion detection, permit means analyze the packet, deny means just go ahead and send it, don't bother it. Additionally, and this is a slick one. I didn't know until years into my networking career is you can use an ACL to limit the impact of a debug.
+
+[00:17:04] So a debug, in programming you debug a program and it shows you all the nitty-gritty details that are happening, it's very verbose. In networking, you can go into a switch or router and you can issue debug statements and it'll show you under the hood of the router, what's happening with the process
+
+[00:17:20] and routers, run many, many processes. So, some debugs you're troubleshooting, you type in a debug, and you look at the screen and it doesn't tell you anything. And you type in another command and it's not telling you anything. So you do a broader statement to get more info, and now the terminal is just flooded with texts and you can barely shut it off.
+
+[00:17:40] It happens, you can crash routers, they'll tell you many times throughout your networking career and a lot of classes, don't use debugs in production equipment, or use them very, very carefully. So, what we can do is use a debug statement and tether it to an access list. So I can say, only worry about packets in this one particular flow.
+
+[00:18:00] And again, the idea is it's gonna limit my switch or router or firewall from being overwhelmed by trying to debug too much information. The ACL, gives me the ability to look at a subset of the data, really pretty slick.

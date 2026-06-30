@@ -1,0 +1,67 @@
+[00:00:00] Welcome course taker to video number four authentication and authorization. So in this video, we'll look at how we use Amazon, Cognito as the backend, how it works, how it does authentication, authorization and how we integrate it into our code. So if you're ready, let's get started. So Cognito really is a
+
+[00:00:22] user password management, authentication, authorization tool for web and mobile apps. So you can use it directly within your mobile application and it's integrated into the Amplify framework or you can use the back end SDK that we're using in this demonstration.
+
+[00:00:41] So you can use Amazon to authenticate, but you can also use third party ID PS like Facebook, Amazon dot com as well as Google. So there's two main components user pools which we'll focus on, which are really a set of directories that you can allow you to add users sign in register and then identity pools that do mappings into AWS IM
+
+[00:01:02] and we're not going to really focus on those today. So in essence, this is what it looks like. So we have our user pool which has a set of users in it and it basically Cognito provides the ability to manage, register users do password resets and two way authentication using open ID connect.
+
+[00:01:23] If you've ever tried to write any of this back end, you'll realize how complicated it can be. So Cognito is complicated and we're only really touching the surface of it in this module. But it's an important aspect. And if you remember back to our failure mode analysis, it was the top priority to get authentication
+
+[00:01:40] and authorization into our application as quickly and as easily as possible. So, Cognito is based around Json web tokens. Um and it provides three tokens back on a successful authentication based on the open ID connect standards. So you have an ID token that basically says who you are, you have an access token that says what you can do
+
+[00:02:01] and then you have a refresh token that allows you to refresh those tokens because normally they're quite short lived. So incognito they last for about an hour, they're valid for an hour or so. Hopefully you're familiar with the Json web token. But if you're not, it looks something like this. So you have three sections, you have the header which tells you what's the algorithm,
+
+[00:02:21] you have the signature that allows you to verify the contents and then you have the payload data effectively that you're working against. So if we look at access tokens um within an access token, we've got the header, we've got the signature. But within the actual data, the payload itself you normally have a scope,
+
+[00:02:40] variable and scope will tell you what you're authorized to do. So in this example, we have a, a resource, let's call it cars. And we've given two scopes, car read and card, right? So this is kind of an admin user or a super user, they can both read and write data. So if I'm given that particular set of scopes, it means I can then validate,
+
+[00:03:02] I can read the data for cars. I can update the data from cars. I may choose to have another set of scopes where you just have the read for users that only need read access. So you basically customize configure a resource, you give it some scopes and then when you provide those scopes back in an access token,
+
+[00:03:21] your application can simply look at those scopes and say, are you allowed to do such a thing? Can I read? Can I write to cars? Now, we have one slight disadvantage using the SDK in that we don't get custom scopes through that. So if you look at the the access tokens we get provided, we always just have the standard AWS scopes,
+
+[00:03:42] the Cognito signin scopes and any custom scopes are not provided. So I have to do a little bit more work on the back end to actually understand how to use authorization as well. So let's look at our server here, we have our solution. So on the left hand side, we have Ian and Kevin, they're the users on the right hand side,
+
+[00:04:01] we have Ian and Kevin represented as users in our Cognito pool. So in our or microservice, we're gonna provide a login function. So login function will basically allow us to log in. So we expose login and we provide a username and password and successful authentication with Cognito will mean
+
+[00:04:23] that we provide the tokens, the I token, the A token and the refresh token provide the identity and access and refresh token back to the user. We'll provide those as cookies. Every subsequent request to our API will contain the identity and access token.
+
+[00:04:41] So every single additional function can now verify those tokens are valid and then can look at the scopes or at least use them to get the scopes and then deny or allow access to that page. And that's how we basically implement authentication through the login and then authorization through the scopes.
+
+[00:05:03] So let's look at how that works. So this is our a module. It follows a very similar pattern to everything else we've done. First thing we provide is a login method. All right. So let's look at that in action.
+
+[00:05:20] So here's my login, I'm gonna provide basic username and password. So when I send that I get a 200 response and I get provided back my access token when it expires token type the refresh token. And down here is my identity token. So they're all encoded at this point.
+
+[00:05:41] So if we go back into the code, the next function we've got is a who am I? Now, we've got another decorator, Python decorator, which is just a way of adding code on top of code for who am I. So if we look at who am I? And the check function, the first thing it's going to do is validate that we have a valid
+
+[00:06:03] and present ID token and access token. Let's go back into our method. If we run, who am I? Now, in this response, I've now got the decoded version of the ID token. So we say we've got our username,
+
+[00:06:21] which is Ian. We're a member of a Cognito group and we've got our access token and here we have our scope. So how do we got that information? Well, we've configured incognito a user pool and here's the idea of the user pool
+
+[00:06:40] and we can see this user pool further down here should match up. It's got two users, Ian and Kevin. And then we've got two groups. We've got an admin group which Ian is a member of and a user group, which Kevin is a U A member of. So if we go back to our DCODE,
+
+[00:07:00] we can see that this is Ian and therefore he gets returned an admin group. Incognito as well. I've created a resource server. So here's my URL protected and then I've got my scope that I'm providing. Now, I've chosen to add in the group. So it's saying here anybody, a member admin group
+
+[00:07:22] going to this protected resource and using a get is allowed. OK. Now this is a custom group, a custom resource. Now, if I were querying it through a web service in my decode, I would expect to see in my access token that custom scope in here,
+
+[00:07:41] but I don't. So I have to do a little bit more work in my code. So we go back into the code here in my decorator. I'm pulling out the type of methods. So we get toast. I'm getting the endpoint, which is the actual function I'm calling and I'm getting the base URL and I'm creating this thing called inferred
+
+[00:08:05] scope. So I'm saying anything that has got the group, the resource and the action is allowed and that will work on every single page. So it will say it will pull out the group from the identity token. It pulls a resource from the URL itself and the action from the URL,
+
+[00:08:23] it builds its inferred permission and then it's just checking to see is the inferred permission in scope. And if there's no resource group for it, then it fail. It just basically says, well, you're not protecting this resource. If there is a resource group, then it will fall through.
+
+[00:08:40] So how does this work in reality? Well, let's have a quick look at the resource group. OK. So we're saying for a protected resource this year out. I need to have admin get permissions. And so therefore, I need to be part of the admin group and I can click on that,
+
+[00:09:00] send that and I get results. Ok? Because if you remember Ian was in the admin group. Now, if I change my login, change that to Kevin and put Kevin's password in, I've now looked in if I do, who am I?
+
+[00:09:21] I'm now Kevin. I can see that I'm getting Kevin's tokens. And if I click on protected, I now get a 403 forbidden. So by using a combination of groups and also specific resource servers for specific resources and scopes,
+
+[00:09:40] I've now managed to add in the authorization part as well. So this piece of part of the functionality I've included in the the authentication module pre test really that functionality with the decorator and authenticating your tokens that would now be included in every single module that we provide.
+
+[00:10:01] And we would create resource servers with Cognito for every page, every API call that we wanted to protect. So it's quite complicated authentication. Authorization is complicated. Had I had to write the back end as well and all the open ID connect credential handling the sign on pages
+
+[00:10:20] that would have taken me forever. So Cognito is providing you with that capability out of the box. The code to integrate is a little bit more complicated. You've got to think about how it works. Um but it is there. And so now we've resolved one of our key failure mode analysis areas of, you know, how do we authenticate and authorize users for that API
+
+[00:10:42] And we can create a separate set of users for the service through user pools or we could integrate it back into a Google identity platform or an Amazon identity platform or even use the inhouse uh active directory as well.
+
+[00:11:00] I hope that was interesting. Please join me in the next module where we look at code deployment with code pipeline. Thanks very much.

@@ -1,0 +1,93 @@
+[00:00:00] Welcome to ITProTV, I'm your host, Don Pezet. &gt;&gt; [CROSSTALK] &gt;&gt; [MUSIC] &gt;&gt; You're watching ITProTV. &gt;&gt; Welcome back to another great episode here at ITProTV. I'm your host, Wes Bryan, and in today's episode we're continuing through our DNS tech skills. We're actually coming back with a part two on configuring replication in NBS.
+
+[00:00:23] Joining us back in the studios is none other than Mr. Don Pezet. Don, how you doing, sir? &gt;&gt; I'm doing swell, Wes, ready to dive back into NSD. And in fact, this is part two to our last episode where we were configuring replication, right? We set up a master slave model of NSD. If you haven't watched part one, you definitely wanna check it out. We got everything running.
+
+[00:00:40] We're replicating between the two, so we successfully got the master slave model. The only thing is I didn't get a chance to put security keys or authentication key on the replication. So as it stands now I'm replicating data between my server DNS3 and my server DNS4. But without authentication anybody could intercept traffic in the middle,
+
+[00:01:01] due to the man in the middle attack, modify the zone file and send it on. And the other side's gonna have no idea that it's been tampered with or that it's coming from an inappropriate source. And that means they can poison my DNS records, that's not a good thing. So we need a little extra security, and for that we're going to use keys. I'm gonna put keys on each of the settings that lets the master talk to the slave
+
+[00:01:24] to ensure that we can validate the identity of who's on the other side. Now, MSD has this functionality built in. It actually uses its SHA-256 encrypted hashes that it exchanges between the two. So very secure method of communicating, and it's one of the reasons why a lot of
+
+[00:01:40] people prefer MSD these days, cuz it's got security built into it like that. So the hardest part about this is coming up with a key, right? A lot of people will make up a key right off the top of their head. Which is actually not a good idea because humans are horrible at being random. Computers aren't so great at it either. But there's a few different techniques we can generate for a key. And there's one standard kinda method that we see in the Linux world.
+
+[00:02:01] As long as you have good entropy on your system, you can use DD, the disc duplicator to take the contents of your disk or contents of /dev/random and generate a key based on random data. Now the random number generator inside of Linux is only as good as the disk trail that you're running, and a lot of them have updates and
+
+[00:02:20] things that have been pushed out. Some systems have hardware random number generators, which are really awesome. But if you don't have that, you can at least make use of what you've got. So that's what I'm gonna do here, is I'm gonna generate as random a key as I can, and I will use it on these different systems. Remember, if you've got 20 different slaves out there you could have 20 different keys if you want, to keep it nice and granular,
+
+[00:02:40] or you can re-use the same key. But if the key gets compromised, it's now compromised throughout the entire environment, so always be aware of that. All right, let me show you the way that I generate keys out there in the field. So if I need to get a key generated, I use the DD utility. And I'm gonna do an interface, I'm sorry, an input file. So where am I getting my data from? I'm gonna pull my data from /dev/random, right?
+
+[00:03:02] /dev/random is the random number generator for Linux. So I'm just calling that, and there's actually four or five different RNG's that are out there. And depending on your distro, it can reference any number of different ones. So this is just kind of an alias that points to whatever is your default. And then I'm gonna do an output file of /dev,
+
+[00:03:20] I'm gonna say it right and spell it wrong. /dev/stdout, right? I wanna be able to see it on the screen. So I'm gonna get some data out of /tab/random and I'm gonna output it to my screen. And I'm gonna tell it just to do it once and give me a block size of 32. So it's gonna give me, it won't be 32 bits, and then I'm going to render it as base 64, which is what I want my key to be in.
+
+[00:03:43] This is gonna give me a nice good random stream, right? And so I can see that right here. 32 bytes were copied and here's my stream. Now could I have thought of this on my own? Maybe, but the odds are by the time I got to the eighth or ninth character, I'd start, you know, reusing things or I have a habit of just picking numbers
+
+[00:04:02] between one and five and then higher than five. I don't know why I do that, but I do. But that's a good random stream right there. So that's all I'm trying to is get some random data that I didn't make. And once I've got that I can just copy that to my clipboard. And I'm gonna put that key on both sides of my replication, right?
+
+[00:04:21] I need both sides to have it, so that I know that it's gonna work and that everything's gonna function. So I'm on DNS3 which is my master. And so I'm gonna edit, /etc/nsd/nsd.conf. And I'm gonna go all the way down to the bottom where I define my zone and
+
+[00:04:42] my pattern, okay? It was in the pattern that we actually set the key. And so when I configured this, I did it with no key, just to get things done, right? Just because I didn't want to have to mess with that. So what I'm gonna do now is actually add a key.
+
+[00:05:00] And so I'm gonna come up above this and I'm gonna add another line, key, and I'll give it a name. And I'm gonna name this key, this is what I do, you can name it whatever you want, but I like to name it based on the servers that are gonna use it. This is the key I'm using for DNS3 to DNS4. I might have other ones that connect to different systems, but this is the one for
+
+[00:05:21] DNS3 to DNS4. That's gonna be the name of my key. Then I can say the algorithm that I wanna use, and I'm gonna use hmac-sha256. Right, that's a pretty good algorithm for me. It will give me the level of security that I need. And then I'll say, secret, and then, here is where I paste in my key.
+
+[00:05:41] So there's my key, right there, layout, all right? So now that I've got that in place, I've got a key, everywhere down here that I say NOKEY? Instead of saying NOKEY, I can now provide a key name. So I can delete NOKEY and I can put dns3-dns4 and same thing on this next line, dns3-dns4 right?
+
+[00:06:04] So now when I provide a transfer, or when I send a notification, I'm gonna send this hash to authenticate myself and authenticate the other side. And if they don't match, it's going to fail, right? So now I've got that setup right here with something that I know is random,
+
+[00:06:22] at least, as good as I'm gonna get, right? So that's the key setup right here. Now the key isn't gonna take effect until I load that. So I'm gonna, well, I've learned my lesson, right, I'm gonna do an nsd-control, sorry, nsd-checkconf /etc/nsd/nsd.conf, so I wanna make sure I didn't get any errors, right?
+
+[00:06:44] And then I will do a nsd-control reconfig so that we reload it. All right, so now I'm expecting those keys when I reach out to the other side. On the other side, my replication should be failing. I might not see that, right, on the other side.
+
+[00:07:02] On DNS4, if it tries to replicate right now it's gonna fail cuz I don't have keys over here, right? But I might not see that. If you do an nsd-control zone status and I pull it up for that zone, everything's okay. Well, it's failing but it had good ones in the past which is holding onto ones in the past.
+
+[00:07:22] Eventually I'll hit the expiration for that zone. I think I set my expiration to 86,400 seconds. So after that time it will expire and then I'll have a problem, but in the short term, I'm not gonna see it. If I wanna see the problem, probably the easiest thing to do is just restart the thing. So if I do a systemctl restart nsd.service,
+
+[00:07:41] it's gonna restart, and that's gonna dump what I've cached, and then it's gonna try and retransfer it down. And so now when I look, my state's refreshing. And it's failing, right? If I look in /var/log/nsd.log, I can see my transfer is failing, right? I can see that I've received an error code refused from the server,
+
+[00:08:02] it's not getting through, right? And if I jump back over to the other server, I should be seeing some errors, well, actually, I probably won't see the errors here cuz it's just gonna refuse the stuff outright? But we can look. If I look at /var/log/nsd.log, let's see. We've got warning signals received, that's just a restart, yeah.
+
+[00:08:20] So no crazy errors to be found in here. Maybe in the assist log. Nope, nothing there either. So everything's looking fine on this side. Because we're sending a key. The other side doesn't match, what do we care, right? We're the master, so I don't care if they work or not. So that's what we're seeing right now. So what I need to do now is I need to go and add the key to the other side, right?
+
+[00:08:43] So I'm gonna go ahead and edit, /etc/nsd/nsd.com. I'm gonna jump all the way down to the bottom. And I'm gonna define the exact same key, it needs to match. If it doesn't match, it's not gonna work, right? So that's kind of important. So I'm gonna give it a name.
+
+[00:09:00] And the name doesn't actually have to match. The name can be whatever you want, right? The key is what has to match. But I'm gonna stick with the same name because again that's what I do to make it easier to troubleshoot stuff. So I'm gonna call this dns3-dns4, cuz that's the name I want for my key. I want my algorithm to be hmac-sha256,
+
+[00:09:21] which absolutely has to match, too many dashes. Hmac-sha256, and then from there I need to do secret, and then what my secret is. And I'm just gonna paste it right into the same as the other side, so they both have the same. It's a preshared key that we're using, and it's got it in place.
+
+[00:09:41] And now I can go down here and take anywhere where I've got NOKEY and change that to the right values. All right, and now that I've got that in place, I'm set to use that key when I talk to the other side. When I get a notification, I'll allow the notification, assuming the key matches,
+
+[00:10:00] and same thing when requesting a transfer. I'll request it with this key. &gt;&gt; Now in the first part of that where you said the key, you said the name doesn't matter, but when you call on it in pattern at that point the name does matter, right? &gt;&gt; Sure, yeah, within the file it matters. But what I meant was I might have called the key Fred on the other server and on this server I called it Bob. &gt;&gt; Okay. &gt;&gt; And that's okay, cuz they don't exchange names.
+
+[00:10:20] But you're absolutely right. Right here in the file, when I define it in the key, that's gotta match what I do right here. That absolutely has to match. But I could use different names, like on here I might call it dns4-dns3. But for me that gets confusing, I like to use the same key name across the different servers so I can remember what the heck it was, right? The key's the same, might as well make the name the same, and there you go, all right?
+
+[00:10:40] So now that I've got that in place I can get out, assuming that I didn't screw it up. We can do a quick check config, /etc/nsd/nsd.com, and it at least thinks that it's okay. And then we can do an nsd-control, reconfig, all right?
+
+[00:11:01] So it's gonna reload. I didn't get any errors. That's good, right? But I didn't get any errors last time. It just tried to replicate and failed a bunch. And so, how do I know if it worked? Well, the easiest way is to pull up the zone status, and see what I get. If I have refreshing, that means I haven't synced. I haven't gotten it yet, okay?
+
+[00:11:20] Well, I've seen this before where sometimes it takes a little while or it doesn't quite sync up. That can cause a problem. Also sometimes you just have to wait. Sometimes you get inpatient. I know I do. The other thing is it's possible that one side hasn't taken the key versus the other side. So worst case scenario, you can always do a systemctl restart and restart nsd.
+
+[00:11:45] I did a reconfig, which should load the key, but if I already have an established session that's failed too many times, I might not restart that session. I do generally like to restart the master first if I'm gonna do that. So if I wanna restart nsd, I can restart it over here and I can jump and
+
+[00:12:01] restart it over here. And so that's gonna kick it off and tell it to reach out and talk again, and then I can monitor/var/log/nsd.log and see if it works, right? And, look at that, I got a sync, right? And so if I do a nsd-control zonestatus I can see I'm working, right?
+
+[00:12:21] So don't panic and go and start editing your conf file or whatever, sometimes it just needs to restart. And normally it's because you did what I did, you let it sit there too long and fail too many times. It'll fail enough times and it'll stop and it won't retry until your retry interval is up. My retry interval was 7,200 seconds when I defined this zone.
+
+[00:12:40] I don't actually know what that is in minutes. It's like an hour, isn't it? &gt;&gt; I don't know off the top of my head. [LAUGH] &gt;&gt; So if we made a really long episode, eventually it would have sorted itself out, but I'm impatient. So I just restart NSD, problem solved. Now I did restart my master, which could cause a micro-outage on the network. You might not wanna do that, but if you're just trying to force this in place, that's one way to do it. I could have forced a transfer also.
+
+[00:13:01] I guess that's another way to go about it, but this took care of it. So now I'm transferring, and more importantly, I'm transferring with authentication. I'm handing off that key. And if somebody man in the middles this, and they modify the zone and send it along, the hash isn't gonna match anymore. When we rehash that zone file, it doesn't match, I'll reject it.
+
+[00:13:20] So now you can't tamper with my transfers. You can still intercept them and read them, they're not encrypted, right? But they're digitally signed, so you can't modify them. And that effectively kills off the man in the middle. Remember, we don't need to encrypt because it's not private data, it's DNS data. People can do the look ups and get the information. If you insist on encrypting it, you can do an IP set tunnel or whatever between
+
+[00:13:42] the servers, an SSH tunnel, even, will work just fine for encrypting the data. But a digital signature is what's important and that's what those keys do. Now you should do key rotation, every so often go and change it, right? Sha256 is pretty strong, but it can be broken if you give somebody enough time. You give them a year, two years, they can break it. So if we rotate every three months, we don't have to worry about.
+
+[00:14:03] So every three months, just go in there and change the key, rotate them out. You can define more than one key, and so all you're doing is changing which key you call in the zone and then you've got it, right. So easy enough to do, but now we've got to secure authentication, secure replication, and we're set up. We've got a nice, secure, and stable master and slave replicated environment in an NSD.
+
+[00:14:23] &gt;&gt; Don, thank you for taking the time to at least let us see how to secure that NDS server. Now, does look like we're coming to the end of this episode, but before we do, do you have any additional advice you'd like to let somebody know about maybe securing or really just NDS in general? &gt;&gt; NSD. &gt;&gt; NSD, very good, very good. &gt;&gt; [LAUGH] &gt;&gt; And
+
+[00:14:40] the other thing is we didn't touch on DNS sec, right? So what I did right there is I secured zone transfers. I didn't do anything to help clients validate that my records are valid. So I'm still vulnerable there, so we wanna do DNS sec. Stay tuned, cuz we're gonna have an episode on configuring DNS sec and getting that put in place. You definitely wanna be implementing that on your DNS servers these days.
+
+[00:15:01] Absolutely something to tackle so be sure to check that out. But this is the first step, DNS is the second step, you put them together and now we're in business. &gt;&gt; Don, we appreciate you taking the time to stop by the studios and show us that information, and we certainly appreciate you, the viewers, watching. Signing out for ITProTV, I've been your host, Wes Bryan. &gt;&gt; And I'm Don Pezet.
+
+[00:15:20] &gt;&gt; And we'll see you next time. [MUSIC] Thank you for watching ITProTV.

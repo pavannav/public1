@@ -1,0 +1,177 @@
+[00:00:00] Hello and welcome to this demonstration.
+
+[00:00:20] Now, let's navigate to the AWS console. Once there, click on the EC two instance and go to the storage tab. Here we can see that the root device is an GB volume which we have selected during the EC two instance creation. Next, let's return to the terminal
+
+[00:00:41] to check the available storage devices on the system. We can use the command FDISK hyphen L. The FDISK command is a dialog driven program used for creating and manipulating partition tables. By using the hyphen L option.
+
+[00:01:01] We list the partition tables for all the devices and then exit in the output. You will note these entries for loop 01 and two. These are loop devices which are virtual devices and not physical storage.
+
+[00:01:20] Loop devices allow you to treat files as block devices on an awsec to open to instance these loop devices are automatically created for mounting snap package files and handling other system related tasks.
+
+[00:01:41] Next we see slash DEV slash XVDA which is eight gigabytes which represents our root disk. Finally, these are the partitions on slash DEV slash XVD A. Next let's use the LSBLK command
+
+[00:02:01] this command provides a clean, easy to read list of all the available block devices and their partitioning details. Making it more concise than F disk hyphen L. When you run lsblk, you will see the loop devices along with
+
+[00:02:21] your root disk and its associated partitions. What's great about LSBLK is that even if the disk is not partitioned, it will show up in the output, making it easy to identify unpartitioned disks. This command is especially useful when you have multiple disks available as it
+
+[00:02:43] helps you quickly reference which disk contains which partitions simplifying storage management. One more important point to note is that these devices are represented as files in the
+
+[00:03:00] DEV directory. If you run the command, ls hyphen LRT DEV var, it will list all devices related to the root disconnect partitions until now we have seen directories and files but notice the letter B in the output.
+
+[00:03:23] This indicates that these are block devices which are used for storing data in fixed size blocks, block devices like XVDA and its partitions are used to store file system and other data.
+
+[00:03:42] Let's add and provision some storage. First, we will go back to the EC two dashboard, navigate to elastic block store and click on volumes. Click on create volume and set the size to 20 gigabytes
+
+[00:04:01] leaving the other settings as default. One important thing to keep in mind is the availability zone. It should match the availability zone of your EC two instance after selecting the right zone, we will add a tag with the key name and the value.
+
+[00:04:21] Think next data. Once everything is set, click create volume, we will see that the volume is being created after a refresh, select the new volume and click actions, then choose attach volume. Now we select our instance and specify a device name
+
+[00:04:44] slash DEV slash D one is already used for the root device. And AWS recommends using D one for root volumes and DEVD through
+
+[00:05:00] slash DEV slash STP for data volumes. So let's choose slash DEV slash stach volume. Newer kernels may rename device names such as slash DEV slash SDA one becoming slash
+
+[00:05:20] DEV slash XVDA one or slash DEV slash SD, changing to slash DEV slash XV. DH. The XPD prefix stands for Zen virtual disk, which is used for virtual block devices presented to virtual machines by the Zen hypervisor or similar hypervisorss.
+
+[00:05:45] The A indicates the first disk attached to the VM with subsequent disks following an alphabetical order. So for example XVDB C etc, the number one refers to the first partition on the disk.
+
+[00:06:04] Let's click on attach volume. Now if you go back to the EC two dashboard and click on the storage tab, you will see the new data disk listed back into the terminal. We can run FDISK
+
+[00:06:22] hyphen L and see that slash DEV slash XV. DH is our new 20 GB disk with its corresponding sectors. Observe that has changed to slash DEV slash XV.
+
+[00:06:42] Next, let's use the LSBLK command. And here we will also see the new disk attached in rare cases. If the disk is not visible, you can use the command rescan hyphen Scuzzy
+
+[00:07:00] hyphen bus dot S this scans these cas for new devices and makes them available to the system. This command saves time by avoiding reboots and helps dynamically update storage configurations. You might notice host zero and host one in the output.
+
+[00:07:24] Alternatively, you can use this command to manually trigger a scan like this. You would run this across all available hosts. While this issue was more common in traditional data centers,
+
+[00:07:40] you are now equipped to manage it. It's relatively rare in AWS environments thanks to its use of modern virtualization technology. Now let's revisit the LSPLK command. As you can see a root disk has partitions but a newly added data disk doesn't have any.
+
+[00:08:03] This is because partitioning doesn't happen automatically. We will need to manually create a partition on the new data disk. So let's partition the volumes to organize the storage space effectively by using
+
+[00:08:21] LS hyphen LRT slash DEV slash var. We can confirm that DEVD, which is our newly attached data disk appears in the list to partition the volume. We will use the FDISK
+
+[00:08:41] command providing the path to the disk which is slash DEV slash XBD. In our case, this starts the partitioning process. Once we enter the FDISK utility pressing M will show us a list of available options.
+
+[00:09:03] M stands for help menu. Here are some of the key options which we will be using D to print the partition table N to create a new partition W to write the changes to the Diskant exit D to delete a partition
+
+[00:09:20] Q to quit without saving any changes. These options help us manage the partitions easily. When we press B, it will print the partition table since we haven't created any partitions yet, it will show that there is no partition table on the disk.
+
+[00:09:42] This is normal as we are about to create one. Now let's begin by creating the partition. We will start by typing N to create a new partition. As we discussed earlier, there are primary and extended partitions.
+
+[00:10:01] We can have up to four primary partitions. But if we use all four primary, we won't be able to create any extended partitions. So we will go ahead and create three primary partitions and one extended partition
+
+[00:10:20] to begin type P for primary partition. Next, it will ask for the partition number. The available numbers are 1 to 4 and the default will be one. So we will just press enter to select it. Now, it will show a starting sector
+
+[00:10:40] and we can leave it as the default which is 2048. As we have already understood, this sector is reserved and everything before this point is not used for partitioning. Next, we will be asked for the last sector. We can specify the size using units like KM
+
+[00:11:02] or G for kilobytes, megabytes and gigabytes respectively. Let's enter plus five G. Now, you might be wondering why we have used plus five G for the partitioning size. Here is the reason the total disk size is 20 GB.
+
+[00:11:23] By specifying minus five G, we are essentially telling the system to leave five GB of space unused, meaning the partition will take up the remaining 15 GB. This allows us to reserve five GP for other partitions
+
+[00:11:40] or purposes while utilizing the rest of the disk. After confirming the partition creation, you can verify by running P to see the details of the partition with its starting and ending sectors. Let's proceed by creating the next two primary partitions
+
+[00:12:04] first type in to create a new partition and then pick when asked for the partition number. Enter two for the second partition, the system will display the first available sector which we will accept as the default.
+
+[00:12:22] Now to keep things moving, we will use the default first sector and specify the last sector as plus one G to create a one GB partition. Repeat the same steps for the third partition using the default first sector and specifying the last sector as plus one
+
+[00:12:43] G. Again, this will create two additional partitions of one GB each. If we type B again, we can view the updated partition table. The table now shows three primary partitions.
+
+[00:13:00] The id column represents the file system type to see a list of all available file system types type L for example, 83 corresponds to the Linux file system as shown in our table.
+
+[00:13:20] If there is an extended partition, it will be represented by 05 for LVM or logical volume manager. The idea is eight E which we will discuss in the next section. Next we will create an extended partition to do this. We will press in and select E option for creating an extended partition
+
+[00:13:46] for the size. We will allocate the remaining available space which is in this case 13 GB. Once done, the partition table will show the new extended partition. If we press B to view the table,
+
+[00:14:02] we can see that the type is now set to extend it with an id of 05. Now let's create a logical partition within the extended partition. When we press in again, the system informs us that all primary partitions are in use.
+
+[00:14:23] This means we are now adding logical partitions. Let's create a one GB or plus one G logical partition. Once created pressing P again, will display the updated partition table showing the new Linux
+
+[00:14:43] logical partition which is created within the extended partition. Notice that on the device XWD H four, even though the sector starts here, the numbering for the logical partition of XVDB
+
+[00:15:00] five begins only after 2048 sectors from this point this is because Linux reserves 2048 sectors for storing metadata related to the extended partition which offsets the numbering of logical partitions.
+
+[00:15:21] We have already discussed this earlier, right? It's important to save these changes to the disk to do so we press w to write the changes and quit. A message confirms that the partition table has been altered and the command to reload the partition table is executed.
+
+[00:15:43] If we run the Lsblk command, we can see all the partitions including primary extended and logical partitions. Similarly, using the ID command will display all partitions along with their associated
+
+[00:16:03] id and file system types. U stands for universally unique identifier. Note that the partitions like XVDA 16 and XVDA one have both uuid and part
+
+[00:16:21] uuid. While newly created partitions like XVDB one XVDB two etc show only part uuid part stands for partitioning. This is because the file system has not yet been created for these partitions.
+
+[00:16:40] Additionally, logical partitions such as H four will not appear in the list because they are not part of an extended partition and do not have a separate file system entry. Now let's create file systems on the partitions
+
+[00:17:01] by typing MKFS, we can see available file system types. We already know that common options include XFS and AXD four. We will be using XFS to create a file system. Let's use the command
+
+[00:17:21] MKFS, XFS slash DEV slash XVDB one. This command initializes the partition with the XFS system creating metadata for it to verify we will use
+
+[00:17:41] I again. Initially, we only saw part UID which identifies the partition. After creating the file system, a UUID is assigned representing the formatted file system. Let's first check the initial space using DF hyphen H command
+
+[00:18:05] at this stage, DEVD, one will not appear because it is not yet mounted. Next, we will create a mount point and mount the partition, mkdir slash think
+
+[00:18:22] next mount slash DEV slash XV DH one slash. Think next. Finally checking the space usage again with DF hyphen will show that approximately five GB is allocated to
+
+[00:18:42] slash DEV slash XV one and it is now mounted on slash. Think next, the actual available space might be slightly less due to the file system overhead and reserved blocks for system use.
+
+[00:19:00] This means our partition is ready for read and write operations. Now let's create file systems for the other partitions, MKFS dot XFS slash DEV slash XVTH two. Similarly war
+
+[00:19:21] three and five. Once the file systems are created rerunning, the Blkid command will show all these partitions with the respective views and file system types, which is XFS. In our case indicating that the file systems are properly initialized.
+
+[00:19:45] We will also create mount point for these partitions, mkdir slash. Think next to we will repeat the same for think next three and think next four. Instead of mounting each partition manually,
+
+[00:20:03] we can add entries to the etc FS file. This approach will not only mount all partitions at once, but as we discussed earlier, will also make these changes persistent across reboots
+
+[00:20:21] before proceeding. Let's unmount existing partition you mount slash think next. After unmounting, we can edit the slash etc slash FSTAB file and add entries for each partition. Before doing that, let's understand the syntax of
+
+[00:20:43] slash etc slash FSTAB entries. You can use the man command to access the manual page for FSTAB within the FSTAB manual. You will find detailed descriptions for each field including the first field which specifies the device or partition to be mounted.
+
+[00:21:04] The first field can either be label or UUID of the partition label refers to a named label for a partition and uuid refers to the universally unique identifier for the partition.
+
+[00:21:20] Second field specifies where the partition will be mounted in the file system hierarchy like slash or slash MNT data or slash home. Third field specifies the file system type such as ext four XFS or swap defines the type of file system on the device.
+
+[00:21:42] In our case, we will be using XFS. Fourth field lists the options used during mounting example defaults rrw, we will set to defaults to use standard options. The fifth indicates whether the partition should be included in dump backups,
+
+[00:22:05] typically set to zero for skip and want to include let's set to zero to skip the dump back up. The sixth field specifies the order in which the file system check or
+
+[00:22:20] FSCK should be performed at boot, the root file system should have a value of one and others typically have value of two, which means they will be checked after the root file system. And with zero meaning no check, we will set this to two for the partition to be checked by
+
+[00:22:41] FSCK during boot. Feel free to explore these fields in the manpage to get a deeper understanding of how the slash A TC slash FT file works and its options. Now let's add entries for each partition using their
+
+[00:23:02] UUID. We can get the you ids from blkid. Let's execute it one more time and save the output for reference. If we run cat slash etc slash FSTAB, you will notice that the first wheel is label instead of UIDS
+
+[00:23:24] labels can also be retrieved using the blkid command. For example, label equal to boot. If we see blkid response, we see that the partition with the label boot corresponds to the device slash DEV
+
+[00:23:41] slash XVDA. As we understood earlier, you can use either label or UUID in the slash etc slash FS tab file to identify the part. Next, let's open slash etc slash FS tab. For editing,
+
+[00:24:00] we will add all four entries for the first entry. Use the UUID of DEVD one as the device. We are using UUID as every partition disk gets a unique identification which is guaranteed to remain the same.
+
+[00:24:22] Even if the device is moved to a different system or if the device name changes, the mode point will be the next the file system type will be XFS. And as discussed, we will keep the options as defaults zero for
+
+[00:24:41] Tfield and two for Fsck. During put similarly, we will add entries for other three partitions as well.
+
+[00:25:02] It saved the fight. After running DF hyphen edge, you may not see the newly mounted partitions because they haven't been mounted yet to mount all file systems listed in slash etc slash FSTAB.
+
+[00:25:20] You can use mount hyphen a command. However, you might encounter the following message, your FSTAB has been modified but system still uses the old version, use this command to reload. This means that systemd has not yet recognized the changes made to the
+
+[00:25:45] to reload the systemd configuration and apply the changes. Let's run systemctl demon hyphen reload. Now, if you run DF hyphen again, you should see the partitions mounted correctly
+
+[00:26:02] showing five GB for slash techniques, approximately one GB for the other partitions. This confirms that the file system mounts were successful and the space is allocated as intended. Now, all these are ready to be used.
+
+[00:26:23] Let's test the setup by writing some data to a partition to ensure the system is working as expected. For example, we can create a test file on the techniques partition. This command creates a file name, test file in the
+
+[00:26:41] next month point with this message. If the file is created successfully. It confirms that the slash think next partition is properly mounted and writeable. If we get the file, we can see our messages being displayed indicating successful mounting.
+
+[00:27:01] You can repeat this process for other partitions by specifying their respective one points, ensuring all the partitions are functioning as expected, but I will skip it for now. Now let's move to the final part of this demonstration where we will unmock the partitions
+
+[00:27:22] first comment out the entries cap to prevent any errors. If the entries are not commented out, you may encounter an error saying that the partitions are listed in FSR but not available. Next, we will delete all the mot
+
+[00:27:40] points. This will remove any files within the directories after that unmount the partitions. Now run DF hyphen edge to verify that the partitions are no longer listed, confirming they have been successfully unmounted.
+
+[00:28:02] Now we will use fdisk to delete the partitions, fdisk slash DEV slash XV DH to delete a partition press D and then specify the partition number. Say for example five for the fifth partition,
+
+[00:28:21] repeat the D command to delete all partitions, use P to print the partition table confirming that all partitions are deleted. After deleting the partitions save and exit fdisk by pressing W run LSBLK and
+
+[00:28:42] BLK it to confirm that the partitions are no longer present. Both commands should indicate the partitions removed, go to the AWS management console and navigate to S and then volumes, select the volume go to actions, then detach the volume
+
+[00:29:05] after the volume is detached, refresh the page and delete the volume. This completes the process of managing the storage and Linux using native tools. However, this approach is not ideal for production environments
+
+[00:29:24] in production. We would use LVM or logical volume manager for more flexible and robust storage management. We will discuss this in detail in the next section that concludes this demonstration. Thank you.

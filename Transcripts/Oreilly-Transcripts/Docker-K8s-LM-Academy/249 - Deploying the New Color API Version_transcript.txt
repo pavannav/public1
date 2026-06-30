@@ -1,0 +1,93 @@
+[00:00:00] Now that we have our mongo to be up and running and working as expected. And we have a new version of our color API that can communicate with the database. Let's then create a deployment here to deploy a couple of parts of our color API application. Let's add a new file. We're just gonna call this color API dot YAML.
+
+[00:00:20] And we will also want to create a service here. So let's create a service color service dot yo like so and then let's start with the deployment here. So under the color API do yo file, let's then set the kind to deployment, right? So now here, differently from the stateful set of our database, we don't really have any state in our color API.
+
+[00:00:43] That means we don't need a stable identity for the pods. We don't need a stable network ID, a stable storage id. So we can just use the traditional deployment here. Let's change the my app that is already populated here to color API like so
+
+[00:01:00] and then let's have a look at what we need to clean up or organize here. So the metadata will be the color API here. The labels will include our, also our app. So let's say labels app color API like. So and then let's have a look at the specifications here. So the selector to match the labels app color API,
+
+[00:01:22] we can confirm that this matches this label here. That's very good. The container then color API as well. The image here we're going to use is the LM Academy or your username. If you're also pushing the images and the version is 2.0 0.0. If you skipped the application part of the or
+
+[00:01:41] the previous videos where we updated our color API, we have removed the functionality of allowing users to pass colors via files because this is a potential breaking change. Maybe some clients would be using this functionality. Then we are releasing here a major bump or a major version increase so that everyone
+
+[00:02:03] is aware that there is some breaking change in this new version. Perfect. So now the parts here, the container port that we're interested in is just advertising container port 80 that is pretty much the beginning of our setup here. So that is just the deployment.
+
+[00:02:20] We do need to pass a couple of environment variables, right? So namely here, the most important environment variable is the db underscore URL environment variable. So let's start by setting this up here E and V and that will be a list of key value or a list of objects here. So we're going to have the first one is the DB underscore
+
+[00:02:42] L so this is the name of our variable. And then we also need the value for this URL in Mongodb, the connection string looks like this. So Mongodb colon forward slash forward slash, then we have the user colon the password,
+
+[00:03:00] then we have like, so we have then the host here. So the database host, we then have colon the port here and finally the database name, so DB name here, right? So there are quite a few pieces of information that need to be passed to the to this database URL
+
+[00:03:23] and some of them can be hard coded while others is actually not a good practice, particularly the user and password here because this file is likely to be committed to a repository since this is supposed to be non sensitive information, right?
+
+[00:03:40] So the only ones that we wouldn't want to commit are like secrets or something that could contain sensitive information. But the deployment here should be able like it should be clean to be committed. However, if we come here and we just get the color to B credentials, so let's have a look here. And if we were to just copy this and paste this in our,
+
+[00:04:00] in our environment variable here, then this would store the user and the password in plain text. This is definitely not what we want. So a way for us to actually retrieve this information without having to hard code, it is to retrieve it as environment variable before the database URL. And that's important. The order is important here.
+
+[00:04:22] So we add entries to the ENV list before our URL and then we can reference them here. So that's going to dynamically retrieve these values and we can do that from our secret, right? So let's say name DB underscore user. And then the value from key here will specify the secret key. Ref
+
+[00:04:42] the key that we will retrieve is the username and the name of the secret here. So the name of the secret will be let's open our credentials here. The name of the secret will be just the color DB creds here. We will do the same for the db password. So let's do the same here.
+
+[00:05:02] Db underscore password. And the value will also retrieve from the same secret will also be retrieved from the same secret here. The key is password. Now that we have access to this information, the B user and DB password, we can then just copy this and paste this here
+
+[00:05:21] and we should use this dollar sign and then a parenthesis syntax and then we can interpolate the value here. So once again, it is important that we define this in the order that it is used. If we were to set this entry here before the db user and the db password, this method would not work.
+
+[00:05:40] So we basically just think about it like logically, we need to retrieve the values and then we can use them in whatever environment variables we want. So the first one is the db user and the second one is the db password. We can also set the host port and db name as environment variables if we wish to do so, maybe for the sake of clarity here, instead of hard coding everything.
+
+[00:06:02] So let's just give a little try to this method here and let's add this information as well. So we have the db host value and we're gonna populate that in a little bit, we then have the db port here and then we have the DB name here in the end.
+
+[00:06:20] Let's then move this information to our connection URL. Let's just copy this here. Db underscore host. Then we have the dollar sign parenthesis, DB underscore port and then we have here in the end dollar sign parenthesis db underscore name.
+
+[00:06:40] Now, why are we adopting this strategy of passing the database? URL as an environment variable? We could very well pass all this information, retrieve it from the application and then simply build this URL from within the application. The thing is that if you are using like if you want to migrate to using a managed mongo database,
+
+[00:07:00] for example, from Mongodb like Mongodb Atlas, then the connection string will be a little bit different. So that would be like, I believe SRV plus mongo DB or something. I don't don't exactly remember, but there are some different prefixes here and the structure of the URL might also be different. You might also have to include here
+
+[00:07:21] some additional query parameters. So because D db URL might vary depending on whether you're using self hosted or a managed solution, then I do find that from the applications perspective, it shouldn't really worry, it shouldn't really have to know how to build this connection. URL, you should just retrieve the db URL from the environment variable
+
+[00:07:41] and connect to whatever database we want to connect to. Perfect. So let's just fill out the database host that we're gonna use our fully qualified domain for now. So MongoDB dash SS dash zero dot MongoDB dash SVC dot default dot SVC
+
+[00:08:01] dot cluster dot local. We can have a look here at our Mongo stateful set to confirm that that's the name of the stateful set and then the name of the service. So the stable network identity of our pod will be the zero index here. The db part will be just 2717. So let's just add this here 27 0 17.
+
+[00:08:27] And the DB name that we have used to create our database is just call DB Perfect. So let's save this. Let's scroll up a little bit. Let's confirm that everything is looking good. Yes, everything is looking fine.
+
+[00:08:40] Let's now come, let's close our MongoDB service here and let's now create our color service. So the kind will be service and then we're gonna have here, the name will be color API or let's just call this color service like. So the Selector app will be color API and then the port here will be port 80 right?
+
+[00:09:00] So now we have also this is a traditional cluster IP service. That means we can just use this service here to communicate with the underlying color API. Let's just confirm that the labels here on the template, they are also matching. So a color API that's looking good color API. So I believe that's all we need to do for our cluster IP service. Perfect.
+
+[00:09:24] So with all this in mind, let's now come to the terminal and let's apply these two files. So keep cut, apply, let's apply the color API and then also the color service. And let's wait for these pods to be created.
+
+[00:09:40] Let's get our pods and we can show only the pods from our color API deployment by passing a label here and then app has to be equal to color API. So we can confirm that the pod is up and running. Let's copy the name here. Let's have a look at the logs and let's see if we successfully connected to the database
+
+[00:10:01] that is looking good here. So it's saying connected to Mogo DB color API listening on port 80 and if we were to. So basically here, just maybe I was a little bit too quick. This string here signifies that we have successfully connected to our Mongo database from our pod. If this was not the case here, then the pod will take a little while to start up,
+
+[00:10:23] it would eventually fail and it would throw an error here. It would actually just console log an error for us because that's what we have specified in the code. So if this was the case, we would actually get a much longer message here signaling that it was not possible to connect to our Mongodb
+
+[00:10:40] because this was executed very quickly and it printed the connected to Mongodb string. Then we can rest on the safe side that we are connected to our database. That also means that the authentication credentials and the database name, they were all correct and our application was able to establish the connection. We can then also have a look at our service.
+
+[00:11:01] So let's describe here the service color SVC and we can confirm that we have a single endpoint here. So now let's expose this with minicube so that we can interact with our API. So we're gonna say minicube service call SVC and this will create an IP address that we can use
+
+[00:11:20] to talk to our API in the end. So in the end here I come to post mail. Let me see if I can zoom in a little bit more. Yes, I believe that's better. So this is the same address that we have present here in the in the process that was started by Minicube and we do need to keep this process up and running, right. So you can see here the terminal needs to be open to run it.
+
+[00:11:42] So we cannot close this terminal or run any other commands here. You can also see here an interesting an interesting message from Minicube simply saying that services that have a type clusterip are not meant to be exposed. However, for local development, Minicube allows you to access this. So if we want to be on the 100% safe side, let's then stop this here. Let's come to the ide
+
+[00:12:05] and let's make this color service here. A nodeport service. All we need to do here for this service to become a nodeport service is to add a type of nodeport. And then we will also add here. If you want to set your own port, then you can set the node port option here.
+
+[00:12:25] So we're gonna just add, let's say 30,007 here and that's all good. Let's save this. Let's now come back to the terminal here and let's apply. So let's clear the screen just so that we can see the better. Let's apply just the color SVC file. This will configure the service.
+
+[00:12:43] And if we were to now describe our service color service, you will see that this has become a Nodeport service. And we have then here also the nodeport 30,007. So now hopefully minicube will not print the same message because we have defined the service as a nodeport.
+
+[00:13:02] That's perfect. So we have here now, the nodeport printed as well and the message is gone. That's much better. But now the URL here has changed. So let's make sure to copy this new one and let's paste this here in our postman application. So now if we were to send this,
+
+[00:13:21] we would then just get the message back from our pod here. As you can see, the hostname has the name of the pod from our deployment. We can then also hit the forward slash API and point here with a get request that's gonna send back the same information. And now we can also start getting some more information from our color.
+
+[00:13:42] So if we were to hit back D or to hit just the forward slash API forward slash color, currently, there is no data saved. So let's create one here. Let's post to primary and let's send the value here. So let's say that our primary color would be purple, for example. And let's send this request. We get our data back here.
+
+[00:14:04] And now if we get our primary color, then we will see that we get data purple back. And if we were to get now here, the just the API color endpoint, then we will get the list of colors that we have saved. Let's then create another one. Let's just add here, secondary
+
+[00:14:22] and secondary. I would like to be orange color. And then let's send this once again, we can confirm that everything was saved by just hitting the top level color and point. And we can confirm that we have both here. Let me increase this a little bit here and we'll see the primary and secondary. All right.
+
+[00:14:40] So now we also have the possibility of customizing the color that we want to retrieve here via the color key option. So let's just say that we want to retrieve the primary color here. Let's send this and the moment you do that, you can see that our color is purple here. We can also set the secondary key here
+
+[00:15:00] and then we should get back orange in our response. Awesome. So our database and our application are able to talk to each other. We are able to store information in our database by using our color API here and sending http requests. That's amazing. So, congratulations on implementing this project.
+
+[00:15:20] We have explored so many different concepts related to Cnis here and I am super excited to bring this project to a working state. There are still a few things that we can use this project to help us discuss and understand in Cnis. So let's take a short break and I'll see you in the next lecture.

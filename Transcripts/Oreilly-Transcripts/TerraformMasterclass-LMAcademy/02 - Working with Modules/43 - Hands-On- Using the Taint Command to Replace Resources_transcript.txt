@@ -1,0 +1,95 @@
+[00:00:00] Hello and welcome back. Let's now discuss tainting resources in Dataform. What does tainting mean for us to understand that? Let's create a new file here. We're gonna just call this dot TF. And let's create here a very simple E two instance. So AWS underscore instance or actually, we could create an S3 bucket since we don't need to go looking for the AMI ID.
+
+[00:00:21] So let's say tainted here, right? And this here is just gonna have a bucket name that's just gonna be my tainted bucket. And then here we're just gonna say just some once again, random string here and once we are in our CLI, so let's run a data form plan or even directly and apply here
+
+[00:00:42] and we will just create this bucket, right? So let's type yes here. And this will create the bucket for us behind the scenes. And let's say that for whatever reason, this bucket has become unusable and we need to recreate the bucket. So once again, like to be very clear, this doesn't happen with every type of resource,
+
+[00:01:03] but there are some resources which might become misconfigured or they might enter into a failed state And even though the configuration of these resources didn't change, we would like to recreate them. So instead of going into the console, deleting them and then running our terraform apply.
+
+[00:01:23] Once again, we could actually do that. Let's have a look here if we can actually do this. So we come here, come to buckets, let's refresh this. And then here we are gonna just select this one. We're gonna click on delete, we're gonna copy this and then we're gonna paste it here, right? So let's copy this, paste it here. Click on delete bucket.
+
+[00:01:40] Everything has been deleted. That's good. We can see here that we cannot see the bucket anymore. Now let's come back to our IDE and let's run a terraform apply once again, Dataform will not be able to find the bucket. So we want to recreate the bucket, right? We will type here. Yes, and the bucket will be recreated. So if you come here to the console, we refresh this and that's all good.
+
+[00:02:02] The bucket is there. Now, we are talking about one resource here, right? And it might be the case that one resource in Dataform is a dependency of many other resources. So we would have to go and start deleting things over and over or through many things, many places in our console and we definitely don't want to do that.
+
+[00:02:21] So Terraform offers a better way for us to actually do this so we can resources in terraform. And what tainting means is basically, let's mark these resources for recreation. So if we were to come here to the CLI and we say Terraform, and then we pass the resource reference,
+
+[00:02:40] so that's the resource type and then the label here, then you will see that terraform has marked this instance here as tainted. If we were to now run a terraform apply, we will see that Terraform wants to actually recreate this bucket so it will destroy the bucket and then it will add the bucket. Once again, you will see here that the AWS S3 bucket is tainted,
+
+[00:03:04] so it must be replaced. Now, let's say that for whatever reason we realize, no, we actually don't need to, to recreate it. So we can also come here and say Terraform untaint and we will say AWS underscore S3 bucket dot tainted.
+
+[00:03:21] The moment we do that, then we untaint this resource and then whenever we run a terraform apply, terraform will not try to recreate it. So you see that now there are no changes to our infrastructure. If we were to. Once again, let's call this with our S3 bucket and let's go all the way through with our terraform apply
+
+[00:03:42] autoapproved here, then we will see that Terraform will destroy our old bucket and then it will create the new bucket. This is one feature of terraform that is good for us to have in mind. We don't come across this very often. It already happened to me when I was working with lambdas and function URL S for lambdas that the functions were
+
+[00:04:01] not really updated even though the lambdas were and they were not pointing to the correct Lambda. So I just, I had to recreate the function URL S without really changing any configuration I just wanted or just need a terraform to destroy the old one and recreate the new one and then pointed to the correct Lambda.
+
+[00:04:20] However, nothing was changed in the configuration. So for terraform, there was nothing to change. Even though the state of my resources was inconsistent, it was incorrect and they actually had to be recreated. So this is just one example that I came across in my experience, you might come up across others and it's good to have in mind that we contained resources for recreation.
+
+[00:04:43] We have successfully recreated our S3 bucket, but we might also ask ourselves what happens when we have dependent resources. And for us to better visualize this, let's create an aws VPC here. We're gonna say this and then we'll just pass a cidr block of 10.0 0.0 0.0 forward slash
+
+[00:05:03] 16. And then let's create a Subnet resource, aws underscore Subnet. We also call this, this the Cider block here. For us will be 10.0 0.0 0.0 forward slash 24. And the V PCI D here, the V PCI D will be just AWSVPC
+
+[00:05:21] dot This, right. So let's save this here. Let's run a Dataform format and let's then execute. Let's apply these changes and I don't need to pass an ID. So that's not the whole object. It's just the ID. So let's have a look now at Terraform apply. And as you can see, we have two to add and zero to destroy.
+
+[00:05:40] These are our subnets and AWS VPC as well. Let's type. yes, here. And once the completion, once the creation is completed, let's now here. Terraform our AWS underscore VPC dot This and the moment we do that this VPC will be scheduled for recreation, which means the V PCI D will also change, right?
+
+[00:06:02] So theoretically, we should also change this Subnet. Let's see what's gonna happen here, Terraform plan or Terraform apply and let's have a look at the output. And as you can see here, we have two resources to add and to, to destroy, right? So if we scroll up, we will see here that because we are changing the VPC ID
+
+[00:06:22] in our subnet, this forces a replacement. So the subnet must be replaced. However, here for our DPC, what will happen is just that we will destroy and recreate it. So that's here, right? So this is was a little bit below at the output. Our AWS E PC is tainted, so it must be replaced.
+
+[00:06:43] So whenever we a resource and then as a result of this replacement, the some properties of this resource that are used in downstream resources they change, then terraform will also apply these changes. So it will also cascade the changes here.
+
+[00:07:00] And in the case of the Subnet, it will lead to a replacement of the Subnet. As you can see here, there were no changes in the configuration. The only thing that is happening is that we are recreating the VPC. So the ID will change and once you type yes, here, then this will go through, everything will be destroyed and created and everything was successfully changed.
+
+[00:07:21] Just wanna highlight also that this will not always be the case in terms that the form will not always recreate downstream resources. Let's come here to our import. Let's copy our public access block. Let's paste it here and we're gonna use now the tainted S3 bucket and this, we're gonna just say here from,
+
+[00:07:41] from underscore tainted and now let's save this. Let's run a data form apply. Let's pass, let's pass an auto approve here and everything should be fairly quick. And now let's our bucket. So we're gonna just say AWS or actually dataform ,
+
+[00:08:01] Aws underscore S3 bucket dot tainted. All right. So now here we have tainted our, our S3 bucket. Let's clear the console. Let's run a terraform apply once again and we will see that here. The only thing that will change is actually the bucket because there were no changes to the properties here.
+
+[00:08:20] Then this object will not be recreated by terraform. It will just recreate the bucket before we run that. Let's type. No here. Let's change a few things. We're gonna say false and then also false here. And let's save this. Let's run a data form, untaint for our bucket. So I believe that's the same.
+
+[00:08:41] Let's let's now run a dataform apply and let's wait a little bit and type. Yes here, right. So there is one resource that we are changing. This is what we are changing. Let's come back here to our S3 buckets and let's click on our bucket. Once we click on permissions here,
+
+[00:09:00] we should see that there are some settings that were turned off, right? So now let's come back here to our, to our IDE. Let's once again our bucket. So terraform, AWS S3 bucket tainted. Let's clear the console. So I believe our S3 bucket is tainted. Now, let's run a terraform apply. Let's wait a little bit
+
+[00:09:21] and we will see that we have one resource to add one to remove. Let's type. Yes, here. And once we do that, let's see what actually comes in the console for our new S3 bucket. So here we have our buckets. Let's refresh this here. We know that this bucket was recreated behind the scenes. Let's click here and then click on the permissions and Tara, as you can see here,
+
+[00:09:43] this is different than what we actually have in our data form configuration, the bucket was recreated and these permissions here, they actually refer to the permissions of the new bucket. So these permissions here were not taken into consideration. As you can see
+
+[00:10:01] if we run a Terraform plan. Once again, we should actually see a difference. Now, we should see that there is one resource to change. So Terraform has recreated this bucket here. However, it did not recreate the resource that is dependent on this bucket because nothing changed the name of the bucket didn't really change.
+
+[00:10:22] So Terraform is getting a little bit confused here. It is recreating the bucket but because nothing is changing, it is not recreating downstream resources. Let's then mark this as true here and this as true as well because we want to block public access. Let's save this. Let's run a Terraform
+
+[00:10:40] plan. Another aspect I want to highlight is that I've seen the usage of much more than the usage of the new recommended approach from Terraform. So let's clear this. And if you go look in the documentation, the command, it's actually considered deprecated by Terraform even though if we want to do a
+
+[00:11:01] here help, even though we get no information here that this will actually that this is actually deprecated, right? So as you can see here, there is nothing that is saying here that the command is deprecated. However, Terraform does recommend a new command here, which is called the terraform apply. And then, so it's still apply and we can actually use the dash replace tag here.
+
+[00:11:23] And if we are not the tag but the flag, if we were to then pass here, the AWS underscore S3 underscore bucket dot tainted, then we will see that terraform will also mark this resource here for recreation. Scroll up a little bit, you will see that this here will be replaced as requested.
+
+[00:11:44] The behavior is very similar to the command. So as you can see when we scroll down here, we also see that there is just one resource to add and one to destroy. That means that a form will not recreate this public access block resource here. So we could also end up with inconsistencies in our configuration.
+
+[00:12:03] If you wanted to be very thorough here, we would actually pass twice the replace the replace flag here. We'll say replace and then that would be our S3 bucket public access block dot from underscore tainted. And once we do that, then we should actually see that there are two to add and two to destroy.
+
+[00:12:22] And this will make sure that this public access block here will be created once the bucket is recreated, all hopefully your head is not yet spinning. There was a lot of discussion here around what happens, not only when we recreate resources, but also when we have resources that have dependencies
+
+[00:12:42] and the different cases that can happen whenever we or mark resources for replacement, that's great. So for us to wrap up, I would like to destroy all the resources that we have. We do have here a life cycle. Prevent destroy. So let's just remove this from here because this will prevent terraform from destroying this bucket.
+
+[00:13:02] Let's save this here. And then let's run a terraform destroy. And the moment we do that, we should get a list of objects that terraform will remove. And as you can see, there are eight objects, quite a few that are some here from our move state. There are some from our import file. There are also some from our
+
+[00:13:21] file. Let's type Yes here and wait for the destruction to complete. And just while the destruction here is proceeding just once again to bring that back to your memory. If you have some ray bucket, which is a critical resource such as this one that is storing remote state,
+
+[00:13:40] then you would like to prevent this drive for us here. Since I know that this bucket comes from this folder here and we are not using this folder anymore, then I know that we are on the safe side to remove this bucket. As you can see here, we actually get an error because the bucket we try to delete is not empty. So this bucket here is not empty. Let's come back to the console. Let's come back to the buckets.
+
+[00:14:01] Let's refresh this here, we still have our bucket. Here. There is one option object, probably this one which is an empty state. So if we open here, this is an empty state, we can safely then come here to the bucket. Select this. Here. We're gonna type delete and we're gonna delete everything. So let's type permanently delete,
+
+[00:14:21] copy, paste here, delete objects. Perfect. And now the bucket here should be empty and we should be able to delete this bucket. We can also click on empty here if you want. But since there are no objects, then the AWS console will not enable will not allow us to empty this bucket. Let's click here.
+
+[00:14:40] Let's come back to the Terraform console here and let's run once again. A terraform destroy. Now, the only two things would be this S3 bucket here and our public access block. But as you can see, we have already, so Terraform has already deleted the access block. Therefore, we cannot import this access block. So we will have to remove this here.
+
+[00:15:00] Let's just comment this out. I'm gonna uncomment this because I don't wanna commit files with comments for when you are accessing the reference. It's getting a little bit confusing. I apologize for this but I am just trying to be go go step by step here without doing or cutting anything that I am facing. So now we have removed this public access block here.
+
+[00:15:22] Now we will remove the bucket. We're gonna type. Yes, here. Perfect. The bucket has been destroyed and I'm gonna uncomment this so that whenever you access the code, this is uncommented and it's a bit more clear. Perfect. So as you can see, sometimes it's not that straightforward to work with the terraform CLI
+
+[00:15:40] sometimes we get some errors and we need to handpick, we need to fine tune exactly what we want to perform in the operations. But hopefully we manage to achieve our final result. So if we were to have a look now at our state tele form state list, then we have nothing here and we are good to go. Let's then take a short break and come back in the next lecture.

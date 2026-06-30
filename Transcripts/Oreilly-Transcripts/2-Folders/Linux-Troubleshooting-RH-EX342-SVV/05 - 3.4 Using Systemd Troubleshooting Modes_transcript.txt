@@ -1,0 +1,37 @@
+[00:00:06] - In the previous lesson we have talked about low level troubleshooting modes. That included the rescue disk, rd.break, and init is /bin/bash. These low level troubleshooting modes break into the system before systemd gets operational,
+
+[00:00:23] and they are useful in specific scenarios, scenarios where your GRUB boot loaded has got damage, or the scenario where you just need access to your root file system, or the scenario where you don't have the root password anymore. Using low level troubleshooting modes is okay,
+
+[00:00:41] but the lower you get the less system functionality you've got, and in troubleshooting you should always try to get get to a situation that looks most like the current working situation, and that is why you should not always start by using a low level troubleshooting mode,
+
+[00:01:02] which can be done by using the systemd targets. There are two targets that matter. We've talked about it, emergency target and rescue.target. Let's get into these specific targets, and let's see what's happening if you get into these specific targets. So again you will do that from the GRUB boot menu.
+
+[00:01:22] So I'm pressing E once more, and I'm looking for the line that starts Linux 16, and I'm typing systemd.unit=emergency.target. Let's do a Control + X, and let's see what's happening.
+
+[00:01:42] So here again we get through the start of the kernel in initramfs, and then it drops in an environment where we need to type the root password for maintenance. As systemd is involved and your root file system has been mounted,
+
+[00:02:00] right here is a read-only file system, but it has been mounted. You need to type a password. Now if you really want to start fixing stuff, of course you first need to make sure that your root file system will become read-write. So mount-o remount,rw
+
+[00:02:22] on / will do that for us. Now let's explore what we've got in order to explore systemctl list-units.
+
+[00:02:40] It's showing you that there are only nine loaded units available. So we have the dev-mapper-centos, which is the mount that you need, the mount to your root file system. There is the configuration file system, which is the sys mount. We have the emergency service,
+
+[00:03:01] which is providing some minimal services. We have journald. We have support for slices, and that's about it. Another way to look at the current situation is by using systemctl list-dependencies. This will show a tree of everything
+
+[00:03:20] that is currently available and the topics that are not available. So you can see that in the default target, which is the situation that you should normally be loading, nearly everything is red. Here we have a slice. Here we have the journald. We have the sys-kernel-config. We have the journald again,
+
+[00:03:42] and we have the root mount, and that's about it. Everything else is not currently loaded. Now instead of going back to the GRUB boot menu, we have seen it sufficiently, we are going to use systemctl isolate rescue.target.
+
+[00:04:02] Of course you have used systemd.unit as a rescue.target as a kernel boot argument as well, but I want to show you something different. Systemctl isolate is going to kick out the current target and replace the current target entirely by the new target. So if there's anything that is available
+
+[00:04:21] in emergency target but which is not supposed to be available in rescue target, it will be properly removed and replaced by the parts that are required in the rescue.target. So here again we need to enter the root shell, and let's use systemctl list-units once more,
+
+[00:04:43] and there you can see that a lot of additional units have been loaded. The sys-devices obviously mainly corresponds to the different devices that are available in your system. So basically the big difference between the 95 loaded units
+
+[00:05:01] that you've got now and the nine units that we have seen in the emergency target is that in emergency target systemd is not trying to address any devices but the root device, and in this rescue.target you have full access to all your devices. So that's the main difference, device access.
+
+[00:05:21] So if you have a problem in loading your devices, don't go use rescue target, use emergency target, but if you think your devices are okay, start by using the rescue target. Let me also show you systemctl list-dependencies.
+
+[00:05:40] So let's again see it from the perspective of the dependency tree that is available, and as you can see many more green dots are available, which means that you are in a much more operational situation, and also the mount of the root file system. Currently the root file system
+
+[00:06:00] is mounted as a read-write. So you can start troubleshooting your system straight from here.

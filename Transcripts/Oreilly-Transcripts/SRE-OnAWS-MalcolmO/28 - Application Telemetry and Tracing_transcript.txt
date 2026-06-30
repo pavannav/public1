@@ -1,0 +1,45 @@
+[00:00:00] Welcome course taker to video number six application to entry and tracing. So in this video, we begin to address the problem we had with our failure mode analysis around how do we begin to see inside of our application and the different Microservices? So we'll look through the general statement and problem. We'll look at the general problem statement for Microservices.
+
+[00:00:23] We'll look at the two approaches at a high level and that's appmesh and X ray for Amazon. And then we'll drive a little bit more detail on what we have to do to get x-ray working in our application. So if you're ready, let's get started. So while we had a single application, our pi simple application,
+
+[00:00:43] the complexity tended to be in the code itself. So we had one API one failure domain, everything was set around the code that ran within that application. As we begin to break out the code into different micro services, the complexity moves.
+
+[00:01:00] So it becomes more complex in terms of the interaction. So that's not to say that the code is less complex because sometimes it isn't the interactions between the different services becomes where the main complexity is So tracing and observability becomes more important on Amazon. There are a number of ways you can look at the Microservices.
+
+[00:01:22] So the first one is deploying appmesh and we'll talk about appmesh a bit more in the next section. So we'll just touch on it briefly here in APPMESH. What you do is in your task or in your pods. If you are you talking about Eks Cinetis, you'll basically deploy a proxy, an envoy proxy.
+
+[00:01:40] So your container, your application no longer talks directly to the network, it talks through the proxy and the proxy has all the controls there to say what you can talk to, to do the name resolution where you can go from a microservice point of view. The big advantage of that is that obviously you then track all your stats and it uses uh dog stats D as an agent within the envoy proxy to then send metrics.
+
+[00:02:06] And those metrics can be sent to um cloudwatch or to something like prometheus. So the proxy really becomes your stats demon and it can track all the network traffic and the flows through there. X ray gives you a further more detailed set of
+
+[00:02:23] information around the flows and different traces. Now, in order to use X ray, you need to include the X ray SDK and we'll see how that's done. And then there needs to be a demon running. So if you're running it on premise, you need to run a demon locally. And that's what I'm doing for testing purposes here
+
+[00:02:40] in ecs or EKS, you need to run the agent as a container within your infrastructure and then something like Lambda, it runs in the infrastructure itself. Um But you need those two things, you need to have the SDK installed and all your library patched and you need to have the demon running either explicitly
+
+[00:03:01] or implicitly in the architecture and in the service that Amazon are providing when you've got that set up, basically, you can trace all the way through your infrastructure. So here's an example of API to Lambda function to dynamo DB table, you can use a trace and a trace id
+
+[00:03:20] and then you can have different segments between the different components and then even and different sub segments between those. So let's look at our configuration. So if you go into our code, I'll look at um my main file. So this is our Ly Cars module.
+
+[00:03:41] So I've imported the X ray SDK. I've also included the Middleware piece because we want to instrument our flask and patch all or patch all the Amazon libraries. So now if I make a call to Cognito or I make a call to dynamodb or to Cloudwatch, it's going to be tracked through
+
+[00:04:01] X ray, I also need to go down into my flask environment. And flask is one of the supported apps for X ray and I need to configure my recorder. So I'm giving it the service P car. Also got some error handling here and this is where I actually patch my flash
+
+[00:04:22] app to start sending information to xray and further down every route I'm now, you know, adding in a capture for the recorder and I'm just giving it a different set of information what it's doing. OK. And I've done the same for the A
+
+[00:04:40] module as well. So if I go into my fourth module and just generate some traffic, so I'm gonna log in to who am I gonna do a resource, get who protected? And then I want to go back into my local app again, get some car information
+
+[00:05:02] for that to change the port on this one. So I've generated some traffic. And because on tracking this now through x-ray, what I should be able to do is go into my x-ray consult.
+
+[00:05:20] It will build a nice user friendly map for me to look at the traces. And so here I have so here Payar. So client talking to our service, talking to SQL, but also talking to Cloudwatch. And then here we have our py service talking to Cognito ID P.
+
+[00:05:42] And I can get quite a lot of information. I can do some analysis of those traces. If I want to look at the specific traces here, I can see the URL S what the average response time. Um And I can see, you know, the difference between get and put here, for example,
+
+[00:06:02] so I can get an awful lot of information. Obviously, as you begin to increase the coverage, you will begin your service map, you'll begin to see these requests are fairly disjointed. You know, they're not connected, these are two separate modules. But as we would begin to integrate pi car into Cognito,
+
+[00:06:21] we begin to see the interactions between those two nodes. And if presentable, if for example, I start making calls between these, then I begin to see it. So you can begin to see how the interactions begin to play out. Certainly with the Amazon services and you can see the amount of detail you can get from
+
+[00:06:42] xray. Now, when we think back to our failure mode analysis, when we are talking about understanding performance, understanding the interactions between the services, this is clearly gonna give you a usable dashboard and also give you a lot of detail around how long requests are taking.
+
+[00:07:00] You could begin to feed this information into dashboards and begin to track against when there's a good baseline. What makes good for a customer the response time and when that starts to deviate, you begin to see errors being generated at the customer end. So I hope that was useful. Please join me in the final module of this section. Application Analytics.
+
+[00:07:23] Thanks very much.

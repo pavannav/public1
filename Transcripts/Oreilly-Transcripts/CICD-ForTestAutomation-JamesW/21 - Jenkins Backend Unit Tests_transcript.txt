@@ -1,0 +1,55 @@
+[00:00:00] OK. So we've now got our Jenkins file working and it's running a very simple pipeline, but the pipeline running at the moment, it's actually got nothing to do with the project yet. It's basically just a Hello world pipeline. So let's look now at how we can start actually running some of the stuff from our projects. So let's just start by running the unit tests of the back end, for example. So I'm just going to close down the terminal here at the bottom to give us some space.
+
+[00:00:23] So let's first see how we can run the tests locally. So to do that, I'm going to see the into the bug tracker backend folder. So this bug tracker project, it's got a bunch of unit tests that are in here that we can run. So again, because I've got go lang installed, I can just run these locally. Now this is optional.
+
+[00:00:40] You don't have to do this. I just want to show you how we can run the unit tests locally and what that looks like. So in order to run the test locally, I do go test dot forward slash dot dot dot And this is basically just a convention to run all of the unit tests that within this folder. So if I execute that, and then after a few seconds, we get this message back here and it shows that all of
+
+[00:01:00] the tests have been run and they've just been run locally. So what we really wanted to do now is we want to run these unit tests. We want to run them on Jenkins. We don't want to run them on this, on our local machine. We want to run them as part of our CI CD pipeline. So let's open up our Jenkins file. So here we're just gonna change this stage over. So instead of calling it hello, let's call it
+
+[00:01:22] unit tests backend, we're gonna take out the steps that we've got in here currently and now I want us to run our backend tests. Now, the first thing that we need to do is that we need to specify which folder we're running these tests in. So again, because all of these tests live within this bug tracker backend folder,
+
+[00:01:41] we need to make sure that we specify that direct that directory in our Jenkins file to do that and type du and it will say our directory name, which is bug tracker backend. So again, this bug tracker backend directory, that's what our directory here corresponds to bug tracker backend,
+
+[00:02:03] add some curly brackets and now let's run the same go command. So I can say go test. It was minus the dot forward slash dot dot dot dot So let's save that. So again, that go test, that's the same command here.
+
+[00:02:20] This is the command that we now want to run on Jenkins. Ok. Let's check in this Jenkins bar. So to do that, we'll do a dot It commits minus down. That's the running back end unit tests.
+
+[00:02:40] Oops, actually, before we do that, we need to make sure that we're doing this from the route. So I'm just gonna CD dot dot To go up one level, do git status again to check if it needs to be committed. Again, we want to commit this junkies car to see if we can keep A dot Again, let's do the commit again. So do the git commit run package unit tests
+
+[00:03:01] my due to get status. Ok. Everything is now ready to be pushed. So now if push minus U origin lane, if you ever want to check that that's been, that's been pushed. Ok, then you can just go over to get up here. We go into Jenkins, we look at our Jenkins file and now here we've got the new Jenkins file. So that's ready to be pulled into Jenkins.
+
+[00:03:22] Ok. So now let's go over to Jenkins. Go over to our bog tracker. Let's hit build now. Ok. So that's gonna start running. Let's click on it to watch through and we're getting an error here. I can see the error is because we didn't wrap this in a shell command. So we need to remember to do sh and then put it in Syns
+
+[00:03:41] like that. So just make that change. Let's add the file again. So get at dots, make enough mits another push through the main branch. Let's now head back over to Jenkins, back to Bob Tracker and let's build the project again. This time, the project has failed again.
+
+[00:04:02] And if we look down at the error message here, we can see that we're getting this error here. That's saying go, not found what that means is because we're running this now on Jenkins on our Jenkins server. We don't have go lang installed on Jenkins yet. So there's a few different things that we could do here. We could install the plugin on Jenkins that would install go
+
+[00:04:23] lang for us. That would be a perfectly good option. Another thing that we could do is that we could actually install, go each time we run the pipeline. That might not be the best because that wouldn't be particularly efficient. We'd have to keep installing go lang each time. What we're actually gonna do here is we're gonna use another Docker container. So we're gonna basically pull in another Docker container
+
+[00:04:42] within our Jenkins pipeline and that Docker container, it already has Doang installed on it. So basically we'll pull in that container and then we're gonna run the unit tests within that container. Let me show you how to do that. Now. So here just under the stage, what we're saying, stage unit test back end. Let's now add in an agent,
+
+[00:05:01] the agent is gonna be Docker. So now we need to specify what the Docker image is gonna be called. So this is the Docker image that's gonna get pulled down from Docker hub. And I've actually already created an image especially for this course. So it lives in my repository which is called Snakey and then go forward slash J units,
+
+[00:05:21] OS J units. Next version we say colon 1.21 for version 1.21. So this image that we're using is basically an image that I created earlier and it's got go already installed on it and it's also got J units installed as well. So we're gonna JUnit later on to run some of the unit tests.
+
+[00:05:40] So basically this is just a Docker container that's got everything installed on it that we need in order to run our tests. And another flag we need to put here is reuse. No true. And all this does is make sure that the dock container that we're using here that makes sure that it uses it throughout the Jenkins pipeline so that we can run all of the unit tests for it. So just make sure that you put in the re
+
+[00:06:01] no true flag here. Otherwise you might run into problems later on. OK. Let's save that file you can get as dots, get commits and get push, push back up to the main branch. Let's head back over to Jenkins. Click on bug tracker, click on build now see build number four starts up. So if we click on it, we can watch it going through
+
+[00:06:23] and we can see here it's now pulling in this Docker image. So the go lang JUnit Docker image that's been ported down and after a few seconds, we can see that our tests have been run and all of our tests have succeeded and we now and our build is now passing. So we get a message at the bottom saying finish success because all of the unit tests now run.
+
+[00:06:41] So this is great. We're now actually running all of our unit tests on a different machine, IE on the Jenkins machine instead of having to run them locally. And again, this is because we're doing it through Docker. This is just one way we could do it again, we could do it through adding in a plugin or we could do it by just installing go lang each time. But using a Docker container with any software already preinstalled.
+
+[00:07:01] That's a really good strategy that we'll often do as testers. We'll often have that configured and then ready to go and put in. So just to check that this is working, let's actually make one of our test file and see what happens in the pipeline. When we make one of the test fail. So in the bug tracker back end, I'm gonna go into the internal folder, I'm gonna go into handlers and then I'll choose this Bob underscore test dot go.
+
+[00:07:23] I'm gonna come down here to line 53 just here where it's saying expected error types is required. I'm just gonna add three different XS here. So just gonna save this. So this test should now fail when we run this. So again, let's add that. So, so you get add dot
+
+[00:07:40] So you get commits and the message can just say thank you test fine. Push that back up to the main branch if I jump back over to Jenkins and then I click build now. So now the build's gonna execute again and we should see this build fail because one of the tests should now fail.
+
+[00:08:02] So again, after a few seconds, we can see that it's gone red. If we click on it down here, scroll down to the bottom, we can now see that we're getting at least one failing test. And if we scroll up link there, we can see that we get this error message here specifically, it's saying it's failing on here because the title of this required
+
+[00:08:20] is not being appeared, it's not appearing because that's what we just specified it or set it to. So if one of the unit tests fails, that basically means the, the pipeline is gonna fail so that we know that there's a problem with one of the tests and we need to go in and do some investigation. Ok? Before we finish, let's just put that back to what it was before. So I'll take out the three Xs, send that,
+
+[00:08:40] then we do get our dots, get commit. What I'm saying? Let's say the pairing tests again. Get push mine again. Go back over to Jenkins. I've just run the pipeline once more just to check everything is ok. And now the pipeline has passed and we get the nice green check here.
+
+[00:09:02] Like so, so that's how we can run our back end unit test through Jenkins.

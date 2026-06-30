@@ -1,0 +1,49 @@
+[00:00:06] - So let me setup some remote authentication. I have an LDAP server, which is using IPA, and that's a DNS server as well, and it's a Kerberos server. There are two ways that you can connect to service like that. You can use the IPA client,
+
+[00:00:21] or you can use the plain LDAP client, and I'm going for the plain LDAP client so that we can install and look what is behind. I'm using the utility authconfig-tui, authentication configuration text user interface.
+
+[00:00:41] So in this utility I need to specify what I want to do. So I want user information to be obtained from LDAP. That's okay, it's already there, and I also want authentication to happen in LDAP, and I want to involve Kerberos as well.
+
+[00:01:00] Let's go all the way. Now Kerberos is something to realize. Kerberos is very dependent upon DNS. So before I'm continuing I'm opening a new tab and I am going to make sure that DNS is setup correctly, which means that I don't wanna do any outside DNS server.
+
+[00:01:21] I want to use the Kerberos server as the DNS server. I'm going to configure that using nmtui, the network manager text user interface, which is the easiest way to do that. Here we can see the Google DNS server. Let's take that out,
+
+[00:01:40] and let's replace that with my internal DNS server. Now we need to activate the connection again, and back, and quit, and just a quick check in /etc/resolv.conf, and we can see nameserver is set to 4.200.
+
+[00:02:03] That's what I want it to be. So now we can continue, and we will shortly see why because Kerberos has an option to get all the relevant information out of DNS, but before we get there between user information and authentication, authentication is the part that's consults
+
+[00:02:21] the PAM modules. User information is the part that consults the /etc/nsswitch.conf to find information about users, which is also used by utilities such as ls -l. In ls -l you see usernames, right? That's why you want to configure this.
+
+[00:02:40] So here we get a couple of messages about missing packages. I want to advise you if you try to do this yourself, install the packages immediately because otherwise you will get failures. So it wants krb5. There we go, krb5,
+
+[00:03:01] and now the LDAP configuration. In LDAP I want to configure TLS, and we need to specify what is the LDAP server. Well definitely not 127.0.0.1. The LDAP server is labipa.example.com, which is the name of the LDAP server.
+
+[00:03:21] The base DN is dc is example, dc is com, and that is all right. So I can continue and specify the Kerberos configuration. So Kerberos needs a realm, a KDC, an admin server. The realm is the Kerberos domain, the KDC is the key distribution center,
+
+[00:03:40] and the admin server is the Kerberos server where you do your administration. So you could call KDC an admin server both your Kerberos server. I don't want to specify that manually. I want to get that out of a DNS. Now it's telling us that it needs access
+
+[00:04:00] to a CA certificate. Read carefully. It's telling us that we need to enter that information right now. So we need to copy the certificate to /etc/openldap/cacerts and then press okay. I will also show you why. First I will copy the certificate, which I
+
+[00:04:22] can get using scp of the Kerberos server. So scp to the lab IPA, /etc/ipa/ca.crt. That's where the certificate is by default if your LDAP Kerberos server is an IPA server,
+
+[00:04:42] and then copy to /etc/openldap/cacerts/. Let me show you the contents of that directory because I need you to be aware of something. We see the certificate, right? Now I go back to the utility, I press okay,
+
+[00:05:00] it's done, and I press ls again, and do you see what it has done? It has created the symbolic link that points to the certificate, and this symbolic link is essential for the working of everything you are doing, and now I can use su -ldapuser1, which is an LDAP user that I have created, and, no, no.
+
+[00:05:20] Ldapuser1 does not exist. So we can start the troubleshooting right now, but that's the topic of the next demonstration and explanation. So for now let's just investigate what has happened behind the scenes. So behind the scenes we should have a look at the /etc/pam.d/system-auth.
+
+[00:05:45] We see that two lines have been added. First there is auth sufficient to pam_krb5.so. Then there is auth sufficient to pam_ldap.so. So what does that mean? Well, that means that this configuration
+
+[00:06:00] is first going to check with Kerberos, and what do we have in Kerberos? That is a configuration file with the name krb5.conf. Let's have a look. If we get in there, then we can see that the realm is set to example.com. Oh, this is behind hashes.
+
+[00:06:21] So that's not valid. We can see there is an includedir. There's a couple of log files, and we can see, well, probably the most important line, dns_lookup_kdc is true. So that's about it. Now if we have a look at /etc/krb5.conf.d/
+
+[00:06:43] then we can see that that's empty. Let's also have a look at the LDAP configuration. In the LDAP configuration there is /etc/openldap/, and in /etc/openldap/ there is a file with the name ldap.conf, and this ldap.conf, this has the information that we need.
+
+[00:07:02] So the LDAP is set to labipa.example.com, and the base dc is example, dc is com. So that is where it's going to by default. Now how about backend services? Let's have a look what we've got.
+
+[00:07:22] Nscd is not there. Nslcd is present. So nslcd is doing something, and it's also giving us some nice error messages. Failed to bind to LDAP server ldap 127.0.0.1.
+
+[00:07:40] I don't wanna talk about that yet because that's part of troubleshooting, our next topic. I do want to check the availability of triple sd because in some situations you will get triple sd. In this situation I did not prepare it, so we don't have any triple sd right here. So this all for now.
+
+[00:08:01] Let's get back to the slides and talk about troubleshooting.

@@ -1,0 +1,65 @@
+[00:00:00] Hello and welcome back. Let's now continue exploring how we can reference the resources that are created via the count argument. Let's come to the variables here. We're gonna create a new variable and we will say easy to instance count. This will also be a of type number, type number
+
+[00:00:20] and the default here is going to be one. Now, we might want to deploy more than one AC two instance count and we will see in a little bit how we can do that, but you might already expect that we're gonna be using the count argument. And then we just need to change the va the value of this variable. So let's create a new file here. We're gonna call this compute dot TF and we
+
+[00:00:42] will create a resource that's gonna be AWS instance and this is going to be just, let's say from count. And so now here we will have the count argument that's gonna be var dot E two instance count. And then we also need an AMI ID. Let's come here to our data sources folder
+
+[00:01:00] where we have explored data sources for retrieving the AMI D for our, for our Ubuntu image. Let's just copy this here and let's paste this in our compute under the folder 11 multiple resources. We can also close this here and let's just paste this here so that we can retrieve our Ubuntu
+
+[00:01:21] 22 image. And then we'll simply say AMI is equal to data dot aws dot Ubuntu dot id. We will also hard code the instance type for now. So we say instance type is gonna be T two dot micro. We also would like to provide some tags here and the tags are going to be.
+
+[00:01:42] And I believe that the locals are actually defined within our networking. So let's create a new file. We're gonna say data dot TF. And then within here, we will copy this locals and we will paste this in our data dot TF file. And now we can use these locals also within our compute. I mean,
+
+[00:02:00] we can also use the locals from the networking file. If we left them there, we could also use them within the compute. However, since they are more um their scope goes beyond only networking, they also they can also be used in other files. Then I prefer to put them in a separate file and not within the networking file.
+
+[00:02:20] If we have locals that refer only to the networking, then I would put them here. However, for shared ones, then we can put in shared locals or we can put in data dot TF. And so on and so forth. Great. Um So let's then use them here. The name for our compute is going to be the local, same thing as for the Subnet
+
+[00:02:41] local dot project. And then here we will say once again the count dot index and the project here is going to be local dot project, right? So now let's save this, let's run a data form format and let's see what a data form plan gives us back.
+
+[00:03:01] Great. So we have the resource to be created here. However, we are not defining any subnet where we want to create this. So let's see, let's say that we want to explicitly define the subnet for this resource. So we could actually provide a subnet ID. And now here we have AWS subnet dot main. However, I cannot just go and say AWS subnet dot main dot id.
+
+[00:03:23] You will see that this will return an error. Let's save this, let's run a data plan. And the problem here is that the AWS Subnet main is actually a list, a list of subnets that was created here within our networking. We have the index zero and the index one. So we need to explicitly pass which Subnet
+
+[00:03:43] we want to use here, we could pass zero for example, and then we run a terraform plan and that is going to go through. We could also pass a one here to deploy this in the second subnet. And if we were to run a terraform plan once again, that would also go through. If we try to pass a two or a nonexistent index here, then we should get an error back.
+
+[00:04:05] That's exactly what we get, we get an invalid index back. That means we can either use only zero or one. So let's start with this. Let's run a terraform format. Let's clear the console. Let's run a data form, apply dash auto, approve here And then we will deploy this instance within this Subnet.
+
+[00:04:25] Great. Once our changes go through, we could actually come to the console and check if everything is in order, let's come here to two. And then within here, we should see that there is one instance running. And if we click on this instance here, we see that it has a name.
+
+[00:04:41] So that's the instant zero. And if we scroll down a little bit more, we should also see that it is associated with the subnet with an ID here that corresponds to our subnet with index zero. That's great. So we managed to reference here a subnet that was created via our resource subnet here using the count argument.
+
+[00:05:05] However, let's suppose that we actually let's have a look at the verbals. What's the name here? E two instance, go, let's say that we actually want to deploy four E two instances and don't worry about the cost, just make sure that you delete everything after you run this and it's OK.
+
+[00:05:23] Basically the, how, how AWS the free tier works is that you have 750 hours per month of T two or T three micro. That means if you launch for instances, they will just consume the 750 hours four times faster.
+
+[00:05:40] However, if you do not leave your infrastructure running all the time, which is what I always recommend, then you should have enough hours to try all these examples. So just one example here of a calculation, it would be if we, if we create these instances here and leave them running for 10 minutes, they would actually deduct 40 minutes from those 700
+
+[00:06:01] 50 hours. So if you have stuff running full time on Aws, then yes, this might incur costs because then you will like if you're thinking, OK, I can run 12 instance, 24 hours a day, 30 days in a month, then if you are already doing that, then this will probably go over the free tier limit and then you would get some costs.
+
+[00:06:22] So just keep that in mind when applying these changes here. But for all the purposes, if you are creating and destroying your as you go along with the course and this is a new AWS account and you don't have anything running 24 7, then you should have no concerns with the costs. Great. So now I want to deploy four a two instances.
+
+[00:06:43] However, if I were to come here in our compute file, then we will see that they will all be deployed in our first subnet. However, let's say we would like to adopt a round robin strategy here that we would like to just distribute these instances equally across our subnets.
+
+[00:07:01] How can we do that? Well, we could theoretically create a list of objects and then define in each of these objects which exact subnet we want to deploy the EC two instance to or we can leverage the count dot index here. So if we were to actually use the count dot index,
+
+[00:07:20] then this would give us the first half of the solution. And how we can do round robin through the subnets. Why do I say only the first half of the solution? You might have guessed the index of our two instances will go beyond the index of the Subnet. So if we were to run a terraform plan here, you will see that we will get an error
+
+[00:07:42] because we will have indexes that are outside of the aws subnet indexes. These are the index two and the index three here. Now how do we solve that? Well, very easy. We use the module here and then we're going to take the module operator of the length or we're gonna take the module of the length
+
+[00:08:03] with our aws subnet dot Main. So basically what we are doing here is we're saying take the count dot index and the remainder of the division of the division by the length of how many subnets we have deployed. So let's have some examples here
+
+[00:08:21] so that we can understand. So zero module and we have two subnets zero module two is equal to zero. And then we have one module two is equal to one, we have then two module two is equal to zero. And the three module two here, the three module two is equal to one.
+
+[00:08:41] So in the end here, we're gonna get 0101. And this is gonna provide a pretty effective round robin strategy for deploying these two instances. Let's save this. Let's run it at a farm apply, but without an auto proof. And then here, let's just inspect the plan before we approve it. Let's scroll up a little bit and you will
+
+[00:09:01] see here that we actually already have the Subnet ID, right? So now if you scroll up a little bit more, you will see all your instances and you should see all. So the subnet id vary between them. OK? So let's type yes here and let's wait for terraform to apply the changes. Perfect. So we have deployed our three instances.
+
+[00:09:21] Let's come back to the AWS console. Let's clear a little bit of the information here, deselect this and then refresh the page. And if we scroll up a little bit more, you should see or I don't think that the no, the subnet is not shown here, but maybe we could try to include that. Let's have a look here, subnet
+
+[00:09:40] ids. Perfect. So we can include this in our instance um information and if we look for the information that should be available. Perfect. That's it. Let's expand this a little bit and we will see that we have then this different subnets here. And just to confirm here, let's have a look if the subnets are correctly allocated.
+
+[00:10:00] So we see that the two subnets with the same ID here, if we scroll to the left and we expand a little bit, the name section here, they're actually correctly allocated to the zero and the second instance. Great. So that's one way that we could go about it. That's just gonna be a round robin and then it's gonna assign two different subnets.
+
+[00:10:21] Now, before we wrap up this lecture, let's make sure to destroy all our infrastructure since we have created several T two micro instances, always good to destroy all of them at the end of the lecture. So let's confirm we want to destroy seven resources. This is one DPC, two subnets and four AWS instances. Let's type yes
+
+[00:10:41] and wait for the destruction to complete. Perfect. Once everything is destroyed, we can then head over to a short break and come back in the next lecture.

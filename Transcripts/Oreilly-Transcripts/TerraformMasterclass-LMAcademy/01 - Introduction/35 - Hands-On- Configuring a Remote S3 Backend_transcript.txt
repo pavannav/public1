@@ -1,0 +1,59 @@
+[00:00:00] Welcome back. Let's now discuss backends and remote backends in a little bit more detail. And for that, I'm gonna copy, paste this third folder here. I'm just gonna make a new folder and I'm gonna call this 04 back ends because I would like to use the same code since we're already familiar with it. I would like to use the same code. I'm gonna remove the terraform state and the terraform state backup
+
+[00:00:23] files and we'll also remove the terraform folder and I'm gonna rerun the terraform in it. So let's change into 04 backends and we will run Teito like now to migrate our local state,
+
+[00:00:41] our terraform configuration block without a remote backend to a remote backend, right? So we would like to add here a backend S3. And here you can already see all the options that are available as a back end. Let me delete this and let's write this block again back end. And then here you can see that there are lots of options, right?
+
+[00:01:02] So Azure resource manager console, we also have HTTP backend. If you would like to implement a solution by yourself. It's also possible. It's a lot of work, but it's also possible we will click on S3. Great. So we have a backend S3 block, but we haven't really confirmed
+
+[00:01:22] this back end. And how do we inform the S3 bucket that we would like to use here? And how do we create that dataform doesn't really create the buckets for us if we inform a bucket name here. However, we would like to manage our infrastructure as code, right? So it's a little bit of a chicken and egg problem here because we
+
+[00:01:42] need to have an S3 bucket so that the remote backend can work. However, for us to create some piece of infrastructure, we would like to use a Dataform project. We will see different ways that we can tackle that in the future. For now, we'll just create the S3 bucket manually and then we will provide the information here
+
+[00:02:00] in the AWS console. Make sure you are logged in and in the region of your choice. Even though three buckets are a global service, they are bound to a specific region. So let's just make sure that we are on the same region as that of our choice. I'm gonna zoom in a little bit and then click on create bucket. We will then be redirected to this page where we can select the
+
+[00:02:22] AWS region and we can provide a bucket name here. I'm gonna say Terraform course, Laura Miller remote backend. I think that this is unique enough So this should be already good to go object ownership. We're gonna leave this disabled
+
+[00:02:41] and we will also block all the public access. We can disable bucket versioning since bucket versioning does have some cost implications. I would prefer to disable it for now just to stay within the free side of things. However, in any serious project, it would definitely enable that
+
+[00:03:01] in case you have any problems with the state file, you have versioning enabled and you can look at previous versions. We will leave all the other options marked as the default and we're just gonna click on create bucket. Great. Now, we can use this bucket here in our remote backend configuration.
+
+[00:03:21] Let's just copy the the bucket name here and let's go back to our IDE. So here in back end S3, we can provide a name which is not called the name. It's actually a bucket argument. We'll just provide this bucket here. We will also provide a key and the key that we would like to provide here. We're just simply going to say
+
+[00:03:41] state dot TF state. This is the path for our, for our state file. And then here we can also provide a region and the region. It will be eu west one. It's important to differentiate here between this region and this region. So this region here is the region of the bucket of the state
+
+[00:04:02] bucket or of the bucket that is used to store our state file. This does not need to be the same region as this region. The region at the bottom here is the region that we are using to set up our aws provider. This is where our infrastructure will be deployed.
+
+[00:04:21] This is the region where we will deploy our infrastructure so we can deploy in EU West one and have our S3 buckets, storing our state files in some other region. Eu West two or Eu central one or us East one. That's also fine. OK? So these two regions, they are different things.
+
+[00:04:40] Let's leave it as it is. And let's run once again, terraform in it. Once we do that, we can see that the Terraform project has been successfully initialized. So let's see if we can now run a Terraform apply command. We see the two changes we would like to add. Let's type. Yes and let's press enter.
+
+[00:05:00] Perfect. So Terraform executed without any errors. However, we don't have any state file locally. Let's go back to the console and see what happened back in the AWS console. Let's click on our bucket name. And as you can see here, we have then a new object and this new object is exactly the same object
+
+[00:05:21] or it is in the path that we have provided in the Terraform configuration. Let's click here. And if we click here on open, we should be able to see our file. Let's zoom in a little bit and we will see that this is exactly the same file as we had before whenever we were using the local backend.
+
+[00:05:40] Perfect. So we were able to set up a remote backend with S3. And the last thing I would like to discuss here is that we can provide a dynamo DB table. I'm not gonna do that here. My dynamodb table and this can be used for the state locking purposes. So
+
+[00:06:00] the S3 remote backend supports state locking. And this is done via a dynamodb table. We would have to create this table and then add the correct name here. And terraform would look at this table whenever performing any apply or destroy operations and, and, and it would look and see if there are any active locks in the state file.
+
+[00:06:23] If there are any active locks, it would wait until the lock is released. And if there are no locks, it would proceed with the operation. We're gonna remove this here from now. Let's simply run a Dataform FMT command here so that we format our file a little bit better. We can leave this file as it is. However, I would like to change a little bit here.
+
+[00:06:44] And if we were to change the key, let's see if we can do that. We're gonna write here 0 4 dash backends forward slash state dot TF state. We can also leave the Terraform course remote backend name here. This doesn't really matter.
+
+[00:07:00] I just want to see what will happen once we run Terraform init. And as you can see here, Terraform backend configuration change, it informed us that there were some changes and that these changes may require migrating the existing state. So it provides us the option here to run terraform init dash migrate state.
+
+[00:07:21] So let's give it a try. Let's clean the console terraform init dash migrate state like so and as you can see here, it will ask us for a confirmation. So it said that there is some preexisting state while migrating the previous backend to the new back end.
+
+[00:07:40] And then here we can type yes to copy the state or no to start with a new state to start with an empty state. So once we do that, let's go back to the console here and let's see the changes. I'm going to refresh this page and I'm gonna click once again on the name of the bucket and we do have a new bucket here from our project. So let's ignore that one.
+
+[00:08:03] Let's click on the newly created bucket. And as you can see here, we have our 04 back ends and then the state file. Now, here you can see that the old state file is still present, it was not deleted, it was copied to the new path, right? So terraform will not delete the file, it will copy to the new path.
+
+[00:08:23] However, if we were to come back here, now, let's destroy our Terraform project, all our configuration, we will approve that we'll simply type here. Yes, and we will see that. Now, the two state files coming back to the id here. Now, if we were to open it here
+
+[00:08:40] and click on this file and click on open, then we can see that this file is empty. However, the previous file, let's come back here to the Terraform bucket. If we click here, we will see that this file still has the information. So this file here basically became stale. It's not connected to our Terraform project anymore,
+
+[00:09:01] but it still has a, a lot of information. And if there are some sensitive data that was stored here and we migrated the back end. For example, then this data here is still stored somewhere. So I would recommend that whenever you migrate, you may just change these changes, then you always come to the previous state
+
+[00:09:21] and you make sure that you delete. OK? So here we will simply type at the bottom permanently delete. We're gonna delete this state file here. Let's delete the objects. That's good. We have managed to delete the objects. So now we can come back to our buckets and we can see that the only one that is available here is our 04 backends.
+
+[00:09:42] Perfect. In this lecture, we saw how we can set up a remote backend as well as several aspects related to working with this remote backend. Let's take a short break and come back in the next lecture.

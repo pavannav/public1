@@ -1,0 +1,51 @@
+[00:00:07] - After this quick knowledge refresh of SELinux let's look more specifically at fixing SELinux issues. I will show you some information on the slides then we'll do some demo and the last bit will be a lab.
+
+[00:00:23] So first an overview of common SELinux problems. To start with non-standard locations are used by services. That's the example where you put your web server document route in directly that's not created by the system. SELinux doesn't know about it so your directory's
+
+[00:00:42] not in the policy so you need to set the context type. In order to do so you can use semanage fcontext. And after doing that you can use restorecon to apply this new context to the filesystem. In the previous demo about semanage we have seen that this doesn't apply only
+
+[00:01:01] to known default directories but some services have it by nature. As anything you do in semanage it's non-default there is not default (mumbles). Switching from disabled to enforcing also may create issues in SELinux but normally that is dealt with pretty well.
+
+[00:01:21] The problem that is in disable mode contexts are not set appropriately and when switching to enforcing mode autorelabel is automatically created and when you reboot your entire filesystem will be relabeled. And that is to make sure that your filesystem is compliant to what is in the SELinux policy.
+
+[00:01:41] Another common issue is wrong booleans. Booleans are on off switches. On off switches of functionality that in general is considered dangerous. And if it's considered dangerous well there's an SeLinux Boolean that by default will deny that functionality. Non-standard network ports is also an issue.
+
+[00:02:02] We have seen it in the previous demo using the SSH service that was listening on ports 20, 22. In order to troubleshoot SELinux logging is very important. We have already seen that the logs are written to the auditlog and how sealerts can be used
+
+[00:02:20] to get information out of viral messages. Combined with some artificial intelligence that makes troubleshooting SELinux relatively easy. If you want to know more you can use ausearch. Ausearch is a command that you can use to search in the audit subsystem.
+
+[00:02:42] For example ausearch -m avc - ts recent will show messages that were logged in the last 10 minutes. Alternatively, you can use today, yesterday or this-week as an argument to the -ts option. In ausearch -m avc
+
+[00:03:01] make sure that you filter SELinux messages only. Because ausearch is a generic utility. Some SELinux events do occur so often that they are not audited by default. In most cases that's convenient but if you really want to go deep you need to have information about these events
+
+[00:03:23] as well. You can use sesearch which is an advanced command to search for SELinux event. Sesearch -D will show these events. And if you do wanna see them in your logs as well you can use semanage dontaudit off
+
+[00:03:40] that'll temporarily disablee the dontaudit functionality and create a lot more entries in your logs. We have already seen sealert in my previous demo. Sealert is really convenient it was created to make troubleshooting SELinux easier. But sealert is using artificial intelligence
+
+[00:04:00] and the artificial intelligence can never be as good as human knowledge. So sealert by itself is a guideline, it's not the ultimate solution. And by anything that sealert is suggesting it still is a good idea to think about it for yourself as an administrator so that you know for sure that this is really what you want to see.
+
+[00:04:23] Sealert uses the sedispatch plugin for auditd. On recent versions of Red Hat Enterprise Linux sealert as well as sedispatch may be installed already depending on the installation pattern that you have selected. If sealert is not operational by default you need to install
+
+[00:04:43] the setroubleshoot server package. And you need to make sure that the auitd is restarted after installing that package. In troubleshooting SELinux it also helps if you understand the SELinux rules. In order to do so seinfo and sesearch may help.
+
+[00:05:02] For example seinfo -thttpd_sys_content_t will show aliases for this specific context type or seinfo --portcon=80 --tcp will show all rules that are associated to a specific port.
+
+[00:05:20] And that may be really helpful to figure out what exactly is happening. What do you think of sesearch --allow -b httpd_can_connect_ldap this will show all rules that are associated to a boolean. You know booleans are hard to understand in some cases
+
+[00:05:40] and if you really want to know what the boolean is doing than this command is really very useful. Let me give you a demo so that at least you can have a look at the seinfo and sesearch commands. So let's start with seinfo. Just typing enter because seinfo is not installed
+
+[00:06:02] by default, command not found. Yum provides star /seinfo is going to tell us the name of the package. So the name of the package is setools console. Yum install setools console.
+
+[00:06:27] There we go. Now we use seinfo -thttpd_sys_content_t. Which will show aliases for this context type.
+
+[00:06:43] So what was that? These are aliases that in fact do exactly the same. Now let's get some information about ports. Seinfo --portcon=80/tcp.
+
+[00:07:02] So what do we see? We see that it is set to httpp port t. We can also see it's a part of the range one to 511 in tcp as well as udp which has arranged has reserved port t. That's interesting to know so apparently SELinux is using
+
+[00:07:21] reserve ports t for the entire range in which some ports are overwritten. Now let's have a look at the boolean. Sesearch --allow -b httpd_can, oops.
+
+[00:07:40] Httpd_can_connect_ldap. And there we can see that this has one rule only. So the rules allow httpd_t ldap_port_t tcp_socket name_connect.
+
+[00:08:00] So httpd_t can connect to anything labeled as ldap_port_t and the connection is allowed for the tcp socket at system call as well as the name connect system call. Sesearch allowed -b is a very interesting one because it allows you to understand what exactly
+
+[00:08:21] is happening when you enable a boolean which is in some cases is a lot more than you would wish for.

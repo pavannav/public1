@@ -1,0 +1,73 @@
+[00:00:00] Hello and welcome back in this lecture. I would like to run a couple of tests with you. Let's explore a little bit more here, what we have in terms of our O I DC setup. And as you can remember here, we are allowing only the dataform CLI workspace to use this role to authenticate into
+
+[00:00:20] AWS within Terraform cloud. Let's come to our Terraform O I DC project here and let's try to create a new workspace. We're gonna call, gonna also use the CLI driven workflow here. That's gonna be dataform CLI two. We're gonna create under the data form O I DC project. Let's click create here and let's have a look at the variables.
+
+[00:00:42] Let's scroll down here and you will see that we already have this variable set applied to this new workspace. This happens because under our settings, variable sets, let's click here. We are applying this variable set to the entire Terraform O I DC project.
+
+[00:01:01] That means that this variable set will be automatically applied to new workspaces that are created here. If we were to now come back to our variable sets, let's have a look here. We also apply this at the workspace level. So if we were to create a new variable set
+
+[00:01:20] with the same variables here, but different values and apply that to our new CLI workspace, then this apply would take priority over the project level, apply, right? So let's just come back here to our workspaces. We're gonna use the terraform CLI two here and now what we would like to do, let's create a new folder in our ID.
+
+[00:01:42] That is just for testing purposes. We're gonna create here a new one. We're gonna say project 05 and we're gonna say test folder, we will delete this test folder at the end of this lecture. Let's just change into project 05 here and we're gonna say test folder and then let's open this here
+
+[00:02:01] in our ID. Let's create a new file. We're gonna call this provider dot TF and we're gonna take the same configuration as we have here. So I'm just gonna copy all this, paste it here and do a little bit of clean up and adjusting the providers as well as the cloud configuration. We would like to use haarp AWS. The workspace here is gonna be CLI two
+
+[00:02:22] and the provider will be AWS. So now here, if we look at the Terraform Cloud, if we look at the variables for this Terraform CLI two, we should actually be able theoretically, we should not be able, but we should try to use OIDC here to authenticate into
+
+[00:02:42] aws. This should not work by default because here under our oidc configuration, we are not allowing this workspace. So you can see here that we have workspace. Dataform CLI here, but we do not have Dataform CL two. So let's give it a try under our test folder here. Let's create a new file. We're gonna say S3 dot TF.
+
+[00:03:03] Let's just create a simple AWS S3 bucket. I'm gonna call this and then we say here, the bucket will be data form CLI two and then some random string. Let's save this here. And now let's run Terraform init and let's try to run
+
+[00:03:20] terraform apply here. Let's see if that is going to work. Perfect. And as you can see here, we get exactly the error we were expecting for. This is an access denied is a forbidden status code here. And even though we are trying to use OIDC because our workspace is not among the allowed workspaces to use that role,
+
+[00:03:42] then we are not gonna be able to move forward with this operation. If we wanted to do that, we can actually give it a try here. Let's create a new variable. We're gonna say, let's say variables here and we're gonna say admin role, admin role workspaces. This is going to be a list of strings.
+
+[00:04:02] We will have no default here and we will say here all workspaces that can assume the admin role, right? So that here. So I'm gonna be the admin role. We could actually put a data form, cloud admin role is a little bit better.
+
+[00:04:22] We can also add the automation here. If you want to be very, very precise, we can now in our data form dot the FF file, create a new entry here. Let's add an entry for this one. And we will simply set this to be equal to the form dash CLI and dataform dash CLI two.
+
+[00:04:42] We can now use this variable here inside of our O I DC to actually generate this set of strings here or list of strings dynamically. So let's just add a four. So gonna say four workspace in V dot admin
+
+[00:05:01] roll workspaces and then we will return here this string and this string will actually here instead of containing the hard coded workspace, we're just gonna say workspace here and we can also add the project here. So if we want to add a variable, let's say here, variable admin role project
+
+[00:05:22] admin role project here, and we can use the same logic if you wanna have another list of strings and then do a nested for loop here. That's also possible. I'm just gonna add this string here to keep things simple. And then we say Terraform cloud project
+
+[00:05:40] to allow assuming the dataform cloud automation. So I'm just gonna copy this automation, admin automation, admin role, right? This is looking a little bit better. Let's just do a little bit of housekeeping here and this is looking good.
+
+[00:06:00] So now the default here, we can actually add a dataform dash O I DC so that we don't need to provide or we can actually provide this in the data form dot DF vs file. So we just gonna have the admin Role project. I believe that's how it's called admin Role project is equal to data form O I DC.
+
+[00:06:21] And then here we can reference this via V dot admin Role project. This is looking good. Let's run a Terraform format. Actually, we are not within the correct folder here. So let's go back a little bit and let's run here, Terraform format. This is gonna format everything
+
+[00:06:40] and now we can change into the project 05 Terraform cloud O I DC first. So first, we need to actually apply these changes here to make sure that we also allow our CLI to workspace. So let's now run terraform apply here. Let's inspect the changes. All we should see in terms of changes is adding a new line
+
+[00:07:04] to the list here of values that are allowed to assume the role. There is a little typo here for dot V. I don't know why the D keeps putting that. So let's try once again, let's fix that. And now let's try to run the dataform apply. Once again,
+
+[00:07:20] this is looking good. We have just one resource to change here. And as you can see, we're just gonna add this, we're gonna change from being a single string here to actually being a list of strings. Let's type. Yes. And let's see if this will enable us to authenticate from both this project as well as the
+
+[00:07:41] this one. Perfect. We can confirm that this still has access by running Terraform plan. Let's just make sure that we didn't lock ourselves out of this if we have done. So then we would have to go into AWS and manually revert the changes. Because basically now here we cannot assume the role to manage this project via Terraform cloud.
+
+[00:08:01] But I believe everything should be working as expected. As you can see, we are able to refresh everything and we should also see that there are no changes to the infrastructure. So this is working as expected. And let's see now, if we are able to assume this role from within our test folder, let's simply run a dataform apply here and see if we are able to create our S3 bucket.
+
+[00:08:25] And as expected, we are now able to authenticate into AWS and we can create our S3 bucket. That is very good. Congratulations. So as you can see now, we are able to extend this and provide access to other workspaces by just
+
+[00:08:41] adding them to this list here. And then we can just apply the telephone cloud OIDC project give access and then these workspaces will also be able to assume the respective roles. We could set up a more robust configuration here where we don't allow all the workspaces to assume the admin role.
+
+[00:09:01] But rather we create roles with least privileged permissions and then we delegate these roles to specific workspaces. This is of course something that you would have to do when working in real world production projects. But for us here, it's just important that we understand how the mechanics work and how you are able to take this knowledge and apply that,
+
+[00:09:23] customize it to the use cases in your own projects. This is looking good for us here. Let's now delete the project 05 test folder here. So let's just do a remove project 05 test folder and this will remove everything we did not apply this configuration.
+
+[00:09:42] That means we do not have an S3 bucket created. If you did apply the configuration, please delete the S3 bucket before removing the folder. Otherwise, you will just remove all the state here and you will not be able to delete that via terraform anymore. The last thing I would like to do is to change into project 05 here.
+
+[00:10:02] And I would like to destroy all our OIDC as well as as three setup that we might have still here. One small warning. The moment we destroy this, the moment we destroy the O I DC setup, we will not be able to authenticate into AWS via O I DC
+
+[00:10:20] from tele cloud anymore. So just make sure that you delete all the resources from the previous test folder as well as from this folder before running the destroy comment. After the destroy command is completed, we will come back to terraform cloud and finish deleting the workspaces that we have created. We should now have four resources to destroy. Let's inspect which ones.
+
+[00:10:42] The first one is our S3 bucket. The second one is our policy attachment. Then we have our role and we have. So this is the role and we also have the OIDC provider. This is looking good for us. Let's type. Yes, here. And once again, this will just remove the access from Telecomm
+
+[00:11:00] cloud into AWS. We can still log in normally via our udemy admin user. So we don't need to worry about locking ourselves out of AWS by running this destroy operation, great with everything destroyed. Let's now come back here to our workspaces in Terraform Cloud. Let's delete this one here. So let's click here.
+
+[00:11:22] Let's click, come to settings and then destruction and deletion. Let's delete from Terraform Cloud. I'm gonna just delete it here and let's come to the Dataform CLI now let's click on settings, destruction and deletion. Delete from Terraform Cloud. Let's delete this one here. That's looking good.
+
+[00:11:40] Now, Dataform O I DC here, we would like to click on project and then we can delete, let's click on edit project and then we can delete the project by clicking at the bottom here. On delete. Let's just copy the name, paste it here, click on delete, looking good. And now let's the last thing here. Let's delete our variable set.
+
+[00:12:02] So this variable set, let's click here, scroll down to the bottom and then let's delete the O I DC admin role variable set. Once we do that, we have actually removed everything that we have created both project workspaces and variable sets. And we are at a very good place to take a short break and come back in the next lecture.

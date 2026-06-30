@@ -1,0 +1,59 @@
+[00:00:00] I would now like to implement a little bit more robust validation here. Let's say that our notebook's backend is down. It's not able to validate this request. It's not able to return any information here. And in these scenarios, we would actually like to still store the notebook id. If it is a valid object ID,
+
+[00:00:21] we could then think about posting a message in a queue that will be consumed by the notebook's backend once it's back up and it's gonna validate the backlog of unvalidated notebook ids. But that would be a little bit too much for our use case here. We're just gonna ink, implement this mechanism that will still enable a user
+
+[00:00:40] to store a note with a valid object ID. Even if the service for our notebooks is down, we will also code the logic all inside of the post request handler. But if you wish to code it outside in a function, then by all means go ahead with this. So let's say here, we're gonna say let validated notebook ID.
+
+[00:01:01] This is just going to be no. So the first thing that we will check here is if there is no notebook ID. So if no notebook ID coming in the request body, we will simply say console.info and this is an information here. We will say the message, notebook ID. So notebook
+
+[00:01:22] id not provided storing node without notebook. So very straightforward here, if there is no notebook, we're just going to console log or just print this information here in our logs, this will not be shown to the our user. This is just in case we need to retrieve this information later on. Great.
+
+[00:01:42] So if there is a notebook id, then we need to validate whether this is a valid id or not. So we're gonna say if this is not a valid id. So let's say with the mongoose here, let's then we can confirm that this is already here. So we have the mongoose here. So if not mongoose dot types
+
+[00:02:02] object ID is valid the notebook id here, then we will simply return a message to the user response status of 404. And then we'll simply inform here dot Jason and we will say message or error
+
+[00:02:20] notebook not found. And then we also provide here the notebook id for reference purposes. You could also adopt another approach here, for example, and just log or print an error message for our logs. And then simply say here that the object id
+
+[00:02:40] or the notebook id was an invalid object id. And then for the final for the end user, you could potentially just store the notebook id field as null. But I do find this a little bit more intuitive. So basically, if the user sends or provides a notebook ID, that is not a valid object ID, we know that this will not be saved in our notebook service.
+
+[00:03:02] So we can just return this. This makes an assumption that every notebook will always have an object ID as the ID inside of the notebook's back end. In more complex scenarios, you might not be the team who is actually responsible for managing the notebooks back end. That means you might not be able to make these many assumptions.
+
+[00:03:23] But for us here in our controlled environment, this is fine. So if we have a notebook ID, now we enter into the last case here if we have a notebook id, so if this is false and this notebook id is valid and this is also false, right? So if this condition is also false,
+
+[00:03:40] then we will enter into the last condition here. And now in this condition, we would like to validate our notebook id here by issuing our axios request. If this trial request goes through here, then we would like to save the validated notebook id to be equal to our notebook id.
+
+[00:04:01] So the validated notebook id is here. And if this request here returns a 200 response code, then we are sure that this notebook is actually saved in our notebooks database. So we can add it to the validated notebook ID. If now we get an error here, we would like to, first of all get the
+
+[00:04:22] JSON format of the error. So I'm gonna say JSON error is equal to error 0.2 Json like so and this is a method from the error that is thrown by AXIOS. This is not a method, a standard javascript method. This method is available because we are using axios and then we can leverage the the
+
+[00:04:41] JSON object here to retrieve the status. So I'm gonna say if the Json error dot status is equal to 404. So if this is a not found error here, then we would like to return the same message here. We're gonna say return response dot status 404
+
+[00:05:00] dot chase on error notebook not found if this is not the case. However, if this is not the case, then we would like to print an error message here. We're gonna say console dot log or console dot error is better. And we're gonna print a message here that will simply say error ve verifying let's say verifying
+
+[00:05:22] the notebook ID, upstreams notebooks service not available. Then we can also say here um storing node with provided ID for later validation. And so you could for example, provide this message to the logs of our application.
+
+[00:05:43] And then right after here, you could let's say post something in a queue for later processing and then you could say that when you have, let's say the, the the notebooks back end processes this and then it verifies that the notebook ID exists or not,
+
+[00:06:00] then it's gonna post another message back here for the notes back end to actually act on the result of this validation. But again, this would require us to create a few more services here. So we're going to skip that for now, I'm just gonna call log an error message or we're just gonna print this as an error and then we can also save the notebook id.
+
+[00:06:21] So notebook id, let's let's also add this to our logs and the error here, we're gonna say er R or error dot message so that we can store this message that is coming from the error of checked. We can also remove the console dot error here at the bottom.
+
+[00:06:40] And even though we have not been able to verify this with the notebooks upstream service, we would also like to save this. So let's add this here to our validated notebooks and notebook ID. We're just gonna take the notebook ID like so, so here, if the notebook is not found, we will return from this function and we will never reach this line here.
+
+[00:07:04] If the notebook service is not available, alltogether, meaning it gives back something else other than the 44, a 500 or something, then we would still like to store the notebook ID. For later processing. So you notice that we have this line here both inside
+
+[00:07:22] of the catch and inside of the try statements, we can remove this duplication by moving this line here to a final statement that will always execute independently of the result of our axios call. So the axios call will happen here. And then if this is successful, that's great. It will jump directly into the final
+
+[00:07:43] and it will verify, it will assign the value of notebook id to the validated notebook id variable. If however, we do get an error from axios, then we will transform this to JSON. And we check is the status 404. If it is 404 that means the notebook was not found.
+
+[00:08:01] And we will just return a 404 message to the user. Actually, in this case here, the 44 is not the best, the 400 would actually be the best here because this is a bad request from the perspective of the nodes back end. But again, I'm entering into details here. You can choose 400 or 44.
+
+[00:08:20] They will both work just fine because they're both error states. If the status is not 44 coming from our notebook service, then we would like to inform ourselves, we're just gonna log in this information, but we will continue with saving the notebook id. That's why we will enter the final block here
+
+[00:08:40] and assign the value of notebook id to the validated notebook id variable. We can also scroll up a little bit here and add 400 instead of 404 in case the notebook id is not a valid object ID last but not least, we then need to use the validated notebook id here
+
+[00:09:00] to save the information. And this is the notebook ID field will be equal to the validated notebook id. All right. So hopefully your head is not spinning too much. I know I am overcomplicating things here. The logic is a little bit more complicated than it needs to be. You could be as simple as just issuing an API request.
+
+[00:09:20] And if it returns a 44, you return a 400 that's all. But I just want to introduce the concept here having a slightly more resilient notes backend service. The nodes backend service will still continue to function even if the notebooks backend service is not running. And this is implemented by this slightly more annoying or more
+
+[00:09:42] complex logic inside of the catch statement for our validation request. I'm super excited to test this in Postman. So let's jump to postman and let's see how this works.
