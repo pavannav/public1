@@ -131,7 +131,7 @@
 ### Storage & CI/CD
 | Session | File Name | Status | Topics |
 |---------|-----------|--------|--------|
-| 005 | 005-How-To-Create-a-Bucket-GCP-in-Hindi.txt | [ ] Pending | Cloud Storage Buckets |
+| 005 | 005-How-To-Create-a-Bucket-GCP-in-Hindi.txt | [x] Completed | Cloud Storage Buckets, Storage Classes, Lifecycle Policies |
 | 044 | 044-Creating-Cloud-Source-Repositories-GCP-Deprecated-.txt | [ ] Pending | Cloud Source Repositories |
 | 045 | 045-Working-with-Cloud-build-and-Private-Pools-GCP-Part-1.txt | [ ] Pending | Cloud Build Part 1 |
 | 046 | 046-Working-with-Cloud-Build-and-Cloud-Builders-GCP-Part-2.txt | [ ] Pending | Cloud Build Part 2 |
