@@ -17,7 +17,7 @@
 | 003 | 003-How-to-Create-Cloud-NATGCP-in-Hindi.txt | [ ] Pending | Cloud NAT |
 | 008 | 008-How-to-create-a-Instance-Template-GCP-in-Hindi.-Part1-.txt | [ ] Pending | Instance Templates |
 | 009 | 009-Simulating-a-Host-maintenance-EventGCP-in-Hindi.txt | [ ] Pending | Host Maintenance |
-| 010 | 010-How-to-create-Instance-Group-GCP-In-Hindi.txt | [ ] Pending | Instance Groups |
+| 010 | 010-How-to-create-Instance-Group-GCP-In-Hindi.txt | [x] Completed | Instance Groups, Auto Scaling, Auto Healing |
 | 016 | 016-Creating-an-Unmanaged-Instance-Group-GCP-in-Hindi.txt | [ ] Pending | Unmanaged Instance Groups |
 | 017 | 017-Updating-Managed-Instance-Group-Canary-Update-Part-1-Google-Cloud-in-Hindi.txt | [ ] Pending | Canary Updates Part 1 |
 | 018 | 018-Updating-Managed-Instance-Group-Canary-Update-Part-2-Google-Cloud-in-Hindi.txt | [ ] Pending | Canary Updates Part 2 |
