@@ -12,12 +12,12 @@
 | Session | Date | Topic | Status | Key Concepts |
 |---------|------|-------|--------|--------------|
 | [Session 02](Session%2002%2016th%20Feb.md) | 16th Feb | Operating Systems, Virtualization, and Containerization | [x] Completed | Bare metal, Hypervisors, VMs, Containerization, Docker |
-| [Session 03](Session%2003%2017th%20Feb.md) | 17th Feb | TBD | [ ] Not Started | TBD |
+| [Session 03](Session%2003%2017th%20Feb.md) | 17th Feb | EC2 Remote Access, SOCKS Proxy, and Global Infrastructure | [x] Completed | SSH protocol, SOCKS5 proxy, tunneling, AWS regions, Global Accelerator |
 | [Session 04](Session%2004%2022nd%20Feb.md) | 22nd Feb | TBD | [ ] Not Started | TBD |
 | ~~Session 05~~ | ~~23rd Feb~~ | ~~Missing~~ | ~~N/A~~ | ~~Session not available~~ |
-| [Session 06](Session%2006%2024th%20Feb.md) | 24th Feb | TBD | [ ] Not Started | TBD |
+| [Session 06](Session%2006%2024th%20Feb.md) | 24th Feb | CloudWatch Monitoring, IAM Security, and AWS CLI Fundamentals | [x] Completed | Resource monitoring, metrics, IAM users/policies, CLI concepts |
 | [Session 07](Session%2007%2025th%20Feb.md) | 25th Feb | TBD | [ ] Not Started | TBD |
-| [Session 08](Session%2008%2026th%20Feb.md) | 26th Feb | TBD | [ ] Not Started | TBD |
+| [Session 08](Session%2008%2026th%20Feb.md) | 26th Feb | API Gateway - REST API Concepts and Serverless Integration | [x] Completed | REST APIs, HTTP methods, API Gateway proxy, Lambda/S3 integration |
 | [Session 09](Session%2009%2028th%20Feb.md) | 28th Feb | TBD | [ ] Not Started | TBD |
 | [Session 10](Session%2010%201st%20March.md) | 1st March | TBD | [ ] Not Started | TBD |
 | [Session 11](Session%2011%203rd%20March.md) | 3rd March | TBD | [ ] Not Started | TBD |
@@ -61,9 +61,9 @@
 - **Session 05**: Not available in transcript folder (gap between Session 04 and Session 06)
 
 ## Progress Statistics
-- **Completed Sessions**: 0/44
-- **Completion Rate**: 0%
-- **Last Processed**: None
+- **Completed Sessions**: 4/44
+- **Completion Rate**: 9%
+- **Last Processed**: Session 08 - API Gateway concepts and serverless integration
 
 ---
 *This file is automatically maintained. Update after processing each session.*
