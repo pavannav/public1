@@ -1,6 +1,6 @@
-# Section 30: Disk Management in Linux - Managing Storage in RHEL-8
-
 <details open>
+<summary><b> Section 30: Disk Management in Linux - Managing Storage in RHEL-8</b></summary>
+
 <details>
 <summary><b>Set-01 Assignment</b></summary>
 
