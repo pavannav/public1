@@ -189,4 +189,197 @@ nvme id-ctrl /dev/nvme0n1
 **Deliverable**: Performance analysis report with optimization recommendations based on your findings.
 
 </details>
+
+<details>
+<summary><b>Set-02 Assignment</b></summary>
+
+## Beginner Level Exercises
+
+### Exercise 1.1: Block Device Identification Using Different Methods
+**Objective**: Master multiple approaches to identify and classify block devices
+
+**Tasks**:
+1. Use `lsblk` with different output formats (tree, list, JSON)
+2. Compare output from `/sys/block/` vs `/proc/partitions`
+3. Create custom `lsblk` output showing only specific columns
+4. Identify removable vs internal storage devices
+
+**Commands**:
+```bash
+lsblk -J
+lsblk -l
+lsblk -o NAME,SIZE,TYPE,RM,RO,MOUNTPOINT
+cat /sys/block/*/size
+for dev in /sys/block/*/; do echo "$dev: $(cat $dev/size 2>/dev/null)"; done
+lsblk -d -o NAME,RM,TYPE,SIZE
+```
+
+**Deliverable**: Comparison report of different block device identification methods with examples.
+
+### Exercise 1.2: Advanced Disk Metadata Collection
+**Objective**: Collect and interpret detailed disk metadata using various tools
+
+**Tasks**:
+1. Extract detailed disk information using `udevadm`
+2. Parse disk information from `/sys/class/block/`
+3. Compare `hdparm` and `smartctl` output for the same device
+4. Create a standardized disk information template
+
+**Commands**:
+```bash
+udevadm info -a -n /dev/sda
+cat /sys/class/block/sda/uevent
+sudo hdparm -I /dev/sda
+sudo smartctl --all /dev/sda
+cat /sys/class/block/sda/device/model
+cat /sys/class/block/sda/device/rev
+```
+
+**Deliverable**: Standardized template for disk metadata collection with sample data.
+
+### Exercise 1.3: Device Path Resolution and Persistence
+**Objective**: Understand persistent device naming and path resolution
+
+**Tasks**:
+1. Map all persistent device names to their current `/dev` names
+2. Analyze udev rules affecting device naming
+3. Create custom udev rules for consistent naming
+4. Test device name persistence across reboots (in a VM)
+
+**Commands**:
+```bash
+find /dev/disk -type l -exec ls -la {} \;
+udevadm test /sys/class/block/sda 2>&1 | grep ID_
+cat /etc/udev/rules.d/70-persistent-net.rules 2>/dev/null || echo "No custom rules"
+udevadm trigger --verbose --dry-run
+```
+
+**Deliverable**: Documentation of device path mappings and a custom udev rule example.
+
+## Intermediate Level Exercises
+
+### Exercise 2.1: Partition Table Conversion Planning
+**Objective**: Plan and understand MBR to GPT conversion processes
+
+**Tasks**:
+1. Create a backup strategy for MBR to GPT conversion
+2. Document the conversion process using `gdisk`
+3. Identify potential issues and their resolutions
+4. Plan rollback procedures
+
+**Commands**:
+```bash
+sudo gdisk /dev/sda
+# Interactive commands: r (recovery), g (convert MBR to GPT)
+sudo sgdisk --backup=table-backup.bin /dev/sda
+sudo sgdisk --load-backup=table-backup.bin /dev/sda
+sudo gdisk -l /dev/sda | grep -E "GPT|MBR|protective"
+```
+
+**Deliverable**: Step-by-step conversion guide with safety checks and rollback procedures.
+
+### Exercise 2.2: Multi-Path Storage Device Management
+**Objective**: Configure and manage devices with multiple access paths
+
+**Tasks**:
+1. Identify multipath devices if configured
+2. Configure device-mapper-multipath for test devices
+3. Create multipath configuration for specific WWIDs
+4. Test failover scenarios
+
+**Commands**:
+```bash
+sudo multipath -ll
+cat /etc/multipath.conf
+sudo multipath -a 36001405xxxxxxxxxxxxxxx
+sudo multipathd show paths
+echo "multipath { wwids { /.*xxx.*/ } }" | sudo tee -a /etc/multipath.conf
+```
+
+**Deliverable**: Multipath configuration guide with device mapping examples.
+
+### Exercise 2.3: Advanced Partition Alignment Strategies
+**Objective**: Implement optimal partition alignment for different workloads
+
+**Tasks**:
+1. Calculate optimal starting sectors for different RAID configurations
+2. Align partitions for SSDs with different page sizes
+3. Create aligned partitions using `parted` with exact values
+4. Verify alignment using `blockdev` and filesystem tools
+
+**Commands**:
+```bash
+sudo parted /dev/sda mkpart primary ext4 2048s 50%
+sudo blockdev --getalignoff /dev/sda1
+sudo parted /dev/sda align-check optimal 1
+cat /sys/block/sda/queue/physical_block_size
+cat /sys/block/sda/queue/logical_block_size
+```
+
+**Deliverable**: Alignment calculation worksheet with verified optimal configurations.
+
+## Advanced Level Exercises
+
+### Exercise 3.1: Storage Stack Deep Dive and Debugging
+**Objective**: Debug complex storage stack issues using kernel tracing
+
+**Tasks**:
+1. Enable block layer tracing to monitor I/O patterns
+2. Analyze blktrace output for performance bottlenecks
+3. Trace device-mapper operations
+4. Create custom debug scripts for storage issues
+
+**Commands**:
+```bash
+sudo blktrace -d /dev/sda -w 30 -o trace
+blkparse trace
+sudo btrace /dev/sda
+echo 1 | sudo tee /sys/block/sda/trace/enable
+cat /sys/block/sda/trace/enable
+dmsetup table
+dmsetup status
+```
+
+**Deliverable**: Storage debugging toolkit with custom trace analysis scripts.
+
+### Exercise 3.2: Storage Virtualization with LVM Thin Provisioning
+**Objective**: Implement advanced storage virtualization using LVM
+
+**Tasks**:
+1. Create thin-provisioned logical volumes
+2. Configure thin pool monitoring and auto-extension
+3. Implement snapshot strategies for backup
+4. Create automated thin pool management scripts
+
+**Commands**:
+```bash
+sudo lvcreate --type thin-pool -L 100G -n thin_pool vg01
+sudo lvcreate --type thin -V 500G -T vg01/thin_pool -n virtual_lv
+sudo lvs --segments -o +seg_monitor
+sudo lvextend --use-policies vg01/thin_pool
+sudo lvs -o +seg_monitor,kernel_read_ahead
+```
+
+**Deliverable**: LVM thin provisioning deployment guide with monitoring automation.
+
+### Exercise 3.3: Enterprise Storage Performance Benchmarking Framework
+**Objective**: Create comprehensive storage performance testing framework
+
+**Tasks**:
+1. Design benchmark scenarios for different workloads (random/sequential, read/write)
+2. Implement automated benchmark execution with fio
+3. Create performance baseline documentation
+4. Generate capacity planning recommendations based on benchmarks
+
+**Commands**:
+```bash
+sudo fio --name=randread --ioengine=libaio --iodepth=32 --rw=randread --bs=4k --direct=1 --size=10G --numjobs=4 --runtime=300 --group_reporting
+sudo fio --name=seqwrite --ioengine=libaio --iodepth=32 --rw=write --bs=1M --direct=1 --size=100G --numjobs=1 --runtime=300
+iotop -o -d 1
+iostat -xzm 1
+```
+
+**Deliverable**: Complete benchmarking framework with workload profiles, automation scripts, and reporting templates.
+
+</details>
 </details>
