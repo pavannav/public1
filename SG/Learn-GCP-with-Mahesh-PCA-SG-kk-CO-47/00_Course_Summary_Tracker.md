@@ -10,8 +10,8 @@
 
 | Status | Count | Percentage |
 |--------|-------|------------|
-| ✅ Completed | 1 | 1.1% |
-| ⏳ Pending | 87 | 98.9% |
+| ✅ Completed | 2 | 2.3% |
+| ⏳ Pending | 86 | 97.7% |
 | **Total** | **88** | **100%** |
 
 ## Session Completion Table
@@ -21,7 +21,7 @@
 | 01 | Introduction to Google Cloud, Free Trial Activation, Six ways to interact with Google Cloud | ⏳ | - | - |
 | 02 | Cloud SDK, Rest API - Curl, Postman, Terraform, Quiz, Cloud IAM - Identity, Roles Concept | ⏳ | - | - |
 | 03 | Demo on Principal of least Privilege, IAM Policy Binding, What & Why Organization | ✅ | [session_03_IAM_Policy_Binding_Principle_Least_Privilege_Organization.md](session_03_IAM_Policy_Binding_Principle_Least_Privilege_Organization.md) | 2026-08-04 |
-| 04 | Demo on Policy Inheritance, Deny Policy, Service Account Concept - Part 1 | ⏳ | - | - |
+| 04 | Demo on Policy Inheritance, Deny Policy, Service Account Concept - Part 1 | ✅ | [session_04_Policy_Inheritance_Deny_Policy_Service_Accounts.md](session_04_Policy_Inheritance_Deny_Policy_Service_Accounts.md) | 2026-08-04 |
 | 05 | Service Account Deep Dive Concept | ⏳ | - | - |
 | 06 | Q & A Discussion | ⏳ | - | - |
 | 06 | Service Account Token Creator Deep Dive, Organization Policies of Service Account | ⏳ | - | - |
@@ -123,6 +123,33 @@
 | 88 | HRL & EHR Case Study demystification. Cloud Endpoints, Anthos-GKE Enterprise | ⏳ | - | - |
 
 ## Session Summaries
+
+### Day 04: Policy Inheritance, Deny Policy, Service Account Concepts - Part 1
+**File**: [session_04_Policy_Inheritance_Deny_Policy_Service_Accounts.md](session_04_Policy_Inheritance_Deny_Policy_Service_Accounts.md)
+
+**Key Topics Covered**:
+- Policy inheritance behavior: High privilege at organization level vs low privilege approach
+- Union operation: Higher privilege roles always override lower ones at lower levels
+- Why granting Editor at organization level creates unmanageable access
+- Browser role for hierarchy visibility without modification capabilities
+- Recommended approach: Minimal privileges at org level, specific roles at folder/project level
+- IAM propagation delays (2-7 minutes typical, up to 24 hours for groups)
+- Deny Policies as override mechanism when high-privilege roles cannot be removed
+- Service account fundamentals: Identity concept, multiple VMs sharing SA, key-based authentication
+- Three implementation approaches for VM-to-GCS data transfer:
+  - Compute Engine Default SA (problematic due to access scopes)
+  - User-created SA (recommended - flexible without restarts)
+  - Dangerous configuration (Editor + Full Access Scope = security risk)
+- Cross-project service account access patterns and best practices
+
+**Practical Demonstrations**:
+- Creating test users via Cloud Identity
+- Testing inherited access and attempting (failed) restrictions
+- Deny policy creation via gcloud to block role creation
+- VM-to-GCS data transfer with three different service account configurations
+- Cross-project bucket access using service accounts
+
+---
 
 ### Day 03: IAM Policy Binding, Principle of Least Privilege, Organization Concepts
 **File**: [session_03_IAM_Policy_Binding_Principle_Least_Privilege_Organization.md](session_03_IAM_Policy_Binding_Principle_Least_Privilege_Organization.md)
