@@ -1,1 +1,0 @@
-Task completed: Session 9 study guide has been created with all topics from the transcript, including compute service models (IaaS through FaaS), machine types, persistent disks, and VM classes. Files committed to git repository. Ready for next session.

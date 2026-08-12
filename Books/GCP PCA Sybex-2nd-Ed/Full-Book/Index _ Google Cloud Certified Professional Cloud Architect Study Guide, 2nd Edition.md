@@ -1,0 +1,1327 @@
+- **A**
+- abstractions, Kubernetes clusters, [86](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_86)–88
+- acceptance testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190)
+- access controls, [40](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_40), [272](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_272)–273
+  - Cloud Filestore, [113](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_113)
+- ACID (atomicity, consistency, isolation, durability)
+  - atomicity, [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)
+  - consistency, [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)
+  - durability, [115](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_115)
+  - isolation, [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)–115
+- AES128 encryption, [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+- AES256 encryption, [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+- agile methodologies, [246](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_246)–247
+- AI (artificial intelligence), [75](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_75)
+  - Vertex AI, [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)
+- alerts, Cloud Operations Suite, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183), [186](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_186)
+- ALTS (Application Layer Transport Security), [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)
+- AMD Epyc processor, confidential VMs, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- analytical databases, [117](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_117)–120
+  - BigQuery, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3), [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29), [117](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_117)–118
+  - selecting, [119](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_119)
+- Anthos, [75](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_75), [90](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_90)–91
+  - Anthos Clusters, fleet, [91](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_91)
+  - Anthos Config Management, [92](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_92)–93
+    - Google Cloud Deployment, [93](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_93)
+  - Anthos Multi Cluster Ingress, [92](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_92)
+  - Anthos Service Mesh, [91](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_91)–92
+  - migration, [265](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_265)
+- Apache Airflow DAG, [97](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_97)
+- Apache Spark, [46](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_46)
+- API best practices
+  - collections, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)
+  - custom methods, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)
+  - resources, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)–249
+  - REST APIs, HTTP methods, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)
+  - security, [249](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_249)–251
+  - standard methods, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)–249
+- App Engine, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8), [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+  - Cloud Pub/Sub and, [82](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_82)
+  - Disable Source Code Download, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+  - high availability, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+  - PaaS (platform-as-a-service) and, [74](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_74)
+  - runtime generation, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - Task Queues, [82](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_82)
+  - use cases, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)–82
+- App Engine Cron Service, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+- App Engine Flexible, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)
+  - containers, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - Go, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - Java [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8), [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - .NET, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - Node.js, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - PHP 5/7, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - Python 2.7, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - Python 3.6, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - Ruby, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - runtimes, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+- App Engine Standard, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - Go, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - Java, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - Node.js, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - PHP, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - Python, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+  - Ruby, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+- application availability, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)–61
+- application design, cost considerations, [27](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_27)–33
+- application development methodologies
+  - agile methodologies, [246](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_246)–247
+  - spiral methodologies, [245](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_245)–246
+  - waterfall, [244](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_244)–245
+- Application Layer (OSI Model), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- architecture design debt, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)
+- archival storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- ASICs (application-specific integrated circuits), [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)
+- asynchronous calls, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)–100
+- atomicity (ACID), [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)
+- auditing, [167](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_167)
+  - Cloud Audit Logs, [168](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_168)
+  - Cloud Logging Agent, [167](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_167)
+- authentication, [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)
+- authorization, [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)
+- AutoML tables, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- autoscaling, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4), [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+- availability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10), [41](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_41), [66](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_66)
+  - high availability, [52](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_52)
+    - App Engine, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+    - case studies, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)–56, [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59)–60
+    - Cloud Functions, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+    - Compute Engine, [54](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_54)–55
+    - Kubernetes Engine, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+    - storage, [56](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_56)–59
+  - managed services, [67](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_67)
+  - redundancy and, [66](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_66)–67
+  - SLAs (service-level agreements) and, [52](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_52)–53
+
+- **B**
+- backup storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- balanced persistent disk, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+- batch loading, BigQuery, [119](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_119)
+- batch processing
+  - Cloud Dataproc, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+  - hybrid-cloud networking and, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138)
+- BGP (Border Gateway Protocol), [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+- BigQuery, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3), [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29), [117](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_117)–119
+- BigQuery Storage Write API, [119](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_119)
+- Bigtable, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- binding, [158](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_158)
+- blameless culture, [215](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_215)
+- block storage, persistent disks, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+- Blue/Green deployment, [192](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_192)
+- boot images, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+- Borg, [118](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_118)
+- business continuity planning, [217](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_217)–218
+- business processes
+  - change management
+    - methodologies, [232](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_232)–233
+    - reasons for change, [231](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_231)–232
+  - cost management, [235](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_235)–236
+  - customer success management, [234](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_234)–235
+  - stakeholder management
+    - influences, [228](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_228)–229
+    - interests, [228](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_228)–229
+    - portfolios, [230](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_230)
+    - programs, [230](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_230)
+    - projects, [229](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_229)–230
+    - stages, [230](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_230)–231
+  - team skill management, [233](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_233)–234
+- business requirements
+  - analyzing, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)–7
+  - Capex (capital expenditure), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6)–7
+  - compliance, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - data management, [36](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_36)–37
+  - development, accelerating, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+  - digital transformation, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - EHR Healthcare case study, [25](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_25)–26
+  - governance, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - Helicopter Racing League case study, [26](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_26)
+  - incident recovery, [5](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_5)–6
+  - KPI (key performance indicator), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - line of business, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - Mountkirk Games case study, [26](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_26)–27
+  - operating budget, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - operational expenses, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)–4, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - Opex (operational expenditures), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - product strategy, [24](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_24)–27
+  - SLAs (service-level agreements), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - SLIs (service-level indicators), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - SLOs (service-level objectives), [5](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_5), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - systems integration
+    - EHR Healthcare, [33](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_33)–34
+    - Helicopter Racing League, [34](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_34)
+    - Mountkirk Games, [34](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_34)–35
+    - TerramEarth, [35](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_35)
+  - TerramEarth case study, [27](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_27)
+- business use cases, [24](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_24)–25
+- BYOL (bring your own license), [270](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_270)
+  - sole-tenant nodes and, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+
+- **C**
+- caches, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+  - Cloud Memorystore, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)–122
+  - in-memory, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+- caching, high availability, [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59)
+- canary deployment, [191](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_191)–192
+- canary updates, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+- Capacitor, [118](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_118)
+- Capex (capital expenditure), [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6)–7
+- capital expenditures, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)
+- case studies, [11](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_11)
+  - EHR Healthcare, [12](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_12)–13, [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59)
+  - Helicopter Racing League, [13](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_13)–14, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55), [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59)
+  - Mountkirk Games, [14](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_14)–15, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+  - TerramEarth, [15](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_15)–16, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55), [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59)
+- CD (continuous delivery)
+  - deployment, [191](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_191)–192
+  - QA (quality assurance), [189](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_189)
+  - testing, [189](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_189)–191
+- CDAP, Cloud Data Fusion and, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+- CEL (Common Expression Language), [160](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_160)
+- change management
+  - methodologies, [232](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_232)–233
+  - Plan-Do-Study-Act, [233](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_233)
+  - reasons for change, [231](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_231)–232
+- chaos engineering tools, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198), [214](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_214)
+- CI (continuous integration), [192](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_192)–193
+- CI/CD (Continuous Integration/Continuous Delivery)
+  - building blocks, [212](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_212)–213
+  - business drivers, [211](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_211)–212
+  - business-critical software, [212](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_212)
+  - safety critical software systems, [212](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_212)
+  - secret managers, [213](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_213)
+  - security-critical software, [212](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_212)
+  - version control, [212](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_212)
+- CIDR (Classless Inter-Domain Routing) blocks, [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9), [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133), [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+- Circuit Breaker pattern, upstream throttling and, [195](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_195)
+- client processes, stateful systems, [98](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_98)
+- Cloud Armor, [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+- Cloud Audit Logs, [168](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_168)
+- Cloud Bigtable, [120](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_120)
+- Cloud CDN, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+- Cloud Composer, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29), [97](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_97)
+- Cloud Data Fusion, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29), [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)–97
+- Cloud Data Transfer, [30](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_30)
+- Cloud Dataflow, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+  - BigQuery and, [119](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_119)
+- Cloud Datalab, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- Cloud Dataproc, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+- Cloud Datastore, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)
+- Cloud Deployment Manager, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- Cloud DNS, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+- Cloud EKM (External Key Manager), [166](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_166)
+- Cloud Filestore, [57](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_57), [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)
+  - access controls, [113](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_113)
+  - Filestore Basic, [112](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_112)
+  - Filestore Enterprise, [112](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_112), [113](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_113)
+  - Filestore High Scale, [112](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_112), [113](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_113)
+  - instances, [112](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_112)
+  - service tiers, [112](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_112)–113
+  - VPC Network Peering, [113](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_113)
+- Cloud Functions, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8), [75](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_75)
+  - backgroud processes, [83](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_83)
+  - code repository, [83](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_83)
+  - events, [82](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_82)–83
+  - Firebase databases, [83](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_83)
+  - functions, [82](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_82)–83
+  - high availability, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+  - images, [83](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_83)
+  - triggers, [82](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_82)–83
+- Cloud HSM, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+- Cloud IAM Conditions, [160](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_160)
+- Cloud Interconnect service
+  - Dedicated Interconnect, [140](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_140)
+  - hybrid-cloud networking and, [140](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_140)
+  - Partner Interconnect, [140](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_140)
+- Cloud KMS, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+- Cloud Logging, [5](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_5), [187](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_187)
+- Cloud Logging Agent, [167](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_167)
+- Cloud Memorystore, [30](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_30), [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59), [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+  - Memchached, [122](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_122)
+  - Redis and, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)–122
+- Cloud Monitoring, [5](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_5)
+  - alerting, [186](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_186)
+  - dashboards, [185](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_185)
+  - logging and, [187](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_187)
+  - metrics, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183)
+  - time series, [184](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_184)
+- Cloud Natural Language API, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- Cloud Operations Suite
+  - alerting, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183), [186](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_186)
+  - Cloud Logging, [187](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_187)
+  - Cloud Monitoring, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183)–187
+  - logging, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183), [187](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_187)
+  - monitoring, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183)
+- Cloud Pub/Sub, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+  - App Engine and, [82](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_82)
+  - pull subscriptions, [95](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_95)
+  - push subscriptions, [95](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_95)
+- Cloud Router, [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+- Cloud Run, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8), [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+  - Allowed Binary Authorization Policies, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+  - containers, stateless, [84](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_84)
+- Cloud Source Repository, [193](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_193)
+- Cloud Spanner, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29), [117](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_117)
+- Cloud SQL, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29), [115](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_115)
+  - MySQL and, [116](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_116)
+  - PostgreSQL and, [116](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_116)
+  - Restrict Public IP Access on Cloud SQL Instances, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+  - SQL Server and, [116](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_116)
+- Cloud Storage, [30](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_30), [57](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_57), [109](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_109), [166](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_166)
+  - Coldline storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - DRA (Durable Reduced Availability), [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - dual-region storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - Enforce Public Access Prevention, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+  - FUSE (Filesystem in Userspace), [110](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_110)
+  - geo-redundant storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - lifecycle management, [122](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_122)–123
+  - multiregion storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - namespaces, bucket names, [109](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_109)
+  - Nearline storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - Premium network tier, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - Standard network tier, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - standard storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - use cases, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)–112
+- Cloud TPU, [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)
+- Cloud Translation, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- Cloud Vision, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- Cloud VPN, hybrid-cloud networking and, [140](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_140)
+- Cloud Workflows, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+- CloudSQL, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+- Coldline storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- Colossus, [118](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_118)
+- communication plans, [231](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_231)
+- complete deployment, [191](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_191)
+- compliance, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)–39, [44](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_44)
+- Compute Engine, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8), [67](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_67)
+  - containers, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79), [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - high availability
+    - hardware redundancy, [54](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_54)
+    - load balancing, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+    - managed instance groups, [54](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_54)–55
+    - migration, [54](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_54)
+    - reginal instances, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+  - instance groups
+    - canary updates, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+    - instance templates, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+    - MIGs (managed instance groups), [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+    - rolling updates, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+    - unmanaged instance groups, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+  - Kubernetes clusters, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+  - migration, [265](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_265)
+  - permissions, [156](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_156)
+  - Shielded VMS, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+  - stateful applications and, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+  - VMs (virtual machines)
+    - machine types, [75](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_75)–76
+    - service accounts, [75](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_75)–76
+- compute requirements, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)
+- compute resources, [74](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_74). *See also* [compute services](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/b02.xhtml#ind317)
+- compute services. *See also* specific services
+  - App Engine, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)
+  - App Engine Flexible, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)
+  - Cloud Functions, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)
+  - Cloud Run, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)
+  - Compute Engine, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)
+  - Kubernetes Engine, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)
+- confidential VMs, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- confidentiality, [40](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_40)
+- consistency (ACID), [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)
+- constraints, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+  - Resource Location Restrictions, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+- containers
+  - App Engine Flexible, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - Cloud Run, [84](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_84)
+  - Compute Engine, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79), [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - GKE (Google Kubernetes Engine), [75](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_75)
+    - Kubernetes container orchestration, [84](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_84)–85
+- continuous delivery, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+- continuous integration, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+- COPPA (Children's Online Privacy Protection Act), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38), [173](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_173)
+- cost considerations, [46](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_46)
+  - TCO (total cost of ownership), [28](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_28)
+- cost management, [235](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_235)
+- cost-benefit analysis, [208](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_208)
+- COTS (commercial off-the-shelf software), [207](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_207)
+- cross-region replica, [116](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_116)
+- cryptographic keys, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+- customer success management, [234](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_234)
+- customer-managed encryption keys, [166](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_166)
+- customer-supplied keys, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+
+- **D**
+- DAGs (directed acyclic graphs), [97](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_97)
+  - Apache Airflow DAG, [97](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_97)
+- data and system migration. *See* [migration](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/b02.xhtml#ind872)
+- data at rest, [39](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_39)
+- Data Catalog, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- data flows, [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)–95
+  - Cloud Dataflow, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+  - Cloud Workflows, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+- data in transit/motion, [39](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_39)
+- data integrity
+  - access controls, [40](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_40)
+  - regulations, [39](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_39)
+- data lifecycle management
+  - caches, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+  - CloudSQL, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+  - Firestore, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+  - memorystore, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+  - object storage, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+  - time-series databases, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+- Data Link Layer (OSI Model), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- data management, [44](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_44)
+  - processing, [37](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_37)
+  - storage time, [36](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_36)
+- data migration
+  - governance and, [268](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_268)
+  - object storage, [268](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_268)–269
+  - relational data, [269](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_269)
+- data retention, [122](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_122)–123
+- data security
+  - Cloud Storage, [166](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_166)
+  - encryption
+    - AES128, [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+    - AES256, [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+    - DEK (data encryption key), [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+    - encryption at rest, [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)–164
+    - encryption in transit, [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)
+    - KEK (key encryption key), [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+  - key management
+    - Cloud EKM (External Key Manager), [166](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_166)
+    - Cloud HSM, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+    - Cloud KMS, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+    - customer-managed encryption keys, [166](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_166)
+    - customer-supplied keys, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+    - default encryption, [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)–165
+- data sets, archived, [68](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_68)
+- data transfer, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- data warehouses, [48](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_48)
+- databases, [48](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_48)
+  - analytical, [117](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_117)–120
+  - Cloud Spanner, [117](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_117)
+  - Cloud SQL, [115](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_115)–116
+  - distributed systems, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+  - managed databases, [58](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_58)–59
+  - NoSQL, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)–9
+    - Cloud Bigtable, [120](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_120)
+    - Cloud Datastore, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)
+    - Cloud Firestore, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)
+  - relational, [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)–115
+  - self-managed databases, [58](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_58)
+- data-driven testing, [251](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_251)
+- Dataflow, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- Dataproc, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- datasets, BigQuery, [118](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_118)–119
+- DDoS (distributed denial-of-service) attacks, [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+- decryption, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- Dedicated Interconnect, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60), [141](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_141)
+- defense in depth, [39](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_39), [170](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_170)
+- DEK (data encryption key), [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+- delivery, continuous, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+- deployment, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - Blue/Green deployment, [192](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_192)
+  - canary deployment, [191](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_191)–192
+  - complete deployment, [191](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_191)
+  - rolling deployment, [191](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_191)
+- Deployment Manager, [97](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_97)
+- design
+  - application, [27](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_27)–33
+  - hybrid-cloud networking, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138)–139
+  - security
+    - defense in depth, [170](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_170)
+    - least privilege, [169](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_169)–170
+    - SoD (security of duties), [168](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_168)–169
+  - software
+    - detailed design, [209](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_209)
+    - development and testing, [209](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_209)–210
+    - documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+    - high-level design, [208](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_208)–209
+    - maintenance, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)–211
+    - ORM (Object Relations Mapper), [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+    - UX (user experience), [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+- developer documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+- development and operations
+  - API best practices
+    - resources, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)–249
+    - security, [249](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_249)–251
+    - standard methods, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)–249
+  - application development methodologies
+    - agile methodologies, [246](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_246)–247
+    - spiral methodologies, [245](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_245)–246
+    - waterfall, [244](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_244)–245
+  - data and system migration, [253](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_253)–255
+  - Google Cloud interaction, [256](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_256)–257
+  - technical debt, [247](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_247)–248
+  - testing frameworks
+    - automated tools, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)–253
+    - models, [251](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_251)–252
+- DevOps
+  - managed services, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)
+  - release management, [188](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_188)–193
+- Dialogflow Essentials, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- digital transformation, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7), [232](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_232)
+- direct peering, hybrid-cloud networking and, [140](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_140)
+- disaster plan, [218](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_218)
+- disaster recovery (DR), [218](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_218)–219
+- distributed systems, client processes, [98](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_98)
+- division of labor, [189](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_189)
+- DNS (domain name services), [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9)
+  - naming conventions, [109](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_109)
+- documentation
+  - developer documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+  - operations documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+  - runbook, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+  - user documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+- documents, Cloud Datastore, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)
+- DRA (Durable Reduced Availability), [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32), [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- Dremel, [118](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_118)
+- dual-region storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- durability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10)
+- durability (ACID), [115](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_115)
+
+- **E**
+- Editor role, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)
+- EHR Healthcare, [12](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_12)–13
+  - business requirements, [25](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_25)–26
+  - regulations and, [46](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_46)
+  - systems integration, [33](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_33)–34
+- encryption, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - AES128, [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+  - AES256, [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+  - cryptographic keys, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+  - DEK (data encryption key), [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+  - encryption at rest, [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)–164
+  - encryption in transit, [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)
+  - Google Front End, [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)
+  - KEK (key encryption key), [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+  - TLS (Transport Layer Security), [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)
+- environment debt, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)
+- Envoy proxy, [86](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_86)
+- ETL (extraction, transformation, and load), Cloud Data Fusion and, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+- events, Cloud Functions, [82](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_82)–83
+- exam objectives, [2](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_2)–3
+- expenses, operational, reducing, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)–4
+
+- **F**
+- false alerts, [186](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_186)
+- filesystems, [110](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_110)
+- Firestore, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+- firewalls, [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9)
+  - Cloud Armor, [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+  - RDP (Remote Desktop Protocol), [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+  - rules, [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9), [146](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_146)
+    - attributes, [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+    - default-allow-icmp, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+    - default-allow-internal, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+    - default-allow-rdp, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+    - default-allow-ssh, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+  - WAF (web application firewall), [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+- functional technical requirements, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)–10
+- FUSE (Filesystem in Userspace), [110](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_110)
+
+- **G**
+- garbage collection, [187](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_187)
+- gated egress and ingress topology, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+- gated egress topology, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+- gated ingress topology, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+- gcs mount point, [110](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_110)
+- GDPR (General Data Protection Regulation), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38), [172](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_172)
+- geo-redundant storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- GitHub, [193](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_193)
+- GKE (Google Kubernetes Engine), [84](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_84)–85
+  - clusters, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+    - abstractions, [86](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_86)–88
+    - infrastructure, [85](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_85)–86
+    - types, [88](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_88)–89
+    - workload, [86](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_86)–88
+  - containers, [75](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_75)
+  - Ingress Controller, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - Kubernetes cluster management, [84](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_84)–85
+  - Kubernetes container orchestration, [84](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_84)–85
+  - networking
+    - load balancing, [90](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_90)
+    - service networking, [89](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_89)–90
+  - node affinity, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - node labels, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - node pools, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - nodeSelector, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - PersistentVolumes, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - pod specification, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - pods, [86](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_86)–87
+  - use cases, [90](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_90)
+- GLBA (Gram-Leach-Bliley Act), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)
+- global load balancing
+  - HTTP(S) load balancer, [144](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_144)
+  - SSL Proxy load balancer, [144](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_144)
+  - TCP Proxy Load Balancing, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+- Google Cloud, emulators, [257](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_257)
+- Google Cloud Build, [193](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_193)
+- Google Cloud Deployment, Anthos Config Management, [93](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_93)
+- Google Cloud interaction, [256](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_256)–257
+- Google Cloud Key Management Service, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+- Google Cloud Professional Architect exam, [2](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_2)
+  - exam objectives, [2](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_2)–3
+- Google Cloud SDK, [256](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_256)
+- Google Cloud Shell, [256](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_256)
+- Google Front End, [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)
+- governance, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+- Grafana, [188](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_188)
+- GUIDs (globally unique identifiers), [109](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_109)
+
+- **H**
+- handover topology, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+- HBase API, Cloud Bigtable, [120](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_120)
+- headers, [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)
+- Helicopter Racing League, [13](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_13)–14
+  - business requirements, [26](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_26)
+  - systems integration, [34](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_34)
+- high availability
+  - App Engine, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+  - application availability, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)–61
+  - case studies, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)–56, [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59)–60
+  - Cloud Functions, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+  - Compute Engine, [54](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_54)–55
+  - Kubernetes Engine, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+  - network availability, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+  - storage, [56](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_56)–60
+- high-level objectives, [24](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_24)
+- HIPAA (Health Insurance Portability and Accountability Act), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)
+- HIPAA/HITECH, [171](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_171)–172
+- HTTP(S) load balancer, [144](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_144)
+- hybrid testing, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)
+- hybrid-cloud networking, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138), [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+  - design, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138)–139
+  - implementing, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+    - Cloud Interconnect service, [140](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_140)
+    - Cloud VPN, [140](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_140)
+    - direct peering, [141](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_141)
+  - multicloud network, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138)
+  - reliability, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+
+- **I**
+- IaC (infrastructure-as-code), migration and, [265](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_265)
+- IAM (Identity and Access Management), [154](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_154), [174](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_174)
+  - best practices, [160](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_160)–161
+  - Cloud IAM Conditions, [160](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_160)
+  - Cloud Identity, [155](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_155)
+  - G Suite domains, [154](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_154)
+  - Google accounts, [155](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_155)
+  - Google Groups, [155](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_155)
+  - IAP (Identity-Aware Proxy), [161](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_161)
+  - identities, [154](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_154)–155
+  - members, [154](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_154)–155
+  - permissions, [156](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_156)
+  - policies, [158](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_158)–159
+  - resources, [155](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_155)–156
+    - hierarchy, [159](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_159)
+  - roles, [156](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_156)
+    - basic roles, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)–158
+    - custom, [158](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_158)
+    - predefined, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)
+    - primitive roles, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)–158
+  - Workload Identity Federation, [161](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_161)
+- IAM Disable Cross-Project Service Account Usage, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+- IAM roles
+  - BigQuery, [118](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_118)–119
+  - Cloud Filestore, [113](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_113)
+- IAP (Identity-Aware Proxy), [161](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_161)
+- IETF (Internet Engineering Tasks Force), [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+- incident management, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198)
+- incident recovery, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3), [5](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_5)–6, [68](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_68)
+- information security, [39](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_39)–41
+- in-memory cache, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+- instance groups
+  - canary updates, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+  - instance templates, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+  - MIGs (managed instance groups), [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+  - rolling updates, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+  - unmanaged instance groups, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- instance templates, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- instances
+  - boot images, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+  - Cloud Filestore, [112](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_112)
+  - volatile instances, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+- integration, continuous, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+- integration testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190), [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+- integrity monitoring, shielded VMs, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+- Internal TCP/UDP load balancer, [143](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_143)–144
+- IOPS (IO operations per second), [64](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_64)
+- IP addressing, [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9)
+  - CIDR (Classless Inter-Domain Routing) notation, [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133)
+  - IETF (Internet Engineering Tasks Force), [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+  - IPv4, [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133)
+  - IPv6, [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133)
+  - NAT (network address translation), [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+  - private, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+  - public, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+  - subnet masks, [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133)
+- IP protocol, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- isolation (ACID), [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)–115
+- ITIL (Information Technology Infrastructure Library), [173](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_173)–174
+- ITIL Enterprise, [216](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_216)–217
+
+- **J**
+- Java, App Engine Standard, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+- Java [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8), App Engine Flexible, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+- Jenkins, [193](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_193)
+- Jupiter, [118](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_118)
+- JWT (JSON Web Tokens), [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)
+
+- **K**
+- K8s. *See* [GKE (Google Kubernetes Engine)](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/b02.xhtml#ind525)
+- KEK (key encryption key), [163](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_163)
+- key management
+  - Cloud EKM (External Key Manager), [166](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_166)
+  - Cloud HSM, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+  - Cloud KMS, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+  - customer-managed encryption keys, [166](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_166)
+  - customer-supplied keys, [165](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_165)
+  - default encryption, [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)–165
+- keyword-driven testing, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)
+- KPIs (key performance indicators), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7), [43](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_43), [44](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_44)
+  - migration and, [46](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_46)
+  - operations KPI, [42](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_42)
+  - project KPIs, [41](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_41)–42
+  - ROI (return on investment), [42](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_42)
+- Kubernetes clusters, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+- Kubernetes Engine, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8), [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55), [67](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_67), [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79). *See* [GKE (Google Kubernetes Engine)](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/b02.xhtml#ind525)
+  - deployment, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)
+    - canary deployment, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)
+  - GKE clusters, [55](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_55)
+  - node pools, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)
+  - pods, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)
+    - services, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)
+
+- **L**
+- latency, [45](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_45)
+  - network latency, [123](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_123)–124
+- least privilege, [169](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_169)–170
+- lifecycle management, [122](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_122)–123
+- lift and shift, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+- line of business, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+- LLC (Logical Link Control), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- load balancing, [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+  - GKE, [90](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_90)
+  - global
+    - HTTP(S) load balancer, [144](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_144)
+    - SSL Proxy load balancer, [144](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_144)
+    - TCP Proxy Load Balancing, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+  - regional
+    - Internal TCP/UDP load balancer, [143](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_143)–144
+    - Network TCP/UDP load balancer, [143](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_143)
+- load testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190)–191
+- LoadBalancer (GKE), [89](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_89)
+- Log Analytics, [187](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_187)
+- logging, Cloud Logging, [187](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_187)
+
+- **M**
+- MAC (Media Access Control), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- managed databases, [58](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_58)–59
+- managed services, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3), [28](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_28)–30, [43](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_43), [49](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_49)
+  - availability and, [67](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_67)
+  - DRA (Durable Reduced Availability), [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+  - Premium Tier networking, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)
+  - Pub/Sub, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)–32
+  - Pub/Sub Lite, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)–32
+  - reduced levels, [30](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_30)–32
+  - scalability and, [67](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_67)
+  - Standard Tier networking, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)
+  - VM (virtual machine), preemptible VMs, [30](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_30)–31
+- marketing and sales, [234](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_234)
+- Memchached, Cloud Memorystore, [122](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_122)
+- memorystore, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+- meshed topology, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+- metered model of migration, [270](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_270)
+- methodologies, [244](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_244)
+- microservice architecture, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4), [49](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_49)
+- Migrate for Anthos, [265](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_265)
+- Migrate for Compute Engine, [265](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_265)
+- migration, [253](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_253)–255
+  - assessment phase, [265](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_265)
+  - cloud migrations, [253](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_253)
+  - cloud services integration, [264](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_264)–266
+  - data migration, [268](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_268)–269
+  - Database Migration Service, [255](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_255)
+  - deployment phase, [265](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_265)
+  - Google Transfer Service, [254](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_254), [255](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_255)
+  - gsutil, [255](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_255)
+  - KPIs and, [46](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_46)
+  - lift and shift, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+  - management planning, [271](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_271)–273
+  - network planning, [271](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_271)–273
+  - planning phase, [265](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_265)
+  - replatforming, [253](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_253)–254
+  - repurchasing, [254](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_254)
+  - retaining, [254](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_254)
+  - retirement, [254](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_254)
+  - rip and replace, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+  - software license mapping, [269](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_269)–270
+  - systems migration, [266](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_266)–269
+  - third-party vendors, [255](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_255)
+  - transfers, [254](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_254)
+- MIGs (managed instance groups), [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+  - canary updates, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+  - instance templates, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+  - rolling updates, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+  - unmanaged instance groups, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- mirrored topology, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+- ML (machine learning), [75](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_75)
+  - Cloud Dataproc, [96](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_96)
+- model-based testing, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)
+- modularity-driven testing, [251](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_251)–252
+- monitoring
+  - Cloud Operations Suite, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183)–185
+  - Prometheus, [188](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_188)
+- monolithic applications, microservice architecture, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+- Mountkirk Games, [14](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_14)–15
+  - business requirements, [26](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_26)–27
+  - systems integration, [34](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_34)–35
+- multicloud network, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138)
+- multiregion storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- MySQL, Cloud SQL and, [116](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_116)
+
+- **N**
+- namespaces, Cloud Storage, [109](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_109)
+- NAT (network address translation), [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+- Nearline storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+
+- .NET, App Engine Flexible, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+
+- network availability
+  - Dedicated Interconnect, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+  - Partner Interconnect, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+  - Premium Network Tier, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+  - redundant network connections, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+  - Standard Network Tier, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+- network latency, [123](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_123)–124
+- Network Layer (OSI Model), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- Network TCP/UDP load balancer, [143](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_143)
+- networking. *See also* [VPCs (virtual private clouds)](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/b02.xhtml#ind1292)
+  - access controls, [272](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_272)–273
+  - Cloud CDN, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+  - Cloud DNS, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+  - Compute Instance Admin, [272](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_272)
+  - connectivity, [273](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_273)
+  - data transfer, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - decryption, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - encryption, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - firewall rules, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)–135
+  - firewalls
+    - Cloud Armor, [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+    - WAF (web application firewall), [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+  - GKE
+    - load balancing, [90](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_90)
+    - service networking, [89](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_89)–90
+  - hybrid-cloud networking, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138), [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+    - design, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138)–139
+    - implementing, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)–141
+    - multicloud network, [138](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_138)
+  - IP addressing
+    - CIDR (Classless Inter-Domain Routing) notation, [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133)
+    - IPv4, [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133)
+    - IPv6, [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133)
+    - private, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+    - public, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+    - subnet masks, [133](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_133)
+  - IP protocol, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - LLC (Logical Link Control), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - load balancing, [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+    - global, [144](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_144)–145
+    - regional, [143](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_143)–144
+  - MAC (Media Access Control), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - Network Admin, [272](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_272)
+  - Network Viewer, [272](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_272)
+  - OSI model, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - peering, VPCs and, [137](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_137)–138
+  - Premium Tier, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)
+  - Private Google Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Private Google Access for On-premises Hosts, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Private Service Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Private Service Connect for Google APIs, [141](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_141)
+  - Private Service Connect for Google APIs with Consumer HTTP(S), [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Private Service Connect for Published Services, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - requirements
+    - VPCs (virtual private clouds), [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9)
+    - VPNs (virtual private networks), [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9)
+  - routers, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+    - Cloud Router, [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+  - scalability, [64](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_64)
+  - scaling, [273](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_273)
+  - Security Admin, [272](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_272)
+  - Serverless VPC Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Service Directory, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+  - service-centric, [141](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_141)–142, [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+  - Standard Tier, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)
+  - TCP (Transmission Control Protocol), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - TLS (Transport Layer Security), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - topologies
+    - gated egress, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+    - gated egress and ingress, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+    - gated ingress, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+    - handover, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+    - meshed, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+    - mirrored, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+  - UDP (User Datagram Protocol), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - VPCs (virtual private clouds), [271](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_271)–272
+    - network peering, [137](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_137)–138
+    - shared, [137](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_137)
+    - subnets, [136](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_136)
+  - VPNs (virtual private networks), [271](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_271)–272
+- Node.js
+  - App Engine Flexible, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - App Engine Standard, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+- NodePort ServiceType (GKE), [89](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_89)
+- nonfunctional requirements, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10)
+  - availability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10)
+  - durability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10)
+  - observability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10)
+  - reliability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10)
+  - scalability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10)
+- NoSQL databases, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)–9
+  - Cloud Bigtable, [120](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_120)
+  - Cloud Datastore, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)
+  - Cloud Firestore, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)
+- notifications, Cloud Monitoring, [186](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_186)
+
+- **O**
+- object storage, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32)
+  - migration and, [268](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_268)–269
+- observability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10)
+- operating budget, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+- operational expenses, [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - reducing, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)–4
+- operations documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+- operations KPI, [42](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_42)
+- Opex (operational expenditures), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+- OSI (Open Systems Interconnection) Network model
+  - Layer 1 (Physical), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - Layer 2 (Data Link), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - Layer 3 (Network), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - Layer 4 (Transport), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - Layer 5 (Session), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - Layer 6 (Presentation), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - Layer 7 (Application), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- OWASP (Open Web Application Security Project), [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+- Owner role, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)
+
+- **P**
+- PaaS (platform-as-a-service)
+  - App Engine and, [74](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_74)
+  - App Engine Standard, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+- Partner Interconnect, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60), [141](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_141)
+- pay-as-you-go model of migration, [270](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_270)
+- payload, [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)
+- PCI (Payment Card Industry Data Standard), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6)
+- PCI DSS (Payment Card Industry Data Security Standard), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)
+- PDs (persistent disks), [57](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_57)
+- penetration testing, [167](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_167)
+- permissions, [174](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_174)
+  - Compute Engine, [156](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_156)
+- persistent disks
+  - balanced persistent disk, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+  - block storage, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+  - SDD persistent disk, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+  - standard persistent disk, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+- PersistentVolumes (GKE), [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+- PHP, App Engine Standard, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+- PHP 5/7, App Engine Flexible, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+- Physical Layer (OSI Model), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- pipelines, [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)–95
+- Plan-Do-Study-Act methodology, [233](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_233)
+- pods
+  - GKE, [86](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_86)–87
+    - specifications, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+  - TPUs (Tensor Processing Units), [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)
+- points of presence, [124](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_124)
+- policies
+  - bindings, [158](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_158)
+  - Cloud Monitoring, [186](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_186)
+- portfolios, [230](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_230)
+- POSIX, Cloud Filestore, [113](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_113)
+- PostgreSQL, Cloud SQL and, [116](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_116)
+- post-mortem analysis, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198)
+  - incident post-mortems
+    - blameless culture, [215](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_215)
+    - major incidents, [215](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_215)
+    - minor incidents, [214](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_214)–215
+    - timeline of events, [215](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_215)
+  - project post-mortems, [215](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_215)–216
+- preemptible VMs, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)–4, [30](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_30)–31, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+- Preium network tier, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- Premium Network Tier, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+- Premium Tier networking, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)
+- preprocessing scripts, [45](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_45)
+- Presentation Layer (OSI Model), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- principle of least privilege, [39](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_39)
+- privacy regulations, [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)–39
+- Private Google Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+- Private Google Access for On-premises Hosts, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+- private IP addressing, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+- Private Service Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+- Private Service Connect for Google APIs, [141](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_141)
+- Private Service Connect for Google APIs with Consumer HTTP(S), [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+- Private Service Connect for Published Services, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+- product strategy, business requirements, [24](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_24)–27
+- professional services, [234](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_234)
+- programs, [230](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_230)
+- project KPIs, [41](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_41)–42
+- projects, [229](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_229)–230
+- Prometheus, [188](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_188)
+- public IP addressing, [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+- Pub/Sub, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)–32
+- Pub/Sub Lite, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4), [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)–32
+- pull subscriptions, Cloud Pub/Sub, [95](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_95)
+- push subscriptions, Cloud Pub/Sub, [95](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_95)
+- Python, App Engine Standard, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+- Python 2.7, App Engine Flexible, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+- Python 3.6, App Engine Flexible, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+
+- **Q**
+- QUIC (Quick UDP Internet Connections), [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)
+
+- **R**
+- RDP (Remote Desktop Protocol), [134](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_134)
+- read replicas, [116](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_116)
+- Recommendations AI, [29](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_29)
+- recommenders, VMs, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- recovery. *See also* [incident recovery](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/b02.xhtml#ind622)
+- recovery plan, [218](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_218)
+- Redis, Cloud Memorystore and, [121](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_121)–122
+- redundancy, availability, [66](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_66)–67
+- redundant network connections, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+- regional load balancing
+  - Internal TCP/UDP load balancer, [143](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_143)–144
+  - Network TCP/UDP load balancer, [143](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_143)
+- regression testing, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+- regulations, [44](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_44)
+  - compliance, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6)–7
+  - COPPA (Children's Online Privacy Protection Act), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38), [173](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_173)
+  - data integrity, [39](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_39)
+  - EHR system and, [46](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_46)
+  - GDPR (General Data Protection Regulation), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38), [172](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_172)
+  - GLBA (Gram-Leach-Bliley Act), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)
+  - HIPAA (Health Insurance Portability and Accountability Act), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)
+  - HIPAA/HITECH, [171](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_171)–172
+  - PCI (Payment Card Industry Data Standard), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6)
+  - PCI DSS (Payment Card Industry Data Security Standard), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)
+  - privacy, [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38)–39
+  - SOX (Sarbanes-Oxley Act), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38), [172](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_172)–173
+- relational data, migration and, [269](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_269)
+- relational databases
+  - ACID (atomicity, consistency, isolation, durability)
+    - atomicity, [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)
+    - consistency, [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)
+    - durability, [115](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_115)
+    - isolation, [114](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_114)–115
+  - selecting, [119](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_119)
+- release management, [188](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_188)
+  - CD (continuous delivery)
+    - deployment, [191](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_191)–192
+    - QA (quality assurance), [189](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_189)
+    - testing, [189](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_189)–191
+  - CI (continuous integration), [192](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_192)–193
+- reliability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10), [66](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_66), [182](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_182)
+  - Cloud Operations Suite, [182](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_182)
+    - alerting, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183), [186](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_186)
+    - logging, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183), [187](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_187)
+    - monitoring, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183)–185
+  - engineering, [65](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_65)–66
+  - hybrid-cloud networking, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+  - measuring, [65](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_65)
+  - release management, [188](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_188)–189
+    - CD (continuous delivery), [189](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_189)–192
+    - CI (continuous integration), [192](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_192)–193
+  - systems reliability
+    - cascading failures, [196](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_196)–197
+    - incident management, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198)
+    - overload and, [193](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_193)–194
+    - post-mortem analysis, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198)
+    - quality of service, degrading, [194](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_194)–195
+    - testing, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)–198
+    - upstream throttling, [195](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_195)
+- reliability stress testing, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)–198
+- ReplicaSet, [87](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_87)
+- Resource Location Restrictions, [162](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_162)
+- RESTful APIs, integration testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190)
+- rip and replace, [4](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_4)
+- ROI (return on investment), [42](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_42), [43](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_43), [208](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_208)
+- roles, [156](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_156), [174](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_174)
+  - basic roles
+    - Editor role, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)
+    - Owner role, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)
+    - Viewer role, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)
+  - custom roles, [158](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_158)
+  - identities, [156](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_156)–157
+  - predefined, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)
+  - primitive roles, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)–158
+- rolling deployment, [191](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_191)
+- rolling updates, [79](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_79)
+- routers, [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+  - Cloud Router, [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+- RTO (recovery time objectives), [218](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_218)
+- Ruby
+  - App Engine Flexible, [81](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_81)
+  - App Engine Standard, [80](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_80)
+- runbook, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+
+- **S**
+- SaaS (software as a service), VPC network peering and, [137](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_137)–138
+- scalability, [10](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_10), [66](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_66)
+  - App Engine, [61](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_61)
+  - autoscale, [61](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_61), [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+  - Cloud Function, [61](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_61)
+  - Compute Engine, [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)–63
+  - Kubernetes, [61](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_61)
+  - Kubernetes Engine, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)–64
+  - managed services, [67](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_67)
+  - network design, [64](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_64)
+  - NoSQL databases, [61](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_61)
+  - regional persistent disks, [64](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_64)
+  - relational databases, [61](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_61)
+  - scaling down, [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+  - scaling in, [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+  - scaling out, [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+  - scaling up, [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+  - stabilization period, [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+  - storage resources, [64](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_64)
+  - trailing time window, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)
+  - unmanaged instance groups, [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+  - vertical scaling, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)
+  - VMs, [61](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_61), [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+- Secret Manager, [213](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_213)
+- secure boot, shielded VMs, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+- Secure Encrypted Virtualization, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- security, [44](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_44). *See also* [information security](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/b02.xhtml#ind623)
+  - API
+    - authentication, [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)
+    - authorization, [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)
+    - resource limiting, [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)–251
+  - auditing, [167](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_167)–168
+  - data changes, [46](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_46)
+  - ITIL (Information Technology Infrastructure Library), [173](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_173)–174
+  - penetration testing, [167](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_167)
+- security design
+  - defense in depth, [170](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_170)
+  - least privilege, [169](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_169)–170
+  - SoD (security of duties), [168](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_168)–169
+- self-managed databases, [58](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_58)
+- Serverless VPC Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+- service accounts, VMs, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+- Service Directory, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+- service networking (GKE), [89](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_89)–90
+- service-centric networking, [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+  - Private Google Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Private Google Access for On-premises Hosts, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Private Service Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Private Service Connect for Google APIs, [141](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_141)
+  - Private Service Connect for Google APIs with Consumer HTTP(S), [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Private Service Connect for Published Services, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+  - Serverless VPC Access, [142](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_142)
+- service-level objectives, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)
+- Session Layer (OSI Model), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- Shared VPC, [137](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_137)
+- shielded VMs, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+- signature, [250](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_250)
+- Simian Army, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198)
+- SLAs (service-level agreements), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+  - availability and, [52](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_52)–53
+- SLIs (service-level indicators), [5](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_5), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+- SLOs (service-level objectives), [5](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_5), [7](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_7)
+- SoD (security of duties), [168](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_168)–169
+- software development
+  - analysis, [206](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_206)–207
+    - cost-benefit analysis, [208](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_208)
+    - COTS (commercial off-the-shelf software), [207](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_207)
+    - options, [207](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_207)–208
+    - ROI (return on investment), [208](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_208)
+    - scoping, [207](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_207)
+  - business requirements and, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)
+  - design
+    - detailed design, [209](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_209)
+    - development and testing, [209](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_209)–210
+    - documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+    - high-level design, [208](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_208)–209
+    - maintenance, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)–211
+    - ORM (Object Relations Mapper), [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+    - UX (user experience), [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+  - documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+  - maintenance, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)–211
+- software license mapping, [269](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_269)–270
+- sole-tenancy, VMs, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)–77
+- SOX (Sarbanes-Oxley Act), [6](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_6), [38](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_38), [172](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_172)–173
+- spiral methodologies, [245](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_245)–246
+- spot VMs, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+- Spot VMs, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)
+- SQL Server, Cloud SQL and, [116](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_116)
+- SSD persistent disk, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+- SSL Proxy load balancer, [144](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_144)
+- SSL/TLS traffic, SSL Proxy load balancer, [144](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_144)
+- Stackdriver, [183](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_183)
+- stakeholder management
+  - communication plans, [231](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_231)
+  - influences, [228](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_228)–229
+  - interests, [228](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_228)–229
+  - portfolios, [230](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_230)
+  - programs, [230](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_230)
+  - projects, [229](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_229)–230
+  - stages, [230](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_230)–231
+- stakeholders, [228](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_228)
+- Standard network tier, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- Standard Network Tier, [60](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_60)
+- standard persistent disk, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+- standard storage, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+- Standard Tier networking, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)
+- state, distributed systems
+  - client processes, [98](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_98)
+  - Cloud Memorystore, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+  - databases, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+  - in-memory cache, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+  - persistent, [98](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_98)–99
+  - volatile instances, [98](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_98)–99
+- storage
+  - archival, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - backup, [111](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_111)
+  - high availability
+    - availability *versus* durability, [57](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_57)
+    - caching, [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59)
+    - case studies, [59](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_59)–60
+    - Cloud Filestore, [57](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_57)
+    - Cloud Storage, [57](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_57)
+    - databases, [58](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_58)–59
+    - PDs (persistent disks), [57](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_57)
+  - requirements, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)–9
+    - NoSQL databases, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)–9
+  - scalability, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)
+  - service overview, [108](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_108)
+- streaming data, BigQuery, [119](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_119)
+- subnets, [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9)
+  - VPCs (virtual private clouds), [136](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_136), [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+- synchronous calls, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)–100
+- system testing, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+- systems integration
+  - EHR Healthcare, [33](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_33)–34
+  - Helicopter Racing League, [34](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_34)
+  - Mountkirk Games, [34](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_34)–35
+  - TerramEarth, [35](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_35)
+- systems reliability
+  - cascading failures, [196](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_196)–197
+  - incident management, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198)
+  - overload and, [193](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_193)–194
+    - shedding load, [194](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_194)
+  - post-mortem analysis, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198)
+  - quality of service, degrading, [194](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_194)–195
+  - testing
+    - integration tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+    - regression tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+    - reliability stress tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)–198
+    - system tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+    - unit tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+  - upstream throttling, [195](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_195)
+
+- **T**
+- tablets, Bigtable, [120](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_120)
+- target pool, [143](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_143)
+- TCO (total cost of ownership), [28](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_28), [43](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_43)
+- TCP (Transmission Control Protocol), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- TCP Proxy Load Balancing, [145](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_145)
+- team skill management, [233](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_233)–234
+- technical debt, [247](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_247)–248
+- technical processes
+  - business continuity planning, [217](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_217)–218
+  - CI/CD
+    - building blocks, [212](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_212)–213
+    - business drivers, [211](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_211)–212
+  - disaster recovery, [218](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_218)–219
+  - ITIL Enterprise, [216](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_216)–217
+  - post-mortem analysis
+    - incident post-mortems, [214](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_214)–215
+    - project post-mortems, [215](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_215)–216
+  - software development
+    - analysis, [206](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_206)–208
+    - design, [208](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_208)–210
+    - documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+    - maintenance, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)–211
+  - troubleshooting, [213](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_213)–216
+- technical requirements, functional requirements, [8](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_8)–10
+- Terraform, [97](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_97)
+- TerramEarth, systems integration, [35](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_35)
+- TerramEarth case study, [15](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_15)–16
+  - business requirements, [27](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_27)
+- test-driven development, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)
+- testing
+  - acceptance testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190)
+  - chaos engineering tools, [198](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_198)
+  - integration testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190)
+  - integration tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+  - load testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190)–191
+  - regression testing, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+  - reliability stress tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)–198
+  - system tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+  - unit testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190)
+  - unit tests, [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+- testing frameworks
+  - automated tools, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)–253
+  - data-driven testing, [251](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_251)
+  - hybrid testing, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)
+  - keyword-driven testing, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)
+  - model-based testing, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)
+  - models, [251](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_251)–252
+  - modularity-driven testing, [251](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_251)–252
+  - test-driven development, [252](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_252)
+- thrashing, [196](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_196)–197
+- time-series databases, [32](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_32), [45](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_45)
+- TLS (Transport Layer Security), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132), [164](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_164)
+- topologies
+  - gated egress, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+  - gated egress and ingress, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+  - gated ingress, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+  - handover, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+  - meshed, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+  - mirrored, [139](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_139)
+- TPUs (Tensor Processing Units), [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)
+  - pods, [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)
+- trailing time window, [63](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_63)
+- training and support, [234](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c10.xhtml#Page_234)
+- Transport Layer (OSI Model), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- tripping the circuit breaker, [195](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_195)
+- trust boundaries, [160](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_160)
+
+- **U**
+- UDP (User Datagram Protocol), [132](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_132)
+- unit testing, [190](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_190), [197](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_197)
+- unmanaged instance groups, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- use cases, business use cases, [24](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_24)–27
+- user documentation, [210](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_210)
+
+- **V**
+- version control, [212](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c09.xhtml#Page_212)
+- Vertext AI, [94](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_94)
+- vertical scaling, [248](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_248)
+- Viewer role, [157](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_157)
+- virtualization, Secure Encrypted Virtualization, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+- visualization, Grafana, [188](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c08.xhtml#Page_188)
+- VMs (virtual machines)
+  - confidential, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+  - persistent disks, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+  - preemptible VMs, [3](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_3)–4, [30](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_30)–31, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+  - recommenders, [78](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_78)
+  - scalability, [62](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c03.xhtml#Page_62)
+  - service accounts, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)
+  - shielded, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+  - sole-tenancy, [76](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_76)–77
+  - spot VMs, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+  - Spot VMs, [31](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c02.xhtml#Page_31)
+- volatile instances, [99](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_99)
+- VPCs (virtual private clouds), [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9), [146](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_146), [271](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_271)–272
+  - network peering, [137](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_137)–138
+  - Network Peering, Cloud Filestore, [113](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c05.xhtml#Page_113)
+  - peering, [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9)
+  - shared, [137](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_137), [146](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_146)
+  - subnets, [136](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_136), [147](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_147)
+- VPNs (virtual private networks), [9](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c01.xhtml#Page_9), [271](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c12.xhtml#Page_271)–272
+- vTPM (virtual trusted platform module), shielded VMs, [77](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c04.xhtml#Page_77)
+
+- **W–Z**
+- WAF (web application firewall), [135](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c06.xhtml#Page_135)
+- waterfall methodologies, [244](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c11.xhtml#Page_244)–245
+- Workload Identity Federation, [161](https://learning.oreilly.com/library/view/google-cloud-certified/9781119871057/c07.xhtml#Page_161)
